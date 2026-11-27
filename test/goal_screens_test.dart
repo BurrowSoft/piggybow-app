@@ -226,4 +226,69 @@ void main() {
       );
     }
   });
+
+  testWidgets(
+    'a save row: its title in ink, its day muted, its amount in the accent',
+    (tester) async {
+      await openHome(
+        tester,
+        seed: (app) async {
+          await app.journal.putGoal(
+            Goal(
+              id: 'g1',
+              name: 'Bike',
+              targetMinor: 100000,
+              createdAt: t,
+              updatedAt: t,
+            ),
+          );
+          await app.journal.addEntry(
+            type: EntryType.saved,
+            amountMinor: 2000,
+            currency: 'THB',
+            localDate: '2026-10-01',
+            note: 'Birthday money',
+          );
+        },
+      );
+      await tester.tapId('goal-card');
+      await settle(tester, byId('goal-screen'));
+      final theme = Theme.of(tester.element(byId('goal-screen')));
+      Color? colour(Finder f) => tester.widget<Text>(f).style?.color;
+      expect(colour(find.text('Birthday money')), theme.colorScheme.onSurface);
+      expect(
+        colour(find.text('Yesterday')),
+        theme.colorScheme.onSurfaceVariant,
+      );
+      expect(colour(find.text('+${money(2000)}')), theme.colorScheme.primary);
+    },
+  );
+
+  testWidgets(
+    '"Added" from the goal detail stays there: back on Home, no SnackBar',
+    (tester) async {
+      await openHome(
+        tester,
+        seed: (app) => app.journal.putGoal(
+          Goal(
+            id: 'g1',
+            name: 'Bike',
+            targetMinor: 100000,
+            createdAt: t,
+            updatedAt: t,
+          ),
+        ),
+      );
+      await tester.tapId('goal-card');
+      await settle(tester, byId('goal-add-savings'));
+      await tester.tapId('goal-add-savings');
+      await tester.enterId('add-amount', '10');
+      await tester.tapId('add-submit');
+      expect(find.text('Added'), findsOneWidget);
+      GoRouter.of(tester.element(byId('goal-screen'))).pop();
+      await tester.pumpAndSettle();
+      expect(byId('home-screen'), findsOneWidget);
+      expect(find.text('Added'), findsNothing, reason: "not over Home's +");
+    },
+  );
 }

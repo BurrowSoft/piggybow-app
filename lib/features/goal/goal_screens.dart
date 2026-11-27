@@ -484,7 +484,13 @@ class _SaveRow extends StatelessWidget {
     final text = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: theme.textTheme.bodyLarge),
+        // In ink: the theme's bodyLarge is muted.
+        Text(
+          title,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurface,
+          ),
+        ),
         Text(
           day,
           style: theme.textTheme.bodySmall?.copyWith(

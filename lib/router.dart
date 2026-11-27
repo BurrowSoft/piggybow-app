@@ -60,7 +60,9 @@ GoRouter buildRouter({
   }) => GoRoute(
     path: path,
     parentNavigatorKey: root,
-    builder: (context, state) => build(state),
+    // Its own messenger: a SnackBar shown here ("Added") stays here, and
+    // never lingers on the tabs' shell over Home's +.
+    builder: (context, state) => ScaffoldMessenger(child: build(state)),
     routes: routes,
   );
 
