@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:piggybow/core/app_config.dart';
 import 'package:piggybow/core/device.dart';
-import 'package:piggybow/export/csv_export.dart';
 import 'package:piggybow/features/me/me_actions.dart';
 import 'package:piggybow/features/me/me_screen.dart';
 import 'package:piggybow/journal/category.dart';
@@ -324,6 +323,7 @@ void main() {
       String? name;
       String? text;
       String? path;
+      List<int>? bytes;
       await tester.runAsync(
         () => exportJournal(
           app.services,
@@ -331,12 +331,14 @@ void main() {
           share: (file) async {
             name = file.name;
             path = file.path;
-            text = await file.readAsString();
+            bytes = await file.readAsBytes();
+            text = utf8.decode(bytes!);
           },
         ),
       );
       expect(name, 'piggybow-2026-10-02.csv');
-      expect(text, startsWith(csvBom));
+      // UTF-8 with a BOM (EF BB BF), so spreadsheets read Thai text right.
+      expect(bytes!.take(3), [0xEF, 0xBB, 0xBF]);
       expect(text, contains('2026-10-01,saved,1200.50,THB'));
       expect(text, contains('Bike'));
       expect(File(path!).existsSync(), isFalse, reason: 'deleted after');

@@ -89,6 +89,10 @@ Future<void> deleteEverything(
   final userId = session.user?.id;
   if (lock != null && userId != null) await lock.forget(userId);
   await session.setThemeMode(ThemeMode.system);
-  await sweepExports(cache: cache);
+  try {
+    await sweepExports(cache: cache);
+  } on Object {
+    // No cache to sweep (no file was ever exported): the wipe goes on.
+  }
   services.onboarded.value = false;
 }
