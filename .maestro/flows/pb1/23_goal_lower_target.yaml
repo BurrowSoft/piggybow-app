@@ -45,6 +45,12 @@ tags: [pb1, goal]
     timeout: 10000
 - tapOn:
     id: goal-done-close
+- runFlow:                           # Done returns to the goal's detail when the save was made there
+    when:
+      visible:
+        id: goal-screen
+    commands:
+      - tapOn: "Back"
 - assertVisible:
     id: goal-card-reached
     text: ".*Reached: Bike.*"

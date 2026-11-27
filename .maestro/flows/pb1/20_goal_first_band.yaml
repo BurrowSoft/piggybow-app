@@ -25,7 +25,7 @@ tags: [pb1, goal]
 - assertVisible: ".*Give your goal a name\\..*"
 - assertVisible: ".*Enter a goal amount\\..*"
 - takeScreenshot: 20-goal-create-errors
-- back
+- tapOn: "Back"                   # the app bar arrow; system back first closes the keyboard
 - extendedWaitUntil:
     visible:
       id: goal-create
