@@ -155,6 +155,36 @@ steps:
     );
   });
 
+  // The first label run died at boot: "Not enough space to create userdata
+  // partition" (3.5 GB left on /, 7.4 GB needed).
+  test('room for the emulator: a 4 GB data partition, on the larger disk', () {
+    expect(wf, contains('disk-size: 4096M\n'));
+    expect(wf, contains(r'ln -sfn /mnt/avd "$HOME/.android/avd"'));
+    final copy = wf.indexOf(r'cp "build/app/outputs/flutter-apk/$built"');
+    expect(wf.indexOf('rm -rf build\n'), greaterThan(copy));
+    expect(
+      wf.indexOf('rm -rf build\n'),
+      lessThan(wf.indexOf('android-emulator-runner@')),
+    );
+  });
+
+  test('a failed step still leaves a reason in the evidence', () {
+    final step = wf.indexOf(
+      "- name: If a step failed, the disk and the emulator's setup",
+    );
+    expect(step, greaterThan(wf.indexOf('android-emulator-runner@')));
+    expect(
+      step,
+      lessThan(wf.indexOf('- name: No installable file in the evidence')),
+    );
+    final body = wf.substring(
+      step,
+      wf.indexOf('- name: No installable file in the evidence'),
+    );
+    expect(body, contains(r'if: ${{ failure() }}'));
+    expect(body, contains(r'> "$OUT/boot.txt"'));
+  });
+
   test('run.sh: an emulator only, and every adb call names it', () {
     expect(run, contains('emulator-*) ;;'));
     expect(run, contains('ro.kernel.qemu'));
