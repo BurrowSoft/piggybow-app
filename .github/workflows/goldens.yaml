@@ -1,0 +1,107 @@
+name: Goldens
+
+# The golden baselines (decision 44). Renders every golden-tagged widget test
+# with --update-goldens on Linux, on the runner and Flutter that ci.yaml's
+# tests use, from a chosen ref. Keeps ONLY the PNGs and their manifest, for
+# 3 days. Manual only. Baselines come from here, never from a PC.
+#
+# Then a developer replaces test/goldens/ with the artifact, unchanged:
+#   rm -rf test/goldens
+#   gh run download <run id> -n goldens-<sha>-<attempt> -D test/goldens
+# PB UX & PM looks at the screens, PB Mobile Tester checks the manifest
+# against this run, and they are committed in a reviewed PR. From then on,
+# every CI run compares the goldens against them.
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "The branch, tag or full sha to render"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  goldens:
+    name: render the golden baselines
+    # One render at a time; a running one is never cancelled. Job-level, so
+    # only a run whose job runs joins the group.
+    concurrency:
+      group: goldens
+      cancel-in-progress: false
+    # The same runner as ci.yaml's tests, where the goldens are compared.
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # The input reaches the shell only as env, and is checked here.
+      - name: Inputs
+        id: in
+        env:
+          REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          [[ "$REF" =~ ^[A-Za-z0-9._/-]{1,100}$ && "$REF" != *..* ]] || { echo "::error::ref: letters, digits and . _ / - only"; exit 2; }
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ steps.in.outputs.ref }}
+          persist-credentials: false
+      - name: The commit rendered
+        id: src
+        run: |
+          set -euo pipefail
+          sha=$(git rev-parse HEAD)
+          [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "rendering $sha"
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      # Every golden-tagged test, each golden rewritten. expectGolden prints
+      # one line per golden, which the JSON report ties to its test.
+      - name: Render the goldens
+        run: |
+          set -euo pipefail
+          touch "$RUNNER_TEMP/goldens-start"
+          flutter test --tags golden --update-goldens --reporter expanded \
+            --file-reporter json:"$RUNNER_TEMP/goldens-report.json"
+      # The PNGs this run wrote and manifest.json: the run, and per PNG its
+      # state, test, sha256, size and dimensions. It fails on a PNG written
+      # outside expectGolden, or one that isn't 8-bit RGBA.
+      - name: The PNGs and their manifest
+        env:
+          SHA: ${{ steps.src.outputs.sha }}
+          REF: ${{ steps.in.outputs.ref }}
+          OUT: ${{ runner.temp }}/goldens
+        run: |
+          set -euo pipefail
+          flutter_version=$(flutter --version --machine | jq -r .frameworkVersion)
+          dart run tool/golden_manifest.dart write \
+            --report "$RUNNER_TEMP/goldens-report.json" --since "$RUNNER_TEMP/goldens-start" \
+            --out "$OUT" --sha "$SHA" --ref "$REF" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --flutter "$flutter_version" | tee -a "$GITHUB_STEP_SUMMARY"
+      # Only the PNGs and the manifest leave the runner: no folder, link or
+      # other file, and every PNG starts with the PNG signature.
+      - name: Only PNGs and the manifest
+        id: guard
+        env:
+          OUT: ${{ runner.temp }}/goldens
+        run: |
+          set -euo pipefail
+          bad=$(find "$OUT" -mindepth 1 \( -type d -o -type l -o \( -type f ! -name '*.png' ! -name 'manifest.json' \) \))
+          if [ -n "$bad" ]; then echo "::error::not a PNG or the manifest:"; echo "$bad"; exit 1; fi
+          for f in "$OUT"/*.png; do
+            [ "$(head -c 8 "$f" | od -An -tx1 | tr -d ' \n')" = 89504e470d0a1a0a ] || { echo "::error::not a PNG: $f"; exit 1; }
+          done
+          echo "upload: $(find "$OUT" -name '*.png' | wc -l) PNGs and manifest.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ steps.guard.outcome == 'success' }}
+        with:
+          name: goldens-${{ steps.src.outputs.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/goldens
+          retention-days: 3
+          if-no-files-found: error

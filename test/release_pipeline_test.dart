@@ -51,10 +51,12 @@ void main() {
 
   // The Reviewer, round 3 B3: the R8 mapping is checked and kept with the AAB.
   // The repo is public: an artifact is downloadable by anyone signed in to
-  // GitHub. Decision 31: two uploads only, each kept 3 days: the release AAB,
-  // and the emulator job's evidence (never a build: emulator_workflow_test).
-  // No workflow uploads an APK, the mapping or a report.
-  test('two artifacts only, the AAB and the emulator evidence, 3 days each; R8 mapping checked first', () {
+  // GitHub. Decision 31: three uploads only, each kept 3 days: the release
+  // AAB, the emulator job's evidence (never a build: emulator_workflow_test),
+  // and the golden baselines (PNGs and their manifest only, decision 44:
+  // goldens_workflow_test). No workflow uploads an APK, the mapping or a
+  // report.
+  test('three artifacts only, the AAB, the emulator evidence and the golden baselines, 3 days each; R8 mapping checked first', () {
     const mapping = 'build/app/outputs/mapping/prodRelease/mapping.txt';
     final check = workflow.indexOf('M=$mapping');
     expect(check, greaterThan(workflow.indexOf('flutter build appbundle')));
@@ -69,15 +71,29 @@ void main() {
     );
     expect(step, contains('retention-days: 3'));
     expect(step, isNot(contains('mapping.txt')));
-    final uploads = {
+    final workflows = {
       for (final f in Directory(
         '.github/workflows',
       ).listSync().whereType<File>())
-        f.uri.pathSegments.last: 'actions/upload-artifact'
-            .allMatches(f.readAsStringSync())
-            .length,
+        f.uri.pathSegments.last: f.readAsStringSync(),
+    };
+    final uploads = {
+      for (final w in workflows.entries)
+        w.key: 'actions/upload-artifact'.allMatches(w.value).length,
     }..removeWhere((_, n) => n == 0);
-    expect(uploads, {'release-aab.yaml': 1, 'emulator.yaml': 1});
+    expect(uploads, {
+      'release-aab.yaml': 1,
+      'emulator.yaml': 1,
+      'goldens.yaml': 1,
+    });
+    // Each upload step keeps its artifact 3 days.
+    for (final name in uploads.keys) {
+      final text = workflows[name]!;
+      final at = text.indexOf('actions/upload-artifact');
+      final next = text.indexOf('\n      - ', at);
+      final uploadStep = text.substring(at, next < 0 ? text.length : next);
+      expect(uploadStep, contains('retention-days: 3\n'), reason: name);
+    }
   });
 
   test('manual only, from master, the prod flavour with its env', () {

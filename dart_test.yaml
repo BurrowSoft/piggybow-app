@@ -1,0 +1,6 @@
+# Test tags.
+#   golden: the PNG goldens (decision 44). .github/workflows/goldens.yaml
+#   renders them on Linux with --update-goldens; every other run, CI's
+#   included, compares against the baselines in test/goldens/.
+tags:
+  golden: {}
