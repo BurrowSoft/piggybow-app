@@ -29,13 +29,18 @@ void main() {
     expect('persist-credentials: false'.allMatches(wf), hasLength(3));
   });
 
+  // Job-level, not workflow-level: every push to any PR starts this
+  // workflow, and a run whose job is skipped must not join the group (it
+  // would displace a pending dispatch).
   test('one emulator at a time; a running one is never cancelled', () {
     expect(
       wf,
       contains(
-        '\nconcurrency:\n  group: emulator\n  cancel-in-progress: false\n',
+        '\n    concurrency:\n      group: emulator\n'
+        '      cancel-in-progress: false\n',
       ),
     );
+    expect(wf, isNot(contains('\nconcurrency:')));
   });
 
   test('inputs reach the shell only as env, and are validated', () {
