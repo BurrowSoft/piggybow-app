@@ -253,6 +253,17 @@ void main() {
       );
       await tester.tapId('goal-card');
       await settle(tester, byId('goal-screen'));
+      // The saves are under the rainbow: scrolled to (the list builds lazily).
+      await tester.scrollUntilVisible(
+        find.text('Birthday money'),
+        200,
+        scrollable: find
+            .descendant(
+              of: byId('goal-screen'),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
       final theme = Theme.of(tester.element(byId('goal-screen')));
       Color? colour(Finder f) => tester.widget<Text>(f).style?.color;
       expect(colour(find.text('Birthday money')), theme.colorScheme.onSurface);
