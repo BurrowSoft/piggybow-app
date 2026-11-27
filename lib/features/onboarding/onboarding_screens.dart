@@ -87,13 +87,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(
-                        l10n.onbCurrencyLine(
-                          l10n.currencyName(currency),
-                          currencySymbolOf(currency, locale),
-                        ),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface,
+                      child: TestId(
+                        'onb-currency',
+                        child: Text(
+                          l10n.onbCurrencyLine(
+                            l10n.currencyName(currency),
+                            currencySymbolOf(currency, locale),
+                          ),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
                         ),
                       ),
                     ),
