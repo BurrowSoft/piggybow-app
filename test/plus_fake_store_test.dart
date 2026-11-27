@@ -31,10 +31,10 @@ void main() {
         "kDebugMode &&\n          flavor == Flavor.staging &&\n          const bool.fromEnvironment('PLUS_FAKE_STORE')",
       ),
     );
-    // main wires it only from that config value.
+    // v0.1 has no Plus UI: main wires no store at all (the plumbing only
+    // compiles). Wiring one later goes through config.plusFakeStore above.
     final main = File('lib/main.dart').readAsStringSync();
-    expect(RegExp('RowsPlusStore\\(').allMatches(main), hasLength(1));
-    expect(main, contains('config.plusFakeStore'));
+    expect(main, isNot(contains('PlusStore(')));
   });
 
   test('no env file and no workflow turns it on', () {
