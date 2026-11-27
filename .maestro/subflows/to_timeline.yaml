@@ -20,6 +20,7 @@ appId: ${APP_ID}
           visible:
             id: tab-home
           timeout: 10000
+- runFlow: dismiss_system_anr.yaml       # another app's ANR dialog can appear after the launch
 - tapOn:
     id: tab-timeline
 - extendedWaitUntil:

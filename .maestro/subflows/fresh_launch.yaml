@@ -1,6 +1,8 @@
 # A clean install state and first launch. The seed shows start-screen while
 # the session starts, then the tabs; from PR 4 on, onboarding (onb-start).
-# Another app's ANR dialog (seen on CI emulators) is dismissed first.
+# Another app's ANR dialog (seen on CI emulators) is dismissed: up to two
+# rounds, because a second one can appear right after the first is gone.
+# Piggybow's own ANR is never dismissed, so it still fails the flow.
 appId: ${APP_ID}
 ---
 - launchApp:
@@ -12,6 +14,11 @@ appId: ${APP_ID}
     visible:
       id: "onb-start|tab-home|tab-timeline|start-error|android:id/aerr_wait"   # id matching is a regex
     timeout: 120000                                                           # a debug cold start on a CI emulator can be slow
+- runFlow: dismiss_system_anr.yaml
+- extendedWaitUntil:
+    visible:
+      id: "onb-start|tab-home|tab-timeline|start-error|android:id/aerr_wait"
+    timeout: 60000
 - runFlow: dismiss_system_anr.yaml
 - extendedWaitUntil:
     visible:
