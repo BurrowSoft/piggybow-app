@@ -1,3 +1,9 @@
+// Goldens at 320 dp ×2 (decision 44), named by the ids of PB Mobile
+// Tester's PR 3 list: H1, H2, the filled goal form (its G3), the goal
+// detail in progress (D2) and the celebration (X1).
+@Tags(['golden'])
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -127,6 +133,26 @@ void main() {
     );
   }
 
+  /// The goal in progress with five saves, one with the 80-character note
+  /// (D2 of PB Mobile Tester's PR 3 list): [fullWeek]'s save and four more.
+  Future<void> fiveSaves(TestApp app) async {
+    await fullWeek(app);
+    for (final (day, amount, note) in [
+      ('2026-09-27', 1500, note80),
+      ('2026-09-28', 2500, ''),
+      ('2026-09-30', 1000, ''),
+      ('2026-10-01', 5000, ''),
+    ]) {
+      await app.journal.addEntry(
+        type: EntryType.saved,
+        amountMinor: amount,
+        currency: 'USD',
+        localDate: day,
+        note: note,
+      );
+    }
+  }
+
   /// A goal reached today and already celebrated: Home shows "Reached: …"
   /// and the pig's longest line, "You reached …!".
   Future<void> reachedToday(TestApp app) async {
@@ -147,6 +173,16 @@ void main() {
       await open(tester, c);
       expect(find.text('Start a savings goal'), findsOneWidget);
       await checkScrolled(tester, listIn('home-screen'), 'H1');
+      if (c.takesGolden) {
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('home-screen'),
+          screen: 'home',
+          state: 'first-day',
+          stateId: 'H1',
+        );
+      }
     });
 
     testWidgets(
@@ -160,6 +196,16 @@ void main() {
           'H2',
           amounts: fullAmounts,
         );
+        if (c.takesGolden) {
+          await expectLayoutGoldens(
+            tester,
+            c,
+            listIn('home-screen'),
+            screen: 'home',
+            state: 'full',
+            stateId: 'H2',
+          );
+        }
       },
     );
 
@@ -247,7 +293,7 @@ void main() {
     );
 
     testWidgets('G2 the goal detail with its saves ($c)', (tester) async {
-      await open(tester, c, seed: fullWeek);
+      await open(tester, c, seed: fiveSaves);
       await tester.tapId('goal-card');
       await settle(tester, byId('goal-add-savings'));
       await checkScrolled(
@@ -256,7 +302,46 @@ void main() {
         'G2',
         amounts: [usd(amountMax)],
       );
+      if (c.takesGolden) {
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('goal-screen'),
+          screen: 'goal-detail',
+          state: 'in-progress',
+          stateId: 'D2',
+        );
+      }
     });
+
+    testWidgets(
+      'G-filled the goal form filled: a 40-character name, the largest target and already saved ($c)',
+      (tester) async {
+        await open(tester, c);
+        await tester.tapId('goal-create');
+        await settle(tester, byId('goal-submit'));
+        await tester.enterId('goal-name', goal40);
+        await tester.enterId('goal-amount', '9999999999.99');
+        await tester.enterId('goal-start', '9999999999.99');
+        await tester.pumpAndSettle();
+        await checkScrolled(
+          tester,
+          listIn('goal-edit-screen'),
+          'G-filled',
+          amounts: [usd(amountMax)],
+        );
+        if (c.takesGolden) {
+          await expectLayoutGoldens(
+            tester,
+            c,
+            listIn('goal-edit-screen'),
+            screen: 'goal-create',
+            state: 'filled',
+            stateId: 'G3',
+          );
+        }
+      },
+    );
 
     testWidgets("G4 a reached goal's detail is read-only ($c)", (tester) async {
       await open(tester, c, seed: reachedToday);
@@ -303,6 +388,16 @@ void main() {
         'G3',
         amounts: [usd(amountMax)],
       );
+      if (c.takesGolden) {
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('goal-done-screen'),
+          screen: 'goal-done',
+          state: 'celebration',
+          stateId: 'X1',
+        );
+      }
     });
   }
 }
