@@ -141,10 +141,20 @@ void main() {
         );
         Future<void> picks(JournalStore s) => s.setPicks({HappyPick.plan});
         Future<void> plan(JournalStore s) => s.setPlanMinor(5000);
+        Future<void> goal(JournalStore s) => s.putGoal(
+          Goal(
+            id: 'g1',
+            name: 'Bike',
+            targetMinor: 1000,
+            createdAt: DateTime.utc(2026),
+            updatedAt: DateTime.utc(2026),
+          ),
+        );
         for (final (what, notes) in [
           ('an entry', spend),
           ('picks', picks),
           ('a plan', plan),
+          ('a goal', goal),
         ]) {
           final f = LaunchFixture.byId('C6', casesJson);
           var ids = 0;
@@ -155,14 +165,33 @@ void main() {
           addTearDown(store.close);
           await notes(store);
           final entries = (await store.entries()).length;
+          final goals = (await store.goals()).length;
           final problem = await f.write(store);
           expect(problem, contains('C6'), reason: what);
           expect(problem, contains('empty journal'), reason: what);
           expect((await store.entries()).length, entries, reason: what);
-          expect(await store.goals(), isEmpty, reason: what);
+          expect((await store.goals()).length, goals, reason: what);
         }
       },
     );
+
+    testWidgets('on a journal with notes the app shows fixture-error and why', (
+      tester,
+    ) async {
+      final f = LaunchFixture.byId('C6', casesJson);
+      final problem = await tester.runAsync(() async {
+        final store = await JournalStore.inMemory(clock: f.clock);
+        await store.setPlanMinor(5000);
+        final problem = await f.write(store);
+        expect(await store.goals(), isEmpty);
+        await store.close();
+        return problem;
+      });
+      expect(problem, isNotNull);
+      await tester.pumpWidget(FixtureErrorApp(problem!));
+      expect(find.bySemanticsIdentifier('fixture-error'), findsOneWidget);
+      expect(find.text(problem), findsOneWidget);
+    });
 
     test('a blank journal takes one (its currency may be set)', () async {
       final f = LaunchFixture.byId('C6', casesJson);
