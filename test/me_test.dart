@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:piggybow/core/app_config.dart';
@@ -34,6 +35,21 @@ void main() {
       buildNumber: '1',
       buildSignature: '',
     );
+  });
+
+  // Delete everything sweeps the export cache: a real folder where the app
+  // asks for its temporary directory.
+  const pathProvider = MethodChannel('plugins.flutter.io/path_provider');
+  late Directory temp;
+  setUp(() {
+    temp = Directory.systemTemp.createTempSync('pb_me');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(pathProvider, (call) async => temp.path);
+  });
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(pathProvider, null);
+    temp.deleteSync(recursive: true);
   });
 
   Future<void> settle(WidgetTester tester, Finder f) async {

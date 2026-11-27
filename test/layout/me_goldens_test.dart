@@ -178,11 +178,12 @@ void main() {
 
     testWidgets('M9 "Not everything was erased" ($c)', (tester) async {
       final app = await open(tester, c);
-      app.reminders.failCancel = true;
+      // A journal that can't be wiped (its store closed): nothing else is
+      // erased, so the dialog shows in the appearance chosen.
+      await tester.runAsync(app.journal.close);
       await tester.tapId('me-delete');
       await tester.tapId('me-delete-confirm');
-      // The wipe sweeps the cache with real file calls: real time between
-      // frames lets them finish.
+      // Real time between frames, for any real file calls of the wipe.
       final title = find.text('Not everything was erased');
       for (var i = 0; i < 40 && title.evaluate().isEmpty; i++) {
         await tester.runAsync(

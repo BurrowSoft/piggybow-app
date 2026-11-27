@@ -148,6 +148,9 @@ class TestApp {
   late final LocalDay localDay;
   int _ids = 0;
 
+  /// Device account ids: device-1, then device-2 after Delete everything…
+  int _deviceIds = 0;
+
   late final services = AppServices(
     clock: clock,
     localDay: localDay,
@@ -184,7 +187,7 @@ class TestApp {
       prefs: prefs,
       timeZone: await device.timeZone(),
       country: device.countryCode,
-      newId: () => 'device-1',
+      newId: () => 'device-${++_deviceIds}',
       now: clock.nowUtc,
     );
     session = AppSession(
