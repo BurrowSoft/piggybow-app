@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -282,6 +283,7 @@ class _PickCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final (title, hint) = switch (pick) {
       HappyPick.save => (l10n.happySaveTitle, l10n.happySaveHint),
       HappyPick.plan => (l10n.happyPlanTitle, l10n.happyPlanHint),
@@ -295,8 +297,19 @@ class _PickCard extends StatelessWidget {
           value: selected,
           onChanged: (v) => onChanged(v ?? false),
           controlAffinity: ListTileControlAffinity.leading,
-          title: Text(title),
-          subtitle: Text(hint),
+          // Whole words at large text: the checkbox leaves the title little room.
+          title: WholeWordsText(
+            title,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          subtitle: WholeWordsText(
+            hint,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
       ),
     );

@@ -163,10 +163,12 @@ void main() {
     await tester.tapId('onb-currency-change');
     await tester.pumpAndSettle();
     tester.expectScreen('currency-screen');
-    final rows = find.bySemanticsIdentifier(RegExp('^currency-[A-Z]{3}\$'));
+    final first = find
+        .descendant(of: byId('currency-screen'), matching: find.byType(ListTile))
+        .first;
     expect(
-      tester.getSemantics(rows.first).identifier,
-      'currency-USD',
+      find.descendant(of: first, matching: find.textContaining('US dollar')),
+      findsOneWidget,
       reason: "en_US's own currency on top",
     );
     await tester.tapId('currency-JPY');
