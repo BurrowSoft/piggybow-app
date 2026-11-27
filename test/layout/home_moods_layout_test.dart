@@ -1,5 +1,5 @@
-// Goldens: Home in two of the pig's moods at 320 dp ×2 (decision 44), the
-// H5 row of PB Mobile Tester's PR 3 list.
+// Goldens: Home in three of the pig's moods at 320 dp ×2 (decision 44), the
+// H5 row of PB Mobile Tester's PR 3 list (Calm is H1's first day).
 @Tags(['golden'])
 library;
 
@@ -20,7 +20,7 @@ import 'layout_matrix.dart';
 /// Home in the pig's moods, in every layout case (plan §0.3): each state is
 /// a case of the mood contract (test/contracts/pig_mood_cases.json), played
 /// into the journal at its own times, so Home shows exactly the contract's
-/// mood. C6 is Sleepy (the last entry 113 hours ago), C4 Delighted (save and
+/// mood. C3 is Happy (a save this week), C6 Sleepy (the last entry 113 hours ago), C4 Delighted (save and
 /// plan both met).
 void main() {
   setUpAll(loadAppFonts);
@@ -79,7 +79,11 @@ void main() {
       .first;
 
   for (final c in layoutCases) {
-    for (final (id, mood) in [('C6', 'sleepy'), ('C4', 'delighted')]) {
+    for (final (id, mood) in [
+      ('C3', 'happy'),
+      ('C6', 'sleepy'),
+      ('C4', 'delighted'),
+    ]) {
       testWidgets('H5 Home with the pig $mood (contract $id) ($c)', (
         tester,
       ) async {
