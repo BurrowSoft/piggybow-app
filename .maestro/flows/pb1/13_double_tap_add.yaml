@@ -1,0 +1,57 @@
+appId: ${APP_ID}
+name: PR 2 double tap on Add makes exactly one entry, and it survives a relaunch
+tags: [pb1, journal]
+env:
+  NOTE: "Bus"
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_timeline.yaml
+- tapOn:
+    id: "tl-empty-add|tl-add"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "2.40"
+      EXPECT: ".*2[.,]40.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-transport
+- tapOn:
+    id: add-cat-transport
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-note
+      TEXT: ${NOTE}
+      EXPECT: ".*Bus.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- doubleTapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: "tl-row-.*"
+      text: ".*Bus.*"
+    timeout: 10000
+- assertNotVisible:
+    id: "tl-row-.*"
+    index: 1                       # exactly one row
+- assertNotVisible:
+    id: add-submit                 # the sheet closed, no second sheet left open
+# Relaunch: still exactly one
+- stopApp
+- launchApp
+- tapOn:
+    id: tab-timeline
+- extendedWaitUntil:
+    visible:
+      id: "tl-row-.*"
+      text: ".*Bus.*"
+    timeout: 20000
+- assertNotVisible:
+    id: "tl-row-.*"
+    index: 1

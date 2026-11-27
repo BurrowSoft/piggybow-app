@@ -1,0 +1,127 @@
+appId: ${APP_ID}
+name: PR 2 journal loop - add a spend, see it in Timeline, edit it, delete it (Cancel keeps it)
+tags: [pb1, smoke, journal]
+env:
+  NOTE: "Coffee"
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_timeline.yaml
+
+# 1. Add a spend: 12.50, Food & drinks, Worth it, note "Coffee"
+- tapOn:
+    id: "tl-empty-add|tl-add"
+- assertVisible:
+    id: add-seg-spent
+    selected: true                 # the segment defaults to Spent (spec §3.3)
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "12.50"
+      EXPECT: ".*12[.,]50.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-feel-worth
+- tapOn:
+    id: add-feel-worth
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-note
+      TEXT: ${NOTE}
+      EXPECT: ".*Coffee.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- takeScreenshot: 10-add-sheet-spent-filled      # for the UX look: amount + "= $12.50" preview, category, feeling, note
+- tapOn:
+    id: add-submit
+
+# 2. It's in Timeline, once, under Today, with the amount
+- extendedWaitUntil:
+    visible:
+      id: "tl-row-.*"
+    timeout: 10000
+- assertVisible:
+    id: "tl-row-.*"
+    text: ".*Coffee.*"
+- assertVisible:
+    id: "tl-row-.*"
+    text: ".*12[.,]50.*"
+- assertNotVisible:
+    id: "tl-row-.*"
+    index: 1                       # no second row
+# (No minus sign before an amount: the S9b widget test owns that check.)
+- takeScreenshot: 10-timeline-one-spend
+
+# 3. Edit: change the amount to 8.75, save
+- tapOn:
+    id: "tl-row-.*"
+- takeScreenshot: 10-edit-sheet
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "8.75"
+      EXPECT: ".*8[.,]75.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: edit-save
+- tapOn:
+    id: edit-save
+- extendedWaitUntil:
+    visible:
+      id: "tl-row-.*"
+      text: ".*8[.,]75.*"
+    timeout: 10000
+- assertNotVisible:
+    id: "tl-row-.*"
+    text: ".*12[.,]50.*"
+- assertNotVisible:
+    id: "tl-row-.*"
+    index: 1                       # an edit doesn't add a row
+
+# 4. Delete: Cancel keeps it, Delete removes it
+- tapOn:
+    id: "tl-row-.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: edit-delete
+- tapOn:
+    id: edit-delete
+- takeScreenshot: 10-delete-dialog
+- tapOn:
+    id: delete-cancel
+- assertVisible:
+    id: edit-save                  # still in the sheet, entry kept
+- tapOn:
+    id: edit-delete
+- tapOn:
+    id: delete-confirm
+- extendedWaitUntil:
+    visible:
+      id: tl-empty-add             # the only entry is gone: the empty state
+    timeout: 10000
+- assertNotVisible:
+    id: "tl-row-.*"
+- takeScreenshot: 10-timeline-empty
+
+# 5. Still gone after a relaunch (local persistence, no clearState)
+- stopApp
+- launchApp
+- tapOn:
+    id: tab-timeline
+- extendedWaitUntil:
+    visible:
+      id: tl-empty-add
+    timeout: 20000

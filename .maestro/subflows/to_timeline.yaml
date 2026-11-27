@@ -1,0 +1,28 @@
+# From a fresh launch to the Timeline tab. Walks the shortest onboarding
+# path only when onboarding shows (PR 4 onward): Get started → pick
+# "Saving something each week" → Continue → Maybe later.
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      visible:
+        id: onb-start
+    commands:
+      - tapOn:
+          id: onb-start
+      - tapOn:
+          id: onb-happy-save
+      - tapOn:
+          id: onb-continue
+      - tapOn:
+          id: onb-goal-later
+      - extendedWaitUntil:
+          visible:
+            id: tab-home
+          timeout: 10000
+- tapOn:
+    id: tab-timeline
+- extendedWaitUntil:
+    visible:
+      id: "tl-empty-add|tl-add"
+    timeout: 10000
