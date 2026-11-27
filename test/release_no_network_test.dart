@@ -151,7 +151,12 @@ void main() {
       r'''val=$(printf '%s' "${!v}" | tr -d '\r\n')'''.allMatches(workflow),
       hasLength(2),
     );
-    expect(r'echo "::add-mask::$val"'.allMatches(workflow), hasLength(2));
+    // A workflow command decodes %25, %0D and %0A: line endings are gone, and
+    // a % is escaped, so the mask is the value itself.
+    expect(
+      r'echo "::add-mask::${val//\%/%25}"'.allMatches(workflow),
+      hasLength(2),
+    );
     final build = workflow.indexOf('flutter build appbundle');
     final bundletool = workflow.indexOf('build-apks --mode=universal');
     final loops = [for (final m in loop.allMatches(workflow)) m.start];

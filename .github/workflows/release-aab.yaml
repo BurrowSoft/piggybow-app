@@ -121,7 +121,7 @@ jobs:
             val=$(printf '%s' "${!v}" | tr -d '\r\n')
             test -n "$val" || { echo "::error::$v is not set"; exit 1; }
             if [[ "$val" =~ [[:space:]] ]]; then echo "::error::$v holds whitespace: enter it again"; exit 1; fi
-            echo "::add-mask::$val"
+            echo "::add-mask::${val//\%/%25}"
             export "$v=$val"
           done
           [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]] || { echo "build_number must be digits" >&2; exit 1; }
@@ -179,7 +179,7 @@ jobs:
             val=$(printf '%s' "${!v}" | tr -d '\r\n')
             test -n "$val" || { echo "::error::$v is not set"; exit 1; }
             if [[ "$val" =~ [[:space:]] ]]; then echo "::error::$v holds whitespace: enter it again"; exit 1; fi
-            echo "::add-mask::$val"
+            echo "::add-mask::${val//\%/%25}"
             export "$v=$val"
           done
           AAB=build/app/outputs/bundle/prodRelease/app-prod-release.aab
