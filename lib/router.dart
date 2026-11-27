@@ -70,10 +70,14 @@ GoRouter buildRouter({
                 GoRoute(
                   path: tab.path,
                   name: tab.name,
-                  builder: (context, state) => switch (tab) {
-                    AppTab.timeline => const TimelineScreen(),
-                    _ => PlaceholderTab(tab: tab),
-                  },
+                  // Each tab shows its SnackBars on its own Scaffold, so
+                  // the tab's + rides above them instead of under them.
+                  builder: (context, state) => ScaffoldMessenger(
+                    child: switch (tab) {
+                      AppTab.timeline => const TimelineScreen(),
+                      _ => PlaceholderTab(tab: tab),
+                    },
+                  ),
                 ),
               ],
             ),

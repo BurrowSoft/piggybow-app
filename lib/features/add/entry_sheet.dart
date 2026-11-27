@@ -16,8 +16,11 @@ import '../../session/session_scope.dart';
 import '../../theme/theme.dart';
 
 /// Opens the Add sheet on [start] (Spent unless said), or the Edit sheet for
-/// [editing]. True when something was saved or deleted; after an add,
-/// "Added" shows (and is read out).
+/// [editing], on the root navigator: full height over the tab bar, so no
+/// tab can be switched under a half-finished entry. True when something
+/// was saved or deleted; after an add, "Added" shows (and is read out) on
+/// the caller's own Scaffold, under its + (each tab has its own
+/// messenger).
 Future<bool> showEntrySheet(
   BuildContext context, {
   EntryType start = EntryType.spent,
@@ -27,6 +30,7 @@ Future<bool> showEntrySheet(
   final messenger = ScaffoldMessenger.maybeOf(context);
   final saved = await showModalBottomSheet<bool>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (_) => EntrySheet(start: start, editing: editing),

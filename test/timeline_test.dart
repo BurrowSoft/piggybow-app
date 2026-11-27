@@ -171,4 +171,39 @@ void main() {
     await tester.pumpAndSettle();
     expect(position.pixels, before);
   });
+
+  testWidgets('a row: its title in ink, the line under it muted', (
+    tester,
+  ) async {
+    final app = await openTimeline(
+      tester,
+      seed: (app) async {
+        await addSpend(app, 1000, note: 'Coffee');
+        await app.journal.addEntry(
+          type: EntryType.saved,
+          amountMinor: 500,
+          currency: 'THB',
+          localDate: '2026-10-02',
+        );
+      },
+    );
+    final theme = Theme.of(tester.element(find.text('Coffee')));
+    Color? colour(Finder f) => tester.widget<Text>(f).style?.color;
+    expect(colour(find.text('Coffee')), theme.colorScheme.onSurface);
+    expect(
+      colour(find.textContaining('Worth it')),
+      theme.colorScheme.onSurfaceVariant,
+    );
+    final save = (await tester.runAsync(app.journal.entries))!
+        .firstWhere((e) => e.type == EntryType.saved);
+    expect(
+      colour(
+        find.descendant(
+          of: byId('tl-row-${save.id}'),
+          matching: find.text('Saved'),
+        ),
+      ),
+      theme.colorScheme.onSurface,
+    );
+  });
 }

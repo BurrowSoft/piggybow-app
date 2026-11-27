@@ -342,7 +342,13 @@ class _Row extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(title, style: theme.textTheme.bodyLarge),
+                          // In ink: the theme's bodyLarge is muted.
+                          Text(
+                            title,
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
                           if (subtitle != null)
                             Text(
                               subtitle,

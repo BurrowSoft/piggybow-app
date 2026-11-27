@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/features/add/entry_sheet.dart';
+import 'package:piggybow/features/shell/even_tab_bar.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
@@ -403,5 +404,65 @@ void main() {
       isNotNull,
       reason: 'not frozen: Add can be tried again',
     );
+  });
+
+  testWidgets('"Added" shows under the +, which opens the next add at once', (
+    tester,
+  ) async {
+    await openTimeline(tester);
+    await tester.tapId('tl-empty-add');
+    await tester.enterId('add-amount', '10');
+    await tester.tapId('add-cat-food');
+    await tester.tapId('add-submit');
+    expect(find.text('Added'), findsOneWidget);
+    final snack = tester.getRect(find.byType(SnackBar));
+    final add = tester.getRect(byId('tl-add'));
+    expect(add.overlaps(snack), isFalse, reason: '+ $add, Added $snack');
+    expect(add.bottom, lessThanOrEqualTo(snack.top + 0.5));
+    // The next add, while "Added" still shows (flow 14).
+    await tester.tapId('tl-add');
+    expect(byId('add-seg-spent'), findsOneWidget);
+    expect(find.text('Added'), findsOneWidget, reason: 'still showing');
+  });
+
+  testWidgets('both sheets open on the root navigator, over the tab bar', (
+    tester,
+  ) async {
+    final app = await openTimeline(
+      tester,
+      seed: (app) => addSpend(app, 1000, '2026-10-02'),
+    );
+    await tester.pumpAndSettle();
+    final id = (await stored(tester, app)).single.id;
+    final bar = tester.getRect(find.byType(EvenTabBar));
+    final tabs = tester.renderObject(find.byType(EvenTabBar));
+    bool tabsHit() =>
+        tester.hitTestOnBinding(bar.center).path.any((e) => e.target == tabs);
+    expect(
+      tabsHit(),
+      isTrue,
+      reason: 'the control: no sheet, the tabs are hit',
+    );
+    for (final open in ['tl-add', 'tl-row-$id']) {
+      await tester.tapId(open);
+      final sheet = find.byType(EntrySheet);
+      expect(sheet, findsOneWidget, reason: open);
+      final context = tester.element(sheet);
+      expect(
+        Navigator.of(context),
+        same(Navigator.of(context, rootNavigator: true)),
+        reason: '$open: on the root navigator',
+      );
+      expect(
+        tester.getRect(sheet).bottom,
+        greaterThanOrEqualTo(bar.bottom - 0.5),
+        reason: '$open: the sheet reaches over the tab bar',
+      );
+      // The tab bar is under the sheet: nothing of it can be hit.
+      expect(tabsHit(), isFalse, reason: '$open: the tabs are covered');
+      await tester.tapId('add-back');
+      await tester.pumpAndSettle();
+      expect(sheet, findsNothing, reason: '$open closed');
+    }
   });
 }
