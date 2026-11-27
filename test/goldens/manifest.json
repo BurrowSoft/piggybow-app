@@ -1,0 +1,153 @@
+{
+  "source_sha": "64f5c0c0fc392666b874b4659022f28a5654fbde",
+  "ref": "goldens-pr2",
+  "run_id": "46076042739",
+  "run_attempt": "1",
+  "flutter": "3.47.5",
+  "goldens": [
+    {
+      "file": "add-sheet_saved-goal-end_dark_320x2.png",
+      "state": "A5",
+      "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, dark)",
+      "sha256": "e7e2350ce048742ea5e680d6e4b215154ae40ccd0aaef2ac0c93ed1987faa6cf",
+      "bytes": 159963,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_saved-goal-end_light_320x2.png",
+      "state": "A5",
+      "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, light)",
+      "sha256": "8b9385b4af3ac78b959c87b3203b3d9214b9b22703c7c66fc712544938837ebc",
+      "bytes": 161325,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_saved-goal_dark_320x2.png",
+      "state": "A5",
+      "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, dark)",
+      "sha256": "5a37ee0fe28150e10eee2153628799b2072d7e1f3d2908524a0645a2bba3ae89",
+      "bytes": 172108,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_saved-goal_light_320x2.png",
+      "state": "A5",
+      "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, light)",
+      "sha256": "c4f55a0c7f0024d8a210375f585a0a2c93cd08af48e138d2073ee711b229b905",
+      "bytes": 173195,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_spent-full-end_dark_320x2.png",
+      "state": "A2",
+      "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, dark)",
+      "sha256": "43f888dee2e96e2bd7cc896dabfc555e5442b9e4b2f03ead20ff81d8ec5610c0",
+      "bytes": 151604,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_spent-full-end_light_320x2.png",
+      "state": "A2",
+      "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, light)",
+      "sha256": "b4b54f9cbaec5438cdb836f8b92fbe885df276a909170b5d6e29bad79d0a55e8",
+      "bytes": 151932,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_spent-full_dark_320x2.png",
+      "state": "A2",
+      "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, dark)",
+      "sha256": "d271f3e603f32ee33d4a65beb79e3937c757af9907c62ec1fd5883517b97a633",
+      "bytes": 191331,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_spent-full_light_320x2.png",
+      "state": "A2",
+      "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, light)",
+      "sha256": "6154e570deea5277efd2ef8c66521b222de3a5cab322e2d8f1d8ef3e13766ea3",
+      "bytes": 191618,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "delete-dialog_confirm_dark_320x2.png",
+      "state": "B1",
+      "test": "A7 edit, on an older day; B1 the delete dialog (320 dp, text ×2, dark)",
+      "sha256": "a44103c9e6a229ac68023ea04455dc55b1578b7774fa9940afe3efbb4c62a2cf",
+      "bytes": 147037,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "delete-dialog_confirm_light_320x2.png",
+      "state": "B1",
+      "test": "A7 edit, on an older day; B1 the delete dialog (320 dp, text ×2, light)",
+      "sha256": "3e9e7e89c61705b99038bf962ab4d57933687bd05b25d94d46fcf802bbcce941",
+      "bytes": 149298,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_empty_dark_320x2.png",
+      "state": "C1",
+      "test": "C1 empty: the pig and the first-entry button (320 dp, text ×2, dark)",
+      "sha256": "b67cb1aa51ebd6e816e92cf1b68105cecb17245f9a10482106c03dc70e6a2b24",
+      "bytes": 129306,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_empty_light_320x2.png",
+      "state": "C1",
+      "test": "C1 empty: the pig and the first-entry button (320 dp, text ×2, light)",
+      "sha256": "405485f2ec538b9e063b4c003a6d00f506565f0eedacbb2f847e7e6117998b11",
+      "bytes": 128257,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_full-end_dark_320x2.png",
+      "state": "C2",
+      "test": "C2 three days with the stress data (320 dp, text ×2, dark)",
+      "sha256": "31fc01fc93634bcc7bac0148fd77f75f3c851009cad84514a2e8912c98cb16e5",
+      "bytes": 190969,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_full-end_light_320x2.png",
+      "state": "C2",
+      "test": "C2 three days with the stress data (320 dp, text ×2, light)",
+      "sha256": "95f8c9901e1ac6a1fd8b0b0faa005cbeeb81abd06d851e2c3babde5e425c12f9",
+      "bytes": 191951,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_full_dark_320x2.png",
+      "state": "C2",
+      "test": "C2 three days with the stress data (320 dp, text ×2, dark)",
+      "sha256": "96661403a27dec9f15e86dd03eca3a460ce7baca5919c49bdcf27277e14a9fba",
+      "bytes": 212459,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_full_light_320x2.png",
+      "state": "C2",
+      "test": "C2 three days with the stress data (320 dp, text ×2, light)",
+      "sha256": "456e6ce7f3eaf601734902c879efea1727321ea42a25ca8472b1a0e734b5710e",
+      "bytes": 213378,
+      "width": 960,
+      "height": 2340
+    }
+  ]
+}
