@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/clock.dart';
+import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../goal/goal_progress.dart';
@@ -205,7 +206,11 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                       style: context.inputText,
                       onChanged: (_) => setState(() {}),
                       decoration: InputDecoration(
-                        labelText: l10n.goalStartLabel,
+                        // One line, whole: smaller only if it must.
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(l10n.goalStartLabel),
+                        ),
                         errorText: _startError(l10n),
                         errorMaxLines: 3,
                       ),
@@ -372,7 +377,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                     },
                   ),
                   const SizedBox(height: 16),
-                  Text(
+                  WholeWordsText(
                     l10n.goalCardProgress(
                       money(_progress),
                       money(goal.targetMinor),
@@ -386,7 +391,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                     progressMinor: _progress,
                     targetMinor: goal.targetMinor,
                   ))
-                    Text(
+                    WholeWordsText(
                       l10n.goalToGo(money(goal.targetMinor - _progress)),
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(

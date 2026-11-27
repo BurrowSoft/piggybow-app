@@ -66,6 +66,14 @@ void main() {
     expect(filled(1.0), [for (var i = 0; i < 5; i++) (i, 1.0)]);
   });
 
+  test('at each multiple of 20 %, whole arcs only: no dot on the next one', () {
+    for (final p in [20, 40, 60, 80, 100]) {
+      expect(filled(p / 100), [
+        for (var i = 0; i < p ~/ 20; i++) (i, 1.0),
+      ], reason: '$p %');
+    }
+  });
+
   test('five tracks always, in the light or the dark colour', () {
     for (final track in [Rainbow.trackLight, Rainbow.trackDark]) {
       final canvas = _Arcs();

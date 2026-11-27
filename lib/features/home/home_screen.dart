@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../data/models.dart' show ReminderTime;
@@ -355,32 +356,52 @@ class _GoalCard extends StatelessWidget {
           onTap: () => context.push(GoalRoutes.detail(goal.id)),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                SizedBox(width: 96, child: Rainbow(percent: percent)),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            child: Builder(
+              builder: (context) {
+                final numbers = Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(goal.name, style: theme.textTheme.titleMedium),
+                    const SizedBox(height: 4),
+                    WholeWordsText(
+                      l10n.goalCardProgress(saved, target),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      l10n.goalCardPercent(percent),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                );
+                // At large text the rainbow goes above the numbers, so the
+                // amounts get the card's whole width.
+                if (MediaQuery.textScalerOf(context).scale(1) >= 1.3) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(goal.name, style: theme.textTheme.titleMedium),
-                      const SizedBox(height: 4),
-                      Text(
-                        l10n.goalCardProgress(saved, target),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface,
+                      Center(
+                        child: SizedBox(
+                          width: 160,
+                          child: Rainbow(percent: percent),
                         ),
                       ),
-                      Text(
-                        l10n.goalCardPercent(percent),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
+                      const SizedBox(height: 12),
+                      numbers,
                     ],
-                  ),
-                ),
-              ],
+                  );
+                }
+                return Row(
+                  children: [
+                    SizedBox(width: 96, child: Rainbow(percent: percent)),
+                    const SizedBox(width: 16),
+                    Expanded(child: numbers),
+                  ],
+                );
+              },
             ),
           ),
         ),

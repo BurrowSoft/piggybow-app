@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/money/money.dart';
+import 'package:piggybow/router.dart';
 
 import 'helpers.dart';
 
@@ -111,6 +115,64 @@ void main() {
         reason: 'ended, not reached',
       );
       semantics.dispose();
+    },
+  );
+
+  testWidgets('a 13-digit target or "Already saved" is too large', (
+    tester,
+  ) async {
+    await openHome(tester);
+    await tester.tapId('goal-create');
+    await settle(tester, byId('goal-submit'));
+    await tester.enterId('goal-amount', '1234567890123');
+    expect(find.text('That amount is too large.'), findsOneWidget);
+    await tester.enterId('goal-amount', '100');
+    await tester.enterId('goal-start', '1234567890123');
+    expect(find.text('That amount is too large.'), findsOneWidget);
+  });
+
+  testWidgets(
+    "a reached goal's detail is read-only; the next save goes to no goal",
+    (tester) async {
+      final app = await openHome(
+        tester,
+        seed: (app) async {
+          await app.journal.putGoal(
+            Goal(
+              id: 'g1',
+              name: 'Bike',
+              targetMinor: 1000,
+              createdAt: t,
+              updatedAt: t,
+            ),
+          );
+          await app.journal.markCelebrated('g1');
+          await app.journal.addEntry(
+            type: EntryType.saved,
+            amountMinor: 1000,
+            currency: 'THB',
+            localDate: '2026-10-01',
+          );
+        },
+      );
+      // A reached goal has no card of its own: its detail, by its route.
+      unawaited(
+        GoRouter.of(tester.element(byId('home-screen')))
+            .push(GoalRoutes.detail('g1')),
+      );
+      await settle(tester, byId('goal-screen'));
+      expect(byId('goal-menu'), findsNothing, reason: 'no Edit or End');
+      expect(byId('goal-add-savings'), findsNothing);
+      expect(find.textContaining('to go'), findsNothing);
+      final next = await tester.runAsync(
+        () => app.journal.addEntry(
+          type: EntryType.saved,
+          amountMinor: 50,
+          currency: 'THB',
+          localDate: '2026-10-02',
+        ),
+      );
+      expect(next!.goalId, isNull);
     },
   );
 }

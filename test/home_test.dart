@@ -231,4 +231,24 @@ void main() {
     expect(await tester.runAsync(() => app.journal.celebrated('g1')), isTrue);
     expect(byId('goal-done-screen'), findsNothing);
   });
+
+  testWidgets(
+    "a save that completes a band: the band's line, not the save reaction",
+    (tester) async {
+      await openHome(
+        tester,
+        seed: (app) async {
+          await app.journal.putGoal(bike(target: 1000));
+          await save(app, 150, '2026-10-01'); // 15 %: no band yet
+        },
+      );
+      await tester.tapId('home-add');
+      await tester.tapId('add-seg-saved');
+      await tester.enterId('add-amount', '1'); // 100 more: 25 %, band 1
+      await tester.tapId('add-submit');
+      await settle(tester, find.text('Band 1 of 5 colored in!'));
+      expect(find.text('Band 1 of 5 colored in!'), findsOneWidget);
+      expect(find.text('Into the rainbow it goes!'), findsNothing);
+    },
+  );
 }

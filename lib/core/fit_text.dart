@@ -101,6 +101,33 @@ TextScaler wholeWordsScaler(
   floor: 1,
 );
 
+/// Text whose words are never broken inside: an amount like
+/// "$9,999,999,999.99" stays whole, wrapping only between words. The
+/// system's size, or as much smaller as the longest word needs (never below
+/// normal size).
+class WholeWordsText extends StatelessWidget {
+  const WholeWordsText(this.text, {super.key, this.style, this.textAlign});
+
+  final String text;
+  final TextStyle? style;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) => Text(
+      text,
+      style: style,
+      textAlign: textAlign,
+      textScaler: wholeWordsScaler(
+        context,
+        texts: [text],
+        style: style,
+        available: box.maxWidth,
+      ),
+    ),
+  );
+}
+
 /// A screen's big title, or a label next to one: wraps between words, never
 /// inside one. Stops at normal size (Reviewer E4): a title stays a title.
 class ScreenTitle extends StatelessWidget {
