@@ -158,7 +158,11 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final sure = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(l10n.deleteAllTitle),
+        // Whole words at large text: a dialog is narrow.
+        title: WholeWordsText(
+          l10n.deleteAllTitle,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
         content: Text(l10n.deleteAllBody),
         actions: [
           TestId(
@@ -479,7 +483,10 @@ class _PlanDialogState extends State<_PlanDialog> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text(l10n.mePlan),
+      title: WholeWordsText(
+        l10n.mePlan,
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
       content: TestId(
         'me-plan-amount',
         child: TextField(

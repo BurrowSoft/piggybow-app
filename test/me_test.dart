@@ -182,7 +182,15 @@ void main() {
     await tester.tapId('me-delete');
     expect(find.text('Delete everything?'), findsOneWidget);
     await tester.tapId('me-delete-confirm');
-    await settle(tester, byId('onb-welcome'));
+    // The wipe sweeps the cache with real file calls: real time between
+    // frames lets them finish.
+    for (var i = 0; i < 40 && byId('onb-welcome').evaluate().isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pumpAndSettle();
 
     tester.expectScreen('onb-welcome');
     expect(await tester.runAsync(app.journal.isBlank), isTrue);
