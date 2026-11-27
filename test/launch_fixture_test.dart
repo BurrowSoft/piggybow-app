@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/fixtures/launch_fixture.dart';
+import 'package:piggybow/goal/goal_progress.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
@@ -231,9 +232,10 @@ void main() {
       expect(e.amountMinor, 20000);
       expect(e.localDate, '2026-12-02');
       expect(e.createdAt, DateTime.utc(2026, 12, 2, 2));
-      expect(e.goalId, isNull, reason: 'written before the goal');
       final g = (await store.goals()).single;
       expect(g.name, 'Bike');
+      expect(e.goalId, g.id, reason: 'its goal came first, so the save went to it');
+      expect(g.targetMinor, 50000, reason: '200.00 of 500.00: 40 %, band 2');
       expect(g.bandReachedAt, [
         DateTime.utc(2026, 11, 20, 3),
         DateTime.utc(2026, 12, 2, 2),
@@ -242,6 +244,26 @@ void main() {
         null,
       ]);
       expect(f.clock.nowUtc(), DateTime.utc(2026, 12, 2, 5));
+    });
+
+    test("every case: an active goal's card shows the bands it stamped", () async {
+      var checked = 0;
+      for (final id in caseIds) {
+        final store = await written(LaunchFixture.byId(id, casesJson));
+        final goal = await store.activeGoal();
+        if (goal == null) continue;
+        checked++;
+        final percent = goalPercent(
+          progressMinor: await store.goalProgress(goal),
+          targetMinor: goal.targetMinor,
+        );
+        expect(
+          percent ~/ 20,
+          goal.bandReachedAt.where((t) => t != null).length,
+          reason: '$id at $percent %',
+        );
+      }
+      expect(checked, greaterThan(0));
     });
 
     test(

@@ -138,8 +138,12 @@ DateTime? _at(Object? iso) =>
     iso == null ? null : DateTime.parse(iso as String).toUtc();
 
 /// A contract case as the person would have left it: the entries at their
-/// own created_at, then the goals with their stamps (a reached goal was
-/// celebrated when it happened).
+/// own created_at, the goals with their stamps (a reached goal was
+/// celebrated when it happened). The mood reads only the entries and the
+/// stamps; so that the goal card agrees with them too, an active goal with
+/// stamped bands and no amounts of its own comes first, the case's saves go
+/// to it, and its target puts them in its highest stamped band (with no
+/// saves, what's already saved does).
 Future<void> _writeCase(
   JournalStore store,
   FixtureClock clock,
@@ -151,7 +155,33 @@ Future<void> _writeCase(
     for (final p in c['picks'] as List) HappyPick.values.byName(p as String),
   });
   await store.setPlanMinor(c['plan_minor'] as int?);
-  for (final e in (c['entries'] as List).cast<Map<String, dynamic>>()) {
+  final goals = (c['goals'] as List).cast<Map<String, dynamic>>();
+  final entries = (c['entries'] as List).cast<Map<String, dynamic>>();
+  final shown = goals
+      .where(
+        (g) =>
+            (g['status'] ?? 'active') == 'active' &&
+            g['reached_at'] == null &&
+            g['target_minor'] == null &&
+            g['start_minor'] == null &&
+            _highestBand(g) > 0,
+      )
+      .firstOrNull;
+  clock.now = _at(c['now'])!;
+  if (shown != null) {
+    final saved = entries
+        .where((e) => e['type'] == 'saved')
+        .fold<int>(0, (sum, e) => sum + (e['amount_minor'] as int));
+    final band = _highestBand(shown);
+    await _putGoal(
+      store,
+      clock,
+      shown,
+      targetMinor: saved > 0 ? saved * 5 ~/ band : 100000,
+      startMinor: saved > 0 ? 0 : 100000 * band ~/ 5,
+    );
+  }
+  for (final e in entries) {
     clock.now = _at(e['created_at'])!;
     await store.addEntry(
       type: EntryType.fromId(e['type'])!,
@@ -163,24 +193,51 @@ Future<void> _writeCase(
     );
   }
   clock.now = _at(c['now'])!;
-  for (final g in (c['goals'] as List).cast<Map<String, dynamic>>()) {
-    final id = store.newId();
-    final reachedAt = _at(g['reached_at']);
-    await store.putGoal(
-      Goal(
-        id: id,
-        name: g['name'] as String,
-        targetMinor: g['target_minor'] as int? ?? 100000,
-        startMinor: g['start_minor'] as int? ?? 0,
-        status: GoalStatus.fromId(g['status']) ?? GoalStatus.active,
-        bandReachedAt: [for (final b in g['band_reached_at'] as List) _at(b)],
-        reachedAt: reachedAt,
-        createdAt: clock.now,
-        updatedAt: clock.now,
-      ),
+  for (final g in goals) {
+    if (identical(g, shown)) continue;
+    await _putGoal(
+      store,
+      clock,
+      g,
+      targetMinor: g['target_minor'] as int? ?? 100000,
+      startMinor: g['start_minor'] as int? ?? 0,
     );
-    if (reachedAt != null) await store.markCelebrated(id);
   }
+}
+
+/// The highest band a contract goal has stamped (1 to 5), or 0.
+int _highestBand(Map<String, dynamic> g) {
+  final stamps = g['band_reached_at'] as List;
+  for (var i = stamps.length; i > 0; i--) {
+    if (stamps[i - 1] != null) return i;
+  }
+  return 0;
+}
+
+/// A contract goal, with its stamps as the case gives them.
+Future<void> _putGoal(
+  JournalStore store,
+  FixtureClock clock,
+  Map<String, dynamic> g, {
+  required int targetMinor,
+  required int startMinor,
+}) async {
+  final id = store.newId();
+  final reachedAt = _at(g['reached_at']);
+  await store.putGoal(
+    Goal(
+      id: id,
+      name: g['name'] as String,
+      targetMinor: targetMinor,
+      startMinor: startMinor,
+      status: GoalStatus.fromId(g['status']) ?? GoalStatus.active,
+      bandReachedAt: [for (final b in g['band_reached_at'] as List) _at(b)],
+      reachedAt: reachedAt,
+      createdAt: clock.now,
+      updatedAt: clock.now,
+    ),
+  );
+  if (reachedAt != null) await store.markCelebrated(id);
 }
 
 /// The rainbow fixtures: "Bike", 1,000.00, with one save of [savedMinor]
