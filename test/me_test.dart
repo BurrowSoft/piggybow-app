@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:piggybow/core/app_config.dart';
+import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/core/device.dart';
 import 'package:piggybow/features/me/me_actions.dart';
 import 'package:piggybow/features/me/me_screen.dart';
@@ -16,6 +17,7 @@ import 'package:piggybow/lock_rules/lock_rules.dart';
 import 'package:piggybow/money/money.dart';
 import 'package:piggybow/pig/pig_mood.dart' show HappyPick;
 
+import 'app_lock_test.dart' show FakeBiometrics;
 import 'helpers.dart';
 
 /// Me (plan §3.8, decision 63): the rows and what they change, the plan
@@ -250,6 +252,49 @@ void main() {
     await tester.tapId('me-delete-retry');
     await waitFor(tester, byId('onb-welcome'));
     tester.expectScreen('onb-welcome');
+  });
+
+  testWidgets('a failed journal wipe keeps the PIN, the prefs, the account', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+    addTearDown(tester.view.reset);
+    final secrets = MemorySecretStore();
+    final lock = AppLock(
+      store: secrets,
+      biometrics: FakeBiometrics(),
+      firstRun: MemoryFirstRunMarker()..wasSeen = true,
+      iterations: 50,
+    );
+    final app = TestApp(appLock: lock);
+    await tester.runAsync(app.openJournal);
+    await app.pump(tester, location: '/me');
+    await settle(tester, byId('me-happy'));
+    final id = app.session.user!.id;
+    // The lock on, with a PIN, for this account.
+    await tester.runAsync(() async {
+      await lock.switchUser(id);
+      await lock.setPin('2468');
+    });
+    await tester.pumpAndSettle();
+    expect(lock.enabled, isTrue);
+    await tester.tapId('me-theme-dark');
+    // A journal that can't be wiped: its store is closed.
+    await tester.runAsync(app.journal.close);
+    await tester.tapId('me-delete');
+    await tester.tapId('me-delete-confirm');
+    await waitFor(tester, find.text('Not everything was erased'));
+    expect(find.text('Not everything was erased'), findsOneWidget);
+    expect(lock.enabled, isTrue, reason: 'the lock still on');
+    expect(
+      secrets.values['app_lock.$id.pin_hash'],
+      isNotNull,
+      reason: 'its PIN',
+    );
+    expect(app.prefs.appearance, 'dark', reason: 'the prefs');
+    expect(app.session.user!.id, id, reason: 'the account');
+    expect(app.services.onboarded.value, isTrue);
   });
 
   testWidgets('Delete everything, cancelled: nothing changes', (tester) async {

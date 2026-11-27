@@ -74,29 +74,36 @@ Future<void> _shareSheet(XFile file) =>
 /// the journal; the scheduled reminders; the app lock's secure storage,
 /// every id (only after the journal is gone); every pref (the device
 /// account, its reminder, language, appearance and the rest); every export
-/// file. Then a fresh device account, and onboarding from O1. Every step
-/// runs even if another fails; false when one did (Me says so and offers
-/// Try again). Crash reports keep no cache while the build has no Sentry
-/// DSN (v0.1).
+/// file. Then a fresh device account, and onboarding from O1. The lock, the
+/// prefs and the account go only after the journal did; the other steps run
+/// even if one fails; false when any did (Me says so and offers Try again).
+/// Crash reports keep no cache while the build has no Sentry DSN (v0.1).
 Future<bool> deleteEverything(
   AppServices services,
   AppSession session, {
   Future<Directory> Function()? cache,
 }) async {
   var done = true;
-  Future<void> step(Future<void> Function() run) async {
+  Future<bool> step(Future<void> Function() run) async {
     try {
       await run();
+      return true;
     } on Object {
       done = false;
+      return false;
     }
   }
 
-  await step(services.journal.wipe);
+  // The journal first. Only once it is gone do the lock, the prefs and the
+  // account go: a journal still on the phone keeps its PIN and its account,
+  // so this wipe (which Forgot PIN's erase reuses) is never a way past the
+  // lock (decision 67, amended).
+  final journalGone = await step(services.journal.wipe);
   await step(services.reminders.cancelAll);
+  await step(() => sweepExports(cache: cache));
+  if (!journalGone) return false;
   await step(() async => services.appLock?.eraseAll());
   await step(session.prefs.clear);
-  await step(() => sweepExports(cache: cache));
   await step(() async {
     final backend = session.account;
     if (backend is DeviceBackend) {
