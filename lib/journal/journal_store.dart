@@ -89,6 +89,15 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Whether nothing was noted or set yet: no entry, no goal, no picks and no
+  /// plan (the currency may be set). Launch fixtures write only into such a
+  /// journal.
+  Future<bool> isBlank() async =>
+      await _entries.count(_db) == 0 &&
+      await _goals.count(_db) == 0 &&
+      !await _settings.record('picks').exists(_db) &&
+      !await _settings.record('plan_minor').exists(_db);
+
   /// Whether the reminder offer on Home was answered (it shows once).
   Future<bool> reminderOfferAnswered() async =>
       await _settings.record('reminder_offer').get(_db) == true;

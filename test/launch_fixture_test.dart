@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/fixtures/launch_fixture.dart';
+import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/journal/journal_store.dart';
@@ -127,6 +128,51 @@ void main() {
         expect(unknown.check('2026-12-02'), contains('C99'));
       },
     );
+
+    test(
+      'a journal with notes takes no fixture: nothing written, and why',
+      () async {
+        Future<void> spend(JournalStore s) => s.addEntry(
+          type: EntryType.spent,
+          amountMinor: 450,
+          currency: 'USD',
+          localDate: '2026-12-01',
+          category: SpendCategory.food,
+        );
+        Future<void> picks(JournalStore s) => s.setPicks({HappyPick.plan});
+        Future<void> plan(JournalStore s) => s.setPlanMinor(5000);
+        for (final (what, notes) in [
+          ('an entry', spend),
+          ('picks', picks),
+          ('a plan', plan),
+        ]) {
+          final f = LaunchFixture.byId('C6', casesJson);
+          var ids = 0;
+          final store = await JournalStore.inMemory(
+            clock: f.clock,
+            newId: () => 'id${++ids}',
+          );
+          addTearDown(store.close);
+          await notes(store);
+          final entries = (await store.entries()).length;
+          final problem = await f.write(store);
+          expect(problem, contains('C6'), reason: what);
+          expect(problem, contains('empty journal'), reason: what);
+          expect((await store.entries()).length, entries, reason: what);
+          expect(await store.goals(), isEmpty, reason: what);
+        }
+      },
+    );
+
+    test('a blank journal takes one (its currency may be set)', () async {
+      final f = LaunchFixture.byId('C6', casesJson);
+      final store = await JournalStore.inMemory(clock: f.clock);
+      addTearDown(store.close);
+      await store.setCurrency('THB');
+      expect(await store.isBlank(), isTrue);
+      expect(await f.write(store), isNull);
+      expect(await store.isBlank(), isFalse);
+    });
 
     test('an unknown id writes nothing', () async {
       final store = await written(LaunchFixture.byId('C99', casesJson));

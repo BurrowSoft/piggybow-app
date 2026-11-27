@@ -38,7 +38,11 @@ void main() {
         isNull,
         reason: "the case's today is the app's",
       );
-      await tester.runAsync(() => fixture.write(app.journal));
+      expect(
+        await tester.runAsync(() => fixture.write(app.journal)),
+        isNull,
+        reason: 'written',
+      );
       await app.pump(tester);
       for (var i = 0; i < 40 && byId('home-pig-line').evaluate().isEmpty; i++) {
         await tester.pump(const Duration(milliseconds: 50));

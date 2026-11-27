@@ -100,13 +100,14 @@ Future<void> main() async {
   await dayLoad;
   final journal = await journalLoad;
   if (fixture != null) {
-    // Before anything is written: the fixture's today must be the phone's.
-    final problem = fixture.check(localDay.todayWire);
+    // Nothing is written unless the fixture's today is the phone's and the
+    // journal is blank.
+    final problem =
+        fixture.check(localDay.todayWire) ?? await fixture.write(journal);
     if (problem != null) {
       runApp(FixtureErrorApp(problem));
       return;
     }
-    await fixture.write(journal);
   }
   // Until onboarding asks, the journal's currency is the phone's (else USD).
   if (await journal.currency() == null) {

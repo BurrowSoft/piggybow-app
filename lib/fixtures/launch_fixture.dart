@@ -116,13 +116,21 @@ class LaunchFixture {
         'again.';
   }
 
-  /// Writes the fixture into [store] (nothing when [check] fails), then
-  /// leaves [clock] at [now].
-  Future<void> write(JournalStore store) async {
+  /// Writes the fixture into [store], then leaves [clock] at [now]; or, when
+  /// it can't, writes nothing and says why. A fixture goes only into a blank
+  /// journal (no entry, goal, picks or plan): any app can start the launch
+  /// activity with a route, so a fixture must never mix with someone's own
+  /// notes.
+  Future<String?> write(JournalStore store) async {
     final write = _write;
-    if (write == null) return;
+    if (write == null) return error;
+    if (!await store.isBlank()) {
+      return 'Fixture $id goes only into an empty journal, and this one has '
+          "notes. Clear the app's data, then launch again.";
+    }
     await write(store, clock);
     clock.now = now;
+    return null;
   }
 }
 
