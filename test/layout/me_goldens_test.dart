@@ -1,7 +1,8 @@
 // Goldens: Me (decision 44), at 320 dp ×2, light and dark, for PB UX & PM's
 // look at PR 4b: Me with no plan and with one, the notifications-off notice,
 // the plan dialog empty and with a plan, the picker, "Delete everything?",
-// and Your privacy in a build without a Sentry DSN.
+// Your privacy in a build without a Sentry DSN, and "Not everything was
+// erased".
 @Tags(['golden'])
 library;
 
@@ -37,7 +38,7 @@ void main() {
       .descendant(of: byId(screenId), matching: find.byType(Scrollable))
       .first;
 
-  Future<void> open(
+  Future<TestApp> open(
     WidgetTester tester,
     LayoutCase c, {
     int? plan,
@@ -53,6 +54,7 @@ void main() {
     });
     await app.pump(tester, location: '/me');
     await settle(tester, byId('me-happy'));
+    return app;
   }
 
   /// A dialog as a golden: no caret in its field.
@@ -171,6 +173,31 @@ void main() {
         screen: 'me-privacy',
         state: 'lines',
         stateId: 'M8',
+      );
+    });
+
+    testWidgets('M9 "Not everything was erased" ($c)', (tester) async {
+      final app = await open(tester, c);
+      app.reminders.failCancel = true;
+      await tester.tapId('me-delete');
+      await tester.tapId('me-delete-confirm');
+      // The wipe sweeps the cache with real file calls: real time between
+      // frames lets them finish.
+      final title = find.text('Not everything was erased');
+      for (var i = 0; i < 40 && title.evaluate().isEmpty; i++) {
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.pumpAndSettle();
+      expect(title, findsOneWidget);
+      await expectLayoutGolden(
+        tester,
+        c,
+        screen: 'me',
+        state: 'delete-failed',
+        stateId: 'M9',
       );
     });
   }
