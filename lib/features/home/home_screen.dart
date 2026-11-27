@@ -192,15 +192,15 @@ class _Pig extends StatelessWidget {
             createdAt: e.createdAt,
           ),
       ],
-      // An ended goal has no say in the mood: only active and reached ones.
+      // Every goal's stamps, ended ones too (the contract's rule 1, decision
+      // 53): a band or reach from the last 24 h keeps its line after End.
       goals: [
         for (final g in data.goals)
-          if (g.status != GoalStatus.ended)
-            GoalMarks(
-              name: g.name,
-              bandReachedAt: g.bandReachedAt,
-              reachedAt: g.reachedAt,
-            ),
+          GoalMarks(
+            name: g.name,
+            bandReachedAt: g.bandReachedAt,
+            reachedAt: g.reachedAt,
+          ),
       ],
       now: services.clock.nowUtc(),
       today: services.localDay.todayWire,

@@ -279,28 +279,70 @@ void main() {
     expect(byId('goal-add-savings'), findsNothing);
   });
 
-  testWidgets('an ended goal past its target: no celebration, no goal line', (
-    tester,
-  ) async {
-    await openHome(
-      tester,
-      seed: (app) async {
-        // As a journal could hold it from before the store checked the
-        // status: ended, yet stamped reached a moment ago.
-        final at = DateTime.utc(2026, 10, 2);
-        await app.journal.putGoal(
-          bike(target: 1000).copyWith(
-            status: GoalStatus.ended,
-            reachedAt: at,
-            bandReachedAt: List<DateTime?>.filled(5, at),
-          ),
-        );
-      },
-    );
-    expect(byId('goal-done-screen'), findsNothing);
-    expect(find.text('You reached Bike!'), findsNothing);
-    expect(find.textContaining('colored in'), findsNothing);
-    expect(byId('goal-card-reached'), findsNothing);
-    expect(find.text('Start a savings goal'), findsOneWidget);
-  });
+  testWidgets(
+    'an ended goal stamped reached: no celebration, no Reached row; the line stays',
+    (tester) async {
+      await openHome(
+        tester,
+        seed: (app) async {
+          // As a journal could hold it from before the store checked the
+          // status: ended, yet stamped reached a moment ago. It ended, so no
+          // celebration and no "Reached:" row; the pig keeps the goal line
+          // for 24 h, as for any goal (the contract's C31, decision 53).
+          final at = DateTime.utc(2026, 10, 2);
+          await app.journal.putGoal(
+            bike(target: 1000).copyWith(
+              status: GoalStatus.ended,
+              reachedAt: at,
+              bandReachedAt: List<DateTime?>.filled(5, at),
+            ),
+          );
+        },
+      );
+      expect(byId('goal-done-screen'), findsNothing);
+      expect(find.text('You reached Bike!'), findsOneWidget);
+      expect(find.textContaining('colored in'), findsNothing);
+      expect(byId('goal-card-reached'), findsNothing);
+      expect(find.text('Start a savings goal'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'a goal ended right after a band: the band line stays; an edit after End stamps nothing',
+    (tester) async {
+      final app = await openHome(
+        tester,
+        seed: (app) async {
+          await app.journal.putGoal(bike(target: 1000));
+          final s = await app.journal.addEntry(
+            type: EntryType.saved,
+            amountMinor: 300, // 30 %: band 1, stamped now
+            currency: 'THB',
+            localDate: '2026-10-02',
+          );
+          await app.journal.putGoal(
+            (await app.journal.goal('g1'))!.copyWith(status: GoalStatus.ended),
+          );
+          // Past the target after End: nothing new is stamped.
+          await app.journal.updateEntry(s.copyWith(amountMinor: 1500));
+        },
+      );
+      expect(find.text('Band 1 of 5 colored in!'), findsOneWidget);
+      expect(find.text('You reached Bike!'), findsNothing);
+      expect(byId('goal-done-screen'), findsNothing);
+      expect(
+        tester.getSemantics(byId('home-pig')),
+        isSemantics(label: 'Your pig looks delighted.'),
+      );
+      final g = (await tester.runAsync(() => app.journal.goal('g1')))!;
+      expect(g.reachedAt, isNull);
+      expect(
+        [
+          for (final (i, t) in g.bandReachedAt.indexed)
+            if (t != null) i + 1,
+        ],
+        [1],
+      );
+    },
+  );
 }
