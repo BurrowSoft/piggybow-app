@@ -190,6 +190,23 @@ steps:
     expect(body, contains(r'> "$OUT/boot.txt"'));
   });
 
+  // The first journal run's upload failed: a flow name with quotes became a
+  // Maestro folder name, and artifact paths can't hold " : < > | * ?.
+  test('evidence names are made safe for the upload, before the guard', () {
+    final guard = wf.indexOf('- name: No installable file in the evidence');
+    final upload = wf.indexOf('uses: actions/upload-artifact@');
+    final step = wf.substring(guard, upload);
+    final rename = step.indexOf(
+      "find \"\$OUT\" -depth -name '*[\":<>|*?]*' -print0",
+    );
+    expect(rename, greaterThan(0));
+    expect(step, contains("tr '\":<>|*?' '_______'"));
+    // A clash fails the step; nothing is overwritten.
+    expect(step, contains(r'if [ -e "$to" ]; then echo'));
+    expect(step, contains(r'mv -n -- "$p" "$to"'));
+    expect(rename, lessThan(step.indexOf("-iname '*.apk'")));
+  });
+
   test('run.sh: an emulator only, and every adb call names it', () {
     expect(run, contains('emulator-*) ;;'));
     expect(run, contains('ro.kernel.qemu'));
