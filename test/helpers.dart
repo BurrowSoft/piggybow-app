@@ -62,6 +62,12 @@ class FakeReminderScheduler implements ReminderScheduler {
 
 class FakeNotifications implements NotificationPermission {
   int requests = 0;
+
+  /// How many times Me opened the phone's notification settings.
+  int settingsOpened = 0;
+
+  @override
+  Future<void> openSettings() async => settingsOpened++;
   bool grant = true;
 
   /// Whether notifications are allowed now (a granted request sets it).
@@ -97,6 +103,7 @@ class TestApp {
     this.appLock,
     this.currency = 'THB',
     this.onboarded = true,
+    this.config = const AppConfig(flavor: Flavor.staging),
     Clock? clock,
   }) : clock = clock ?? testClock,
        prefs = MemoryLocalPrefs(
@@ -125,6 +132,9 @@ class TestApp {
 
   /// Whether onboarding is done: tests start on Home unless they say not.
   final bool onboarded;
+
+  /// The build's configuration (a Sentry DSN, the policy and help links).
+  final AppConfig config;
 
   late final DeviceBackend backend;
   late final AppSession session;
@@ -188,7 +198,7 @@ class TestApp {
     await session.restore();
     await tester.pumpWidget(
       PiggybowApp(
-        config: const AppConfig(flavor: Flavor.staging),
+        config: config,
         session: session,
         services: services,
         router: buildRouter(

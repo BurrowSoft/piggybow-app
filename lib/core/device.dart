@@ -1,5 +1,6 @@
 import 'dart:ui' show PlatformDispatcher;
 
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 
@@ -59,10 +60,30 @@ abstract interface class NotificationPermission {
   /// Whether notifications are allowed now, without asking (Me re-checks
   /// on open and resume).
   Future<bool> granted();
+
+  /// The phone's own notification settings for Piggybow (Me → Open
+  /// settings, decision 63). iPhone gets its settings URL later.
+  Future<void> openSettings();
 }
+
+/// The channel MainActivity.kt answers on, and its one method (a test checks
+/// that both sides use these names).
+const settingsChannel = 'com.burrowsoft.piggybow/settings';
+const openNotificationSettingsMethod = 'openNotificationSettings';
 
 class PlatformNotificationPermission implements NotificationPermission {
   const PlatformNotificationPermission();
+
+  @override
+  Future<void> openSettings() async {
+    try {
+      await const MethodChannel(
+        settingsChannel,
+      ).invokeMethod<void>(openNotificationSettingsMethod);
+    } on Object {
+      // No settings screen to open (another platform, for now): nothing to do.
+    }
+  }
 
   @override
   Future<bool> granted() async {

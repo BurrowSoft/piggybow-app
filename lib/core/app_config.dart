@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart' show appFlavor;
+import 'package:flutter/widgets.dart';
 
 /// Build-time configuration, read from `--dart-define-from-file=env/<flavor>.json`.
 ///
@@ -139,4 +140,18 @@ enum Flavor {
     }
     return parse(nativeFlavor);
   }
+}
+
+/// The build's configuration, for screens that show or hide by it (Me:
+/// the crash-report line, the policy and help links, the app lock).
+class ConfigScope extends InheritedWidget {
+  const ConfigScope({super.key, required this.config, required super.child});
+
+  final AppConfig config;
+
+  static AppConfig of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ConfigScope>()!.config;
+
+  @override
+  bool updateShouldNotify(ConfigScope old) => old.config != config;
 }

@@ -16,6 +16,7 @@ import 'core/sentry_setup.dart';
 import 'core/services.dart';
 import 'core/startup_trace.dart';
 import 'data/device_backend.dart';
+import 'features/me/me_actions.dart';
 import 'features/onboarding/onboarding_screens.dart';
 import 'features/pig/pig_view.dart';
 import 'features/reminder/reminder_scheduler.dart';
@@ -37,6 +38,8 @@ Future<void> main() async {
   final dates = initializeDateFormatting();
   // The pigs, decoded before the first frame: Home's pig is never late.
   final pigsLoad = precachePigs();
+  // An export lives only while it is shared: none is left from before.
+  unawaited(sweepExports());
   final prefsLoad = SharedLocalPrefs.load();
   final timeZoneLoad = device.timeZone();
   // Read before the first frame: a cold start with the lock on must never

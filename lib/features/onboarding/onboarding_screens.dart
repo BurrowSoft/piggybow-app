@@ -145,7 +145,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 /// first; the weekly plan's amount shows under its card once it's picked.
 /// Continue is always enabled and says what's missing (settings_rules).
 class HappyScreen extends StatefulWidget {
-  const HappyScreen({super.key});
+  const HappyScreen({super.key, this.inMe = false, this.removingPlan = false});
+
+  /// Me's picker: the saved picks and plan to start, Done back to Me.
+  final bool inMe;
+
+  /// Me → Remove plan with only the plan picked (settings_rules.removePlan):
+  /// the plan starts unpicked, and goes once the new picks are saved.
+  final bool removingPlan;
 
   @override
   State<HappyScreen> createState() => _HappyScreenState();
@@ -166,8 +173,20 @@ class _HappyScreenState extends State<HappyScreen> {
   }
 
   Future<void> _load() async {
-    final code = await context.services.journal.currency() ?? 'USD';
-    if (mounted) setState(() => _currency = code);
+    final store = context.services.journal;
+    final locale = context.readSession.device.localeName;
+    final code = await store.currency() ?? 'USD';
+    final picks = widget.inMe ? await store.picks() : const <HappyPick>{};
+    final plan = widget.inMe ? await store.planMinor() : null;
+    if (!mounted) return;
+    setState(() {
+      _currency = code;
+      _picks
+        ..clear()
+        ..addAll(picks);
+      if (widget.removingPlan) _picks.remove(HappyPick.plan);
+      if (plan != null) _plan.text = inputAmount(plan, code, locale);
+    });
   }
 
   @override
@@ -199,9 +218,14 @@ class _HappyScreenState extends State<HappyScreen> {
     final store = context.services.journal;
     await store.setPicks(_picks);
     if (plan != null) await store.setPlanMinor(plan);
+    if (widget.removingPlan) await store.setPlanMinor(null);
     if (!mounted) return;
     setState(() => _busy = false);
-    unawaited(context.push(OnboardingRoutes.goal));
+    if (widget.inMe) {
+      context.pop();
+    } else {
+      unawaited(context.push(OnboardingRoutes.goal));
+    }
   }
 
   @override
@@ -213,17 +237,20 @@ class _HappyScreenState extends State<HappyScreen> {
         : _problem == PicksProblem.planNeeded
         ? l10n.happyPlanNeeded
         : null;
+    final inMe = widget.inMe;
     return TestId.container(
-      'onb-happy',
+      inMe ? 'me-happy' : 'onb-happy',
       child: Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(title: inMe ? Text(l10n.meHappy) : null),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           children: [
-            Text(l10n.onbHappyTitle, style: theme.textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(l10n.onbHappyBody, style: theme.textTheme.bodyLarge),
-            const SizedBox(height: 16),
+            if (!inMe) ...[
+              Text(l10n.onbHappyTitle, style: theme.textTheme.headlineSmall),
+              const SizedBox(height: 8),
+              Text(l10n.onbHappyBody, style: theme.textTheme.bodyLarge),
+              const SizedBox(height: 16),
+            ],
             for (final pick in HappyPick.values) ...[
               _PickCard(
                 pick: pick,
@@ -270,11 +297,14 @@ class _HappyScreenState extends State<HappyScreen> {
               ),
             const SizedBox(height: 16),
             TestId(
-              'onb-continue',
+              inMe ? 'me-happy-done' : 'onb-continue',
               button: true,
               child: FilledButton(
                 onPressed: _busy ? null : _continue,
-                child: Text(l10n.onbContinue, textAlign: TextAlign.center),
+                child: Text(
+                  inMe ? l10n.done : l10n.onbContinue,
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
           ],
