@@ -1,0 +1,8 @@
+* text=auto eol=lf
+*.ttf binary
+*.png binary
+*.jar binary
+*.bat text eol=crlf
+# The art is copied byte for byte from the design files (pure LF).
+*.svg text eol=lf
+*.keystore binary

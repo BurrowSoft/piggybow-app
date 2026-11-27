@@ -1,0 +1,96 @@
+# Codemagic: iOS builds only (Android builds run on GitHub Actions).
+#
+# Both workflows start by hand from the Codemagic UI: there is no `triggering`
+# block, so a push or a PR never builds, signs or uploads anything
+# (test/ios_flavors_test.dart keeps it that way). Neither workflow submits for
+# review: ios-staging lands in TestFlight for the internal group, ios-release
+# only uploads to App Store Connect, and the owner submits it.
+#
+# Signing: the App Store Connect API key is the team integration `piggybow_asc`
+# (set up by the owner in Codemagic); certificates and profiles live in
+# Codemagic's code signing identities, never in this repo. Only public values
+# are built in (env/<flavor>.json; v0.1 has no server at all).
+#
+# - xcode: pinned; a silent Xcode bump must not change a release. Bump it on
+#   purpose, in its own PR.
+# - Plugins use Swift Package Manager. If Flutter ever generates a Podfile,
+#   map all 9 configurations in it: Debug and Debug-<flavor> → :debug, every
+#   Release/Profile one → :release (CocoaPods treats unknown ones as release).
+workflows:
+  ios-staging:
+    name: iOS staging → TestFlight (internal)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: piggybow_asc
+    environment:
+      flutter: 3.47.5 # keep in step with .github/workflows/ci.yaml
+      xcode: "26.6" # quoted: YAML would read 26.10 as 26.1
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.burrowsoft.piggybow.staging
+    scripts:
+      - name: Code signing (profiles for the bundle id above)
+        script: xcode-project use-profiles
+      - name: Packages
+        script: flutter pub get
+      - name: Build the ipa
+        script: |
+          # The store version is pubspec's version name, the same as Android's;
+          # the build number is Codemagic's own counter.
+          BUILD_NAME=$(sed -n 's/^version: *\([0-9][0-9.]*\)+.*/\1/p' pubspec.yaml)
+          test -n "$BUILD_NAME" || { echo "no version name in pubspec.yaml" >&2; exit 1; }
+          echo "version name $BUILD_NAME"
+          flutter build ipa --release --flavor staging \
+            --dart-define-from-file=env/staging.json \
+            --build-name="$BUILD_NAME" \
+            --build-number="$PROJECT_BUILD_NUMBER" \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false
+
+  ios-release:
+    name: iOS release → App Store Connect (upload only)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: piggybow_asc
+    environment:
+      flutter: 3.47.5 # keep in step with .github/workflows/ci.yaml
+      xcode: "26.6" # quoted: YAML would read 26.10 as 26.1
+      cocoapods: default
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.burrowsoft.piggybow
+    scripts:
+      - name: Code signing (profiles for the bundle id above)
+        script: xcode-project use-profiles
+      - name: Packages
+        script: flutter pub get
+      - name: Build the ipa
+        script: |
+          # The store version is pubspec's version name, the same as Android's;
+          # the build number is Codemagic's own counter.
+          BUILD_NAME=$(sed -n 's/^version: *\([0-9][0-9.]*\)+.*/\1/p' pubspec.yaml)
+          test -n "$BUILD_NAME" || { echo "no version name in pubspec.yaml" >&2; exit 1; }
+          echo "version name $BUILD_NAME"
+          flutter build ipa --release --flavor prod \
+            --dart-define-from-file=env/prod.json \
+            --build-name="$BUILD_NAME" \
+            --build-number="$PROJECT_BUILD_NUMBER" \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: false
+        submit_to_app_store: false

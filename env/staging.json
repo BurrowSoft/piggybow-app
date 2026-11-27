@@ -1,0 +1,16 @@
+{
+  "FLAVOR": "staging",
+  "SENTRY_DSN": "",
+  "DISABLE_ANIMATIONS": "true",
+  "FAKE_NOW": "",
+  "THAI_OFFERED": "false",
+  "FR_OFFERED": "false",
+  "ES_OFFERED": "false",
+  "PT_BR_OFFERED": "false",
+  "DE_OFFERED": "false",
+  "IT_OFFERED": "false",
+  "APP_LOCK_ENABLED": "true",
+  "PLUS_ENABLED": "false",
+  "PRIVACY_URL": "",
+  "SUPPORT_URL": ""
+}

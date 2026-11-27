@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PLACEHOLDER (seed): the themed icon (Android 13+), one colour; the
+     system tints it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:strokeColor="#FF000000" android:strokeWidth="3.96" android:pathData="M27.60,52.02 A26.40,26.40 0 0,1 80.40,52.02" />
+    <path android:strokeColor="#FF000000" android:strokeWidth="3.96" android:pathData="M36.84,52.02 A17.16,17.16 0 0,1 71.16,52.02" />
+    <path android:fillColor="#FF000000" android:fillType="evenOdd" android:pathData="M40.80,60.60 a13.20,13.20 0 1,0 26.40,0 a13.20,13.20 0 1,0 -26.40,0 M47.93,57.63 a1.45,1.45 0 1,0 2.90,0 a1.45,1.45 0 1,0 -2.90,0 M57.17,57.63 a1.45,1.45 0 1,0 2.90,0 a1.45,1.45 0 1,0 -2.90,0 M48.39,64.23 a5.61,3.96 0 1,0 11.22,0 a5.61,3.96 0 1,0 -11.22,0" />
+</vector>

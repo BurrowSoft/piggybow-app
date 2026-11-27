@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- PLACEHOLDER (seed): a plain pig face under three arcs, until the real
+     icon lands. Drawn in the adaptive icon's 66 dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:strokeColor="#E27D9A" android:strokeWidth="3.96" android:pathData="M27.60,52.02 A26.40,26.40 0 0,1 80.40,52.02" />
+    <path android:strokeColor="#F2A07B" android:strokeWidth="3.96" android:pathData="M32.22,52.02 A21.78,21.78 0 0,1 75.78,52.02" />
+    <path android:strokeColor="#F3C24F" android:strokeWidth="3.96" android:pathData="M36.84,52.02 A17.16,17.16 0 0,1 71.16,52.02" />
+    <path android:fillColor="#F6B8C8" android:pathData="M40.80,60.60 a13.20,13.20 0 1,0 26.40,0 a13.20,13.20 0 1,0 -26.40,0" />
+    <path android:fillColor="#E88AA3" android:pathData="M48.39,64.23 a5.61,3.96 0 1,0 11.22,0 a5.61,3.96 0 1,0 -11.22,0" />
+    <path android:fillColor="#B85C77" android:pathData="M51.29,64.23 a1.06,1.06 0 1,0 2.12,0 a1.06,1.06 0 1,0 -2.12,0 M54.59,64.23 a1.06,1.06 0 1,0 2.12,0 a1.06,1.06 0 1,0 -2.12,0" />
+    <path android:fillColor="#3A2E39" android:pathData="M47.93,57.63 a1.45,1.45 0 1,0 2.90,0 a1.45,1.45 0 1,0 -2.90,0 M57.17,57.63 a1.45,1.45 0 1,0 2.90,0 a1.45,1.45 0 1,0 -2.90,0" />
+</vector>

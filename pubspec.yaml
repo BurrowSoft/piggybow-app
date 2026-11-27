@@ -1,0 +1,59 @@
+name: piggybow
+description: "Piggybow: a private money journal."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_local_notifications: ^22.3.1
+  flutter_localizations:
+    sdk: flutter
+  flutter_svg: ^2.3.0
+  flutter_timezone: ^5.1.0
+  go_router: ^18.0.2
+  intl: ^0.20.3
+  uuid: ^4.5.1
+  sentry_flutter: ^9.30.1
+  shared_preferences: ^2.5.5
+  timezone: ^0.11.1
+  url_launcher: ^6.3.2
+  path_provider: ^2.1.6
+  package_info_plus: ^10.2.2
+  crypto: ^3.0.6
+  local_auth: ^2.3.0
+  flutter_secure_storage: ^11.2.0
+  # Plus plumbing (compiled, no UI in v0.1). Pinned exactly.
+  in_app_purchase: 3.3.1
+  in_app_purchase_android: 0.5.5
+  in_app_purchase_storekit: 0.4.17
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+flutter:
+  uses-material-design: true
+  generate: true
+
+  assets:
+    # Placeholder brand art until the Piggybow design lands.
+    - assets/brand/
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Poppins-Medium.ttf
+          weight: 500
+    # Poppins has no Thai glyphs; Prompt is its fallback for Thai text.
+    - family: Prompt
+      fonts:
+        - asset: assets/fonts/Prompt-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Prompt-Medium.ttf
+          weight: 500

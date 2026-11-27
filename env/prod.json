@@ -1,0 +1,14 @@
+{
+  "FLAVOR": "prod",
+  "SENTRY_DSN": "",
+  "THAI_OFFERED": "false",
+  "FR_OFFERED": "false",
+  "ES_OFFERED": "false",
+  "PT_BR_OFFERED": "false",
+  "DE_OFFERED": "false",
+  "IT_OFFERED": "false",
+  "APP_LOCK_ENABLED": "true",
+  "PLUS_ENABLED": "false",
+  "PRIVACY_URL": "",
+  "SUPPORT_URL": ""
+}

@@ -1,0 +1,3 @@
+#include "Generated.xcconfig"
+// Unflavored builds (the Runner scheme); the store builds use <Mode>-<flavor>.xcconfig.
+APP_DISPLAY_NAME = Piggybow

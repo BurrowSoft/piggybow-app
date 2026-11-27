@@ -1,0 +1,209 @@
+name: Release AAB
+
+# The Play store build (decision 162): the prod flavour, release + R8, signed
+# with the Play upload key, from master only. Manual only: Actions →
+# Release AAB → Run workflow (master). The version is pubspec.yaml's: both
+# inputs are required, have no default, and must equal it (Reviewer's pilot
+# audit: nobody uploads 0.9.0 by accident). Raise pubspec's version in a PR
+# first, higher than the last upload. Google re-signs it with the app key
+# (Play App Signing).
+#
+# Secrets (the owner, repo Settings → Secrets → Actions; never in this repo):
+# PIGGYBOW_UPLOAD_KEYSTORE_B64, PIGGYBOW_UPLOAD_STORE_PASSWORD,
+# PIGGYBOW_UPLOAD_KEY_ALIAS, PIGGYBOW_UPLOAD_KEY_PASSWORD.
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: versionCode, as in pubspec.yaml after the + (higher than the last upload to Play)
+        required: true
+      build_name:
+        description: versionName, as in pubspec.yaml before the +
+        required: true
+
+jobs:
+  aab:
+    name: signed prod AAB
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: From master only
+        if: github.ref != 'refs/heads/master'
+        run: |
+          echo "Release builds come from master (this run: $GITHUB_REF)." >&2
+          exit 1
+      # As in ci.yaml: the R8 build and native-lib strip can fill the ~14 GB
+      # runner disk.
+      - name: Free runner disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
+            /usr/local/lib/node_modules /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: actions/checkout@v4
+      # Typed twice on purpose: the inputs must equal pubspec's version.
+      - name: The version is pubspec.yaml's
+        env:
+          BUILD_NAME: ${{ inputs.build_name }}
+          BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          V=$(sed -n 's/^version: *\([0-9][0-9.]*+[0-9][0-9]*\) *$/\1/p' pubspec.yaml)
+          [ -n "$V" ] || { echo "pubspec.yaml has no x.y.z+n version" >&2; exit 1; }
+          echo "pubspec: $V; inputs: $BUILD_NAME+$BUILD_NUMBER"
+          [ "$BUILD_NAME+$BUILD_NUMBER" = "$V" ] || { echo "the inputs don't match pubspec.yaml's version" >&2; exit 1; }
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+      # 15 Nov: build 12 was killed twice (exit 143 in bundleProdRelease, then in
+      # verifyNoTrackingDeps' configure). android/gradle.properties asks for
+      # -Xmx8G (for local machines), more than this runner's ~7 GB. The user-home
+      # gradle.properties outranks the project's, so this runner gets a 4G heap.
+      - name: Gradle memory for this runner
+        run: |
+          mkdir -p ~/.gradle
+          printf '%s\n' \
+            'org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError' \
+            'kotlin.daemon.jvmargs=-Xmx1g' >> ~/.gradle/gradle.properties
+          cat ~/.gradle/gradle.properties
+          free -m
+      - name: The upload key (to a temp file)
+        env:
+          KEYSTORE_B64: ${{ secrets.PIGGYBOW_UPLOAD_KEYSTORE_B64 }}
+        run: |
+          test -n "$KEYSTORE_B64" || { echo "PIGGYBOW_UPLOAD_KEYSTORE_B64 is not set" >&2; exit 1; }
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
+          echo "PIGGYBOW_UPLOAD_KEYSTORE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
+      # A fixed clock never reaches a store build (UX, 20 Nov). The app already
+      # ignores FAKE_NOW in the prod flavour (app_config.dart); this is the second
+      # layer: prod.json must not set it, and the build below passes no other defines.
+      - name: No FAKE_NOW, and no define but env/prod.json, in the store build
+        run: |
+          node -e '
+            const j = JSON.parse(require("fs").readFileSync("env/prod.json", "utf8"));
+            if (Object.prototype.hasOwnProperty.call(j, "FAKE_NOW") && j.FAKE_NOW !== "") {
+              console.error("::error::env/prod.json sets FAKE_NOW"); process.exit(1);
+            }
+            console.log("env/prod.json: no FAKE_NOW");'
+          # No define but the file (UX, 20 Nov): every define in the rest of this workflow must
+          # be exactly the prod env file, so no FAKE_NOW, PLUS or any other override can reach a
+          # store build. This step is skipped in the scan (its own text names the pattern).
+          rest=$(awk '/name: No FAKE_NOW, and no define/ { skip = 1; next } skip && /^      - name:/ { skip = 0 } !skip' .github/workflows/release-aab.yaml)
+          found=$(printf '%s\n' "$rest" | grep -o -E -- '--dart-define[^ \\]*' || true)
+          if [ "$found" != "--dart-define-from-file=env/prod.json" ]; then
+            echo "::error::release-aab must take exactly one define, --dart-define-from-file=env/prod.json; found: [$found]"; exit 1
+          fi
+          echo "the only define: $found"
+      - name: Build the AAB
+        env:
+          PIGGYBOW_UPLOAD_STORE_PASSWORD: ${{ secrets.PIGGYBOW_UPLOAD_STORE_PASSWORD }}
+          PIGGYBOW_UPLOAD_KEY_ALIAS: ${{ secrets.PIGGYBOW_UPLOAD_KEY_ALIAS }}
+          PIGGYBOW_UPLOAD_KEY_PASSWORD: ${{ secrets.PIGGYBOW_UPLOAD_KEY_PASSWORD }}
+          BUILD_NAME: ${{ inputs.build_name }}
+          BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]] || { echo "build_number must be digits" >&2; exit 1; }
+          [[ "$BUILD_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "build_name must be x.y.z" >&2; exit 1; }
+          flutter build appbundle --release --flavor prod \
+            --dart-define-from-file=env/prod.json \
+            --build-name="$BUILD_NAME" \
+            --build-number="$BUILD_NUMBER"
+      # No trackers in what ships: the release runtime classpath of :app,
+      # with its full report in the log. Fails the job before upload.
+      # The build's daemon is stopped first, so only one Gradle JVM is alive; a
+      # dependency report needs little heap.
+      - name: No tracking dependencies (verifyNoTrackingDeps)
+        working-directory: android
+        run: |
+          ./gradlew --stop
+          free -m
+          ./gradlew --no-daemon verifyNoTrackingDeps -Dorg.gradle.jvmargs=-Xmx2g
+      - name: Signed with the upload key, not a debug key
+        run: |
+          AAB=build/app/outputs/bundle/prodRelease/app-prod-release.aab
+          keytool -printcert -jarfile "$AAB" > "$RUNNER_TEMP/cert.txt"
+          grep -q 'Owner: CN=Piggybow Upload' "$RUNNER_TEMP/cert.txt" || { cat "$RUNNER_TEMP/cert.txt"; exit 1; }
+          if grep -q 'Android Debug' "$RUNNER_TEMP/cert.txt"; then exit 1; fi
+          grep 'SHA256:' "$RUNNER_TEMP/cert.txt"
+      - name: Permissions = store/play-data-safety.md (android/expected-permissions.txt)
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/bundletool.jar" \
+            https://github.com/google/bundletool/releases/download/1.18.1/bundletool-all-1.18.1.jar
+          AAB=build/app/outputs/bundle/prodRelease/app-prod-release.aab
+          java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest --bundle "$AAB" \
+            --xpath '/manifest/uses-permission/@android:name | /manifest/uses-permission-sdk-23/@android:name' \
+            | sort > permissions.txt
+          echo "== permissions in the AAB"; cat permissions.txt
+          diff <(sort android/expected-permissions.txt) permissions.txt
+      - name: The merged manifest (for the reviewer)
+        run: |
+          java -jar "$RUNNER_TEMP/bundletool.jar" dump manifest \
+            --bundle build/app/outputs/bundle/prodRelease/app-prod-release.aab > merged-manifest.xml
+      # Google Play requires 16 KB page support: every native
+      # library's LOAD segments aligned to >= 16 KB, and the APK Play builds
+      # zip-aligned for 16 KB pages. No sentry-native .so (excluded in gradle).
+      - name: Native libs are 16 KB aligned
+        env:
+          PIGGYBOW_UPLOAD_STORE_PASSWORD: ${{ secrets.PIGGYBOW_UPLOAD_STORE_PASSWORD }}
+          PIGGYBOW_UPLOAD_KEY_ALIAS: ${{ secrets.PIGGYBOW_UPLOAD_KEY_ALIAS }}
+          PIGGYBOW_UPLOAD_KEY_PASSWORD: ${{ secrets.PIGGYBOW_UPLOAD_KEY_PASSWORD }}
+        run: |
+          AAB=build/app/outputs/bundle/prodRelease/app-prod-release.aab
+          mkdir -p "$RUNNER_TEMP/aab"
+          unzip -o -q "$AAB" 'base/lib/*' -d "$RUNNER_TEMP/aab"
+          find "$RUNNER_TEMP/aab" -name '*.so' | sed "s#$RUNNER_TEMP/aab/##" | sort > native-libs.txt
+          echo "== native libs"; cat native-libs.txt
+          if grep -q 'libsentry' native-libs.txt; then echo "sentry-native .so found" >&2; exit 1; fi
+          bad=0
+          for so in $(find "$RUNNER_TEMP/aab" -name '*.so'); do
+            for a in $(readelf -lW "$so" | awk '$1 == "LOAD" {print $NF}'); do
+              if [ $((a)) -lt 16384 ]; then echo "misaligned ($a): $so" >&2; bad=1; fi
+            done
+          done
+          test "$bad" = 0
+          # The universal APK, zip alignment for 16 KB pages.
+          printf '%s' "$PIGGYBOW_UPLOAD_STORE_PASSWORD" > "$RUNNER_TEMP/ks.pass"
+          printf '%s' "$PIGGYBOW_UPLOAD_KEY_PASSWORD" > "$RUNNER_TEMP/key.pass"
+          java -jar "$RUNNER_TEMP/bundletool.jar" build-apks --mode=universal \
+            --bundle "$AAB" --output "$RUNNER_TEMP/universal.apks" \
+            --ks "$PIGGYBOW_UPLOAD_KEYSTORE" --ks-key-alias "$PIGGYBOW_UPLOAD_KEY_ALIAS" \
+            --ks-pass "file:$RUNNER_TEMP/ks.pass" --key-pass "file:$RUNNER_TEMP/key.pass"
+          rm -f "$RUNNER_TEMP/ks.pass" "$RUNNER_TEMP/key.pass"
+          unzip -o -q "$RUNNER_TEMP/universal.apks" universal.apk -d "$RUNNER_TEMP"
+          ZIPALIGN="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/zipalign"
+          "$ZIPALIGN" -c -P 16 -v 4 "$RUNNER_TEMP/universal.apk" | tail -20
+      # aapt2 on the APK Play builds from this AAB: the package, versionCode and
+      # versionName are what pubspec says, before anyone uploads it.
+      - name: aapt2 badging = pubspec
+        env:
+          BUILD_NAME: ${{ inputs.build_name }}
+          BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          AAPT2="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/aapt2"
+          "$AAPT2" dump badging "$RUNNER_TEMP/universal.apk" > badging.txt
+          head -1 badging.txt
+          want="package: name='com.burrowsoft.piggybow' versionCode='$BUILD_NUMBER' versionName='$BUILD_NAME'"
+          case "$(head -1 badging.txt)" in "$want"*) ;; *) echo "badging isn't: $want" >&2; exit 1 ;; esac
+      # R8 wrote its mapping (Play Console's deobfuscation): checked here; it
+      # stays in the run, not in an artifact.
+      - name: The R8 mapping (for Play Console's deobfuscation)
+        run: |
+          M=build/app/outputs/mapping/prodRelease/mapping.txt
+          test -s "$M" || { echo "no R8 mapping at $M" >&2; exit 1; }
+          echo "mapping.txt: $(wc -c < "$M") bytes"
+      # The one artifact any workflow keeps (the repo is public): the AAB for the
+      # owner's upload, for 3 days. The reports above stay in the log; the
+      # universal APK and the mapping are never uploaded.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: piggybow-prod-release-aab-${{ inputs.build_name }}-${{ inputs.build_number }}
+          path: build/app/outputs/bundle/prodRelease/app-prod-release.aab
+          if-no-files-found: error
+          retention-days: 3
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/upload.jks" "$RUNNER_TEMP/ks.pass" "$RUNNER_TEMP/key.pass"

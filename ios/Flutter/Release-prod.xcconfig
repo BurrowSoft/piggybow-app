@@ -1,0 +1,7 @@
+// Flavor "prod", Release (generated with the flavors; keep in step with
+// android/app/build.gradle.kts productFlavors and test/ios_flavors_test.dart).
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release-prod.xcconfig"
+#include "Generated.xcconfig"
+PRODUCT_BUNDLE_IDENTIFIER = com.burrowsoft.piggybow
+APP_DISPLAY_NAME = Piggybow
+DEVELOPMENT_TEAM = MWHGM7ZHML
