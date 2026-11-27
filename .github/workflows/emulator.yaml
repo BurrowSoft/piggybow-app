@@ -245,6 +245,11 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$OUT"
+          # Artifact paths can't hold " : < > | * ? (Maestro names its folders
+          # after the flows, quotes and all): those become _, deepest first.
+          find "$OUT" -depth -name '*[":<>|*?]*' -print0 | while IFS= read -r -d '' p; do
+            mv -- "$p" "$(dirname "$p")/$(basename "$p" | tr '":<>|*?' '_______')"
+          done
           bad=$(find "$OUT" -type f \( -iname '*.apk' -o -iname '*.aab' -o -iname '*.apks' \
             -o -iname '*.ipa' -o -iname '*.dex' -o -iname '*.jar' -o -iname '*.so' -o -iname '*.zip' \))
           if [ -n "$bad" ]; then echo "::error::installable files in the evidence:"; echo "$bad"; exit 1; fi
