@@ -233,7 +233,11 @@ class _HappyScreenState extends State<HappyScreen> {
                       _planTooBig = false;
                     }),
                     decoration: InputDecoration(
-                      labelText: l10n.happyPlanField,
+                      // One line, whole: smaller only if it must.
+                      label: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(l10n.happyPlanField),
+                      ),
                       errorText: planError,
                       errorMaxLines: 3,
                     ),
