@@ -1,3 +1,7 @@
+// Goldens: A2, A5 and B1 at 320 dp ×2 (decision 44).
+@Tags(['golden'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/features/add/entry_sheet.dart';
@@ -137,6 +141,18 @@ void main() {
         await tester.enterId('add-note', note80);
         await tester.pumpAndSettle();
         await checkSheet(tester, 'A2');
+        if (c.takesGolden) {
+          // The top (amount, preview, categories) and the end (the feeling,
+          // the 80-character note, Add).
+          await expectLayoutGoldens(
+            tester,
+            c,
+            sheetList(),
+            screen: 'add-sheet',
+            state: 'spent-full',
+            stateId: 'A2',
+          );
+        }
       },
     );
 
@@ -179,6 +195,17 @@ void main() {
       expect(find.text('Goes to $goal40'), findsOneWidget);
       await tester.enterId('add-amount', '9999999999.99');
       await checkSheet(tester, 'A5');
+      if (c.takesGolden) {
+        // The end too, only if the sheet scrolls at all.
+        await expectLayoutGoldens(
+          tester,
+          c,
+          sheetList(),
+          screen: 'add-sheet',
+          state: 'saved-goal',
+          stateId: 'A5',
+        );
+      }
     });
 
     testWidgets('A6 a save with no goal ($c)', (tester) async {
@@ -203,6 +230,15 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Delete this entry?'), findsOneWidget);
       await expectSoundLayout(tester, reason: 'B1');
+      if (c.takesGolden) {
+        await expectLayoutGolden(
+          tester,
+          c,
+          screen: 'delete-dialog',
+          state: 'confirm',
+          stateId: 'B1',
+        );
+      }
     });
   }
 }

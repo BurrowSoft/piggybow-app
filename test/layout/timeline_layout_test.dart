@@ -1,3 +1,8 @@
+// Goldens: C1 and C2 at 320 dp ×2 (decision 44). Their tab bar, with
+// Timeline selected, is D1's golden.
+@Tags(['golden'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/journal/category.dart';
@@ -140,6 +145,15 @@ void main() {
       await open(tester, c);
       expect(find.text('Nothing here yet'), findsOneWidget);
       await expectSoundLayout(tester, reason: 'C1');
+      if (c.takesGolden) {
+        await expectLayoutGolden(
+          tester,
+          c,
+          screen: 'timeline',
+          state: 'empty',
+          stateId: 'C1',
+        );
+      }
     });
 
     testWidgets('C2 three days with the stress data ($c)', (tester) async {
@@ -157,6 +171,20 @@ void main() {
         findsOneWidget,
         reason: 'the ended goal, at the bottom',
       );
+      if (c.takesGolden) {
+        // The top (Today) and the end (the ended goal's "Saved for").
+        await expectLayoutGoldens(
+          tester,
+          c,
+          find.descendant(
+            of: find.byType(ListView),
+            matching: find.byType(Scrollable),
+          ),
+          screen: 'timeline',
+          state: 'full',
+          stateId: 'C2',
+        );
+      }
     });
 
     testWidgets('C3 / C4 the Spent and Saved filters ($c)', (tester) async {

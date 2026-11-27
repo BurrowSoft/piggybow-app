@@ -118,7 +118,8 @@ List<String> goldenRuleProblems(Map<String, String> files) {
     if (!e.value.contains("@Tags(['golden'])")) {
       problems.add("${e.key}: calls expectGolden without @Tags(['golden'])");
     }
-    if (!e.value.contains('loadAppFonts(')) {
+    // Called, or passed as in setUpAll(loadAppFonts).
+    if (!RegExp(r'\bloadAppFonts\b').hasMatch(e.value)) {
       problems.add('${e.key}: calls expectGolden without loadAppFonts()');
     }
   }
@@ -181,12 +182,17 @@ void main() {
         'test/e_test.dart': 'loadAppFonts();\nexpectLayoutGolden(t,',
         'test/layout/layout_matrix.dart': '=> expectGolden(t, f,',
         'test/f_test.dart': '// expectedGoldenCount, not a call',
+        'test/g_test.dart':
+            "@Tags(['golden'])\nsetUpAll(loadAppFonts);\nexpectLayoutGolden(t,",
+        'test/h_test.dart':
+            "@Tags(['golden'])\nloadAppFontsLater();\nexpectGolden(t,",
       }),
       [
         'test/a_test.dart: calls $direct directly, not expectGolden',
         "test/c_test.dart: calls expectGolden without @Tags(['golden'])",
         'test/d_test.dart: calls expectGolden without loadAppFonts()',
         "test/e_test.dart: calls expectGolden without @Tags(['golden'])",
+        'test/h_test.dart: calls expectGolden without loadAppFonts()',
       ],
     );
   });

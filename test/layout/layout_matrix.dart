@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../helpers/goldens.dart';
+
 /// The layout matrix (plan §0.3, decision 43): every state runs at 320 and
 /// 360 dp, text ×1 and ×2, light and dark (through the app's own setting).
 class LayoutCase {
@@ -145,4 +147,79 @@ TextPainter? _painterOf(RenderParagraph p) {
     textHeightBehavior: p.textHeightBehavior,
     ellipsis: p.overflow == TextOverflow.ellipsis ? '…' : null,
   )..layout(maxWidth: p.softWrap ? p.size.width + 0.5 : double.infinity);
+}
+
+/// Goldens (decision 44) are taken in two of the matrix's cases: 320 dp at
+/// text ×2, light and dark.
+extension LayoutGolden on LayoutCase {
+  bool get takesGolden => width == 320 && textScale == 2;
+}
+
+/// The whole screen as a golden, named for [c] (call it only when
+/// [LayoutGolden.takesGolden]); [stateId] is the state's id in PB Mobile
+/// Tester's list. The file that calls it is tagged golden.
+Future<void> expectLayoutGolden(
+  WidgetTester tester,
+  LayoutCase c, {
+  required String screen,
+  required String state,
+  required String stateId,
+}) {
+  if (!c.takesGolden) {
+    throw ArgumentError.value(c, 'c', 'goldens are taken at 320 dp ×2 only');
+  }
+  return expectGolden(
+    tester,
+    find.byType(MaterialApp),
+    screen: screen,
+    state: state,
+    stateId: stateId,
+    brightness: c.brightness,
+    width: c.width.toInt(),
+    textScale: c.textScale.toInt(),
+  );
+}
+
+/// Takes the focus away (no caret in a golden), and scrolls [scrollable] to
+/// its top or its end. Returns how far it can scroll.
+Future<double> settleForGolden(
+  WidgetTester tester,
+  Finder scrollable, {
+  required bool end,
+}) async {
+  FocusManager.instance.primaryFocus?.unfocus();
+  await tester.pumpAndSettle();
+  final position = tester.state<ScrollableState>(scrollable).position;
+  position.jumpTo(end ? position.maxScrollExtent : 0);
+  await tester.pumpAndSettle();
+  return position.maxScrollExtent;
+}
+
+/// A screen that scrolls, as goldens: its top as [state], and, when
+/// [scrollable] can scroll at all, its end as "[state]-end".
+Future<void> expectLayoutGoldens(
+  WidgetTester tester,
+  LayoutCase c,
+  Finder scrollable, {
+  required String screen,
+  required String state,
+  required String stateId,
+}) async {
+  final scrolls = await settleForGolden(tester, scrollable, end: false);
+  await expectLayoutGolden(
+    tester,
+    c,
+    screen: screen,
+    state: state,
+    stateId: stateId,
+  );
+  if (scrolls <= 0) return;
+  await settleForGolden(tester, scrollable, end: true);
+  await expectLayoutGolden(
+    tester,
+    c,
+    screen: screen,
+    state: '$state-end',
+    stateId: stateId,
+  );
 }
