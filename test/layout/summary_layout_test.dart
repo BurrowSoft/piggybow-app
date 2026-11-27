@@ -1,4 +1,5 @@
-// Goldens: SW1, SW9, SW0 and SM1 at 320 dp ×2 (decision 44).
+// Goldens: SW1, SW9, SW0 and SM1 at 360 dp ×1 (light, dark) and 320 dp ×2
+// (light), decision 44.
 @Tags(['golden'])
 library;
 
@@ -143,15 +144,21 @@ void main() {
     }
   }
 
-  /// The whole Summary as a golden in the 320 dp ×2 cases (decision 44),
-  /// named by PB Mobile Tester's ids: top, and its end if it scrolls.
+  /// The cases Summary's goldens are taken in (PB UX & PM's look): 360 dp at
+  /// text ×1, light and dark, and 320 dp at ×2, light.
+  bool summaryGolden(LayoutCase c) =>
+      (c.width == 360 && c.textScale == 1) ||
+      (c.width == 320 && c.textScale == 2 && c.brightness == Brightness.light);
+
+  /// The whole Summary as a golden (decision 44), named by PB Mobile
+  /// Tester's ids: top, and its end if it scrolls.
   Future<void> golden(
     WidgetTester tester,
     LayoutCase c,
     String state,
     String stateId,
   ) async {
-    if (!c.takesGolden) return;
+    if (!summaryGolden(c)) return;
     await expectLayoutGoldens(
       tester,
       c,
