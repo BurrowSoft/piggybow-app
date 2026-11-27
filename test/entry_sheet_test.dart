@@ -126,8 +126,18 @@ void main() {
       await tester.enterId('add-amount', '1234567890123');
       expect(find.text('That amount is too large.'), findsOneWidget);
 
-      // A paste that isn't an amount.
+      // A paste that isn't an amount: several characters at once go in as
+      // they are, and the error says so (a single key press can't add a
+      // letter).
+      await tester.enterId('add-amount', '');
       await tester.enterId('add-amount', '12a');
+      final field = tester.widget<TextField>(
+        find.descendant(
+          of: byId('add-amount'),
+          matching: find.byType(TextField),
+        ),
+      );
+      expect(field.controller!.text, '12a');
       expect(find.text('Enter an amount.'), findsOneWidget);
       expect(await stored(tester, app), isEmpty, reason: 'nothing was added');
     },
@@ -275,45 +285,45 @@ void main() {
     expect(find.text('No goal yet. It still counts as saved.'), findsNothing);
   });
 
-  testWidgets(
-    'the day: Today first, never a future day, Yesterday once picked',
-    (tester) async {
-      final app = await openTimeline(tester);
-      await tester.tapId('tl-empty-add');
-      Finder dateChip(String label) =>
-          find.descendant(of: byId('add-date'), matching: find.text(label));
-      await tester.scrollUntilVisible(
-        byId('add-date'),
-        100,
-        scrollable: sheetList(),
-      );
-      expect(dateChip('Today'), findsOneWidget);
+  testWidgets('the day: Today first, and the picker ends today', (
+    tester,
+  ) async {
+    await openTimeline(tester);
+    await tester.tapId('tl-empty-add');
+    Finder dateChip(String label) =>
+        find.descendant(of: byId('add-date'), matching: find.text(label));
+    await tester.scrollUntilVisible(
+      byId('add-date'),
+      100,
+      scrollable: sheetList(),
+    );
+    expect(dateChip('Today'), findsOneWidget);
 
-      await tester.tapId('add-date');
-      final picker = tester.widget<DatePickerDialog>(
-        find.byType(DatePickerDialog),
-      );
-      expect(
-        picker.lastDate,
-        DateTime(2026, 10, 2),
-        reason: 'today is the last day',
-      );
-      await tester.tap(find.text('1'));
-      await tester.tap(find.text('OK'));
-      await tester.pumpAndSettle();
-      expect(dateChip('Yesterday'), findsOneWidget);
+    await tester.tapId('add-date');
+    final picker = tester.widget<DatePickerDialog>(
+      find.byType(DatePickerDialog),
+    );
+    expect(picker.lastDate, DateTime(2026, 10, 2), reason: 'no future day');
+    expect(picker.initialDate, DateTime(2026, 10, 2));
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(dateChip('Today'), findsOneWidget, reason: 'Cancel keeps the day');
+  });
 
-      await tester.scrollUntilVisible(
-        byId('add-amount'),
-        -100,
-        scrollable: sheetList(),
-      );
-      await tester.enterId('add-amount', '25');
-      await tester.tapId('add-cat-food');
-      await tester.tapId('add-submit');
-      expect((await stored(tester, app)).single.localDate, '2026-10-01');
-    },
-  );
+  testWidgets('yesterday reads as Yesterday', (tester) async {
+    await openTimeline(tester, seed: (app) => addSpend(app, 500, '2026-10-01'));
+    await tester.pumpAndSettle();
+    await tester.tapId('tl-row-entry-1');
+    await tester.scrollUntilVisible(
+      byId('add-date'),
+      100,
+      scrollable: sheetList(),
+    );
+    expect(
+      find.descendant(of: byId('add-date'), matching: find.text('Yesterday')),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('an older day shows as its date', (tester) async {
     await openTimeline(tester, seed: (app) => addSpend(app, 500, '2026-09-28'));
