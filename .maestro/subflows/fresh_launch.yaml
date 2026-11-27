@@ -1,5 +1,6 @@
 # A clean install state and first launch. The seed shows start-screen while
 # the session starts, then the tabs; from PR 4 on, onboarding (onb-start).
+# Another app's ANR dialog (seen on CI emulators) is dismissed first.
 appId: ${APP_ID}
 ---
 - launchApp:
@@ -9,5 +10,10 @@ appId: ${APP_ID}
       notifications: deny   # the reminder flows (PR 5) override this
 - extendedWaitUntil:
     visible:
-      id: "onb-start|tab-home|tab-timeline|start-error"   # id matching is a regex
-    timeout: 120000                                       # a debug cold start on a CI emulator can be slow
+      id: "onb-start|tab-home|tab-timeline|start-error|android:id/aerr_wait"   # id matching is a regex
+    timeout: 120000                                                           # a debug cold start on a CI emulator can be slow
+- runFlow: dismiss_system_anr.yaml
+- extendedWaitUntil:
+    visible:
+      id: "onb-start|tab-home|tab-timeline|start-error"
+    timeout: 60000

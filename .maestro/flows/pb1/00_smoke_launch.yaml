@@ -26,6 +26,7 @@ tags: [pb1, smoke]
       id: tab-home
     timeout: 30000
 # The screen walk: every tab, one screenshot each (each looked at by the tester)
+- runFlow: ../../subflows/dismiss_system_anr.yaml
 - tapOn:
     id: tab-timeline
 - takeScreenshot: 00-tab-timeline
@@ -43,7 +44,9 @@ tags: [pb1, smoke]
     visible: "piggybow-smoke-never-shown-7f3c"
     timeout: 60000
     optional: true
+# Piggybow's own crash or ANR dialog fails the flow; another app's ANR is dismissed
+- assertNotVisible: ".*Piggybow.*(keeps stopping|has stopped|isn.t responding).*"
+- runFlow: ../../subflows/dismiss_system_anr.yaml
 - assertVisible:
     id: tab-home                        # still on screen: no crash, no restart
-- assertNotVisible: ".*(keeps stopping|has stopped|isn.t responding).*"
 - takeScreenshot: 00-after-60s
