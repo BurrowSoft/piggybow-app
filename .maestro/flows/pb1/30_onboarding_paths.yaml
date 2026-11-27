@@ -14,10 +14,11 @@ tags: [pb1, onboarding]
 - assertVisible:
     id: currency-USD                # the device's currency first
 - takeScreenshot: 30-o1-currency-picker
-- runFlow:
-    file: ../../subflows/reveal.yaml
-    env:
-      ID: currency-THB
+- scrollUntilVisible:              # Thai baht is near the end of 33 rows: allow several scrolls
+    element:
+      id: currency-THB
+    direction: DOWN
+    timeout: 20000
 - tapOn:
     id: currency-THB
 - assertVisible:
