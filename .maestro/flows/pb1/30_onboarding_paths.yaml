@@ -1,0 +1,82 @@
+appId: ${APP_ID}
+name: PR 4 onboarding - currency from the device then changed, both O2 errors, the plan field, O3 validation, Maybe later; no permission prompt; no second onboarding
+tags: [pb1, onboarding]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- waitForAnimationToEnd
+- takeScreenshot: 30-o1-welcome
+# O1: the device's currency (a CI emulator in en-US -> US dollar), then change it
+- assertVisible:
+    id: onb-currency                # O1's "Amounts in …" line (id from #27's next push)
+    text: ".*Amounts in US dollar.*"
+- tapOn:
+    id: onb-currency-change
+- assertVisible:
+    id: currency-USD                # the device's currency first
+- takeScreenshot: 30-o1-currency-picker
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: currency-THB
+- tapOn:
+    id: currency-THB
+- assertVisible:
+    id: onb-currency                # O1's "Amounts in …" line (id from #27's next push)
+    text: ".*Amounts in Thai baht.*"
+- tapOn:
+    id: onb-start
+# O2: Continue stays enabled; nothing picked -> "Pick at least one."
+- tapOn:
+    id: onb-continue
+- assertVisible: ".*Pick at least one\\..*"
+# The plan pick reveals its field; no amount -> "Enter your weekly plan."
+- assertNotVisible:
+    id: onb-plan
+- tapOn:
+    id: onb-pick-plan
+- assertVisible:
+    id: onb-plan
+- tapOn:
+    id: onb-continue
+- assertVisible: ".*Enter your weekly plan\\..*"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: onb-plan
+      TEXT: "2000"
+      EXPECT: ".*2000.*"
+- tapOn:
+    id: onb-pick-save
+- takeScreenshot: 30-o2-plan-field          # plan picked with its amount, save picked
+- tapOn:
+    id: onb-continue
+- extendedWaitUntil:
+    visible:
+      id: onb-goal-start
+    timeout: 10000
+- takeScreenshot: 30-o3-empty
+# O3: Start my rainbow with empty fields -> both errors; then Maybe later
+- tapOn:
+    id: onb-goal-start
+- assertVisible: ".*Give your goal a name\\..*"
+- assertVisible: ".*Enter a goal amount\\..*"
+- takeScreenshot: 30-o3-errors
+- tapOn:
+    id: onb-goal-later
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 10000
+- waitForAnimationToEnd
+- takeScreenshot: 30-home-after-maybe-later
+# No notification permission prompt at any point of onboarding (spec §3.1)
+- assertNotVisible: ".*[Aa]llow.*to send you notifications.*"
+# Onboarding happens once
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 20000
+- assertNotVisible:
+    id: onb-start
