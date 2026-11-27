@@ -67,6 +67,8 @@ jobs:
         run: dart run tool/check_l10n.dart
       - name: no hard-coded user-facing text
         run: dart run tool/check_hardcoded_text.dart
+      - name: no-guilt copy (banned phrases in app_en.arb)
+        run: dart run tool/no_guilt.dart
       - name: l10n untranslated messages
         run: |
           flutter gen-l10n
