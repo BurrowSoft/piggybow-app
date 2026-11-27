@@ -24,3 +24,5 @@ appId: ${APP_ID}
     visible:
       id: "onb-start|tab-home|tab-timeline|start-error"
     timeout: 60000
+- assertNotVisible:
+    id: start-error                     # the start failed (or took over ~10 s): fail here, plainly
