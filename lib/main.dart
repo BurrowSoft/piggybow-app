@@ -126,6 +126,7 @@ Future<void> main() async {
     reminders: PlatformReminderScheduler(),
     notifications: const PlatformNotificationPermission(),
     appLock: appLock,
+    onboarded: await journal.onboarded(),
   );
   // The pig's reaction to an Add lasts until the app goes to the background.
   AppLifecycleListener(onHide: () => services.lastAdd.value = null);
@@ -134,7 +135,11 @@ Future<void> main() async {
     config: config,
     session: session,
     services: services,
-    router: buildRouter(session: session, observers: observers),
+    router: buildRouter(
+      session: session,
+      observers: observers,
+      onboarded: services.onboarded,
+    ),
   );
 
   // Without a DSN (dev, CI, tests, and v0.1 so far) Sentry stays off entirely.

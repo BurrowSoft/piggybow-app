@@ -98,6 +98,16 @@ class JournalStore extends ChangeNotifier {
       !await _settings.record('picks').exists(_db) &&
       !await _settings.record('plan_minor').exists(_db);
 
+  /// Whether onboarding (plan §3.1) was finished; Delete everything erases
+  /// it with the rest.
+  Future<bool> onboarded() async =>
+      await _settings.record('onboarded').get(_db) == true;
+
+  Future<void> setOnboarded() async {
+    await _settings.record('onboarded').put(_db, true);
+    notifyListeners();
+  }
+
   /// Whether the reminder offer on Home was answered (it shows once).
   Future<bool> reminderOfferAnswered() async =>
       await _settings.record('reminder_offer').get(_db) == true;

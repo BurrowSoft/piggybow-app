@@ -129,6 +129,8 @@ class LaunchFixture {
           "notes. Clear the app's data, then launch again.";
     }
     await write(store, clock);
+    // Straight to Home: onboarding doesn't intercept a fixture's launch.
+    await store.setOnboarded();
     clock.now = now;
     return null;
   }

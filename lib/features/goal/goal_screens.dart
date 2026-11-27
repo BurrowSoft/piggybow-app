@@ -22,12 +22,17 @@ import 'rainbow.dart';
 const goalNameMax = 40;
 
 /// Create a goal, or edit one (plan §3.4): what for, the amount, what's
-/// already saved.
+/// already saved. In onboarding it is O3 (plan §3.1), the optional first
+/// goal: "Start my rainbow" saves it and "Maybe later" doesn't; both end
+/// onboarding, and the router goes Home.
 class GoalEditScreen extends StatefulWidget {
-  const GoalEditScreen({super.key, this.goalId});
+  const GoalEditScreen({super.key, this.goalId, this.onboarding = false});
 
   /// The goal to edit; null to create one.
   final String? goalId;
+
+  /// Onboarding's O3 rather than the goal form.
+  final bool onboarding;
 
   @override
   State<GoalEditScreen> createState() => _GoalEditScreenState();
@@ -143,7 +148,25 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
             updatedAt: now,
           );
     await services.journal.putGoal(goal);
-    if (mounted) context.pop();
+    if (widget.onboarding) {
+      await _finishOnboarding(services);
+    } else if (mounted) {
+      context.pop();
+    }
+  }
+
+  /// O3's two buttons end onboarding: the journal's flag, then the router
+  /// takes the person Home.
+  Future<void> _finishOnboarding(AppServices services) async {
+    await services.journal.setOnboarded();
+    services.onboarded.value = true;
+  }
+
+  Future<void> _later() async {
+    if (_busy) return;
+    final services = context.services;
+    setState(() => _busy = true);
+    await _finishOnboarding(services);
   }
 
   @override
@@ -151,20 +174,31 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
     final l10n = AppLocalizations.of(context);
     final currency = _currency;
     final editing = widget.goalId != null;
+    final onboarding = widget.onboarding;
+    final theme = Theme.of(context);
     return TestId.container(
-      'goal-edit-screen',
+      onboarding ? 'onb-goal' : 'goal-edit-screen',
       child: Scaffold(
-        appBar: AppBar(title: Text(l10n.goalTitle)),
+        appBar: AppBar(title: onboarding ? null : Text(l10n.goalTitle)),
         body: currency == null
             ? const SizedBox.shrink()
             : ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
+                  if (onboarding) ...[
+                    Text(
+                      l10n.onbGoalTitle,
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(l10n.onbGoalBody, style: theme.textTheme.bodyLarge),
+                    const SizedBox(height: 16),
+                  ],
                   TestId(
                     'goal-name',
                     child: TextField(
                       controller: _name,
-                      autofocus: !editing,
+                      autofocus: !editing && !onboarding,
                       textCapitalization: TextCapitalization.sentences,
                       maxLength: goalNameMax,
                       style: context.inputText,
@@ -218,13 +252,34 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                   ),
                   const SizedBox(height: 24),
                   TestId(
-                    'goal-submit',
+                    onboarding ? 'onb-goal-start' : 'goal-submit',
                     button: true,
                     child: FilledButton(
                       onPressed: _busy ? null : _submit,
-                      child: Text(editing ? l10n.goalSave : l10n.goalCreate),
+                      child: Text(
+                        onboarding
+                            ? l10n.onbGoalStart
+                            : editing
+                            ? l10n.goalSave
+                            : l10n.goalCreate,
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   ),
+                  if (onboarding) ...[
+                    const SizedBox(height: 8),
+                    TestId(
+                      'onb-goal-later',
+                      button: true,
+                      child: TextButton(
+                        onPressed: _busy ? null : _later,
+                        child: Text(
+                          l10n.onbGoalLater,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
       ),

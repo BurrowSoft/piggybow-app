@@ -244,6 +244,11 @@ void main() {
         null,
       ]);
       expect(f.clock.nowUtc(), DateTime.utc(2026, 12, 2, 5));
+      expect(
+        await store.onboarded(),
+        isTrue,
+        reason: 'straight to Home, past onboarding',
+      );
     });
 
     test("every case: an active goal's card shows the bands it stamped", () async {

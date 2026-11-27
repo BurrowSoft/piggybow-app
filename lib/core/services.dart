@@ -24,7 +24,8 @@ class AppServices {
     this.plus,
     this.plusStore,
     this.stagingTestError = stagingToolsEnabled ? throwStagingTestError : null,
-  });
+    bool onboarded = true,
+  }) : onboarded = ValueNotifier(onboarded);
 
   final Clock clock;
 
@@ -43,6 +44,10 @@ class AppServices {
   /// What was just added, for the pig's reaction (plan §4.4): set after an
   /// Add, cleared when the app goes to the background.
   final lastAdd = ValueNotifier<PigReaction?>(null);
+
+  /// Whether onboarding is done (the journal's flag, read at start): the
+  /// router shows onboarding until it is, and never after.
+  final ValueNotifier<bool> onboarded;
 
   /// App lock; null when APP_LOCK_ENABLED is off.
   final AppLock? appLock;

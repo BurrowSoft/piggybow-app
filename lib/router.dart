@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'core/semantics_id.dart';
 import 'features/goal/goal_screens.dart';
 import 'features/home/home_screen.dart';
+import 'features/onboarding/onboarding_screens.dart';
 import 'features/shell/home_shell.dart';
 import 'features/start/start_screen.dart';
 import 'features/timeline/timeline_screen.dart';
@@ -33,6 +34,26 @@ enum AppTab {
   );
 }
 
+/// Onboarding (plan §3.1), on the first open only: O1 Welcome, O2 "What
+/// makes your pig happy?" and O3, the optional first goal.
+abstract final class OnboardingRoutes {
+  static const welcome = '/onboarding';
+  static const happy = '/onboarding/happy';
+  static const goal = '/onboarding/goal';
+
+  static bool contains(String location) =>
+      location == welcome || location.startsWith('$welcome/');
+}
+
+/// Where [location] leads while onboarding is [done] or not: everywhere
+/// leads to it until it is, and nowhere leads back to it after.
+String onboardingGate(String location, {required bool done}) {
+  final inOnboarding = OnboardingRoutes.contains(location);
+  if (!done && !inOnboarding) return OnboardingRoutes.welcome;
+  if (done && inOnboarding) return Routes.home;
+  return location;
+}
+
 /// The goal screens, over the tabs (they belong to Home).
 abstract final class GoalRoutes {
   static const create = '/home/goal/new';
@@ -45,7 +66,9 @@ GoRouter buildRouter({
   required AppSession session,
   String initialLocation = Routes.home,
   List<NavigatorObserver> observers = const [],
+  ValueListenable<bool>? onboarded,
 }) {
+  final done = onboarded ?? ValueNotifier(true);
   GoRoute page(String path, Widget child) => GoRoute(
     path: path,
     pageBuilder: (context, state) =>
@@ -70,7 +93,7 @@ GoRouter buildRouter({
     navigatorKey: root,
     initialLocation: initialLocation,
     observers: observers,
-    refreshListenable: session,
+    refreshListenable: Listenable.merge([session, done]),
     // A location no route matches never shows go_router's debug page: Home,
     // where the usual rules apply.
     onException: (context, state, router) => router.go(Routes.home),
@@ -78,14 +101,38 @@ GoRouter buildRouter({
       final location = state.matchedLocation;
       final known =
           AppTab.values.any((t) => t.matches(location)) ||
-          location == Routes.start;
+          location == Routes.start ||
+          OnboardingRoutes.contains(location);
       // Anything unknown is treated as Home; never a raw "not found" page.
       final target = known ? location : Routes.home;
-      if (target != location) return session.redirect(target) ?? target;
-      return session.redirect(target);
+      final next = session.redirect(target) ?? target;
+      // While the start screen restores, it stays; then onboarding until
+      // it is done (plan §3.1).
+      final gated = next == Routes.start
+          ? next
+          : onboardingGate(next, done: done.value);
+      return gated == location ? null : gated;
     },
     routes: [
       page(Routes.start, const StartScreen()),
+      GoRoute(
+        path: OnboardingRoutes.welcome,
+        builder: (context, state) =>
+            const ScaffoldMessenger(child: WelcomeScreen()),
+        routes: [
+          GoRoute(
+            path: 'happy',
+            builder: (context, state) =>
+                const ScaffoldMessenger(child: HappyScreen()),
+          ),
+          GoRoute(
+            path: 'goal',
+            builder: (context, state) => const ScaffoldMessenger(
+              child: GoalEditScreen(onboarding: true),
+            ),
+          ),
+        ],
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(shell: shell),
         branches: [

@@ -96,6 +96,7 @@ class TestApp {
     this.shippedLocales = const ['en'],
     this.appLock,
     this.currency = 'THB',
+    this.onboarded = true,
     Clock? clock,
   }) : clock = clock ?? testClock,
        prefs = MemoryLocalPrefs(
@@ -122,6 +123,9 @@ class TestApp {
   /// The journal's currency.
   final String currency;
 
+  /// Whether onboarding is done: tests start on Home unless they say not.
+  final bool onboarded;
+
   late final DeviceBackend backend;
   late final AppSession session;
 
@@ -138,6 +142,7 @@ class TestApp {
     notifications: notifications,
     appLock: appLock,
     stagingTestError: () => stagingErrors++,
+    onboarded: onboarded,
   );
 
   /// Opens the journal and today (call before adding test data; [pump]
@@ -150,6 +155,7 @@ class TestApp {
       newId: () => 'entry-${++_ids}',
     );
     await journal.setCurrency(currency);
+    if (onboarded) await journal.setOnboarded();
     localDay = LocalDay(clock: clock, device: device);
     await localDay.refresh();
   }
@@ -188,6 +194,7 @@ class TestApp {
         router: buildRouter(
           session: session,
           initialLocation: location ?? Routes.home,
+          onboarded: services.onboarded,
         ),
       ),
     );
