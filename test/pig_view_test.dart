@@ -144,6 +144,14 @@ void main() {
     semantics.dispose();
   });
 
+  testWidgets('a file that fails to decode never stops the app from starting', (
+    tester,
+  ) async {
+    await tester.runAsync(
+      () => precacheSvgs(['assets/pig/no-such-pig.svg', pigAsset(PigMood.calm)]),
+    );
+  });
+
   testWidgets('the four pigs are decoded before the first frame', (
     tester,
   ) async {

@@ -12,10 +12,25 @@ String pigAsset(PigMood mood) => 'assets/pig/pig-${mood.name}.svg';
 /// Decodes the four pigs into flutter_svg's cache before the first frame
 /// (main awaits it before runApp), so Home draws its pig straight away
 /// instead of leaving its place blank until the file is decoded.
-Future<void> precachePigs() => Future.wait([
-  for (final mood in PigMood.values)
-    SvgAssetLoader(pigAsset(mood)).loadBytes(null),
+Future<void> precachePigs() => precacheSvgs([
+  for (final mood in PigMood.values) pigAsset(mood),
 ]);
+
+/// Decodes [assets] into flutter_svg's cache. Startup never waits on it
+/// for long, and never fails on it: a file that doesn't decode, or one
+/// still decoding after [limit], simply shows when it's ready.
+Future<void> precacheSvgs(
+  Iterable<String> assets, {
+  Duration limit = const Duration(seconds: 2),
+}) async {
+  try {
+    await Future.wait([
+      for (final asset in assets) SvgAssetLoader(asset).loadBytes(null),
+    ]).timeout(limit);
+  } on Object {
+    // The app runs anyway.
+  }
+}
 
 /// The pig (plan §4.1), front-facing, in one of its four moods. Decorative:
 /// its line is in text beside it. Delighted hops once when it arrives,
