@@ -574,7 +574,8 @@ class _GoalDoneScreenState extends State<GoalDoneScreen> {
                       style: theme.textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    // The amount stays whole: smaller only if it must be.
+                    WholeWordsText(
                       l10n.goalDoneBody(
                         goal.name,
                         formatMoney(goal.targetMinor, _currency, locale),

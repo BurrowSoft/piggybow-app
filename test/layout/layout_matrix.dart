@@ -61,6 +61,19 @@ Future<void> expectSoundLayout(WidgetTester tester, {String? reason}) async {
 
 final _wordChar = RegExp(r'[\p{L}\p{N}]', unicode: true);
 
+/// What a formatted amount is made of: digits, its separators, its symbol.
+final _amountChar = RegExp(r'[\p{N}\p{Sc},.]', unicode: true);
+final _digit = RegExp(r'\p{N}', unicode: true);
+
+/// Whether a soft line break between [before] and [after] splits a word or
+/// an amount: letters or digits on both sides, or an amount's characters on
+/// both sides with a digit next to the break ("$9" | ",999").
+bool splitsAWord(String before, String after) =>
+    (_wordChar.hasMatch(before) && _wordChar.hasMatch(after)) ||
+    (_amountChar.hasMatch(before) &&
+        _amountChar.hasMatch(after) &&
+        (_digit.hasMatch(before) || _digit.hasMatch(after)));
+
 bool _isThai(String text) => text.runes.any((r) => r >= 0x0E00 && r <= 0x0E7F);
 
 /// Every soft line break on screen falls between words: never with a letter
@@ -89,7 +102,7 @@ void expectWholeWords(WidgetTester tester, {String? reason}) {
       final before = text[line.end - 1];
       final after = text[line.end];
       expect(
-        _wordChar.hasMatch(before) && _wordChar.hasMatch(after),
+        splitsAWord(before, after),
         isFalse,
         reason:
             'a word broken after "${text.substring(line.start, line.end)}" in "$text" ($reason)',
