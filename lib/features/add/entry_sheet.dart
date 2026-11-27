@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/button_label.dart';
 import '../../core/clock.dart';
 import '../../core/fit_text.dart';
+import '../../core/line_breaks.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../journal/category.dart';
@@ -216,7 +218,7 @@ class _EntrySheetState extends State<EntrySheet> {
             button: true,
             child: TextButton(
               onPressed: () => Navigator.pop(dialog, false),
-              child: Text(l10n.cancel),
+              child: ButtonLabel(l10n.cancel),
             ),
           ),
           TestId(
@@ -224,7 +226,7 @@ class _EntrySheetState extends State<EntrySheet> {
             button: true,
             child: TextButton(
               onPressed: () => Navigator.pop(dialog, true),
-              child: Text(l10n.deleteEntryConfirm),
+              child: ButtonLabel(l10n.deleteEntryConfirm),
             ),
           ),
         ],
@@ -457,6 +459,14 @@ class _EntrySheetState extends State<EntrySheet> {
                           child: TextField(
                             controller: _note,
                             maxLength: maxNoteLength,
+                            // Up to 3 lines, so a long note is seen whole;
+                            // still one line of text: Enter is Done, and a
+                            // pasted line break becomes a space.
+                            minLines: 1,
+                            maxLines: 3,
+                            keyboardType: TextInputType.text,
+                            textInputAction: TextInputAction.done,
+                            inputFormatters: const [LineBreaksAsSpaces()],
                             textCapitalization: TextCapitalization.sentences,
                             style: context.inputText,
                             decoration: InputDecoration(
@@ -565,7 +575,7 @@ class _EntrySheetState extends State<EntrySheet> {
                             button: true,
                             child: TextButton(
                               onPressed: _busy ? null : _delete,
-                              child: Text(l10n.editDelete),
+                              child: ButtonLabel(l10n.editDelete),
                             ),
                           ),
                           TestId(
@@ -573,7 +583,7 @@ class _EntrySheetState extends State<EntrySheet> {
                             button: true,
                             child: FilledButton(
                               onPressed: _busy ? null : _submit,
-                              child: Text(l10n.editSave),
+                              child: ButtonLabel(l10n.editSave),
                             ),
                           ),
                         ],
@@ -585,7 +595,7 @@ class _EntrySheetState extends State<EntrySheet> {
                           button: true,
                           child: FilledButton(
                             onPressed: _busy ? null : _submit,
-                            child: Text(l10n.addSubmit),
+                            child: ButtonLabel(l10n.addSubmit),
                           ),
                         ),
                       ),

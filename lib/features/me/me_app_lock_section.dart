@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/button_label.dart';
 import '../../core/app_dialog.dart';
 import '../../core/app_lock.dart';
 import '../../core/fit_text.dart';
@@ -292,7 +293,7 @@ Future<bool?> _noEmailNotice(BuildContext context) async {
               button: true,
               child: TextButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(l10n.meLockContinue),
+                child: ButtonLabel(l10n.meLockContinue),
               ),
             ),
           ],

@@ -171,6 +171,12 @@ void main() {
         findsOneWidget,
         reason: 'the ended goal, at the bottom',
       );
+      // At the end of the list the last row clears the + (decision 55).
+      expect(
+        tester.getRect(find.text('+${usd(250000)}')).bottom,
+        lessThanOrEqualTo(tester.getRect(byId('tl-add')).top),
+        reason: 'C2: the last row above the +',
+      );
       if (c.takesGolden) {
         // The top (Today) and the end (the ended goal's "Saved for").
         await expectLayoutGoldens(

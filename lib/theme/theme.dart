@@ -121,6 +121,24 @@ const appButtonShape = RoundedRectangleBorder(
   borderRadius: BorderRadius.all(Radius.circular(26)),
 );
 
+/// Dark mode's raised surfaces (cards, sheets, dialogs, menus, the bars'
+/// tracks): each a step lighter than the page, never darker. The seed's own
+/// dark containers sit below the page's colour; these are the page with a
+/// little more of the text colour in it, step by step.
+ColorScheme raisedSurfacesLighter(ColorScheme s, PiggybowPalette palette) {
+  Color step(double amount) => Color.alphaBlend(
+    palette.text.withValues(alpha: amount),
+    palette.background,
+  );
+  return s.copyWith(
+    surfaceContainerLowest: step(0.03),
+    surfaceContainerLow: step(0.06),
+    surfaceContainer: step(0.08),
+    surfaceContainerHigh: step(0.10),
+    surfaceContainerHighest: step(0.13),
+  );
+}
+
 /// [disableAnimations] (staging flavor) turns page transitions off so Maestro
 /// flows don't wait on them.
 ///
@@ -132,7 +150,7 @@ ThemeData buildTheme(
 }) {
   final palette = paletteColours(plusPalette, brightness);
 
-  final scheme =
+  final seeded =
       ColorScheme.fromSeed(
         seedColor: PiggybowColors.rose,
         brightness: brightness,
@@ -142,6 +160,9 @@ ThemeData buildTheme(
         surface: palette.background,
         onSurface: palette.text,
       );
+  final scheme = brightness == Brightness.dark
+      ? raisedSurfacesLighter(seeded, palette)
+      : seeded;
 
   // Button themes take these styles directly, so they need the font family
   // themselves (ThemeData.fontFamily is only applied to the final text theme).
@@ -172,9 +193,8 @@ ThemeData buildTheme(
 
   // A visible ring for keyboard focus; the default overlay alone is too faint.
   final focusRing = WidgetStateProperty.resolveWith<BorderSide?>(
-    (states) => states.contains(WidgetState.focused)
-        ? _focusSide(palette)
-        : null,
+    (states) =>
+        states.contains(WidgetState.focused) ? _focusSide(palette) : null,
   );
 
   return ThemeData(

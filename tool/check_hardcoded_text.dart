@@ -13,7 +13,10 @@ import 'dart:io';
 final _literal = r'''(?:'[^'\n]*\p{L}[^'\n]*'|"[^"\n]*\p{L}[^"\n]*")''';
 
 final _patterns = [
-  RegExp('\\b(?:Text|SelectableText|Tooltip)\\(\\s*$_literal', unicode: true),
+  RegExp(
+    '\\b(?:Text|SelectableText|Tooltip|ButtonLabel)\\(\\s*$_literal',
+    unicode: true,
+  ),
   RegExp('\\bTextSpan\\([^)]*?\\btext:\\s*$_literal', unicode: true),
   RegExp(
     unicode: true,

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/button_label.dart';
 import '../../core/failure_text.dart';
 import '../../core/semantics_id.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -96,7 +97,7 @@ class _StartScreenState extends State<StartScreen> {
                       button: true,
                       child: FilledButton(
                         onPressed: _tryAgain,
-                        child: Text(l10n.tryAgain),
+                        child: ButtonLabel(l10n.tryAgain),
                       ),
                     ),
                   ],

@@ -27,10 +27,12 @@ Widget f() => Text('วันนี้');
 String g(d) => DateFormat('EEEE, d MMMM y', l).format(d);
 String ok5(d) => DateFormat.yMMMMEEEEd(l).format(d);
 Widget ok4() => Text('English'); // l10n-ignore
+Widget h() => FilledButton(onPressed: null, child: ButtonLabel('Add'));
+Widget ok6() => ButtonLabel(l10n.addSubmit);
 // Text('a comment');
 ''');
     final problems = hardcodedText(root: dir.path);
-    expect(problems, hasLength(7), reason: problems.join('\n'));
+    expect(problems, hasLength(8), reason: problems.join('\n'));
     expect(problems.join('\n'), isNot(contains('English')));
   });
 }

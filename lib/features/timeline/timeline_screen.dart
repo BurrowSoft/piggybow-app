@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/button_label.dart';
 import '../../core/clock.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
@@ -466,7 +467,7 @@ class _Empty extends StatelessWidget {
               button: true,
               child: FilledButton(
                 onPressed: () => showEntrySheet(context),
-                child: Text(l10n.tlEmptyButton),
+                child: ButtonLabel(l10n.tlEmptyButton),
               ),
             ),
           ],
