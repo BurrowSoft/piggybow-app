@@ -49,5 +49,26 @@
   "lockNoEmailConfirm": "You won't be able to open this journal again, on this phone or any other. It stays on our servers for up to 12 months, then it's deleted.",
   "lockSignOutForGood": "Sign out for good",
   "meLockNoEmailNotice": "This journal has no email. If you forget your PIN, you can't get back in. Add an email first if you want a way back.",
-  "meLockContinue": "Continue"
+  "meLockContinue": "Continue",
+
+  "tip01": "Before a non-essential buy, wait a day. If you still want it tomorrow, it's probably worth it.",
+  "tip02": "Pick one subscription to check this week. Do you still use it?",
+  "tip03": "Pay yourself first: put a little aside as soon as money comes in.",
+  "tip04": "Round up your spends and save the difference.",
+  "tip05": "Bring a snack from home once this week.",
+  "tip06": "Make a list before you shop, and stick to it.",
+  "tip07": "Try a no-spend day. Notice how it feels.",
+  "tip08": "Cook one more meal at home this week than last week.",
+  "tip09": "Unsubscribe from one shop's emails. Fewer temptations.",
+  "tip10": "Before you buy, ask: will I use this at least ten times?",
+  "tip11": "Compare the price per unit, not per pack.",
+  "tip12": "Borrow before you buy: books, tools, a tent.",
+  "tip13": "Sell or give away one thing you no longer use.",
+  "tip14": "Treats are good! Plan them, then enjoy them fully.",
+  "tip15": "Look back at your week on Sunday. Five minutes is enough.",
+  "tip16": "Keep your coins in a jar. Count them at the end of the month.",
+  "tip17": "Walk or cycle one short trip this week, if you can.",
+  "tip18": "Look for something free to do this weekend.",
+  "tip19": "Write down why you're saving. Read it when you're tempted.",
+  "tip20": "Give your savings goal a name you love."
 }
