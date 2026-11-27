@@ -201,6 +201,9 @@ class _EntrySheetState extends State<EntrySheet> {
     final today = _today;
     final date = _date;
     if (today == null || date == null) return;
+    // Drop the amount's focus first: when the picker closes, the keyboard
+    // doesn't come back and the sheet doesn't jump up to the amount.
+    FocusManager.instance.primaryFocus?.unfocus();
     final picked = await showDatePicker(
       context: context,
       initialDate: date,
