@@ -1,3 +1,7 @@
+// Goldens: SW1, SW9, SW0 and SM1 at 320 dp ×2 (decision 44).
+@Tags(['golden'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/clock.dart';
@@ -139,6 +143,30 @@ void main() {
     }
   }
 
+  /// The whole Summary as a golden in the 320 dp ×2 cases (decision 44),
+  /// named by PB Mobile Tester's ids: top, and its end if it scrolls.
+  Future<void> golden(
+    WidgetTester tester,
+    LayoutCase c,
+    String state,
+    String stateId,
+  ) async {
+    if (!c.takesGolden) return;
+    await expectLayoutGoldens(
+      tester,
+      c,
+      find
+          .descendant(
+            of: byId('summary-screen'),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+      screen: 'summary',
+      state: state,
+      stateId: stateId,
+    );
+  }
+
   for (final c in layoutCases) {
     testWidgets('S1 this week: every card ($c)', (tester) async {
       await open(tester, c, seed: s1);
@@ -151,6 +179,7 @@ void main() {
         usd(1250),
         usd(320),
       ]);
+      await golden(tester, c, 's1-week', 'SW1');
     });
 
     testWidgets('nine categories at the largest amount ($c)', (tester) async {
@@ -165,12 +194,14 @@ void main() {
         findsWidgets,
         reason: 'the longest label, whole',
       );
+      await golden(tester, c, 'nine-at-max', 'SW9');
     });
 
     testWidgets('an empty week ($c)', (tester) async {
       await open(tester, c);
       expect(find.text('Nothing noted for this week.'), findsOneWidget);
       await expectSoundLayout(tester, reason: 'empty week');
+      await golden(tester, c, 'empty-week', 'SW0');
     });
 
     testWidgets('S1 December ($c)', (tester) async {
@@ -183,6 +214,7 @@ void main() {
         usd(1250),
         usd(320),
       ]);
+      await golden(tester, c, 's1-december', 'SM1');
     });
 
     testWidgets('an empty month ($c)', (tester) async {
