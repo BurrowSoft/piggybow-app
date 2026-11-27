@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/clock.dart';
+import '../../core/day_label.dart';
 import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
@@ -423,28 +423,89 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                     TestId(
                       'goal-save-${e.id}',
                       button: true,
-                      child: ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          e.note.isNotEmpty ? e.note : l10n.tlSavedRow,
-                        ),
-                        subtitle: Text(
-                          wireDate(e.date),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        trailing: Text(
-                          '+${money(e.amountMinor)}',
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                          ),
-                        ),
+                      child: InkWell(
                         onTap: () => showEntrySheet(context, editing: e),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(minHeight: 56),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            child: _SaveRow(
+                              title: e.note.isNotEmpty
+                                  ? e.note
+                                  : l10n.tlSavedRow,
+                              day: dayLabel(
+                                l10n,
+                                context.session.dateLocale,
+                                e.date,
+                                today: context.services.localDay.today,
+                              ),
+                              amount: '+${money(e.amountMinor)}',
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+/// One of a goal's saves: its note (or "Saved"), its day, and "+amount" in
+/// the accent. At large text the amount goes on its own line under the day.
+class _SaveRow extends StatelessWidget {
+  const _SaveRow({
+    required this.title,
+    required this.day,
+    required this.amount,
+  });
+
+  final String title;
+  final String day;
+  final String amount;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final stacked = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+    final money = FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: AlignmentDirectional.centerEnd,
+      child: Text(
+        amount,
+        maxLines: 1,
+        softWrap: false,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.primary,
+        ),
+      ),
+    );
+    final text = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: theme.textTheme.bodyLarge),
+        Text(
+          day,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        if (stacked)
+          Align(alignment: AlignmentDirectional.centerEnd, child: money),
+      ],
+    );
+    if (stacked) return text;
+    return LayoutBuilder(
+      builder: (context, box) => Row(
+        children: [
+          Expanded(child: text),
+          const SizedBox(width: 12),
+          ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
+            child: money,
+          ),
+        ],
       ),
     );
   }

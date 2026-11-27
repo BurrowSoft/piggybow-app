@@ -259,10 +259,12 @@ class JournalStore extends ChangeNotifier {
   /// moved or deleted, or the goal edited): a band, or the goal reached, is
   /// stamped the first time it completes, and never unstamped. A reached
   /// goal is no longer the active one, so the next save goes to no goal.
+  /// Only the active goal moves: an ended goal is never stamped (so never
+  /// celebrated), and a reached one is already complete.
   Future<void> _advance(String? goalId) async {
     if (goalId == null) return;
     final g = await goal(goalId);
-    if (g == null) return;
+    if (g == null || g.status != GoalStatus.active) return;
     final marks = advanceGoalMarks(
       bandReachedAt: g.bandReachedAt,
       reachedAt: g.reachedAt,
@@ -270,9 +272,7 @@ class JournalStore extends ChangeNotifier {
       targetMinor: g.targetMinor,
       nowUtc: _clock.nowUtc(),
     );
-    final status = marks.reachedAt != null && g.status == GoalStatus.active
-        ? GoalStatus.reached
-        : g.status;
+    final status = marks.reachedAt != null ? GoalStatus.reached : g.status;
     if (marks.bandsJustReached.isEmpty &&
         !marks.justReached &&
         status == g.status) {

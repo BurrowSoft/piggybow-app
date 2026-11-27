@@ -103,9 +103,12 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       offerAnswered: await store.reminderOfferAnswered(),
       currency: await store.currency() ?? 'USD',
     );
-    // A goal just reached is celebrated once (plan §3.4).
+    // A goal just reached is celebrated once (plan §3.4); an ended goal
+    // never is.
     for (final g in goals) {
-      if (g.reachedAt != null && !await store.celebrated(g.id)) {
+      if (g.status == GoalStatus.reached &&
+          g.reachedAt != null &&
+          !await store.celebrated(g.id)) {
         await store.markCelebrated(g.id);
         if (mounted) unawaited(context.push(GoalRoutes.done(g.id)));
         break;
@@ -189,13 +192,15 @@ class _Pig extends StatelessWidget {
             createdAt: e.createdAt,
           ),
       ],
+      // An ended goal has no say in the mood: only active and reached ones.
       goals: [
         for (final g in data.goals)
-          GoalMarks(
-            name: g.name,
-            bandReachedAt: g.bandReachedAt,
-            reachedAt: g.reachedAt,
-          ),
+          if (g.status != GoalStatus.ended)
+            GoalMarks(
+              name: g.name,
+              bandReachedAt: g.bandReachedAt,
+              reachedAt: g.reachedAt,
+            ),
       ],
       now: services.clock.nowUtc(),
       today: services.localDay.todayWire,
@@ -203,11 +208,11 @@ class _Pig extends StatelessWidget {
     final key = pigBubbleKey(state, services.lastAdd.value);
     return Column(
       children: [
-        // Its own node: the mood is read (and checked) as its value.
+        // Its own node, read before the line: "Your pig looks calm." (R2).
         Semantics(
           container: true,
           identifier: 'home-pig',
-          value: state.mood.name,
+          label: pigA11yLabel(l10n, state.mood),
           child: PigView(mood: state.mood),
         ),
         const SizedBox(height: 8),
@@ -322,9 +327,33 @@ class _GoalCard extends StatelessWidget {
               ),
               if (last != null && last.status == GoalStatus.reached) ...[
                 const SizedBox(height: 8),
-                Text(
-                  l10n.goalCardReached(last.name),
-                  style: theme.textTheme.bodyMedium,
+                // Opens the reached goal's read-only detail (R1).
+                TestId(
+                  'goal-card-reached',
+                  button: true,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => context.push(GoalRoutes.detail(last.id)),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 48),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              l10n.goalCardReached(last.name),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.chevron_right,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
               ],
               const SizedBox(height: 12),

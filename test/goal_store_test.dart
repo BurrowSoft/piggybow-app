@@ -164,6 +164,20 @@ void main() {
     expect((await store.goals()).single.status, GoalStatus.ended);
   });
 
+  test(
+    'an ended goal is never stamped: its save edited past the target',
+    () async {
+      await store.putGoal(bike());
+      final s = await save(300); // 30 %: band 1
+      await store.putGoal((await g1()).copyWith(status: GoalStatus.ended));
+      await store.updateEntry(s.copyWith(amountMinor: 1500));
+      final g = await g1();
+      expect(g.status, GoalStatus.ended);
+      expect(g.reachedAt, isNull, reason: 'so Home never celebrates it');
+      expect(await stamped(), [1], reason: 'band 1 from while it was active');
+    },
+  );
+
   test('a goal needs a target above 0 and a start of 0 or more', () async {
     expect(() => store.putGoal(bike(target: 0)), throwsArgumentError);
     expect(() => store.putGoal(bike(start: -1)), throwsArgumentError);

@@ -169,6 +169,12 @@ void main() {
         await open(tester, c, seed: reachedToday);
         expect(find.text('You reached $goal40!'), findsOneWidget);
         await checkScrolled(tester, listIn('home-screen'), 'H4');
+        // Under the empty goal card: scrolled back to, then checked.
+        await tester.scrollUntilVisible(
+          find.text('Reached: $goal40'),
+          -200,
+          scrollable: listIn('home-screen'),
+        );
         expect(find.text('Reached: $goal40'), findsOneWidget);
       },
     );

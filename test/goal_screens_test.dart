@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:piggybow/journal/entry.dart';
@@ -175,4 +176,54 @@ void main() {
       expect(next!.goalId, isNull);
     },
   );
+
+  testWidgets('the saves name their day as Timeline does, never the ISO date', (
+    tester,
+  ) async {
+    await openHome(
+      tester,
+      seed: (app) async {
+        await app.journal.putGoal(
+          Goal(
+            id: 'g1',
+            name: 'Bike',
+            targetMinor: 100000,
+            createdAt: t,
+            updatedAt: t,
+          ),
+        );
+        for (final day in [
+          '2026-10-02',
+          '2026-10-01',
+          '2026-09-20',
+          '2025-12-31',
+        ]) {
+          await app.journal.addEntry(
+            type: EntryType.saved,
+            amountMinor: 100,
+            currency: 'THB',
+            localDate: day,
+          );
+        }
+      },
+    );
+    await tester.tapId('goal-card');
+    await settle(tester, byId('goal-screen'));
+    final list = find
+        .descendant(of: byId('goal-screen'), matching: find.byType(Scrollable))
+        .first;
+    for (final day in [
+      'Today',
+      'Yesterday',
+      'Sun, Sep 20',
+      'Wed, Dec 31, 2025',
+    ]) {
+      await tester.scrollUntilVisible(find.text(day), 200, scrollable: list);
+      expect(find.text(day), findsOneWidget);
+      expect(
+        find.textContaining(RegExp(r'[0-9]{4}-[0-9]{2}-[0-9]{2}')),
+        findsNothing,
+      );
+    }
+  });
 }

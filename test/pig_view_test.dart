@@ -17,32 +17,68 @@ void main() {
     l10n = await AppLocalizations.delegate.load(const Locale('en'));
   });
 
-  test('every line the contract expects, and every reaction, has its own text', () {
-    final contract = jsonDecode(File('test/contracts/pig_mood_cases.json').readAsStringSync());
-    final expected = <(String, Map<String, Object>)>[
-      for (final c in contract['cases'] as List)
-        (
-          (c['expect'] as Map)['line'] as String,
-          Map<String, Object>.from(((c['expect'] as Map)['args'] as Map?) ?? const {}),
-        ),
-    ];
-    expect(expected, isNotEmpty);
-    final reactions = [for (final r in PigReaction.values) pigBubbleKey(const PigState(PigMood.calm, 'pigCalm1'), r)];
-    expect(reactions.toSet(), hasLength(5));
-    for (final (key, args) in [...expected, for (final r in reactions) (r, const <String, Object>{})]) {
-      final text = pigLineText(l10n, key, args);
-      if (key != 'pigCalm1') expect(text, isNot(l10n.pigCalm1), reason: '$key fell back');
-      for (final v in args.values) {
-        expect(text, contains('$v'), reason: '$key shows $v');
-      }
-    }
+  test('TalkBack names the pig by its mood (R2)', () {
+    expect(
+      [for (final m in PigMood.values) pigA11yLabel(l10n, m)],
+      [
+        'Your pig looks sleepy.',
+        'Your pig looks calm.',
+        'Your pig looks happy.',
+        'Your pig looks delighted.',
+      ],
+    );
   });
 
+  test(
+    'every line the contract expects, and every reaction, has its own text',
+    () {
+      final contract = jsonDecode(
+        File('test/contracts/pig_mood_cases.json').readAsStringSync(),
+      );
+      final expected = <(String, Map<String, Object>)>[
+        for (final c in contract['cases'] as List)
+          (
+            (c['expect'] as Map)['line'] as String,
+            Map<String, Object>.from(
+              ((c['expect'] as Map)['args'] as Map?) ?? const {},
+            ),
+          ),
+      ];
+      expect(expected, isNotEmpty);
+      final reactions = [
+        for (final r in PigReaction.values)
+          pigBubbleKey(const PigState(PigMood.calm, 'pigCalm1'), r),
+      ];
+      expect(reactions.toSet(), hasLength(5));
+      for (final (key, args) in [
+        ...expected,
+        for (final r in reactions) (r, const <String, Object>{}),
+      ]) {
+        final text = pigLineText(l10n, key, args);
+        if (key != 'pigCalm1') {
+          expect(text, isNot(l10n.pigCalm1), reason: '$key fell back');
+        }
+        for (final v in args.values) {
+          expect(text, contains('$v'), reason: '$key shows $v');
+        }
+      }
+    },
+  );
+
   test('the lines as written', () {
-    expect(pigLineText(l10n, 'pigDelightedBand', {'band': 2}), 'Band 2 of 5 colored in!');
-    expect(pigLineText(l10n, 'pigDelightedGoal', {'goalName': 'Bike'}), 'You reached Bike!');
+    expect(
+      pigLineText(l10n, 'pigDelightedBand', {'band': 2}),
+      'Band 2 of 5 colored in!',
+    );
+    expect(
+      pigLineText(l10n, 'pigDelightedGoal', {'goalName': 'Bike'}),
+      'You reached Bike!',
+    );
     expect(pigLineText(l10n, 'pigAfterSave'), 'Into the rainbow it goes!');
-    expect(pigLineText(l10n, 'pigFirstDay'), 'Hi! Tap Add to note your first spend or save.');
+    expect(
+      pigLineText(l10n, 'pigFirstDay'),
+      'Hi! Tap Add to note your first spend or save.',
+    );
   });
 
   test("each mood's file parses", () async {
@@ -62,7 +98,10 @@ void main() {
 
   double lift(WidgetTester tester) => -tester
       .widget<Transform>(
-        find.descendant(of: find.byType(PigView), matching: find.byType(Transform)),
+        find.descendant(
+          of: find.byType(PigView),
+          matching: find.byType(Transform),
+        ),
       )
       .transform
       .getTranslation()
@@ -78,15 +117,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(lift(tester), closeTo(0, 1e-9), reason: 'back down');
     expect(
-      (tester.widget<SvgPicture>(find.byType(SvgPicture)).bytesLoader as SvgAssetLoader).assetName,
+      (tester.widget<SvgPicture>(find.byType(SvgPicture)).bytesLoader
+              as SvgAssetLoader)
+          .assetName,
       'assets/pig/pig-delighted.svg',
     );
   });
 
   testWidgets('reduce-motion: Delighted without the hop', (tester) async {
-    tester.platformDispatcher.accessibilityFeaturesTestValue = const FakeAccessibilityFeatures(
-      disableAnimations: true,
-    );
+    tester.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
     await show(tester, PigMood.delighted);
     await tester.pump();

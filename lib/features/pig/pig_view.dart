@@ -109,6 +109,14 @@ String pigLineText(
   return text ?? l10n.pigCalm1;
 }
 
+/// How TalkBack names the pig in [mood], read before its line (R2).
+String pigA11yLabel(AppLocalizations l10n, PigMood mood) => switch (mood) {
+  PigMood.sleepy => l10n.pigA11ySleepy,
+  PigMood.calm => l10n.pigA11yCalm,
+  PigMood.happy => l10n.pigA11yHappy,
+  PigMood.delighted => l10n.pigA11yDelighted,
+};
+
 /// The pig's line, in a speech bubble under it.
 class PigBubble extends StatelessWidget {
   const PigBubble({super.key, required this.text});

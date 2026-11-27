@@ -94,7 +94,15 @@ void main() {
         find.text('Hi! Tap Add to note your first spend or save.'),
         findsOneWidget,
       );
-      expect(tester.getSemantics(byId('home-pig')), isSemantics(value: 'calm'));
+      // TalkBack: the pig by its mood, then its line under it (R2).
+      expect(
+        tester.getSemantics(byId('home-pig')),
+        isSemantics(label: 'Your pig looks calm.', value: ''),
+      );
+      expect(
+        tester.getRect(byId('home-pig')).bottom,
+        lessThanOrEqualTo(tester.getRect(byId('home-pig-line')).top),
+      );
       expect(
         byId('home-reminder-yes'),
         findsNothing,
@@ -251,4 +259,48 @@ void main() {
       expect(find.text('Into the rainbow it goes!'), findsNothing);
     },
   );
+
+  testWidgets("Reached: Bike opens the reached goal's read-only detail", (
+    tester,
+  ) async {
+    await openHome(
+      tester,
+      seed: (app) async {
+        await app.journal.putGoal(bike(target: 1000));
+        await app.journal.markCelebrated('g1');
+        await save(app, 1000, '2026-10-01');
+      },
+    );
+    expect(find.text('Reached: Bike'), findsOneWidget);
+    await tester.tapId('goal-card-reached');
+    await settle(tester, byId('goal-screen'));
+    expect(byId('goal-screen'), findsOneWidget);
+    expect(byId('goal-menu'), findsNothing, reason: 'no Edit or End');
+    expect(byId('goal-add-savings'), findsNothing);
+  });
+
+  testWidgets('an ended goal past its target: no celebration, no goal line', (
+    tester,
+  ) async {
+    await openHome(
+      tester,
+      seed: (app) async {
+        // As a journal could hold it from before the store checked the
+        // status: ended, yet stamped reached a moment ago.
+        final at = DateTime.utc(2026, 10, 2);
+        await app.journal.putGoal(
+          bike(target: 1000).copyWith(
+            status: GoalStatus.ended,
+            reachedAt: at,
+            bandReachedAt: List<DateTime?>.filled(5, at),
+          ),
+        );
+      },
+    );
+    expect(byId('goal-done-screen'), findsNothing);
+    expect(find.text('You reached Bike!'), findsNothing);
+    expect(find.textContaining('colored in'), findsNothing);
+    expect(byId('goal-card-reached'), findsNothing);
+    expect(find.text('Start a savings goal'), findsOneWidget);
+  });
 }
