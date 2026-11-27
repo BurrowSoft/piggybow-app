@@ -37,6 +37,13 @@ void setLayout(WidgetTester tester, LayoutCase c, {double keyboard = 0}) {
   tester.platformDispatcher.textScaleFactorTestValue = c.textScale;
   addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+  if (c.takesGolden) {
+    // A focused field's caret drawn steadily, never mid-blink: its phase
+    // would otherwise depend on how many frames the test pumped. Set before
+    // any field is focused, as the blink reads it when it starts.
+    EditableText.debugDeterministicCursor = true;
+    addTearDown(() => EditableText.debugDeterministicCursor = false);
+  }
 }
 
 /// What every state must hold: no overflow or layout error; every tap area

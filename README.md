@@ -25,6 +25,19 @@ A Flutter app for Android and iPhone, by BurrowSoft.
   3 days.
 - Every user-facing string lives in `lib/l10n/app_en.arb`.
 
+## Golden images
+
+Screens are compared against PNG baselines in `test/goldens/`, with a
+`manifest.json` that names the run that rendered them.
+- Golden tests go through `expectGolden` (`test/helpers/goldens.dart`), in a
+  file tagged `golden` that loads the app's fonts.
+- Baselines are rendered only by the **Goldens** workflow
+  (`.github/workflows/goldens.yaml`), on CI's Linux runner, never on a PC.
+  Replace `test/goldens/` with its artifact, unchanged.
+- A solid outline around elevated widgets (e.g. the + button) is
+  flutter_test's shadow stand-in, not the app. Real shadows aren't
+  pixel-stable between runs, so goldens keep it.
+
 ## How this repo started
 
 Piggybow was seeded from BurrowSoft's Moodbow app. `tool/seed/` holds the
