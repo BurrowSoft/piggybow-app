@@ -83,8 +83,8 @@ void main() {
     test('grouping and no decimals: Japan, India, a space-grouped rouble', () {
       expect(style('¥6,000', 6000, '3000'), '¥3,000');
       expect(style('₹4,999.00', 4999, '2499'), '₹2,499.00');
-      expect(style('1 234,56 ₽', 1234.56, '617.28'), '617,28 ₽');
-      expect(style('12 000 ₽', 12000, '6000'), '6 000 ₽');
+      expect(style('1\u00A0234,56\u00A0₽', 1234.56, '617.28'), '617,28\u00A0₽');
+      expect(style('12\u00A0000\u00A0₽', 12000, '6000'), '6\u00A0000\u00A0₽');
     });
 
     test("can't read it that way: the plugin's SK1 form, symbol + amount", () {

@@ -1,0 +1,257 @@
+name: Emulator
+
+# The CI emulator (there is no local one): the tester's Maestro flows and
+# device rows on one Android 14 (API 34) emulator. Manual (workflow_dispatch)
+# or the "emulator" label on a PR; never automatic, so it costs no minutes
+# unless asked.
+#
+# Decision 31: no installable build is ever an artifact. The APK under test is
+# built in this same job from the commit under test (head_sha). Only the
+# evidence (the log, screenshots, Maestro's output) is uploaded, for 3 days,
+# after a step that fails if it holds anything installable.
+on:
+  workflow_dispatch:
+    inputs:
+      head_sha:
+        description: "The app commit to build and test (the full 40-character sha)"
+        required: true
+      flows_ref:
+        description: "Branch, tag or sha holding .maestro/ and tool/device-rows/ (empty: head_sha)"
+        required: false
+        default: ""
+      tags:
+        description: "Maestro --include-tags, comma-separated (used when rows is empty)"
+        required: false
+        default: "smoke"
+      kind:
+        description: "The APK: debug (staging debug), reminder-now (staging debug + REMINDER_NOW), release (staging release, no DSN)"
+        type: choice
+        options: [debug, reminder-now, release]
+        default: debug
+      rows:
+        description: "A device-rows script, tool/device-rows/<rows>.sh at flows_ref (empty: the Maestro flows by tags)"
+        required: false
+        default: ""
+      zone:
+        description: "The emulator's time zone (IANA)"
+        required: false
+        default: "UTC"
+      fake_now:
+        description: "FAKE_NOW for the build, YYYY-MM-DDTHH:MM:SSZ (empty: the real clock)"
+        required: false
+        default: ""
+  pull_request:
+    types: [labeled, synchronize]
+
+# One emulator at a time across the repo; a running one is never cancelled.
+concurrency:
+  group: emulator
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  MAESTRO_VERSION: 2.12.1
+  # maestro.zip of the cli-2.12.1 release (GitHub's digest of the asset).
+  MAESTRO_SHA256: 54dbb0716425626604973cbb374c585ca30272375d9ce15177a1152765ddd9d7
+  # The test runner sends no usage data.
+  MAESTRO_CLI_NO_ANALYTICS: 1
+  MAESTRO_CLI_ANALYSIS_NOTIFICATION_DISABLED: true
+
+jobs:
+  emulator:
+    name: emulator (Maestro + device rows)
+    # A labelled PR: every new head re-runs; another label never does.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (contains(github.event.pull_request.labels.*.name, 'emulator') &&
+       (github.event.action != 'labeled' || github.event.label.name == 'emulator'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      # Inputs reach the shell only as env, and are checked here. A PR run
+      # tests the PR's head with the flows in it: the smoke tag, the debug
+      # APK, UTC.
+      - name: Inputs
+        id: in
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          HEAD_SHA: ${{ inputs.head_sha }}
+          FLOWS_REF: ${{ inputs.flows_ref }}
+          TAGS: ${{ inputs.tags }}
+          KIND: ${{ inputs.kind }}
+          ROWS: ${{ inputs.rows }}
+          ZONE: ${{ inputs.zone }}
+          FAKE_NOW: ${{ inputs.fake_now }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = pull_request ]; then
+            HEAD_SHA=$PR_HEAD FLOWS_REF=$PR_HEAD TAGS=smoke KIND=debug ROWS= ZONE=UTC FAKE_NOW=
+          fi
+          FLOWS_REF=${FLOWS_REF:-$HEAD_SHA}
+          fail() { echo "::error::$1"; exit 2; }
+          [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "head_sha: the full 40-character sha"
+          [[ "$FLOWS_REF" =~ ^[A-Za-z0-9._/-]{1,100}$ && "$FLOWS_REF" != *..* ]] || fail "flows_ref: letters, digits and . _ / - only"
+          [[ "$TAGS" =~ ^[a-z0-9_-]+(,[a-z0-9_-]+)*$ ]] || fail "tags: comma-separated lowercase names"
+          [[ "$KIND" =~ ^(debug|reminder-now|release)$ ]] || fail "kind: debug, reminder-now or release"
+          [[ -z "$ROWS" || "$ROWS" =~ ^[a-z0-9_-]{1,40}$ ]] || fail "rows: a script name, such as pr5"
+          [[ "$ZONE" =~ ^[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}$ ]] || fail "zone: an IANA name, such as Asia/Bangkok"
+          [[ -z "$FAKE_NOW" || "$FAKE_NOW" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail "fake_now: YYYY-MM-DDTHH:MM:SSZ"
+          {
+            echo "head=$HEAD_SHA"; echo "flows=$FLOWS_REF"; echo "tags=$TAGS"; echo "kind=$KIND"
+            echo "rows=$ROWS"; echo "zone=$ZONE"; echo "fake_now=$FAKE_NOW"
+          } >> "$GITHUB_OUTPUT"
+          echo "head $HEAD_SHA | flows $FLOWS_REF | kind $KIND | rows ${ROWS:-none} | tags $TAGS | zone $ZONE | fake_now ${FAKE_NOW:-none}"
+      # The runner's ~14 GB disk fills during the native-lib strip.
+      # The build, Maestro, the system image and the emulator's data all need
+      # room: what this job never uses goes first.
+      - name: Free runner disk
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost \
+            /usr/local/lib/node_modules /usr/share/swift /usr/local/share/powershell \
+            /usr/local/share/chromium /opt/hostedtoolcache/CodeQL /opt/hostedtoolcache/Python \
+            /opt/hostedtoolcache/PyPy /opt/hostedtoolcache/go /opt/hostedtoolcache/Ruby
+          sudo docker image prune --all --force > /dev/null 2>&1 || true
+          df -h / /mnt 2>/dev/null || df -h /
+      # The emulator's files (its data partition alone is 4 GB) go on the
+      # runner's second disk, when it has the room.
+      - name: Put the emulator on the larger disk
+        run: |
+          free=$(df --output=avail -BG /mnt 2>/dev/null | tail -1 | tr -dc '0-9')
+          if [ "${free:-0}" -ge 12 ]; then
+            sudo mkdir -p /mnt/avd
+            sudo chown "$(id -u):$(id -g)" /mnt/avd
+            mkdir -p "$HOME/.android"
+            ln -sfn /mnt/avd "$HOME/.android/avd"
+            echo "AVDs on /mnt (${free} GB free)"
+          else
+            echo "AVDs stay on / (/mnt has ${free:-no} GB free)"
+          fi
+      - name: Enable KVM (hardware acceleration for the emulator)
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      # This workflow's own commit: tool/emulator/run.sh.
+      - uses: actions/checkout@v4
+        with:
+          path: ci
+          persist-credentials: false
+      # The app under test.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.in.outputs.head }}
+          path: app
+          persist-credentials: false
+      # The flows (.maestro/) and the device-rows scripts.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.in.outputs.flows }}
+          path: flows
+          persist-credentials: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: gradle
+          cache-dependency-path: |
+            app/android/*.gradle*
+            app/android/gradle/wrapper/gradle-wrapper.properties
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.5
+          channel: stable
+          cache: true
+      # The APK this run tests, from head_sha, outside the evidence folder.
+      # No env value is printed.
+      - name: Build the APK under test
+        working-directory: app
+        env:
+          KIND: ${{ steps.in.outputs.kind }}
+          FAKE_NOW: ${{ steps.in.outputs.fake_now }}
+        run: |
+          set -euo pipefail
+          jq --arg now "$FAKE_NOW" --arg kind "$KIND" \
+            '.FAKE_NOW = $now | if $kind == "reminder-now" then .REMINDER_NOW = "true" else . end' \
+            env/staging.json > "$RUNNER_TEMP/defines.json"
+          case "$KIND" in
+            release) mode=--release; built=app-staging-release.apk ;;
+            *) mode=--debug; built=app-staging-debug.apk ;;
+          esac
+          flutter build apk "$mode" --flavor staging --dart-define-from-file="$RUNNER_TEMP/defines.json"
+          rm -f "$RUNNER_TEMP/defines.json"
+          cp "build/app/outputs/flutter-apk/$built" "$RUNNER_TEMP/under-test.apk"
+          echo "APK sha256 $(sha256sum < "$RUNNER_TEMP/under-test.apk" | cut -c1-64) ($KIND, built in this job)"
+          # The build's own files are no longer needed: room for the emulator.
+          rm -rf build
+          df -h /
+      - name: Maestro ${{ env.MAESTRO_VERSION }}, checked by sha256
+        run: |
+          set -euo pipefail
+          curl -fsSL -o "$RUNNER_TEMP/maestro.zip" \
+            "https://github.com/mobile-dev-inc/maestro/releases/download/cli-$MAESTRO_VERSION/maestro.zip"
+          echo "$MAESTRO_SHA256  $RUNNER_TEMP/maestro.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$RUNNER_TEMP"
+          rm -f "$RUNNER_TEMP/maestro.zip"
+          echo "$RUNNER_TEMP/maestro/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/maestro/bin/maestro" --version
+      - name: Android 14 emulator, then the flows or the rows
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        env:
+          APK: ${{ runner.temp }}/under-test.apk
+          HEAD_SHA: ${{ steps.in.outputs.head }}
+          FLOWS_DIR: ${{ github.workspace }}/flows
+          FLOWS_REF: ${{ steps.in.outputs.flows }}
+          TAGS: ${{ steps.in.outputs.tags }}
+          KIND: ${{ steps.in.outputs.kind }}
+          ROWS: ${{ steps.in.outputs.rows }}
+          ZONE: ${{ steps.in.outputs.zone }}
+          OUT: ${{ runner.temp }}/evidence
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          cores: 4
+          # The image's default data partition is ~7 GB; the app needs far less.
+          disk-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: bash "$GITHUB_WORKSPACE/ci/tool/emulator/run.sh"
+      # A run that fails before run.sh still leaves a reason in the evidence.
+      - name: If a step failed, the disk and the emulator's setup
+        if: ${{ failure() }}
+        env:
+          OUT: ${{ runner.temp }}/evidence
+        run: |
+          mkdir -p "$OUT"
+          {
+            echo "$(date -u +%FT%TZ) a step failed (the job log has each step's own lines)"
+            df -h / /mnt 2>&1 || true
+            ls -la "$HOME/.android/avd" "$HOME/.android/avd/" 2>&1 | head -20
+            cat "$HOME/.android/avd/test.avd/config.ini" 2>/dev/null | grep -E '^(disk|hw\.(cpu|ramSize)|image)' || true
+          } > "$OUT/boot.txt" 2>&1
+          cat "$OUT/boot.txt"
+      # Decision 31: only evidence leaves the runner, never a build.
+      - name: No installable file in the evidence
+        id: guard
+        if: ${{ !cancelled() }}
+        env:
+          OUT: ${{ runner.temp }}/evidence
+        run: |
+          set -euo pipefail
+          mkdir -p "$OUT"
+          bad=$(find "$OUT" -type f \( -iname '*.apk' -o -iname '*.aab' -o -iname '*.apks' \
+            -o -iname '*.ipa' -o -iname '*.dex' -o -iname '*.jar' -o -iname '*.so' -o -iname '*.zip' \))
+          if [ -n "$bad" ]; then echo "::error::installable files in the evidence:"; echo "$bad"; exit 1; fi
+          echo "evidence: $(find "$OUT" -type f | wc -l) files"
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() && steps.guard.outcome == 'success' }}
+        with:
+          name: emulator-evidence-${{ steps.in.outputs.head }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/evidence
+          retention-days: 3
+          if-no-files-found: warn

@@ -69,6 +69,8 @@ jobs:
         run: dart run tool/check_hardcoded_text.dart
       - name: no-guilt copy (banned phrases in app_en.arb)
         run: dart run tool/no_guilt.dart
+      - name: no hidden characters (bidi controls, zero-width, stray no-break spaces)
+        run: dart run tool/check_hidden_chars.dart
       - name: l10n untranslated messages
         run: |
           flutter gen-l10n

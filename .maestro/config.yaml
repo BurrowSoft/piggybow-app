@@ -1,0 +1,10 @@
+# Piggybow Maestro suite (PB Mobile Tester). Id-based; no server, no secrets.
+# Tags:
+#   pb1        v0.1 flows (flows/pb1)
+#   smoke      the smallest set before a merge: 00, 10
+#   journal    PR 2: add / edit / delete / timeline
+#   fakeclock  needs a build with FAKE_NOW (test-only define)
+flows:
+  - "flows/**"
+executionOrder:
+  continueOnFailure: true

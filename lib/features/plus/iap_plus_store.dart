@@ -73,7 +73,7 @@ String storeStylePrice({
 }) {
   final fallback = '$symbol$amount';
   final value = double.tryParse(amount);
-  final m = RegExp('\\d(?:[\\d.,\'    ’]*\\d)?').firstMatch(yearly);
+  final m = RegExp('\\d(?:[\\d.,\'\u00A0\u202F\u2009 ’]*\\d)?').firstMatch(yearly);
   if (value == null || value <= 0 || m == null || yearlyRaw <= 0) return fallback;
   final number = m.group(0)!;
   final digits = number.replaceAll(RegExp(r'\D'), '');

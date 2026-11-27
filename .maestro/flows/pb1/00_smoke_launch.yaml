@@ -1,0 +1,49 @@
+appId: ${APP_ID}
+name: Smoke - a clean install gets past the start screen, every tab opens (the screen walk), and the app is still alive after 60 s
+tags: [pb1, smoke]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- assertNotVisible:
+    id: start-error                     # the start screen's failure state
+- takeScreenshot: 00-first-screen
+# From PR 4 on, a fresh install starts in onboarding: walk its shortest path
+- runFlow:
+    when:
+      visible:
+        id: onb-start
+    commands:
+      - takeScreenshot: 00-onboarding-o1
+      - tapOn:
+          id: onb-start
+      - tapOn:
+          id: onb-happy-save
+      - tapOn:
+          id: onb-continue
+      - tapOn:
+          id: onb-goal-later
+- extendedWaitUntil:
+    visible:
+      id: tab-home
+    timeout: 30000
+# The screen walk: every tab, one screenshot each (each looked at by the tester)
+- tapOn:
+    id: tab-timeline
+- takeScreenshot: 00-tab-timeline
+- tapOn:
+    id: tab-summary
+- takeScreenshot: 00-tab-summary
+- tapOn:
+    id: tab-me
+- takeScreenshot: 00-tab-me
+- tapOn:
+    id: tab-home
+- takeScreenshot: 00-tab-home
+# 60 s idle (Maestro has no sleep: wait for text that never appears, optionally)
+- extendedWaitUntil:
+    visible: "piggybow-smoke-never-shown-7f3c"
+    timeout: 60000
+    optional: true
+- assertVisible:
+    id: tab-home                        # still on screen: no crash, no restart
+- assertNotVisible: ".*(keeps stopping|has stopped|isn.t responding).*"
+- takeScreenshot: 00-after-60s
