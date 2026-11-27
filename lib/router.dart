@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/semantics_id.dart';
+import 'features/goal/goal_screens.dart';
+import 'features/home/home_screen.dart';
 import 'features/shell/home_shell.dart';
 import 'features/start/start_screen.dart';
 import 'features/timeline/timeline_screen.dart';
@@ -31,6 +33,14 @@ enum AppTab {
   );
 }
 
+/// The goal screens, over the tabs (they belong to Home).
+abstract final class GoalRoutes {
+  static const create = '/home/goal/new';
+  static String detail(String id) => '/home/goal/$id';
+  static String edit(String id) => '/home/goal/$id/edit';
+  static String done(String id) => '/home/goal/$id/done';
+}
+
 GoRouter buildRouter({
   required AppSession session,
   String initialLocation = Routes.home,
@@ -42,7 +52,22 @@ GoRouter buildRouter({
         NoTransitionPage(key: state.pageKey, child: child),
   );
 
+  final root = GlobalKey<NavigatorState>();
+  GoRoute over(
+    String path,
+    Widget Function(GoRouterState) build, {
+    List<GoRoute> routes = const [],
+  }) => GoRoute(
+    path: path,
+    parentNavigatorKey: root,
+    // Its own messenger: a SnackBar shown here ("Added") stays here, and
+    // never lingers on the tabs' shell over Home's +.
+    builder: (context, state) => ScaffoldMessenger(child: build(state)),
+    routes: routes,
+  );
+
   return GoRouter(
+    navigatorKey: root,
     initialLocation: initialLocation,
     observers: observers,
     refreshListenable: session,
@@ -74,10 +99,33 @@ GoRouter buildRouter({
                   // the tab's + rides above them instead of under them.
                   builder: (context, state) => ScaffoldMessenger(
                     child: switch (tab) {
+                      AppTab.home => const HomeScreen(),
                       AppTab.timeline => const TimelineScreen(),
                       _ => PlaceholderTab(tab: tab),
                     },
                   ),
+                  routes: [
+                    if (tab == AppTab.home) ...[
+                      over('goal/new', (_) => const GoalEditScreen()),
+                      over(
+                        'goal/:id',
+                        (s) =>
+                            GoalDetailScreen(goalId: s.pathParameters['id']!),
+                        routes: [
+                          over(
+                            'edit',
+                            (s) =>
+                                GoalEditScreen(goalId: s.pathParameters['id']),
+                          ),
+                          over(
+                            'done',
+                            (s) =>
+                                GoalDoneScreen(goalId: s.pathParameters['id']!),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),

@@ -39,6 +39,11 @@ abstract final class AppDates {
   static String dayShort(String dateLocale, DateTime day) =>
       _format(DateFormat.MMMEd(dateLocale), dateLocale, day);
 
+  /// "Thu, Oct 2, 2025": [dayShort] with the year, for a day in another
+  /// year (decision 48); Thai BE.
+  static String dayShortWithYear(String dateLocale, DateTime day) =>
+      _format(DateFormat.yMMMEd(dateLocale), dateLocale, day);
+
   /// "Tuesday, 10 November" (no year): Insights → AI's reflection rows
   /// (board 30c); another year's day says its year ([full]).
   static String dayLong(String dateLocale, DateTime day, {required int thisYear}) =>

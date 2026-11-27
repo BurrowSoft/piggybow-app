@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/button_label.dart';
 import '../../core/clock.dart';
+import '../../core/day_label.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../journal/entry.dart';
@@ -218,11 +218,12 @@ class _DayHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final locale = context.session.device.localeName;
     final today = context.services.localDay.today;
-    final label = date == today
-        ? l10n.tlToday
-        : date == DateTime(today.year, today.month, today.day - 1)
-        ? l10n.tlYesterday
-        : DateFormat.MMMEd(context.session.dateLocale).format(date);
+    final label = dayLabel(
+      l10n,
+      context.session.dateLocale,
+      date,
+      today: today,
+    );
     // The day's totals in integer minor units; only the ones that aren't 0.
     final currency = entries.first.currency;
     var spent = 0, saved = 0;
