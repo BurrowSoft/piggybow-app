@@ -118,6 +118,13 @@ Future<void> expectGolden(
     100.0 * textScale,
     reason: '$name: the text scale is $textScale',
   );
+  // A golden shows the app as a finger leaves it: never the keyboard focus
+  // ring a widget test can leave on a focused button (PB UX & PM's look at
+  // the first render: the + button's ring, which no phone shows).
+  final strategy = FocusManager.instance.highlightStrategy;
+  FocusManager.instance.highlightStrategy = FocusHighlightStrategy.alwaysTouch;
+  addTearDown(() => FocusManager.instance.highlightStrategy = strategy);
+  await tester.pumpAndSettle();
   final comparator = goldenFileComparator;
   if (comparator is! LocalFileComparator) {
     throw StateError(
