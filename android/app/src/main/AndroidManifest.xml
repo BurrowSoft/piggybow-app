@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Crash reports (Sentry), sent only by a build with a DSN. -->
+    <!-- Crash reports (Sentry), sent only by a build with a DSN. Release
+         builds remove it (src/release) while none has one. -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- The daily reminder: the plugin re-schedules its notifications after a
          restart or an app update. No exact-alarm permission. -->

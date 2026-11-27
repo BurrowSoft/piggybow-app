@@ -1,12 +1,13 @@
 name: Release AAB
 
-# The Play store build (decision 162): the prod flavour, release + R8, signed
-# with the Play upload key, from master only. Manual only: Actions →
-# Release AAB → Run workflow (master). The version is pubspec.yaml's: both
-# inputs are required, have no default, and must equal it (Reviewer's pilot
-# audit: nobody uploads 0.9.0 by accident). Raise pubspec's version in a PR
-# first, higher than the last upload. Google re-signs it with the app key
-# (Play App Signing).
+# The Play store build: the prod flavour, release + R8, signed with the Play
+# upload key, from master only. Manual only: Actions → Release AAB → Run
+# workflow (master). The version is pubspec.yaml's: both inputs are required,
+# have no default, and must equal it, so nobody uploads a wrong version by
+# accident. Raise pubspec's version in a PR first, higher than the last
+# upload. Google re-signs it with the app key (Play App Signing). Its
+# permissions must equal android/expected-permissions.txt: a release build
+# has no network permission (android/app/src/release/AndroidManifest.xml).
 #
 # Secrets (the owner, repo Settings → Secrets → Actions; never in this repo):
 # PIGGYBOW_UPLOAD_KEYSTORE_B64, PIGGYBOW_UPLOAD_STORE_PASSWORD,
@@ -71,11 +72,19 @@ jobs:
             'kotlin.daemon.jvmargs=-Xmx1g' >> ~/.gradle/gradle.properties
           cat ~/.gradle/gradle.properties
           free -m
+      # The four secrets are pasted in by hand: a stray line ending (CR LF from
+      # Notepad) is stripped, and any whitespace left fails the step that
+      # reads it, by name, instead of breaking the signing later.
       - name: The upload key (to a temp file)
         env:
           KEYSTORE_B64: ${{ secrets.PIGGYBOW_UPLOAD_KEYSTORE_B64 }}
         run: |
-          test -n "$KEYSTORE_B64" || { echo "PIGGYBOW_UPLOAD_KEYSTORE_B64 is not set" >&2; exit 1; }
+          set -euo pipefail
+          KEYSTORE_B64=$(printf '%s' "$KEYSTORE_B64" | tr -d '\r\n')
+          test -n "$KEYSTORE_B64" || { echo "::error::PIGGYBOW_UPLOAD_KEYSTORE_B64 is not set"; exit 1; }
+          if [[ "$KEYSTORE_B64" =~ [[:space:]] ]]; then
+            echo "::error::PIGGYBOW_UPLOAD_KEYSTORE_B64 holds whitespace: paste it again as one line"; exit 1
+          fi
           printf '%s' "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/upload.jks"
           echo "PIGGYBOW_UPLOAD_KEYSTORE=$RUNNER_TEMP/upload.jks" >> "$GITHUB_ENV"
       # A fixed clock never reaches a store build (UX, 20 Nov). The app already
@@ -106,6 +115,15 @@ jobs:
           BUILD_NAME: ${{ inputs.build_name }}
           BUILD_NUMBER: ${{ inputs.build_number }}
         run: |
+          # The alias and passwords, pasted in by hand: line endings stripped,
+          # any whitespace left fails, by name.
+          for v in PIGGYBOW_UPLOAD_STORE_PASSWORD PIGGYBOW_UPLOAD_KEY_ALIAS PIGGYBOW_UPLOAD_KEY_PASSWORD; do
+            val=$(printf '%s' "${!v}" | tr -d '\r\n')
+            test -n "$val" || { echo "::error::$v is not set"; exit 1; }
+            if [[ "$val" =~ [[:space:]] ]]; then echo "::error::$v holds whitespace: enter it again"; exit 1; fi
+            echo "::add-mask::$val"
+            export "$v=$val"
+          done
           [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]] || { echo "build_number must be digits" >&2; exit 1; }
           [[ "$BUILD_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "build_name must be x.y.z" >&2; exit 1; }
           flutter build appbundle --release --flavor prod \
@@ -155,6 +173,15 @@ jobs:
           PIGGYBOW_UPLOAD_KEY_ALIAS: ${{ secrets.PIGGYBOW_UPLOAD_KEY_ALIAS }}
           PIGGYBOW_UPLOAD_KEY_PASSWORD: ${{ secrets.PIGGYBOW_UPLOAD_KEY_PASSWORD }}
         run: |
+          # The alias and passwords, pasted in by hand: line endings stripped,
+          # any whitespace left fails, by name.
+          for v in PIGGYBOW_UPLOAD_STORE_PASSWORD PIGGYBOW_UPLOAD_KEY_ALIAS PIGGYBOW_UPLOAD_KEY_PASSWORD; do
+            val=$(printf '%s' "${!v}" | tr -d '\r\n')
+            test -n "$val" || { echo "::error::$v is not set"; exit 1; }
+            if [[ "$val" =~ [[:space:]] ]]; then echo "::error::$v holds whitespace: enter it again"; exit 1; fi
+            echo "::add-mask::$val"
+            export "$v=$val"
+          done
           AAB=build/app/outputs/bundle/prodRelease/app-prod-release.aab
           mkdir -p "$RUNNER_TEMP/aab"
           unzip -o -q "$AAB" 'base/lib/*' -d "$RUNNER_TEMP/aab"

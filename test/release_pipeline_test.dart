@@ -2,9 +2,9 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// The Play release build (decision 162): manual, from master, the prod
-/// flavour, signed with the upload key from secrets only, and its
-/// permissions exactly the data-safety list. These file checks keep it so.
+/// The Play release build: manual, from master, the prod flavour, signed with
+/// the upload key from secrets only, and its permissions exactly the
+/// data-safety list. These file checks keep it so.
 void main() {
   final workflow = File('.github/workflows/release-aab.yaml')
       .readAsStringSync();
@@ -164,14 +164,13 @@ void main() {
       workflow,
       contains('diff <(sort android/expected-permissions.txt) permissions.txt'),
     );
-    // v0.1: only what the reminder (notifications, boot), the app lock
-    // (biometrics; USE_FINGERPRINT is androidx.biometric's fallback below
-    // API 28) and crash reports (INTERNET) need, exactly these, sorted; plus
-    // the Plus plumbing's BILLING and ACCESS_NETWORK_STATE from billing's
-    // datatransport. No microphone, camera, health or location.
+    // v0.1's release: only what the reminder (notifications, boot) and the
+    // app lock (biometrics; USE_FINGERPRINT is androidx.biometric's fallback
+    // below API 28) need, exactly these, sorted; plus the Plus plumbing's
+    // BILLING. No network at all (src/release removes INTERNET and billing's
+    // ACCESS_NETWORK_STATE: release_no_network_test). No microphone,
+    // camera, health or location.
     expect(expected, [
-      'android.permission.ACCESS_NETWORK_STATE',
-      'android.permission.INTERNET',
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.RECEIVE_BOOT_COMPLETED',
       'android.permission.USE_BIOMETRIC',
@@ -217,11 +216,15 @@ void main() {
 
   // The same list is diffed on every PR APK (the tester reads the facts from
   // the log): a plugin that adds a permission fails the PR, not the release.
+  // The PR APK is a debug build, so the network it keeps is added.
   test('the PR APK: permissions diffed, badging and backup printed', () {
     final pr = File('.github/workflows/pr-apk.yaml').readAsStringSync();
     expect(
       pr,
-      contains('diff <(sort android/expected-permissions.txt) permissions.txt'),
+      contains(
+        'diff <(sort android/expected-permissions.txt '
+        'android/debug-only-permissions.txt) permissions.txt',
+      ),
     );
     expect(pr, contains('dump badging'));
     expect(pr, contains('allowBackup'));

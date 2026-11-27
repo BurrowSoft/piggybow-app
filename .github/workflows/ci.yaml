@@ -118,6 +118,26 @@ jobs:
         # A dependency report needs little heap; android/gradle.properties'
         # -Xmx8G is more than the runner has.
         run: ./gradlew --no-daemon verifyNoTrackingDeps -Dorg.gradle.jvmargs=-Xmx2g
+      # A release build sends nothing (src/release/AndroidManifest.xml removes
+      # the network permissions): its merged manifest asks for exactly
+      # android/expected-permissions.txt, the list the Play upload is checked
+      # against. The staging release has the same manifest; a prod task needs
+      # the upload key, which only the Release AAB workflow has.
+      - name: Release permissions = android/expected-permissions.txt
+        working-directory: android
+        run: |
+          set -euo pipefail
+          ./gradlew --no-daemon :app:processStagingReleaseMainManifest -Dorg.gradle.jvmargs=-Xmx2g
+          m=$(find ../build/app/intermediates -path '*merged_manifest*' -path '*stagingRelease*' -name AndroidManifest.xml | head -1)
+          test -n "$m" || { echo "no merged staging release manifest" >&2; exit 1; }
+          echo "merged manifest: $m"
+          tr '\n' ' ' < "$m" \
+            | grep -oE '<uses-permission(-sdk-23)?[^>]*>' \
+            | sed -nE 's/.*android:name="([^"]+)".*/\1/p' \
+            | sed 's/^com\.burrowsoft\.piggybow\.staging\./com.burrowsoft.piggybow./' \
+            | sort -u > "$RUNNER_TEMP/release-permissions.txt"
+          cat "$RUNNER_TEMP/release-permissions.txt"
+          diff <(sort expected-permissions.txt) "$RUNNER_TEMP/release-permissions.txt"
 
   # Master pushes only; a PR's APK comes from pr-apk.yaml ("apk" label).
   apk:

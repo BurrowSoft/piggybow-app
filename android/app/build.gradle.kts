@@ -114,6 +114,38 @@ gradle.taskGraph.whenReady {
     }
 }
 
+// A release build sends nothing: src/release/AndroidManifest.xml removes
+// INTERNET and ACCESS_NETWORK_STATE. A release that would need the network
+// (a Sentry DSN, or Plus with Play Billing) stops here, so that file changes
+// in the same reviewed PR. The dart-defines are the ones Flutter passes
+// (-Pdart-defines: base64 KEY=VALUE pairs, comma-separated), from
+// --dart-define-from-file=env/<flavor>.json.
+val dartDefines: Map<String, String> =
+    (project.findProperty("dart-defines") as String?)
+        .orEmpty()
+        .split(",")
+        .filter { it.isNotEmpty() }
+        .map { String(java.util.Base64.getDecoder().decode(it), Charsets.UTF_8) }
+        .associate { it.substringBefore("=") to it.substringAfter("=", "") }
+
+gradle.taskGraph.whenReady {
+    val release = allTasks.any { it.name.contains("Release") }
+    val dsn = dartDefines["SENTRY_DSN"].orEmpty().isNotBlank()
+    val plus = dartDefines["PLUS_ENABLED"] == "true"
+    if (release && (dsn || plus)) {
+        throw GradleException(
+            "this release build would need the network (" +
+                listOfNotNull(
+                    "SENTRY_DSN".takeIf { dsn },
+                    "PLUS_ENABLED".takeIf { plus },
+                ).joinToString() +
+                "), but src/release/AndroidManifest.xml removes INTERNET and " +
+                "ACCESS_NETWORK_STATE: change that file and " +
+                "android/expected-permissions.txt in the same PR",
+        )
+    }
+}
+
 // Native crash handling is off (sentry_setup.dart: enableNativeCrashHandling
 // and enableNdkScopeSync false), so ship none of sentry-native's .so files:
 // smaller, and no 16 KB page-alignment risk. Dart errors still go

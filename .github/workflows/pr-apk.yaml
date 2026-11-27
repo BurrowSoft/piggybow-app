@@ -49,8 +49,10 @@ jobs:
       - run: flutter build apk --debug --flavor staging --dart-define-from-file=env/staging.json
       # What the tester's rows read from the log, without downloading the APK:
       # the package, label and version; every permission, diffed against
-      # android/expected-permissions.txt (the staging package's own permission
-      # read as the store package's); the manifest's backup attributes.
+      # android/expected-permissions.txt (the release list) plus
+      # android/debug-only-permissions.txt (the network, which only debug and
+      # profile builds keep; the staging package's own permission read as the
+      # store package's); the manifest's backup attributes.
       - name: The APK's facts (badging, permissions, backup)
         run: |
           APK=build/app/outputs/flutter-apk/app-staging-debug.apk
@@ -62,7 +64,7 @@ jobs:
             | sed 's/^com\.burrowsoft\.piggybow\.staging\./com.burrowsoft.piggybow./' \
             | sort -u > permissions.txt
           echo "== permissions"; cat permissions.txt
-          diff <(sort android/expected-permissions.txt) permissions.txt
+          diff <(sort android/expected-permissions.txt android/debug-only-permissions.txt) permissions.txt
           echo "== backup"
           "$AAPT2" dump xmltree --file AndroidManifest.xml "$APK" \
             | grep -E 'allowBackup|fullBackupContent|dataExtractionRules'
