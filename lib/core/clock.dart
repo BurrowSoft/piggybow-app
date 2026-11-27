@@ -3,8 +3,8 @@ import 'package:timezone/timezone.dart' as tz;
 
 /// The one source of "now" in the app. Never call DateTime.now() directly in
 /// features: tests and the staging flavor pin the time through this
-/// (FAKE_NOW), and "today" is always the user's stored IANA zone
-/// (profiles.time_zone), never the phone's zone.
+/// (FAKE_NOW). "Today" is the phone's live zone (LocalDay), never a stored
+/// one.
 class Clock {
   Clock({DateTime? fixed}) : _fixed = fixed?.toUtc() {
     _ensureTimeZones();
@@ -21,8 +21,26 @@ class Clock {
 
   DateTime nowUtc() => _fixed ?? DateTime.now().toUtc();
 
-  /// Now in [timeZone]; an unknown zone falls back to UTC (the server does
-  /// the same).
+  /// [name] when the zone database knows it. Otherwise (the platform gave no
+  /// zone, or one this database doesn't have) a zone at [offset] from UTC
+  /// now, so "today" is still the phone's day: `Etc/GMT-7` for UTC+7 (the Etc
+  /// zones' sign is inverted), or for a part hour the first zone by name at
+  /// that offset now (+5:30, +5:45). UTC only at +0 or when nothing matches.
+  static String knownZoneOr(String? name, Duration offset) {
+    _ensureTimeZones();
+    final zones = tz.timeZoneDatabase.locations;
+    if (name != null && zones.containsKey(name)) return name;
+    final h = offset.inHours;
+    if (offset.inMinutes % 60 == 0 && h >= -12 && h <= 14) {
+      return h == 0 ? 'UTC' : 'Etc/GMT${h > 0 ? '-' : '+'}${h.abs()}';
+    }
+    for (final zone in zones.keys.toList()..sort()) {
+      if (zones[zone]!.currentTimeZone.offset == offset) return zone;
+    }
+    return 'UTC';
+  }
+
+  /// Now in [timeZone]; an unknown zone falls back to UTC.
   tz.TZDateTime nowIn(String timeZone) {
     final location = _location(timeZone);
     return tz.TZDateTime.from(nowUtc(), location);

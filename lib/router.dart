@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'core/semantics_id.dart';
 import 'features/shell/home_shell.dart';
 import 'features/start/start_screen.dart';
+import 'features/timeline/timeline_screen.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'session/app_session.dart';
 
@@ -69,7 +70,14 @@ GoRouter buildRouter({
                 GoRoute(
                   path: tab.path,
                   name: tab.name,
-                  builder: (context, state) => PlaceholderTab(tab: tab),
+                  // Each tab shows its SnackBars on its own Scaffold, so
+                  // the tab's + rides above them instead of under them.
+                  builder: (context, state) => ScaffoldMessenger(
+                    child: switch (tab) {
+                      AppTab.timeline => const TimelineScreen(),
+                      _ => PlaceholderTab(tab: tab),
+                    },
+                  ),
                 ),
               ],
             ),
@@ -79,8 +87,8 @@ GoRouter buildRouter({
   );
 }
 
-/// A tab's page until its screen lands (the weekend plan's P3, P7, P8 and
-/// P9): the tab's name as its title, and nothing else.
+/// A tab's page until its screen lands (the weekend plan's P7, P8 and P9):
+/// the tab's name as its title, and nothing else.
 class PlaceholderTab extends StatelessWidget {
   const PlaceholderTab({super.key, required this.tab});
 

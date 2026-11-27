@@ -6,6 +6,7 @@ import 'package:piggybow/core/app_config.dart';
 import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/core/clock.dart';
 import 'package:piggybow/core/device.dart';
+import 'package:piggybow/core/local_day.dart';
 import 'package:piggybow/core/local_prefs.dart';
 import 'package:piggybow/core/policy.dart';
 import 'package:piggybow/core/services.dart';
@@ -13,17 +14,25 @@ import 'package:piggybow/data/device_backend.dart';
 import 'package:piggybow/data/models.dart';
 import 'package:piggybow/features/reminder/reminder_plan.dart';
 import 'package:piggybow/features/reminder/reminder_scheduler.dart';
+import 'package:piggybow/journal/journal_store.dart';
 import 'package:piggybow/router.dart';
 import 'package:piggybow/session/app_session.dart';
 
 class FakeDevice implements DeviceContext {
-  FakeDevice({this.languageCode = 'en', this.countryCode = 'TH'});
+  FakeDevice({
+    this.languageCode = 'en',
+    this.countryCode = 'TH',
+    this.localeName = 'en_US',
+  });
 
   @override
   final String languageCode;
 
   @override
   final String? countryCode;
+
+  @override
+  final String localeName;
 
   @override
   Future<String> timeZone() async => 'Asia/Bangkok';
@@ -86,6 +95,7 @@ class TestApp {
     String? deviceAccount,
     this.shippedLocales = const ['en'],
     this.appLock,
+    this.currency = 'THB',
     Clock? clock,
   }) : clock = clock ?? testClock,
        prefs = MemoryLocalPrefs(
@@ -108,17 +118,46 @@ class TestApp {
   /// App lock; null = the feature off.
   final AppLock? appLock;
 
+  /// The journal's currency.
+  final String currency;
+
   late final DeviceBackend backend;
   late final AppSession session;
+
+  /// The journal, in memory; entry ids are entry-1, entry-2…
+  late final JournalStore journal;
+  late final LocalDay localDay;
+  int _ids = 0;
+
   late final services = AppServices(
     clock: clock,
+    localDay: localDay,
+    journal: journal,
     reminders: reminders,
     appLock: appLock,
     stagingTestError: () => stagingErrors++,
   );
 
+  /// Opens the journal and today (call before adding test data; [pump]
+  /// calls it when a test didn't).
+  Future<void> openJournal() async {
+    if (_journalOpen) return;
+    _journalOpen = true;
+    journal = await JournalStore.inMemory(
+      clock: clock,
+      newId: () => 'entry-${++_ids}',
+    );
+    await journal.setCurrency(currency);
+    localDay = LocalDay(clock: clock, device: device);
+    await localDay.refresh();
+  }
+
+  bool _journalOpen = false;
+
   Future<void> pump(WidgetTester tester, {String? location}) async {
     await initializeDateFormatting();
+    // The store works on real time (not the test's fake one).
+    await tester.runAsync(openJournal);
     backend = await DeviceBackend.open(
       prefs: prefs,
       timeZone: await device.timeZone(),

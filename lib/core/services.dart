@@ -3,8 +3,10 @@ import 'package:flutter/widgets.dart';
 import '../data/plus.dart';
 import '../features/plus/plus_store.dart';
 import '../features/reminder/reminder_scheduler.dart';
+import '../journal/journal_store.dart';
 import 'app_lock.dart';
 import 'clock.dart';
+import 'local_day.dart';
 import 'staging_tools.dart';
 
 /// The app's dependencies beyond the session (which covers the device
@@ -12,6 +14,8 @@ import 'staging_tools.dart';
 class AppServices {
   AppServices({
     required this.clock,
+    required this.localDay,
+    required this.journal,
     required this.reminders,
     this.appLock,
     this.plus,
@@ -20,6 +24,12 @@ class AppServices {
   });
 
   final Clock clock;
+
+  /// Today on this phone (its live time zone).
+  final LocalDay localDay;
+
+  /// The journal: entries, goals and the journal's settings.
+  final JournalStore journal;
 
   /// The daily reminder's notifications (flutter_local_notifications).
   final ReminderScheduler reminders;

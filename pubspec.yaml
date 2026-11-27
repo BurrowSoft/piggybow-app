@@ -30,6 +30,9 @@ dependencies:
   in_app_purchase: 3.3.1
   in_app_purchase_android: 0.5.5
   in_app_purchase_storekit: 0.4.17
+  # The journal's store on the phone (entries, goals, settings): pure Dart,
+  # no native code, an in-memory database for tests. Pinned exactly.
+  sembast: 3.10.1
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +45,8 @@ flutter:
   assets:
     # Placeholder brand art until the Piggybow design lands.
     - assets/brand/
+    # The pig (design/pig-*.svg, byte for byte).
+    - assets/pig/
 
   fonts:
     - family: Poppins

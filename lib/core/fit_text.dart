@@ -69,12 +69,37 @@ TextScaler wholeNumberScaler(
   required double available,
 }) {
   final words = text.split(_spaces);
-  final forNumber = _fitting(context, MediaQuery.textScalerOf(context), [
-    words.firstWhere((w) => w.contains(number), orElse: () => number),
-  ], style, available);
+  final forNumber = _fitting(
+    context,
+    MediaQuery.textScalerOf(context),
+    [words.firstWhere((w) => w.contains(number), orElse: () => number)],
+    style,
+    available,
+  );
   if (_hasThai(text)) return forNumber;
   return _fitting(context, forNumber, words, style, available, floor: 1);
 }
+
+/// One size for [texts] set side by side in cells [available] wide (a grid
+/// of labels): the system's, or as much smaller as the longest word needs to
+/// stay whole, never below normal size. Thai texts don't count: they break
+/// by dictionary.
+TextScaler wholeWordsScaler(
+  BuildContext context, {
+  required Iterable<String> texts,
+  required TextStyle? style,
+  required double available,
+}) => _fitting(
+  context,
+  MediaQuery.textScalerOf(context),
+  [
+    for (final t in texts)
+      if (!_hasThai(t)) ...t.split(_spaces),
+  ],
+  style,
+  available,
+  floor: 1,
+);
 
 /// A screen's big title, or a label next to one: wraps between words, never
 /// inside one. Stops at normal size (Reviewer E4): a title stays a title.

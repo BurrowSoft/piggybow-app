@@ -42,10 +42,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   test('every TextField and TextFormField in lib/ types in ink', () {
-    // The scan itself is proven by the test below; lib/ may have any number
-    // of fields (the seed has none yet).
     final scan = bareTextFields('lib');
-    expect(scan.bare, isEmpty, reason: 'fields without style: context.inputText');
+    // A floor, so a scan that finds nothing can't pass: the add sheet's
+    // amount and note fields at least.
+    expect(scan.fields, greaterThanOrEqualTo(2), reason: 'fields found');
+    expect(
+      scan.bare,
+      isEmpty,
+      reason: 'fields without style: context.inputText',
+    );
   });
 
   test('the scan catches a bare field and passes a styled one', () {

@@ -116,15 +116,18 @@ void main() {
     });
 
     test(
-      'M2: only known codes or code-shaped values with a digit or _ stay',
+      'M2: only known codes, or code-shaped values with a letter and a digit '
+      'or _; never a bare number (it could be an amount)',
       () {
         final event = SentryEvent(
           exceptions: [
             SentryException(type: 'AppFailure', value: 'tired'),
             SentryException(type: 'AppFailure', value: 'offline'),
             SentryException(type: 'AppFailure', value: 'daily_limit'),
-            SentryException(type: 'PostgrestException', value: '23505'),
+            SentryException(type: 'StateError', value: '23505'),
             SentryException(type: 'AppFailure', value: 'not_enough'),
+            SentryException(type: 'StateError', value: '1250'),
+            SentryException(type: 'StateError', value: '12_50'),
           ],
         );
         final values = [
@@ -135,8 +138,10 @@ void main() {
           '[redacted]',
           'offline',
           'daily_limit',
-          '23505',
+          '[redacted]',
           'not_enough',
+          '[redacted]',
+          '[redacted]',
         ]);
       },
     );
