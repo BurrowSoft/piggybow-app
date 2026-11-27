@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/features/add/entry_sheet.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
@@ -13,6 +14,14 @@ import 'helpers.dart';
 void main() {
   // Tests run on Friday 2 October 2026, 08:30 in Bangkok (helpers.dart).
   String money(int minor) => formatMoney(minor, 'THB', 'en_US');
+
+  // The sheet's own list, built lazily (the Timeline behind it scrolls too).
+  Finder sheetList() => find
+      .descendant(
+        of: find.byType(EntrySheet),
+        matching: find.byType(Scrollable),
+      )
+      .first;
 
   Future<TestApp> openTimeline(
     WidgetTester tester, {
@@ -101,7 +110,17 @@ void main() {
 
       await tester.tapId('add-submit');
       expect(find.text('Enter an amount.'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        find.text('Pick a category.'),
+        100,
+        scrollable: sheetList(),
+      );
       expect(find.text('Pick a category.'), findsOneWidget);
+      await tester.scrollUntilVisible(
+        byId('add-amount'),
+        -100,
+        scrollable: sheetList(),
+      );
 
       // 13 digits of baht: over the 12-digit cap in minor units.
       await tester.enterId('add-amount', '1234567890123');
@@ -263,6 +282,11 @@ void main() {
       await tester.tapId('tl-empty-add');
       Finder dateChip(String label) =>
           find.descendant(of: byId('add-date'), matching: find.text(label));
+      await tester.scrollUntilVisible(
+        byId('add-date'),
+        100,
+        scrollable: sheetList(),
+      );
       expect(dateChip('Today'), findsOneWidget);
 
       await tester.tapId('add-date');
@@ -279,6 +303,11 @@ void main() {
       await tester.pumpAndSettle();
       expect(dateChip('Yesterday'), findsOneWidget);
 
+      await tester.scrollUntilVisible(
+        byId('add-amount'),
+        -100,
+        scrollable: sheetList(),
+      );
       await tester.enterId('add-amount', '25');
       await tester.tapId('add-cat-food');
       await tester.tapId('add-submit');
@@ -290,6 +319,11 @@ void main() {
     await openTimeline(tester, seed: (app) => addSpend(app, 500, '2026-09-28'));
     await tester.pumpAndSettle();
     await tester.tapId('tl-row-entry-1');
+    await tester.scrollUntilVisible(
+      byId('add-date'),
+      100,
+      scrollable: sheetList(),
+    );
     expect(
       find.descendant(
         of: byId('add-date'),

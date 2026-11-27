@@ -15,7 +15,9 @@ import 'helpers/no_error_colour.dart';
 void main() {
   // Tests run on Friday 2 October 2026, 08:30 in Bangkok (helpers.dart).
   String money(int minor) => formatMoney(minor, 'THB', 'en_US');
-  final rows = find.bySemanticsIdentifier(RegExp('^tl-row-'));
+  // A function: the semantics finder needs the test binding, so it can't be
+  // built before a test runs.
+  Finder rows() => find.bySemanticsIdentifier(RegExp('^tl-row-'));
 
   Future<TestApp> openTimeline(
     WidgetTester tester, {
@@ -130,7 +132,7 @@ void main() {
           }
         },
       );
-      final built = rows.evaluate().length;
+      final built = rows().evaluate().length;
       expect(built, greaterThan(0));
       expect(built, lessThan(60), reason: 'built lazily, not all 1000');
     },
@@ -155,14 +157,18 @@ void main() {
       200,
       scrollable: list,
     );
-    await tester.tapId('tl-row-entry-10');
-    final before = tester.state<ScrollableState>(list).position.pixels;
+    await tester.ensureVisible(byId('tl-row-entry-10'));
+    await tester.pumpAndSettle();
+    // Held now: once the sheet is open, its own list is a ListView too.
+    final position = tester.state<ScrollableState>(list).position;
+    final before = position.pixels;
     expect(before, greaterThan(0), reason: 'scrolled down');
 
+    await tester.tapId('tl-row-entry-10');
     await tester.tapId('edit-delete');
     await tester.tapId('delete-confirm');
     expect((await tester.runAsync(app.journal.entries))!, hasLength(39));
     await tester.pumpAndSettle();
-    expect(tester.state<ScrollableState>(list).position.pixels, before);
+    expect(position.pixels, before);
   });
 }
