@@ -9,7 +9,7 @@ import 'reminder_plan.dart';
 /// The words on the notification: copy keys only, never anything the person
 /// wrote (lock screens are public).
 class ReminderCopy {
-  const ReminderCopy({
+  ReminderCopy({
     required this.title,
     required this.bodies,
     required this.channelName,

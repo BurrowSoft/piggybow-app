@@ -47,7 +47,7 @@ void main() {
         .setMockMethodCallHandler(channel, null),
   );
 
-  const copy = ReminderCopy(
+  final copy = ReminderCopy(
     title: 'Piggybow',
     bodies: ['One?', 'Two?', 'Three?'],
     channelName: 'Daily reminder',
