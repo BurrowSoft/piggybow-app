@@ -201,6 +201,9 @@ steps:
     );
     expect(rename, greaterThan(0));
     expect(step, contains("tr '\":<>|*?' '_______'"));
+    // A clash fails the step; nothing is overwritten.
+    expect(step, contains(r'if [ -e "$to" ]; then echo'));
+    expect(step, contains(r'mv -n -- "$p" "$to"'));
     expect(rename, lessThan(step.indexOf("-iname '*.apk'")));
   });
 
