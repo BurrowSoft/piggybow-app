@@ -20,7 +20,6 @@ import '../../session/session_scope.dart';
 import '../../settings_rules/settings_rules.dart';
 import '../../theme/theme.dart';
 import '../currency/currency_picker.dart';
-import '../shell/segmented.dart';
 import '../shell/tab_top.dart';
 import 'me_actions.dart';
 import 'me_app_lock_section.dart';
@@ -318,16 +317,27 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                     onTap: _deleteAll,
                   ),
                   _Section(l10n.meSecAppearance),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: PiggybowSegmented<ThemeMode>(
-                      segments: [
-                        ('me-theme-system', l10n.themeSystem, ThemeMode.system),
-                        ('me-theme-light', l10n.themeLight, ThemeMode.light),
-                        ('me-theme-dark', l10n.themeDark, ThemeMode.dark),
+                  // Three rows: whole at any text size (decision 66).
+                  RadioGroup<ThemeMode>(
+                    groupValue: session.themeMode,
+                    onChanged: (mode) {
+                      if (mode != null) session.setThemeMode(mode);
+                    },
+                    child: Column(
+                      children: [
+                        for (final (id, label, mode) in [
+                          ('me-theme-system', l10n.themeSystem, ThemeMode.system),
+                          ('me-theme-light', l10n.themeLight, ThemeMode.light),
+                          ('me-theme-dark', l10n.themeDark, ThemeMode.dark),
+                        ])
+                          TestId(
+                            id,
+                            child: RadioListTile<ThemeMode>(
+                              value: mode,
+                              title: Text(label),
+                            ),
+                          ),
                       ],
-                      selected: session.themeMode,
-                      onSelected: session.setThemeMode,
                     ),
                   ),
                   _Section(l10n.meSecAbout),

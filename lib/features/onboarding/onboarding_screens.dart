@@ -241,16 +241,20 @@ class _HappyScreenState extends State<HappyScreen> {
     return TestId.container(
       inMe ? 'me-happy' : 'onb-happy',
       child: Scaffold(
-        appBar: AppBar(title: inMe ? Text(l10n.meHappy) : null),
+        // A plain back bar: the title is the headline below, whole at any size.
+        appBar: AppBar(),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
           children: [
+            Text(
+              inMe ? l10n.meHappy : l10n.onbHappyTitle,
+              style: theme.textTheme.headlineSmall,
+            ),
             if (!inMe) ...[
-              Text(l10n.onbHappyTitle, style: theme.textTheme.headlineSmall),
               const SizedBox(height: 8),
               Text(l10n.onbHappyBody, style: theme.textTheme.bodyLarge),
-              const SizedBox(height: 16),
             ],
+            const SizedBox(height: 16),
             for (final pick in HappyPick.values) ...[
               _PickCard(
                 pick: pick,
