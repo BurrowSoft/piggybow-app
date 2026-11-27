@@ -1,0 +1,17 @@
+# Type ${TEXT} into the empty field ${ID} by paste, then check the field
+# holds it. For a field that already has text, use replace_into.yaml.
+# env: ID, TEXT, EXPECT (a regex for the field's text)
+appId: ${APP_ID}
+---
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: ${ID}
+- tapOn:
+    id: ${ID}
+- setClipboard: ${TEXT}
+- pasteText
+- assertVisible:
+    id: ${ID}
+    text: ${EXPECT}
+- setClipboard: ""

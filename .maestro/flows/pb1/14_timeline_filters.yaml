@@ -1,0 +1,103 @@
+appId: ${APP_ID}
+name: PR 2 Timeline filters - All shows both, Spent shows only spends, Saved only saves
+tags: [pb1, journal]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_timeline.yaml
+# One spend ("Coffee") and one save ("Bike fund")
+- tapOn:
+    id: "tl-empty-add|tl-add"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "3.20"
+      EXPECT: ".*3[.,]20.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-note
+      TEXT: "Coffee"
+      EXPECT: ".*Coffee.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: tl-add
+    timeout: 10000
+- extendedWaitUntil:                 # the "Added" confirmation, if it shows
+    visible: "Added"
+    timeout: 5000
+    optional: true
+- takeScreenshot: 14-timeline-after-added   # "Added" showing: the + must not be covered
+- tapOn:
+    id: tl-add
+- extendedWaitUntil:                 # + opened the sheet while "Added" may still show
+    visible:
+      id: add-seg-spent
+    timeout: 5000
+- tapOn:
+    id: add-seg-saved
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "15"
+      EXPECT: ".*15.*"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-note
+      TEXT: "Bike fund"
+      EXPECT: ".*Bike fund.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: "tl-row-.*"
+      text: ".*Bike fund.*"
+    timeout: 10000
+# All
+- tapOn:
+    id: tl-filter-all
+- assertVisible:
+    id: "tl-row-.*"
+    text: ".*Coffee.*"
+- assertVisible:
+    id: "tl-row-.*"
+    text: ".*Bike fund.*"
+- takeScreenshot: 14-filter-all
+# Spent
+- tapOn:
+    id: tl-filter-spent
+- assertVisible:
+    id: "tl-row-.*"
+    text: ".*Coffee.*"
+- assertNotVisible:
+    id: "tl-row-.*"
+    text: ".*Bike fund.*"
+- takeScreenshot: 14-filter-spent
+# Saved
+- tapOn:
+    id: tl-filter-saved
+- assertVisible:
+    id: "tl-row-.*"
+    text: ".*Bike fund.*"
+- assertNotVisible:
+    id: "tl-row-.*"
+    text: ".*Coffee.*"
+- takeScreenshot: 14-filter-saved
