@@ -546,8 +546,15 @@ class _EntrySheetState extends State<EntrySheet> {
               top: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                // Side by side when they fit; when they don't (large text),
+                // they stack, Save on top: whole words always.
                 child: _editing
-                    ? Row(
+                    ? OverflowBar(
+                        alignment: MainAxisAlignment.spaceBetween,
+                        overflowAlignment: OverflowBarAlignment.end,
+                        overflowDirection: VerticalDirection.up,
+                        spacing: 8,
+                        overflowSpacing: 8,
                         children: [
                           TestId(
                             'edit-delete',
@@ -557,15 +564,12 @@ class _EntrySheetState extends State<EntrySheet> {
                               child: Text(l10n.editDelete),
                             ),
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TestId(
-                              'edit-save',
-                              button: true,
-                              child: FilledButton(
-                                onPressed: _busy ? null : _submit,
-                                child: Text(l10n.editSave),
-                              ),
+                          TestId(
+                            'edit-save',
+                            button: true,
+                            child: FilledButton(
+                              onPressed: _busy ? null : _submit,
+                              child: Text(l10n.editSave),
                             ),
                           ),
                         ],
