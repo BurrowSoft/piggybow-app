@@ -187,6 +187,7 @@ jobs:
             trap 'rm -f "$RUNNER_TEMP/throwaway.jks"' EXIT
             cp env/prod.json "$RUNNER_TEMP/defines.json"
             pass=$(openssl rand -hex 16)
+            echo "::add-mask::$pass"
             keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/throwaway.jks" -storetype PKCS12 \
               -alias throwaway -keyalg RSA -keysize 2048 -validity 1 \
               -dname "CN=Piggybow CI throwaway" -storepass "$pass" -keypass "$pass" > /dev/null

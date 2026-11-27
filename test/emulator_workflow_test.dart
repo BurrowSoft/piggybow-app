@@ -162,6 +162,10 @@ steps:
     expect(trap, greaterThan(0));
     expect(keytool, greaterThan(trap));
     expect(build, contains(r'pass=$(openssl rand -hex 16)'));
+    // The throwaway password is masked before anything could print it.
+    final mask = build.indexOf(r'echo "::add-mask::$pass"');
+    expect(mask, greaterThan(build.indexOf(r'pass=$(openssl rand -hex 16)')));
+    expect(keytool, greaterThan(mask));
     expect(build, contains('-dname "CN=Piggybow CI throwaway"'));
     expect(wf, isNot(contains('Piggybow Upload')));
     expect(build, contains(r'cp env/prod.json "$RUNNER_TEMP/defines.json"'));
