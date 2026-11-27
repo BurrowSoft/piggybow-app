@@ -30,4 +30,10 @@ recipe, so the first commit can be reproduced from Moodbow's source:
    tooling; blanked backend values; the rename).
 2. Hand edits on top of that (the seed pull request lists them).
 3. `prune_arb.mjs`: drops every string no code uses.
-4. `placeholder_icons.mjs`: placeholder launcher icons until the real ones land.
+
+## App icons and splash
+
+`tool/icons/generate.mjs` builds the launcher icons (Android adaptive, themed, legacy and the
+notification icon; every iOS size) and the splash art from the two SVGs in `tool/icons/src/`, using
+Node's standard library only. After changing the art there, run `node tool/icons/generate.mjs` and
+commit what it writes.
