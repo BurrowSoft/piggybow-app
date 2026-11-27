@@ -35,8 +35,17 @@ tags: [pb1, journal]
     visible:
       id: tl-add
     timeout: 10000
+- extendedWaitUntil:                 # the "Added" confirmation, if it shows
+    visible: "Added"
+    timeout: 5000
+    optional: true
+- takeScreenshot: 14-timeline-after-added   # "Added" showing: the + must not be covered
 - tapOn:
     id: tl-add
+- extendedWaitUntil:                 # + opened the sheet while "Added" may still show
+    visible:
+      id: add-seg-spent
+    timeout: 5000
 - tapOn:
     id: add-seg-saved
 - runFlow:

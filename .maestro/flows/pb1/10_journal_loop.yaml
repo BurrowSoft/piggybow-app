@@ -13,6 +13,8 @@ env:
 - assertVisible:
     id: add-seg-spent
     selected: true                 # the segment defaults to Spent (spec §3.3)
+- assertNotVisible:
+    id: tab-timeline               # the sheet opens full-height over the tab bar (spec §3.3)
 - runFlow:
     file: ../../subflows/paste_into.yaml
     env:
@@ -65,6 +67,12 @@ env:
 # 3. Edit: change the amount to 8.75, save
 - tapOn:
     id: "tl-row-.*"
+- extendedWaitUntil:
+    visible:
+      id: edit-save
+    timeout: 10000
+- assertNotVisible:
+    id: tab-timeline               # the edit sheet covers the tab bar too
 - takeScreenshot: 10-edit-sheet
 - runFlow:
     file: ../../subflows/replace_into.yaml
