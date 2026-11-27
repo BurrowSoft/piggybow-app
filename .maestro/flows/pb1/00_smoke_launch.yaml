@@ -16,7 +16,7 @@ tags: [pb1, smoke]
       - tapOn:
           id: onb-start
       - tapOn:
-          id: onb-happy-save
+          id: onb-pick-save
       - tapOn:
           id: onb-continue
       - tapOn:

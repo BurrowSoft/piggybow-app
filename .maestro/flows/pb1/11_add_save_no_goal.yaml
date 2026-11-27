@@ -1,0 +1,39 @@
+appId: ${APP_ID}
+name: PR 2 add a save with no goal - no category or feeling, No goal yet, a plus-sign row
+tags: [pb1, journal]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_timeline.yaml
+- tapOn:
+    id: "tl-empty-add|tl-add"
+- tapOn:
+    id: add-seg-saved
+- assertVisible:
+    id: add-seg-saved
+    selected: true
+# Saved shows no category grid and no feeling chips (spec §3.3)
+- assertNotVisible:
+    id: "add-cat-.*"
+- assertNotVisible:
+    id: "add-feel-.*"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "20"
+      EXPECT: ".*20.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- takeScreenshot: 11-add-sheet-saved-no-goal    # "No goal yet. It still counts as saved."
+- tapOn:
+    id: add-submit                 # no category needed for a save
+- extendedWaitUntil:
+    visible:
+      id: "tl-row-.*"
+    timeout: 10000
+- assertVisible:
+    id: "tl-row-.*"
+    text: ".*[+].*20.*"            # saves show as "+{amount}" (spec §3.6)
+- takeScreenshot: 11-timeline-save-row

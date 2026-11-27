@@ -1,0 +1,18 @@
+# Replace the text in field ${ID} with ${TEXT} (erase, then paste), and
+# check the field holds it. Used by the edit flows.
+# env: ID, TEXT, EXPECT (a regex for the field's text)
+appId: ${APP_ID}
+---
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: ${ID}
+- tapOn:
+    id: ${ID}
+- eraseText: 20
+- setClipboard: ${TEXT}
+- pasteText
+- assertVisible:
+    id: ${ID}
+    text: ${EXPECT}
+- setClipboard: ""
