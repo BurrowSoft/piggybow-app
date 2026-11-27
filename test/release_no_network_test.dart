@@ -59,7 +59,8 @@ void main() {
 
   test('a release build that would need the network stops', () {
     expect(gradle, contains('project.findProperty("dart-defines")'));
-    expect(gradle, contains('java.util.Base64.getDecoder()'));
+    expect(gradle, contains('import java.util.Base64'));
+    expect(gradle, contains('Base64.getDecoder()'));
     expect(gradle, contains('it.name.contains("Release")'));
     expect(gradle, contains('dartDefines["SENTRY_DSN"]'));
     expect(gradle, contains('dartDefines["PLUS_ENABLED"] == "true"'));

@@ -1,3 +1,5 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
@@ -125,7 +127,7 @@ val dartDefines: Map<String, String> =
         .orEmpty()
         .split(",")
         .filter { it.isNotEmpty() }
-        .map { String(java.util.Base64.getDecoder().decode(it), Charsets.UTF_8) }
+        .map { String(Base64.getDecoder().decode(it), Charsets.UTF_8) }
         .associate { it.substringBefore("=") to it.substringAfter("=", "") }
 
 gradle.taskGraph.whenReady {
