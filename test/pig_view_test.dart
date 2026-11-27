@@ -160,6 +160,15 @@ void main() {
       await precachePigs();
     });
     expect(svg.cache.count, PigMood.values.length);
+    // Each pig's widget asks for those very keys: nothing new is decoded.
+    for (final mood in PigMood.values) {
+      await tester.pumpWidget(MaterialApp(home: PigView(mood: mood)));
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 50)),
+      );
+      await tester.pump();
+      expect(svg.cache.count, PigMood.values.length, reason: mood.name);
+    }
     final main = File('lib/main.dart').readAsStringSync();
     final start = main.indexOf('final pigsLoad = precachePigs();');
     final awaited = main.indexOf('await pigsLoad;');
