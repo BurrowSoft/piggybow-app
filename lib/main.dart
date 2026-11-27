@@ -15,6 +15,7 @@ import 'core/sentry_setup.dart';
 import 'core/services.dart';
 import 'core/startup_trace.dart';
 import 'data/device_backend.dart';
+import 'features/pig/pig_view.dart';
 import 'features/reminder/reminder_scheduler.dart';
 import 'journal/journal_store.dart';
 import 'l10n/gen/app_localizations.dart';
@@ -31,6 +32,8 @@ Future<void> main() async {
   // wait (cold start = the slowest step, not the sum). Every region's date
   // symbols, so dates follow the device region.
   final dates = initializeDateFormatting();
+  // The pigs, decoded before the first frame: Home's pig is never late.
+  final pigsLoad = precachePigs();
   final prefsLoad = SharedLocalPrefs.load();
   final timeZoneLoad = device.timeZone();
   // Read before the first frame: a cold start with the lock on must never
@@ -113,6 +116,7 @@ Future<void> main() async {
   );
 
   // Without a DSN (dev, CI, tests, and v0.1 so far) Sentry stays off entirely.
+  await pigsLoad;
   StartupTrace.mark('run-app');
   if (config.sentryDsn.isEmpty) {
     runApp(app(const []));

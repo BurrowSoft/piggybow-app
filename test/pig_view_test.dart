@@ -143,4 +143,24 @@ void main() {
     );
     semantics.dispose();
   });
+
+  testWidgets('the four pigs are decoded before the first frame', (
+    tester,
+  ) async {
+    await tester.runAsync(() async {
+      svg.cache.clear();
+      await precachePigs();
+    });
+    expect(svg.cache.count, PigMood.values.length);
+    final main = File('lib/main.dart').readAsStringSync();
+    final start = main.indexOf('final pigsLoad = precachePigs();');
+    final awaited = main.indexOf('await pigsLoad;');
+    expect(start, isNonNegative);
+    expect(awaited, greaterThan(start));
+    expect(
+      awaited,
+      lessThan(main.indexOf('runApp(app(')),
+      reason: 'before the app runs',
+    );
+  });
 }

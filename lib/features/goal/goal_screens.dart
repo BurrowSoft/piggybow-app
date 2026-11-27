@@ -411,14 +411,17 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                       ),
                     ),
                   ],
-                  const SizedBox(height: 24),
-                  Semantics(
-                    header: true,
-                    child: Text(
-                      l10n.goalSavesHeader,
-                      style: theme.textTheme.titleSmall,
+                  // No saves yet: no header over nothing (decision 57).
+                  if (_saves.isNotEmpty) ...[
+                    const SizedBox(height: 24),
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        l10n.goalSavesHeader,
+                        style: theme.textTheme.titleSmall,
+                      ),
                     ),
-                  ),
+                  ],
                   for (final e in _saves)
                     TestId(
                       'goal-save-${e.id}',

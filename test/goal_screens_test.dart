@@ -302,4 +302,41 @@ void main() {
       expect(find.text('Added'), findsNothing, reason: "not over Home's +");
     },
   );
+
+  testWidgets('a goal with no saves shows no "Saves" header', (tester) async {
+    await openHome(
+      tester,
+      seed: (app) => app.journal.putGoal(
+        Goal(id: 'g1', name: 'Bike', targetMinor: 100000, createdAt: t, updatedAt: t),
+      ),
+    );
+    await tester.tapId('goal-card');
+    await settle(tester, byId('goal-screen'));
+    expect(find.text('Saves'), findsNothing);
+  });
+
+  testWidgets('reached at creation, with no saves: no "Saves" header either', (
+    tester,
+  ) async {
+    await openHome(
+      tester,
+      seed: (app) async {
+        await app.journal.putGoal(
+          Goal(
+            id: 'g1',
+            name: 'Bike',
+            targetMinor: 1000,
+            startMinor: 1000,
+            createdAt: t,
+            updatedAt: t,
+          ),
+        );
+        await app.journal.markCelebrated('g1');
+      },
+    );
+    GoRouter.of(tester.element(byId('home-screen'))).go(GoalRoutes.detail('g1'));
+    await settle(tester, byId('goal-screen'));
+    expect(byId('goal-menu'), findsNothing, reason: 'read-only');
+    expect(find.text('Saves'), findsNothing);
+  });
 }

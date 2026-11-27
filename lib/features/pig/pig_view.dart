@@ -9,6 +9,14 @@ import '../../pig/pig_mood.dart';
 /// The pig's file for [mood]: `design/pig-{mood}.svg`, byte for byte.
 String pigAsset(PigMood mood) => 'assets/pig/pig-${mood.name}.svg';
 
+/// Decodes the four pigs into flutter_svg's cache before the first frame
+/// (main awaits it before runApp), so Home draws its pig straight away
+/// instead of leaving its place blank until the file is decoded.
+Future<void> precachePigs() => Future.wait([
+  for (final mood in PigMood.values)
+    SvgAssetLoader(pigAsset(mood)).loadBytes(null),
+]);
+
 /// The pig (plan §4.1), front-facing, in one of its four moods. Decorative:
 /// its line is in text beside it. Delighted hops once when it arrives,
 /// except under reduce-motion.
