@@ -15,7 +15,7 @@ import 'repositories.dart';
 /// Email paths (sign up, sign in, add an email, passwords) don't exist on the
 /// phone: they throw [UnsupportedError] if anything ever reaches them.
 class DeviceBackend implements AuthRepository, AccountRepository {
-  DeviceBackend._(this._prefs, this._account, this._newId);
+  DeviceBackend._(this._prefs, this._account, this._newId, this._now);
 
   /// Opens the device account, making it on the first start, and records
   /// [timeZone] (the phone's own zone right now: "today" follows the phone).
@@ -48,14 +48,32 @@ class DeviceBackend implements AuthRepository, AccountRepository {
       account = account.copyWith(timeZone: timeZone);
       await prefs.setDeviceAccount(account.encode());
     }
-    return DeviceBackend._(prefs, account, makeId);
+    return DeviceBackend._(prefs, account, makeId, now ?? DateTime.now);
   }
 
   final LocalPrefs _prefs;
   final String Function() _newId;
+  final DateTime Function() _now;
   _DeviceAccount? _account;
 
   _DeviceAccount get _current => _account ?? (throw AppFailure.accountGone);
+
+  /// Delete everything (plan §3.8): a fresh device account with a new id,
+  /// as on a first start. The prefs were cleared first.
+  Future<void> startOver({required String timeZone, String? country}) =>
+      _save(
+        _DeviceAccount(
+          id: _newId(),
+          createdAt: _now().toUtc(),
+          timeZone: timeZone,
+          locale: 'en',
+          country: country,
+          onboarded: true,
+          reminderOn: false,
+          reminderTime: ReminderTime.defaultTime,
+          consents: const {},
+        ),
+      );
 
   Future<void> _save(_DeviceAccount account) async {
     _account = account;

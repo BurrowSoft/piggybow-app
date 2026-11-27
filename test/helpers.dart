@@ -53,8 +53,12 @@ class FakeReminderScheduler implements ReminderScheduler {
     this.copy = copy;
   }
 
+  /// Makes [cancelAll] fail (a wipe step that fails).
+  bool failCancel = false;
+
   @override
   Future<void> cancelAll() async {
+    if (failCancel) throw StateError('no notifications service');
     cancels++;
     scheduled = const [];
   }

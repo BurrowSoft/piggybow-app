@@ -16,6 +16,7 @@ import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show HappyPick;
 import '../../reminder_rules/reminder_rules.dart';
 import '../../router.dart';
+import '../../session/app_session.dart';
 import '../../session/session_scope.dart';
 import '../../settings_rules/settings_rules.dart';
 import '../../theme/theme.dart';
@@ -184,8 +185,43 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
       ),
     );
     if (sure != true) return;
-    // Then onboarding takes over, from O1.
-    await deleteEverything(services, session);
+    await _wipe(services, session);
+  }
+
+  /// The wipe; then onboarding takes over, from O1. If a step failed, Me
+  /// says so and can try them all again (decision 67).
+  Future<void> _wipe(AppServices services, AppSession session) async {
+    if (await deleteEverything(services, session) || !mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final again = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: WholeWordsText(
+          l10n.deleteAllFailedTitle,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+        content: Text(l10n.deleteAllFailedBody),
+        actions: [
+          TestId(
+            'me-delete-failed-ok',
+            button: true,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.ok),
+            ),
+          ),
+          TestId(
+            'me-delete-retry',
+            button: true,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.deleteAllRetry),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (again == true && mounted) await _wipe(services, session);
   }
 
   @override

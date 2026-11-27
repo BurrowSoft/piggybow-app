@@ -151,7 +151,19 @@ void main() {
     expect(app.prefs.appearance, 'dark');
   });
 
-  testWidgets('Delete everything: the wipe list, then onboarding again', (
+  /// Frames with real time between them: the wipe sweeps the cache with real
+  /// file calls.
+  Future<void> waitFor(WidgetTester tester, Finder f) async {
+    for (var i = 0; i < 40 && f.evaluate().isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('Delete everything: the wipe list, then O1 on a new account', (
     tester,
   ) async {
     final app = await openMe(
@@ -177,29 +189,67 @@ void main() {
         );
       },
     );
+    final oldId = app.session.user!.id;
     await tester.tapId('me-reminder');
     await tester.tapId('me-theme-dark');
+    await app.prefs.setLocaleCode('en');
+    await app.prefs.setWelcomeSeen();
     await tester.tapId('me-delete');
     expect(find.text('Delete everything?'), findsOneWidget);
     await tester.tapId('me-delete-confirm');
-    // The wipe sweeps the cache with real file calls: real time between
-    // frames lets them finish.
-    for (var i = 0; i < 40 && byId('onb-welcome').evaluate().isEmpty; i++) {
-      await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 20)),
-      );
-      await tester.pump(const Duration(milliseconds: 50));
-    }
-    await tester.pumpAndSettle();
+    await waitFor(tester, byId('onb-welcome'));
 
     tester.expectScreen('onb-welcome');
+    // The journal, the reminders, every pref: gone.
     expect(await tester.runAsync(app.journal.isBlank), isTrue);
     expect(await tester.runAsync(app.journal.onboarded), isFalse);
     expect(app.services.onboarded.value, isFalse);
     expect(app.reminders.cancels, greaterThan(0));
     expect(app.reminders.scheduled, isEmpty);
+    expect(app.prefs.appearance, isNull);
+    expect(app.prefs.localeCode, isNull);
+    expect(app.prefs.palette, isNull);
+    expect(app.prefs.welcomeSeen, isFalse);
+    expect(app.prefs.sessionEndedNoEmail, isFalse);
+    // A new device account: a new id, nothing of the old one.
+    final newId = app.session.user!.id;
+    expect(newId, isNot(oldId));
+    expect(app.prefs.deviceAccount, isNot(contains(oldId)));
     expect(app.session.accountState?.reminderOn, isFalse);
-    expect(app.prefs.appearance, 'system');
+
+    // Onboarding again, then Home, on the new account.
+    await tester.tapId('onb-start');
+    await tester.tapId('onb-pick-save');
+    await tester.tapId('onb-continue');
+    await settle(tester, byId('onb-goal-later'));
+    await tester.tapId('onb-goal-later');
+    await settle(tester, byId('home-screen'));
+    tester.expectScreen('home-screen');
+    expect(app.session.user!.id, newId);
+  });
+
+  testWidgets('a step that fails: Me says so, and Try again finishes it', (
+    tester,
+  ) async {
+    final app = await openMe(
+      tester,
+      seed: (app) => app.journal.setPicks({HappyPick.save}),
+    );
+    app.reminders.failCancel = true;
+    await tester.tapId('me-delete');
+    await tester.tapId('me-delete-confirm');
+    await waitFor(tester, find.text('Not everything was erased'));
+    expect(find.text('Not everything was erased'), findsOneWidget);
+    expect(
+      await tester.runAsync(app.journal.isBlank),
+      isTrue,
+      reason: 'the other steps still ran',
+    );
+    expect(app.services.onboarded.value, isTrue, reason: 'only full success');
+    app.reminders.failCancel = false;
+    await tester.tapId('me-delete-retry');
+    await waitFor(tester, byId('onb-welcome'));
+    tester.expectScreen('onb-welcome');
   });
 
   testWidgets('Delete everything, cancelled: nothing changes', (tester) async {
@@ -298,6 +348,9 @@ void main() {
       kotlin,
       contains('OPEN_NOTIFICATION_SETTINGS = "$openNotificationSettingsMethod"'),
     );
+    // If those settings can't open: the app's details, then nothing.
+    expect(kotlin, contains('ACTION_APPLICATION_DETAILS_SETTINGS'));
+    expect(kotlin, contains('catch (e: Exception)'));
   });
 
   group('export', () {

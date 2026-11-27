@@ -39,7 +39,7 @@ Future<void> main() async {
   // The pigs, decoded before the first frame: Home's pig is never late.
   final pigsLoad = precachePigs();
   // An export lives only while it is shared: none is left from before.
-  unawaited(sweepExports());
+  unawaited(sweepExports().then((_) {}, onError: (Object _) {}));
   final prefsLoad = SharedLocalPrefs.load();
   final timeZoneLoad = device.timeZone();
   // Read before the first frame: a cold start with the lock on must never

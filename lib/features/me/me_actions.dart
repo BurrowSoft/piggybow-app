@@ -1,11 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/services.dart';
-import '../../data/models.dart' show ReminderTime;
+import '../../data/device_backend.dart';
 import '../../export/csv_export.dart';
 import '../../session/app_session.dart';
 
@@ -71,28 +70,43 @@ Future<void> exportJournal(
 Future<void> _shareSheet(XFile file) =>
     SharePlus.instance.share(ShareParams(files: [file]));
 
-/// Me → Delete all my data (plan §3.8, the §4.7 wipe list): the journal
-/// (entries, goals, picks, plan, currency and the onboarding flag), the
-/// scheduled reminders and the reminder setting, the app lock's PIN (only
-/// after the journal is gone), the appearance, and every export file. Then
-/// onboarding shows again, from O1. Crash reports keep no cache while the
-/// build has no Sentry DSN (v0.1).
-Future<void> deleteEverything(
+/// Me → Delete all my data (plan §3.8, the §4.7 wipe list, decision 67):
+/// the journal; the scheduled reminders; the app lock's secure storage,
+/// every id (only after the journal is gone); every pref (the device
+/// account, its reminder, language, appearance and the rest); every export
+/// file. Then a fresh device account, and onboarding from O1. Every step
+/// runs even if another fails; false when one did (Me says so and offers
+/// Try again). Crash reports keep no cache while the build has no Sentry
+/// DSN (v0.1).
+Future<bool> deleteEverything(
   AppServices services,
   AppSession session, {
   Future<Directory> Function()? cache,
 }) async {
-  await services.journal.wipe();
-  await services.reminders.cancelAll();
-  await session.updateReminder(on: false, time: ReminderTime.defaultTime);
-  final lock = services.appLock;
-  final userId = session.user?.id;
-  if (lock != null && userId != null) await lock.forget(userId);
-  await session.setThemeMode(ThemeMode.system);
-  try {
-    await sweepExports(cache: cache);
-  } on Object {
-    // No cache to sweep (no file was ever exported): the wipe goes on.
+  var done = true;
+  Future<void> step(Future<void> Function() run) async {
+    try {
+      await run();
+    } on Object {
+      done = false;
+    }
   }
-  services.onboarded.value = false;
+
+  await step(services.journal.wipe);
+  await step(services.reminders.cancelAll);
+  await step(() async => services.appLock?.eraseAll());
+  await step(session.prefs.clear);
+  await step(() => sweepExports(cache: cache));
+  await step(() async {
+    final backend = session.account;
+    if (backend is DeviceBackend) {
+      await backend.startOver(
+        timeZone: services.localDay.zone,
+        country: session.device.countryCode,
+      );
+    }
+    await session.reloadAccount();
+  });
+  if (done) services.onboarded.value = false;
+  return done;
 }

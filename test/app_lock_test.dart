@@ -354,4 +354,16 @@ void main() {
     await again.load();
     expect(again.locked, isFalse);
   });
+
+  test('Delete everything: every key, every id, legacy ones too', () async {
+    store.values.addAll({
+      'app_lock.u1.pin_hash': 'a',
+      'app_lock.u2.settings': 'b',
+      'app_lock.pin_hash': 'c',
+    });
+    final lock = make();
+    await lock.eraseAll();
+    expect(store.values, isEmpty);
+    expect(lock.enabled, isFalse);
+  });
 }

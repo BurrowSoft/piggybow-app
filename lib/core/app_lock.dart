@@ -24,6 +24,8 @@ enum LockAfter {
 
 /// Where the lock keeps its secrets (the keystore; a map in tests).
 abstract interface class SecretStore {
+  /// Every key, for every id (Delete everything).
+  Future<void> deleteAll();
   Future<String?> read(String key);
   Future<void> write(String key, String value);
   Future<void> delete(String key);
@@ -43,6 +45,9 @@ class KeystoreSecretStore implements SecretStore {
 
   @override
   Future<void> delete(String key) => _storage.delete(key: key);
+
+  @override
+  Future<void> deleteAll() => _storage.deleteAll();
 }
 
 class MemorySecretStore implements SecretStore {
@@ -56,6 +61,9 @@ class MemorySecretStore implements SecretStore {
 
   @override
   Future<void> delete(String key) async => values.remove(key);
+
+  @override
+  Future<void> deleteAll() async => values.clear();
 }
 
 /// Whether this install has run the lock before. The iOS Keychain survives
@@ -300,6 +308,15 @@ class AppLock extends ChangeNotifier {
       _resetMemory();
       notifyListeners();
     }
+  }
+
+  /// Delete everything (plan §3.8): every PIN, setting and count this lock
+  /// kept in secure storage, for every id, legacy ones included. The lock
+  /// is off afterwards.
+  Future<void> eraseAll() async {
+    await store.deleteAll();
+    _resetMemory();
+    notifyListeners();
   }
 
   void _resetMemory() {
