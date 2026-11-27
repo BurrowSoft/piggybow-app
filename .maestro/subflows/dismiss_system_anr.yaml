@@ -10,7 +10,7 @@ appId: ${APP_ID}
     when:
       visible:
         id: "android:id/alertTitle"
-        text: "(?!.*Piggybow).+ isn.t responding"
+        text: "(?i)(?!.*piggybow).+ isn.t responding"
     commands:
       - takeScreenshot: system-anr-dismissed
       - tapOn:

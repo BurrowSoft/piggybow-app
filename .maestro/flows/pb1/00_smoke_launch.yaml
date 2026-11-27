@@ -45,7 +45,7 @@ tags: [pb1, smoke]
     timeout: 60000
     optional: true
 # Piggybow's own crash or ANR dialog fails the flow; another app's ANR is dismissed
-- assertNotVisible: ".*Piggybow.*(keeps stopping|has stopped|isn.t responding).*"
+- assertNotVisible: "(?i).*piggybow.*(keeps stopping|has stopped|isn.t responding).*"
 - runFlow: ../../subflows/dismiss_system_anr.yaml
 - assertVisible:
     id: tab-home                        # still on screen: no crash, no restart
