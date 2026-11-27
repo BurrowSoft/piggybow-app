@@ -1,5 +1,5 @@
 // The money path is integers only (plan §0.1; floating point there is BLOCKING). This reads the
-// source of the money paths (lib/money, lib/export), comments and strings
+// source of the money paths (lib/money, lib/export, lib/pig), comments and strings
 // removed, and fails on anything that brings floating point in. The oracle in format_test.dart is
 // the only place a fraction is computed.
 
@@ -34,12 +34,12 @@ String codeOnly(String source) => source
 
 void main() {
   final files = [
-    for (final dir in ['lib/money', 'lib/export'])
+    for (final dir in ['lib/money', 'lib/export', 'lib/pig'])
       ...Directory(dir).listSync(recursive: true).whereType<File>().where((f) => f.path.endsWith('.dart')),
   ];
 
   test('the scan finds the money and export code', () {
-    expect(files.map((f) => f.uri.pathSegments.last), containsAll(['currency.dart', 'money.dart', 'csv_export.dart']));
+    expect(files.map((f) => f.uri.pathSegments.last), containsAll(['currency.dart', 'money.dart', 'csv_export.dart', 'pig_mood.dart']));
   });
 
   test('no floating point on any money path', () {
