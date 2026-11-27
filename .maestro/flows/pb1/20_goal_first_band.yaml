@@ -8,6 +8,28 @@ tags: [pb1, goal]
 # home-pig-line, goal-card. The rainbow has no id: it's read by its label.
 - runFlow: ../../subflows/fresh_launch.yaml
 - runFlow: ../../subflows/to_home.yaml
+# The goal form: empty, then "Start my rainbow" with nothing filled shows the errors
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-create
+- tapOn:
+    id: goal-create
+- extendedWaitUntil:
+    visible:
+      id: goal-submit
+    timeout: 10000
+- takeScreenshot: 20-goal-create-empty
+- tapOn:
+    id: goal-submit
+- assertVisible: ".*Give your goal a name\\..*"
+- assertVisible: ".*Enter a goal amount\\..*"
+- takeScreenshot: 20-goal-create-errors
+- back
+- extendedWaitUntil:
+    visible:
+      id: goal-create
+    timeout: 10000
 - runFlow:
     file: ../../subflows/create_goal.yaml
     env:

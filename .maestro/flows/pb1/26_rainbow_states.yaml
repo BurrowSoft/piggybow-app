@@ -14,6 +14,8 @@ tags: [pb1, rainbow, fixtures]
     id: goal-card
 - assertVisible:
     text: "Rainbow 0% filled.*"
+- assertNotVisible: "Saves"               # no saves, no header
+- waitForAnimationToEnd              # let late-decoded art (the pig's SVG) paint before the screenshot
 - takeScreenshot: rainbow-0
 - launchApp:
     clearState: true
@@ -27,6 +29,7 @@ tags: [pb1, rainbow, fixtures]
     id: goal-card
 - assertVisible:
     text: "Rainbow 32% filled.*"
+- waitForAnimationToEnd              # let late-decoded art (the pig's SVG) paint before the screenshot
 - takeScreenshot: rainbow-32
 - launchApp:
     clearState: true
@@ -36,4 +39,5 @@ tags: [pb1, rainbow, fixtures]
     visible:
       id: "goal-card|goal-card-reached"
     timeout: 120000
+- waitForAnimationToEnd              # let late-decoded art (the pig's SVG) paint before the screenshot
 - takeScreenshot: rainbow-100-home

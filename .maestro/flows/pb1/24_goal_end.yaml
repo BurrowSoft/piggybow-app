@@ -24,6 +24,7 @@ tags: [pb1, goal]
 - tapOn:
     id: goal-end
 - assertVisible: ".*End this goal\\?.*"
+- takeScreenshot: 24-end-goal-dialog
 - tapOn:
     id: goal-end-cancel
 - assertVisible:
