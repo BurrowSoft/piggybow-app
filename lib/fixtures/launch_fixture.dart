@@ -1,0 +1,232 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show appFlavor;
+
+import '../core/clock.dart';
+import '../journal/category.dart';
+import '../journal/entry.dart';
+import '../journal/goal.dart';
+import '../journal/journal_store.dart';
+import '../pig/pig_mood.dart' show HappyPick;
+
+/// Launch fixtures for the on-device flows (staging builds only). Maestro
+/// starts the app with the "route" extra `/fixture/<id>`; the app writes that
+/// fixture's journal, freezes its clock at the fixture's now for this
+/// process, and opens on Home. The ids: every case of the mood contract, read
+/// from the very file the contract tests use, and R0, R32 and R100 for the
+/// rainbow.
+///
+/// [kLaunchFixtures] is a compile-time constant, false outside the staging
+/// flavor: main.dart uses the fixtures only inside `if (kLaunchFixtures)`, so
+/// a store build compiles them out, and the cases file is a staging-only
+/// asset (pubspec.yaml).
+const kLaunchFixtures = appFlavor == 'staging';
+
+/// The mood contract's cases: an asset of staging builds only.
+const fixtureCasesAsset = 'test/contracts/pig_mood_cases.json';
+
+/// The id in [route] when it is `/fixture/<id>`, else null.
+String? fixtureIdOf(String route) =>
+    RegExp(r'^/fixture/([A-Za-z0-9]+)$').firstMatch(route)?.group(1);
+
+/// The fixture a launch at [route] asks for, or null when it asks for none.
+/// [cases] reads the contract's cases (only when the route names a fixture).
+Future<LaunchFixture?> launchFixtureFor(
+  String route, {
+  required Future<String> Function() cases,
+}) async {
+  final id = fixtureIdOf(route);
+  if (id == null) return null;
+  return LaunchFixture.byId(id, await cases());
+}
+
+/// A clock that can be set: each entry is written at its own creation time,
+/// then the clock stays at the fixture's now.
+class FixtureClock extends Clock {
+  FixtureClock(this.now) : super(fixed: now);
+
+  DateTime now;
+
+  @override
+  DateTime nowUtc() => now.toUtc();
+}
+
+/// One fixture: the journal it writes and the instant it freezes.
+class LaunchFixture {
+  LaunchFixture._(this.id, this.now, this.today, this._write) : error = null;
+
+  /// A fixture that can't load: [error] says why, and it writes nothing.
+  LaunchFixture._unknown(this.id, String this.error)
+    : now = DateTime.utc(2026),
+      today = '',
+      _write = null;
+
+  final String id;
+
+  /// The frozen instant (UTC).
+  final DateTime now;
+
+  /// The day [now] must fall on in the phone's zone (yyyy-mm-dd).
+  final String today;
+
+  /// Why this fixture can't load, or null.
+  final String? error;
+
+  final Future<void> Function(JournalStore, FixtureClock)? _write;
+
+  /// The app's clock for this process: frozen at [now] once written.
+  late final FixtureClock clock = FixtureClock(now);
+
+  /// The fixture [id] (a contract case from [casesJson], or R0, R32, R100);
+  /// an unknown id gives a fixture whose [error] names it.
+  static LaunchFixture byId(String id, String casesJson) {
+    final rainbow = const {'R0': 0, 'R32': 32000, 'R100': 100000}[id];
+    if (rainbow != null) {
+      return LaunchFixture._(
+        id,
+        DateTime.utc(2026, 12, 2, 5),
+        '2026-12-02',
+        (store, clock) => _writeRainbow(store, clock, rainbow, '2026-12-02'),
+      );
+    }
+    final contract = jsonDecode(casesJson) as Map<String, dynamic>;
+    final cases = (contract['cases'] as List).cast<Map<String, dynamic>>();
+    for (final c in cases) {
+      if (c['id'] != id) continue;
+      return LaunchFixture._(
+        id,
+        DateTime.parse(c['now'] as String).toUtc(),
+        c['today'] as String,
+        (store, clock) =>
+            _writeCase(store, clock, c, contract['currency'] as String),
+      );
+    }
+    return LaunchFixture._unknown(id, 'No fixture "$id".');
+  }
+
+  /// Why this fixture can't run where today is [deviceToday] (the phone's
+  /// zone, LocalDay), or null. The zone is never pinned: a run in the wrong
+  /// zone fails here instead of testing the wrong day.
+  String? check(String deviceToday) {
+    if (error != null) return error;
+    if (deviceToday == today) return null;
+    return 'Fixture $id needs today = $today at ${now.toIso8601String()}, '
+        'but today on this phone is $deviceToday. Set the zone, then launch '
+        'again.';
+  }
+
+  /// Writes the fixture into [store] (nothing when [check] fails), then
+  /// leaves [clock] at [now].
+  Future<void> write(JournalStore store) async {
+    final write = _write;
+    if (write == null) return;
+    await write(store, clock);
+    clock.now = now;
+  }
+}
+
+DateTime? _at(Object? iso) =>
+    iso == null ? null : DateTime.parse(iso as String).toUtc();
+
+/// A contract case as the person would have left it: the entries at their
+/// own created_at, then the goals with their stamps (a reached goal was
+/// celebrated when it happened).
+Future<void> _writeCase(
+  JournalStore store,
+  FixtureClock clock,
+  Map<String, dynamic> c,
+  String currency,
+) async {
+  await store.setCurrency(currency);
+  await store.setPicks({
+    for (final p in c['picks'] as List) HappyPick.values.byName(p as String),
+  });
+  await store.setPlanMinor(c['plan_minor'] as int?);
+  for (final e in (c['entries'] as List).cast<Map<String, dynamic>>()) {
+    clock.now = _at(e['created_at'])!;
+    await store.addEntry(
+      type: EntryType.fromId(e['type'])!,
+      amountMinor: e['amount_minor'] as int,
+      currency: currency,
+      localDate: e['local_date'] as String,
+      category: SpendCategory.fromId(e['category']),
+      feeling: Feeling.fromId(e['feeling']),
+    );
+  }
+  clock.now = _at(c['now'])!;
+  for (final g in (c['goals'] as List).cast<Map<String, dynamic>>()) {
+    final id = store.newId();
+    final reachedAt = _at(g['reached_at']);
+    await store.putGoal(
+      Goal(
+        id: id,
+        name: g['name'] as String,
+        targetMinor: g['target_minor'] as int? ?? 100000,
+        startMinor: g['start_minor'] as int? ?? 0,
+        status: GoalStatus.fromId(g['status']) ?? GoalStatus.active,
+        bandReachedAt: [for (final b in g['band_reached_at'] as List) _at(b)],
+        reachedAt: reachedAt,
+        createdAt: clock.now,
+        updatedAt: clock.now,
+      ),
+    );
+    if (reachedAt != null) await store.markCelebrated(id);
+  }
+}
+
+/// The rainbow fixtures: "Bike", 1,000.00, with one save of [savedMinor]
+/// through the usual path (none for 0); a goal reached that way was
+/// celebrated.
+Future<void> _writeRainbow(
+  JournalStore store,
+  FixtureClock clock,
+  int savedMinor,
+  String today,
+) async {
+  await store.setCurrency('USD');
+  await store.setPicks({HappyPick.save});
+  final id = store.newId();
+  await store.putGoal(
+    Goal(
+      id: id,
+      name: 'Bike',
+      targetMinor: 100000,
+      createdAt: clock.now,
+      updatedAt: clock.now,
+    ),
+  );
+  if (savedMinor > 0) {
+    await store.addEntry(
+      type: EntryType.saved,
+      amountMinor: savedMinor,
+      currency: 'USD',
+      localDate: today,
+    );
+  }
+  if ((await store.goal(id))?.reachedAt != null) await store.markCelebrated(id);
+}
+
+/// Shown instead of the app when a fixture can't load: the tester's flows
+/// look for `fixture-error` and read why. Test builds only, so English.
+class FixtureErrorApp extends StatelessWidget {
+  const FixtureErrorApp(this.message, {super.key});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    home: Scaffold(
+      body: SafeArea(
+        child: Semantics(
+          container: true,
+          identifier: 'fixture-error',
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(message),
+          ),
+        ),
+      ),
+    ),
+  );
+}

@@ -47,6 +47,10 @@ flutter:
     - assets/brand/
     # The pig (design/pig-*.svg, byte for byte).
     - assets/pig/
+    # Staging builds only: the launch fixtures read the mood contract's cases.
+    - path: test/contracts/pig_mood_cases.json
+      flavors:
+        - staging
 
   fonts:
     - family: Poppins

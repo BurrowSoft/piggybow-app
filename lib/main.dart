@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
@@ -17,6 +18,7 @@ import 'core/startup_trace.dart';
 import 'data/device_backend.dart';
 import 'features/pig/pig_view.dart';
 import 'features/reminder/reminder_scheduler.dart';
+import 'fixtures/launch_fixture.dart';
 import 'journal/journal_store.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'money/currency.dart';
@@ -45,8 +47,18 @@ Future<void> main() async {
           firstRun: const PrefsFirstRunMarker(),
         )
       : null;
+  // Staging only, compiled out of store builds (kLaunchFixtures is a
+  // constant): a launch fixture for the on-device flows, from the "route"
+  // extra "/fixture/<id>". It brings its own clock, frozen at its now.
+  LaunchFixture? fixture;
+  if (kLaunchFixtures) {
+    fixture = await launchFixtureFor(
+      WidgetsBinding.instance.platformDispatcher.defaultRouteName,
+      cases: () => rootBundle.loadString(fixtureCasesAsset),
+    );
+  }
   // FAKE_NOW pins the time in staging test builds (ignored in prod).
-  final clock = Clock(fixed: config.fakeNow);
+  final clock = fixture?.clock ?? Clock(fixed: config.fakeNow);
   final journalLoad = JournalStore.open(clock: clock);
   // "Today" follows the phone's own time zone, read now and on every resume.
   final localDay = LocalDay(clock: clock, device: device);
@@ -87,6 +99,15 @@ Future<void> main() async {
   StartupTrace.mark('journal');
   await dayLoad;
   final journal = await journalLoad;
+  if (fixture != null) {
+    // Before anything is written: the fixture's today must be the phone's.
+    final problem = fixture.check(localDay.todayWire);
+    if (problem != null) {
+      runApp(FixtureErrorApp(problem));
+      return;
+    }
+    await fixture.write(journal);
+  }
   // Until onboarding asks, the journal's currency is the phone's (else USD).
   if (await journal.currency() == null) {
     await journal.setCurrency(
