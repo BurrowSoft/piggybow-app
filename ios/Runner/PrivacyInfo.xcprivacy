@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- v0.1 keeps every entry and setting on the phone: nothing of it is
-     collected. Only a build with a Sentry DSN sends crash reports (technical
-     details, never an entry), not linked to the person. The App Privacy
-     answers in App Store Connect must match this file. -->
+<!-- v0.1 keeps every entry and setting on the phone and sends nothing: no
+     build has a Sentry DSN, so no data type is collected (case A). A build
+     with a DSN must list here exactly what its scrubbed crash report
+     contains (case B); test/ios_flavors_test.dart ties this file to the DSN
+     in the env files iOS builds from. The App Privacy answers in App Store
+     Connect must match this file. -->
 
 <plist version="1.0">
 <dict>
@@ -14,31 +16,6 @@
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array>
-		<dict>
-			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypeCrashData</string>
-			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
-			<key>NSPrivacyCollectedDataTypeTracking</key>
-			<false/>
-			<key>NSPrivacyCollectedDataTypePurposes</key>
-			<array>
-				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
-			</array>
-		</dict>
-		<dict>
-			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypeOtherDiagnosticData</string>
-			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
-			<key>NSPrivacyCollectedDataTypeTracking</key>
-			<false/>
-			<key>NSPrivacyCollectedDataTypePurposes</key>
-			<array>
-				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
-			</array>
-		</dict>
-	</array>
+	<array/>
 </dict>
 </plist>

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -203,38 +204,124 @@ void main() {
     });
   });
 
-  test('the privacy manifest: crash reports only, never linked or tracking', () {
-    final manifest = File('ios/Runner/PrivacyInfo.xcprivacy').readAsStringSync();
-    expect(manifest, contains('<key>NSPrivacyTracking</key>\n\t<false/>'));
-    // v0.1 keeps everything on the phone. Only a build with a Sentry DSN
-    // sends crash reports and diagnostics, not linked to the person.
-    const label = {'CrashData': false, 'OtherDiagnosticData': false};
-    final entries = RegExp(
-      r'<dict>\s*<key>NSPrivacyCollectedDataType</key>\s*'
-      r'<string>NSPrivacyCollectedDataType(\w+)</string>([\s\S]*?)</dict>',
-    ).allMatches(manifest).toList();
-    expect([for (final e in entries) e.group(1)!]..sort(), label.keys.toList()..sort());
-    for (final e in entries) {
-      final type = e.group(1)!;
-      final body = e.group(2)!;
-      final linked = RegExp(
-        r'<key>NSPrivacyCollectedDataTypeLinked</key>\s*<(true|false)/>',
-      ).firstMatch(body)?.group(1);
-      expect(linked, '${label[type]}', reason: '$type linked');
-      expect(
-        body,
-        matches(RegExp(r'<key>NSPrivacyCollectedDataTypeTracking</key>\s*<false/>')),
-        reason: '$type tracking',
-      );
-      final purposes = RegExp(r'<string>(NSPrivacyCollectedDataTypePurpose\w+)</string>');
-      expect(
-        [for (final p in purposes.allMatches(body)) p.group(1)],
-        ['NSPrivacyCollectedDataTypePurposeAppFunctionality'],
-        reason: '$type purposes',
-      );
+  // Plan §5: the privacy manifest declares no collected data in case A builds
+  // (no Sentry DSN); case B lists what the scrubbed crash report contains.
+  // These tie the file to the DSN in the env files iOS builds from.
+  group('the privacy manifest', () {
+    final manifest = File('ios/Runner/PrivacyInfo.xcprivacy')
+        .readAsStringSync();
+    final envFiles = RegExp(r'--dart-define-from-file=(env/[\w-]+\.json)')
+        .allMatches(codemagic)
+        .map((m) => m.group(1)!)
+        .toSet();
+    bool hasDsn(String path) {
+      final env =
+          jsonDecode(File(path).readAsStringSync()) as Map<String, dynamic>;
+      return '${env['SENTRY_DSN'] ?? ''}'.trim().isNotEmpty;
     }
-    final project = File('ios/Runner.xcodeproj/project.pbxproj').readAsStringSync();
-    expect(project, contains('PrivacyInfo.xcprivacy in Resources */,'));
+
+    test('iOS builds take their DSN only from their env files', () {
+      expect(envFiles, {'env/staging.json', 'env/prod.json'});
+      expect(codemagic, isNot(contains('SENTRY_DSN')));
+      expect(codemagic, isNot(contains('--dart-define=')));
+    });
+
+    test('no tracking and no tracking domains; in the app bundle', () {
+      expect(manifest, contains('<key>NSPrivacyTracking</key>\n\t<false/>'));
+      expect(
+        manifest,
+        contains('<key>NSPrivacyTrackingDomains</key>\n\t<array/>'),
+      );
+      expect(pbx, contains('PrivacyInfo.xcprivacy in Resources */,'));
+    });
+
+    test('the app\'s own code calls no API that needs a declared reason', () {
+      // Apple's required-reason APIs: user defaults, file timestamps, system
+      // boot time, disk space, active keyboards. The plugins ship their own
+      // manifests; the app's code uses none, so it declares none.
+      const apis = [
+        'UserDefaults',
+        'NSUserDefaults',
+        'creationDate',
+        'modificationDate',
+        'NSFileCreationDate',
+        'NSFileModificationDate',
+        'getattrlist',
+        'stat(',
+        'systemUptime',
+        'mach_absolute_time',
+        'volumeAvailableCapacity',
+        'NSFileSystemFreeSize',
+        'NSFileSystemSize',
+        'statfs',
+        'activeInputModes',
+      ];
+      final code = Directory('ios/Runner')
+          .listSync()
+          .whereType<File>()
+          .where((f) => RegExp(r'\.(swift|m|h)$').hasMatch(f.path));
+      expect(code, isNotEmpty);
+      for (final f in code) {
+        final text = f.readAsStringSync();
+        for (final api in apis) {
+          expect(text, isNot(contains(api)), reason: '${f.path}: $api');
+        }
+      }
+      expect(
+        manifest,
+        contains('<key>NSPrivacyAccessedAPITypes</key>\n\t<array/>'),
+      );
+    });
+
+    test(
+      'tied to the DSN: case A collects nothing; case B crash reports only',
+      () {
+        final entries = RegExp(
+          r'<dict>\s*<key>NSPrivacyCollectedDataType</key>\s*'
+          r'<string>NSPrivacyCollectedDataType(\w+)</string>([\s\S]*?)</dict>',
+        ).allMatches(manifest).toList();
+        if (!envFiles.any(hasDsn)) {
+          // Case A (v0.1): nothing leaves the phone, so nothing is collected.
+          expect(entries, isEmpty);
+          expect(
+            manifest,
+            contains('<key>NSPrivacyCollectedDataTypes</key>\n\t<array/>'),
+          );
+          return;
+        }
+        // Case B: crash reports and diagnostics, never linked to the person
+        // or used for tracking. That they are exactly what the scrubbed test
+        // event contains is checked on the day a DSN is set (plan §5).
+        expect(_caseB(entries), isEmpty);
+      },
+    );
+  });
+
+  test('no Moodbow-era leftovers: no "moodbow", only Piggybow ids', () {
+    final skip = RegExp(
+      r'/(Pods|ephemeral|\.symlinks|build|xcuserdata)/|'
+      r'/(Generated\.xcconfig|flutter_export_environment\.sh)$',
+    );
+    final files = [
+      File('codemagic.yaml'),
+      for (final f in Directory(
+        'ios',
+      ).listSync(recursive: true, followLinks: false))
+        if (f is File && !skip.hasMatch(f.path.replaceAll('\\', '/'))) f,
+    ];
+    expect(files.length, greaterThan(20), reason: 'files found');
+    final id = RegExp(r'com\.burrowsoft\.[A-Za-z0-9.]+');
+    final piggybow = RegExp(
+      r'^com\.burrowsoft\.piggybow(\.(dev|staging))?(\.RunnerTests)?$',
+    );
+    for (final f in files) {
+      // latin1 reads any bytes, so image files are scanned too.
+      final text = latin1.decode(f.readAsBytesSync());
+      expect(text.toLowerCase(), isNot(contains('moodbow')), reason: f.path);
+      for (final m in id.allMatches(text)) {
+        expect(m.group(0), matches(piggybow), reason: f.path);
+      }
+    }
   });
 
   test('codemagic.yaml: manual only, no review submission, right ids', () {
@@ -284,4 +371,37 @@ void main() {
         .toSet();
     expect(cmFlutter, ciFlutter, reason: 'one Flutter version everywhere');
   });
+}
+
+/// What case B's manifest gets wrong: anything but crash data and other
+/// diagnostics, each unlinked, never tracking, for app functionality only.
+List<String> _caseB(List<RegExpMatch> entries) {
+  const label = {'CrashData': false, 'OtherDiagnosticData': false};
+  final problems = <String>[];
+  final types = [for (final e in entries) e.group(1)!]..sort();
+  if ('$types' != '${label.keys.toList()..sort()}') {
+    problems.add('collected types $types');
+  }
+  for (final e in entries) {
+    final type = e.group(1)!;
+    final body = e.group(2)!;
+    final linked = RegExp(
+      r'<key>NSPrivacyCollectedDataTypeLinked</key>\s*<(true|false)/>',
+    ).firstMatch(body)?.group(1);
+    if (linked != '${label[type]}') problems.add('$type linked: $linked');
+    if (!RegExp(r'<key>NSPrivacyCollectedDataTypeTracking</key>\s*<false/>')
+        .hasMatch(body)) {
+      problems.add('$type tracking');
+    }
+    final purposes = [
+      for (final p in RegExp(
+        r'<string>(NSPrivacyCollectedDataTypePurpose\w+)</string>',
+      ).allMatches(body))
+        p.group(1),
+    ];
+    if ('$purposes' != '[NSPrivacyCollectedDataTypePurposeAppFunctionality]') {
+      problems.add('$type purposes $purposes');
+    }
+  }
+  return problems;
 }
