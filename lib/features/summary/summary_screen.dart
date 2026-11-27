@@ -345,7 +345,9 @@ class _TotalCard extends StatelessWidget {
     return _Section(
       id: id,
       children: [
-        WholeWordsText(
+        // Plain Text (one word): the row sizes both cards to the taller one,
+        // and a LayoutBuilder-based text can't report its height ahead.
+        Text(
           title,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,

@@ -112,7 +112,9 @@ void main() {
   }) {
     expect(byId(id), findsOneWidget, reason: '$id is never hidden');
     expect(arrow(tester, id).onPressed != null, enabled, reason: id);
-    final node = tester.getSemantics(byId(id));
+    // The id's node merges the button below it: its data carries the
+    // button's tooltip and enabled state.
+    final node = tester.getSemantics(byId(id)).getSemanticsData();
     expect('${node.label} ${node.tooltip}', contains(label), reason: id);
     expect(
       node.flagsCollection.isEnabled,
