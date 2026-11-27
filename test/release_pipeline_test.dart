@@ -92,7 +92,12 @@ void main() {
       final at = text.indexOf('actions/upload-artifact');
       final next = text.indexOf('\n      - ', at);
       final uploadStep = text.substring(at, next < 0 ? text.length : next);
-      expect(uploadStep, contains('retention-days: 3\n'), reason: name);
+      // The whole line, so 30 doesn't pass; the step may end right after it.
+      expect(
+        RegExp(r'^\s+retention-days: 3$', multiLine: true).hasMatch(uploadStep),
+        isTrue,
+        reason: name,
+      );
     }
   });
 
