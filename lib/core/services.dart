@@ -4,8 +4,10 @@ import '../data/plus.dart';
 import '../features/plus/plus_store.dart';
 import '../features/reminder/reminder_scheduler.dart';
 import '../journal/journal_store.dart';
+import '../pig/pig_mood.dart' show PigReaction;
 import 'app_lock.dart';
 import 'clock.dart';
+import 'device.dart';
 import 'local_day.dart';
 import 'staging_tools.dart';
 
@@ -17,6 +19,7 @@ class AppServices {
     required this.localDay,
     required this.journal,
     required this.reminders,
+    required this.notifications,
     this.appLock,
     this.plus,
     this.plusStore,
@@ -33,6 +36,13 @@ class AppServices {
 
   /// The daily reminder's notifications (flutter_local_notifications).
   final ReminderScheduler reminders;
+
+  /// Asking for, and reading, the permission to show notifications.
+  final NotificationPermission notifications;
+
+  /// What was just added, for the pig's reaction (plan §4.4): set after an
+  /// Add, cleared when the app goes to the background.
+  final lastAdd = ValueNotifier<PigReaction?>(null);
 
   /// App lock; null when APP_LOCK_ENABLED is off.
   final AppLock? appLock;

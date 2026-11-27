@@ -1,0 +1,537 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../core/clock.dart';
+import '../../core/semantics_id.dart';
+import '../../core/services.dart';
+import '../../goal/goal_progress.dart';
+import '../../journal/entry.dart';
+import '../../journal/goal.dart';
+import '../../l10n/gen/app_localizations.dart';
+import '../../money/money.dart';
+import '../../pig/pig_mood.dart' show PigMood;
+import '../../router.dart';
+import '../../session/session_scope.dart';
+import '../../theme/theme.dart';
+import '../add/entry_sheet.dart';
+import '../pig/pig_view.dart';
+import 'rainbow.dart';
+
+/// Up to 40 characters, as people count them.
+const goalNameMax = 40;
+
+/// Create a goal, or edit one (plan §3.4): what for, the amount, what's
+/// already saved.
+class GoalEditScreen extends StatefulWidget {
+  const GoalEditScreen({super.key, this.goalId});
+
+  /// The goal to edit; null to create one.
+  final String? goalId;
+
+  @override
+  State<GoalEditScreen> createState() => _GoalEditScreenState();
+}
+
+class _GoalEditScreenState extends State<GoalEditScreen> {
+  final _name = TextEditingController();
+  final _target = TextEditingController();
+  final _start = TextEditingController();
+  Goal? _goal;
+  String? _currency;
+  bool _tried = false;
+  bool _busy = false;
+
+  String get _locale => context.readSession.device.localeName;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  Future<void> _load() async {
+    final store = context.services.journal;
+    final currency = await store.currency() ?? 'USD';
+    final id = widget.goalId;
+    final goal = id == null ? null : await store.goal(id);
+    if (!mounted) return;
+    setState(() {
+      _currency = currency;
+      _goal = goal;
+      if (goal != null) {
+        _name.text = goal.name;
+        _target.text = inputAmount(goal.targetMinor, currency, _locale);
+        if (goal.startMinor > 0) {
+          _start.text = inputAmount(goal.startMinor, currency, _locale);
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _target.dispose();
+    _start.dispose();
+    super.dispose();
+  }
+
+  String? _nameError(AppLocalizations l10n) {
+    final name = _name.text.trim();
+    if (!_tried && name.isEmpty) return null;
+    return name.isEmpty || name.characters.length > goalNameMax
+        ? l10n.goalNameError
+        : null;
+  }
+
+  String? _targetError(AppLocalizations l10n) {
+    final problem = parseAmount(_target.text, _currency!).problem;
+    return switch (problem) {
+      null => null,
+      AmountProblem.tooBig => l10n.addAmountTooBig,
+      AmountProblem.invalid => l10n.goalAmountError,
+      AmountProblem.empty ||
+      AmountProblem.zero => _tried ? l10n.goalAmountError : null,
+    };
+  }
+
+  String? _startError(AppLocalizations l10n) {
+    if (_start.text.trim().isEmpty) return null;
+    return switch (parseAmount(
+      _start.text,
+      _currency!,
+      allowZero: true,
+    ).problem) {
+      null => null,
+      AmountProblem.tooBig => l10n.addAmountTooBig,
+      _ => l10n.addAmountError,
+    };
+  }
+
+  Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
+    final currency = _currency;
+    if (_busy || currency == null) return;
+    setState(() => _tried = true);
+    if (_nameError(l10n) != null ||
+        _targetError(l10n) != null ||
+        _startError(l10n) != null) {
+      return;
+    }
+    final target = parseAmount(_target.text, currency).minor!;
+    final start = _start.text.trim().isEmpty
+        ? 0
+        : parseAmount(_start.text, currency, allowZero: true).minor!;
+    setState(() => _busy = true);
+    final services = context.services;
+    final now = services.clock.nowUtc();
+    final old = _goal;
+    final goal = old == null
+        ? Goal(
+            id: services.journal.newId(),
+            name: _name.text.trim(),
+            targetMinor: target,
+            startMinor: start,
+            createdAt: now,
+            updatedAt: now,
+          )
+        : old.copyWith(
+            name: _name.text.trim(),
+            targetMinor: target,
+            startMinor: start,
+            updatedAt: now,
+          );
+    await services.journal.putGoal(goal);
+    if (mounted) context.pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final currency = _currency;
+    final editing = widget.goalId != null;
+    return TestId.container(
+      'goal-edit-screen',
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.goalTitle)),
+        body: currency == null
+            ? const SizedBox.shrink()
+            : ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  TestId(
+                    'goal-name',
+                    child: TextField(
+                      controller: _name,
+                      autofocus: !editing,
+                      textCapitalization: TextCapitalization.sentences,
+                      maxLength: goalNameMax,
+                      style: context.inputText,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n.goalNameLabel,
+                        hintText: l10n.goalNameHint,
+                        hintMaxLines: 2,
+                        errorText: _nameError(l10n),
+                        errorMaxLines: 3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TestId(
+                    'goal-amount',
+                    child: TextField(
+                      controller: _target,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: context.inputText,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n.goalAmountLabel,
+                        errorText: _targetError(l10n),
+                        errorMaxLines: 3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TestId(
+                    'goal-start',
+                    child: TextField(
+                      controller: _start,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: context.inputText,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: l10n.goalStartLabel,
+                        errorText: _startError(l10n),
+                        errorMaxLines: 3,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  TestId(
+                    'goal-submit',
+                    button: true,
+                    child: FilledButton(
+                      onPressed: _busy ? null : _submit,
+                      child: Text(editing ? l10n.goalSave : l10n.goalCreate),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// A goal (plan §3.4): the big rainbow, how far along, its saves (newest
+/// first, tap to edit), Add savings, and Edit goal / End goal.
+class GoalDetailScreen extends StatefulWidget {
+  const GoalDetailScreen({super.key, required this.goalId});
+
+  final String goalId;
+
+  @override
+  State<GoalDetailScreen> createState() => _GoalDetailScreenState();
+}
+
+class _GoalDetailScreenState extends State<GoalDetailScreen> {
+  Goal? _goal;
+  int _progress = 0;
+  List<Entry> _saves = const [];
+  String _currency = 'USD';
+  AppServices? _services;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      (_services = context.services).journal.addListener(_load);
+      _load();
+    });
+  }
+
+  @override
+  void dispose() {
+    _services?.journal.removeListener(_load);
+    super.dispose();
+  }
+
+  Future<void> _load() async {
+    final store = context.services.journal;
+    final goal = await store.goal(widget.goalId);
+    final progress = goal == null ? 0 : await store.goalProgress(goal);
+    final saves = await store.goalSaves(widget.goalId);
+    final currency = await store.currency() ?? 'USD';
+    if (!mounted) return;
+    setState(() {
+      _goal = goal;
+      _progress = progress;
+      _saves = saves;
+      _currency = currency;
+    });
+  }
+
+  Future<void> _end() async {
+    final l10n = AppLocalizations.of(context);
+    final goal = _goal!;
+    final services = context.services;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => AlertDialog(
+        title: Text(l10n.goalEndTitle),
+        content: Text(l10n.goalEndBody),
+        actions: [
+          TestId(
+            'goal-end-cancel',
+            button: true,
+            child: TextButton(
+              onPressed: () => Navigator.pop(dialog, false),
+              child: Text(l10n.cancel),
+            ),
+          ),
+          TestId(
+            'goal-end-confirm',
+            button: true,
+            child: TextButton(
+              onPressed: () => Navigator.pop(dialog, true),
+              child: Text(l10n.goalEndConfirm),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    await services.journal.putGoal(
+      goal.copyWith(
+        status: GoalStatus.ended,
+        updatedAt: services.clock.nowUtc(),
+      ),
+    );
+    if (mounted) context.pop();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final goal = _goal;
+    final locale = context.session.device.localeName;
+    String money(int minor) => formatMoney(minor, _currency, locale);
+    return TestId.container(
+      'goal-screen',
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(goal?.name ?? l10n.goalTitle),
+          actions: [
+            if (goal != null && goal.status == GoalStatus.active)
+              TestId(
+                'goal-menu',
+                button: true,
+                child: PopupMenuButton<String>(
+                  onSelected: (choice) => choice == 'edit'
+                      ? context.push(GoalRoutes.edit(goal.id))
+                      : _end(),
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: 'edit',
+                      child: TestId('goal-edit', child: Text(l10n.goalEdit)),
+                    ),
+                    PopupMenuItem(
+                      value: 'end',
+                      child: TestId('goal-end', child: Text(l10n.goalEnd)),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        body: goal == null
+            ? const SizedBox.shrink()
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                children: [
+                  Builder(
+                    builder: (context) {
+                      final percent = goalPercent(
+                        progressMinor: _progress,
+                        targetMinor: goal.targetMinor,
+                      );
+                      return Rainbow(
+                        percent: percent,
+                        semanticLabel: l10n.goalRainbowLabel(
+                          percent,
+                          money(_progress),
+                          money(goal.targetMinor),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    l10n.goalCardProgress(
+                      money(_progress),
+                      money(goal.targetMinor),
+                    ),
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurface,
+                    ),
+                  ),
+                  if (!goalReached(
+                    progressMinor: _progress,
+                    targetMinor: goal.targetMinor,
+                  ))
+                    Text(
+                      l10n.goalToGo(money(goal.targetMinor - _progress)),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  if (goal.status == GoalStatus.active) ...[
+                    const SizedBox(height: 16),
+                    TestId(
+                      'goal-add-savings',
+                      button: true,
+                      child: FilledButton.icon(
+                        onPressed: () =>
+                            showEntrySheet(context, start: EntryType.saved),
+                        icon: const Icon(Icons.add),
+                        label: Text(l10n.goalAddSavings),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                  Semantics(
+                    header: true,
+                    child: Text(
+                      l10n.goalSavesHeader,
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ),
+                  for (final e in _saves)
+                    TestId(
+                      'goal-save-${e.id}',
+                      button: true,
+                      child: ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          e.note.isNotEmpty ? e.note : l10n.tlSavedRow,
+                        ),
+                        subtitle: Text(
+                          wireDate(e.date),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        trailing: Text(
+                          '+${money(e.amountMinor)}',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+                        onTap: () => showEntrySheet(context, editing: e),
+                      ),
+                    ),
+                ],
+              ),
+      ),
+    );
+  }
+}
+
+/// The goal reached (plan §3.4): shown once, full screen.
+class GoalDoneScreen extends StatefulWidget {
+  const GoalDoneScreen({super.key, required this.goalId});
+
+  final String goalId;
+
+  @override
+  State<GoalDoneScreen> createState() => _GoalDoneScreenState();
+}
+
+class _GoalDoneScreenState extends State<GoalDoneScreen> {
+  Goal? _goal;
+  String _currency = 'USD';
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final store = context.services.journal;
+      final goal = await store.goal(widget.goalId);
+      final currency = await store.currency() ?? 'USD';
+      if (!mounted) return;
+      setState(() {
+        _goal = goal;
+        _currency = currency;
+      });
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final goal = _goal;
+    final locale = context.session.device.localeName;
+    return TestId.container(
+      'goal-done-screen',
+      child: Scaffold(
+        body: SafeArea(
+          child: goal == null
+              ? const SizedBox.shrink()
+              : ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    const Center(child: PigView(mood: PigMood.delighted)),
+                    const SizedBox(height: 16),
+                    const Rainbow(percent: 100),
+                    const SizedBox(height: 24),
+                    Text(
+                      l10n.goalDoneTitle,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.goalDoneBody(
+                        goal.name,
+                        formatMoney(goal.targetMinor, _currency, locale),
+                      ),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TestId(
+                      'goal-done-new',
+                      button: true,
+                      child: FilledButton(
+                        onPressed: () =>
+                            context.pushReplacement(GoalRoutes.create),
+                        child: Text(l10n.goalDoneNew),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TestId(
+                      'goal-done-close',
+                      button: true,
+                      child: TextButton(
+                        onPressed: () => context.pop(),
+                        child: Text(l10n.goalDoneClose),
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}

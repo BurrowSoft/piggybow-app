@@ -5,6 +5,8 @@ import 'package:sembast/sembast_memory.dart';
 import 'package:uuid/uuid.dart';
 
 import '../core/clock.dart';
+import '../goal/goal_progress.dart';
+import '../pig/pig_mood.dart' show HappyPick;
 import 'category.dart';
 import 'entry.dart';
 import 'goal.dart';
@@ -55,6 +57,47 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// What makes the pig happy (onboarding O2, Me). Until it's been picked:
+  /// saving something each week.
+  Future<Set<HappyPick>> picks() async {
+    final ids = await _settings.record('picks').get(_db);
+    final picks = {
+      for (final id in ids is List ? ids : const [])
+        ...HappyPick.values.where((p) => p.name == id),
+    };
+    return picks.isEmpty ? {HappyPick.save} : picks;
+  }
+
+  Future<void> setPicks(Set<HappyPick> picks) async {
+    await _settings.record('picks').put(_db, [for (final p in picks) p.name]);
+    notifyListeners();
+  }
+
+  /// The weekly spending plan, in minor units; null when there's none.
+  Future<int?> planMinor() async {
+    final v = await _settings.record('plan_minor').get(_db);
+    return v is int && v > 0 ? v : null;
+  }
+
+  Future<void> setPlanMinor(int? minor) async {
+    final record = _settings.record('plan_minor');
+    if (minor == null) {
+      await record.delete(_db);
+    } else {
+      await record.put(_db, minor);
+    }
+    notifyListeners();
+  }
+
+  /// Whether the reminder offer on Home was answered (it shows once).
+  Future<bool> reminderOfferAnswered() async =>
+      await _settings.record('reminder_offer').get(_db) == true;
+
+  Future<void> answerReminderOffer() async {
+    await _settings.record('reminder_offer').put(_db, true);
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------- entries
 
   /// Every entry, newest day first; within a day, the newest added first.
@@ -62,7 +105,10 @@ class JournalStore extends ChangeNotifier {
     final snaps = await _entries.find(
       _db,
       finder: Finder(
-        sortOrders: [SortOrder('local_date', false), SortOrder('created_at', false)],
+        sortOrders: [
+          SortOrder('local_date', false),
+          SortOrder('created_at', false),
+        ],
       ),
     );
     return [for (final s in snaps) ?Entry.fromMap(s.key, s.value)];
@@ -100,6 +146,7 @@ class JournalStore extends ChangeNotifier {
     );
     _check(entry);
     await _entries.record(entry.id).put(_db, entry.toMap());
+    await _advance(entry.goalId);
     notifyListeners();
     return entry;
   }
@@ -112,7 +159,9 @@ class JournalStore extends ChangeNotifier {
     if (old == null) throw StateError('no entry ${changed.id}');
     final spend = changed.type == EntryType.spent;
     var goalId = spend ? null : changed.goalId;
-    if (!spend && old.type == EntryType.spent) goalId = (await activeGoal())?.id;
+    if (!spend && old.type == EntryType.spent) {
+      goalId = (await activeGoal())?.id;
+    }
     final updated = Entry(
       id: old.id,
       type: changed.type,
@@ -128,16 +177,23 @@ class JournalStore extends ChangeNotifier {
     );
     _check(updated);
     await _entries.record(updated.id).put(_db, updated.toMap());
+    await _advance(old.goalId);
+    if (updated.goalId != old.goalId) await _advance(updated.goalId);
     notifyListeners();
     return updated;
   }
 
   Future<void> deleteEntry(String id) async {
+    final old = await entry(id);
     await _entries.record(id).delete(_db);
+    await _advance(old?.goalId);
     notifyListeners();
   }
 
   // --------------------------------------------------------------- goals
+
+  /// A new id for a record (a goal made on its screen).
+  String newId() => _newId();
 
   /// The active goal, if any (one at a time).
   Future<Goal?> activeGoal() async {
@@ -153,10 +209,89 @@ class JournalStore extends ChangeNotifier {
     return m == null ? null : Goal.fromMap(id, m);
   }
 
-  /// Stores [goal] as it is (the goal screens own the rules).
+  /// Stores [goal]; a new target can reach it (the goal screens own the
+  /// other rules).
   Future<void> putGoal(Goal goal) async {
+    if (goal.targetMinor <= 0) {
+      throw ArgumentError.value(goal.targetMinor, 'targetMinor');
+    }
+    if (goal.startMinor < 0) {
+      throw ArgumentError.value(goal.startMinor, 'startMinor');
+    }
     await _goals.record(goal.id).put(_db, goal.toMap());
+    await _advance(goal.id);
     notifyListeners();
+  }
+
+  /// Every goal, ended and reached ones too, newest first.
+  Future<List<Goal>> goals() async {
+    final snaps = await _goals.find(
+      _db,
+      finder: Finder(sortOrders: [SortOrder('created_at', false)]),
+    );
+    return [for (final s in snaps) ?Goal.fromMap(s.key, s.value)];
+  }
+
+  /// The saves that name [goalId], newest day first.
+  Future<List<Entry>> goalSaves(String goalId) async => [
+    for (final e in await entries())
+      if (e.type == EntryType.saved && e.goalId == goalId) e,
+  ];
+
+  /// A goal's progress: what was already saved, plus every save that names it.
+  Future<int> goalProgress(Goal goal) async {
+    var sum = goal.startMinor;
+    for (final e in await goalSaves(goal.id)) {
+      sum += e.amountMinor;
+    }
+    return sum;
+  }
+
+  /// Whether the celebration for reaching [goalId] was shown (it shows once).
+  Future<bool> celebrated(String goalId) async =>
+      await _settings.record('celebrated.$goalId').get(_db) == true;
+
+  Future<void> markCelebrated(String goalId) async {
+    await _settings.record('celebrated.$goalId').put(_db, true);
+  }
+
+  /// After a change that can move [goalId]'s progress (a save added, edited,
+  /// moved or deleted, or the goal edited): a band, or the goal reached, is
+  /// stamped the first time it completes, and never unstamped. A reached
+  /// goal is no longer the active one, so the next save goes to no goal.
+  Future<void> _advance(String? goalId) async {
+    if (goalId == null) return;
+    final g = await goal(goalId);
+    if (g == null) return;
+    final marks = advanceGoalMarks(
+      bandReachedAt: g.bandReachedAt,
+      reachedAt: g.reachedAt,
+      progressMinor: await goalProgress(g),
+      targetMinor: g.targetMinor,
+      nowUtc: _clock.nowUtc(),
+    );
+    final status = marks.reachedAt != null && g.status == GoalStatus.active
+        ? GoalStatus.reached
+        : g.status;
+    if (marks.bandsJustReached.isEmpty &&
+        !marks.justReached &&
+        status == g.status) {
+      return;
+    }
+    final now = _clock.nowUtc();
+    await _goals
+        .record(g.id)
+        .put(
+          _db,
+          g
+              .copyWith(
+                bandReachedAt: marks.bandReachedAt,
+                reachedAt: marks.reachedAt,
+                status: status,
+                updatedAt: now,
+              )
+              .toMap(),
+        );
   }
 
   // ---------------------------------------------------------------- all
@@ -174,8 +309,12 @@ class JournalStore extends ChangeNotifier {
   Future<void> close() => _db.close();
 
   static void _check(Entry e) {
-    if (e.amountMinor <= 0) throw ArgumentError.value(e.amountMinor, 'amountMinor');
-    if (e.date.isAfter(DateTime(9999))) throw ArgumentError.value(e.localDate, 'localDate');
+    if (e.amountMinor <= 0) {
+      throw ArgumentError.value(e.amountMinor, 'amountMinor');
+    }
+    if (e.date.isAfter(DateTime(9999))) {
+      throw ArgumentError.value(e.localDate, 'localDate');
+    }
     if (e.type == EntryType.spent && e.category == null) {
       throw ArgumentError('a spend needs a category');
     }

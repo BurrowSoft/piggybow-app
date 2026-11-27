@@ -99,8 +99,11 @@ Future<void> main() async {
     localDay: localDay,
     journal: journal,
     reminders: PlatformReminderScheduler(),
+    notifications: const PlatformNotificationPermission(),
     appLock: appLock,
   );
+  // The pig's reaction to an Add lasts until the app goes to the background.
+  AppLifecycleListener(onHide: () => services.lastAdd.value = null);
 
   Widget app(List<NavigatorObserver> observers) => PiggybowApp(
     config: config,

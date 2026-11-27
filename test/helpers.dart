@@ -112,6 +112,7 @@ class TestApp {
   final MemoryLocalPrefs prefs;
   final FakeDevice device;
   final reminders = FakeReminderScheduler();
+  final notifications = FakeNotifications();
   int stagingErrors = 0;
   final List<String> shippedLocales;
 
@@ -134,6 +135,7 @@ class TestApp {
     localDay: localDay,
     journal: journal,
     reminders: reminders,
+    notifications: notifications,
     appLock: appLock,
     stagingTestError: () => stagingErrors++,
   );
