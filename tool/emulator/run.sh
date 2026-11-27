@@ -62,6 +62,9 @@ echo "head $HEAD_SHA | flows $FLOWS_REF = $FLOWS_SHA | kind $KIND | APK sha256 $
 
 export APK HEAD_SHA FLOWS_SHA OUT SERIAL APP_ID KIND
 export FLOWS="$FLOWS_DIR/.maestro"
+# From here on, relative paths (Maestro's takeScreenshot files) land in the
+# evidence.
+cd "$OUT"
 
 # The tester's device rows: the script installs and checks the APK itself.
 if [ -n "$ROWS" ]; then

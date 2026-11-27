@@ -188,6 +188,12 @@ steps:
       );
       expect(run, contains(r'rows="$FLOWS_DIR/tool/device-rows/$ROWS.sh"'));
       expect(run, contains('--test-output-dir "\$OUT/maestro"'));
+      // Relative outputs (takeScreenshot files) land in the evidence: the
+      // script works from it before the rows or Maestro run.
+      final cd = run.indexOf('\ncd "\$OUT"\n');
+      expect(cd, greaterThan(0));
+      expect(run.indexOf('bash "\$rows"'), greaterThan(cd));
+      expect(run.indexOf('maestro --device'), greaterThan(cd));
     },
   );
 
