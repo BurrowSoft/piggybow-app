@@ -1,14 +1,16 @@
-# CI emulators sometimes show another app's "… isn't responding" dialog (the
-# system launcher's, seen on master dfec61d), which covers Piggybow and hides
-# its ids. Tap "Wait" on it, but ONLY when the dialog isn't Piggybow's own:
-# an ANR of our app must still fail the flow.
+# CI emulators sometimes show ANOTHER app's "<app> isn't responding" dialog
+# (the system launcher's, seen on master dfec61d), which covers Piggybow and
+# hides its ids. Tap "Wait" only when the dialog's title names another app:
+# an ANR of Piggybow itself must still fail the flow.
+# Each time it fires it leaves evidence: the "system-anr-dismissed"
+# screenshot, and the tap on android:id/aerr_wait in commands.json.
 appId: ${APP_ID}
 ---
 - runFlow:
     when:
       visible:
-        id: "android:id/aerr_wait"
-      notVisible: ".*Piggybow.*"
+        id: "android:id/alertTitle"
+        text: "(?!.*Piggybow).+ isn.t responding"
     commands:
       - takeScreenshot: system-anr-dismissed
       - tapOn:
