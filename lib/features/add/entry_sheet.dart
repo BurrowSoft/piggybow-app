@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/clock.dart';
+import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../journal/category.dart';
@@ -346,7 +347,15 @@ class _EntrySheetState extends State<EntrySheet> {
                                   id,
                                   button: true,
                                   selected: _type == t,
-                                  child: Text(label),
+                                  // One word: whole, smaller only if it must.
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      label,
+                                      maxLines: 1,
+                                      softWrap: false,
+                                    ),
+                                  ),
                                 ),
                               ),
                           ],
@@ -373,6 +382,7 @@ class _EntrySheetState extends State<EntrySheet> {
                               labelText: l10n.addAmountLabel,
                               prefixText: '${_symbol(currency)} ',
                               errorText: amountError,
+                              errorMaxLines: 3,
                             ),
                           ),
                         ),
@@ -450,6 +460,8 @@ class _EntrySheetState extends State<EntrySheet> {
                               hintText: spend
                                   ? l10n.addNoteHintSpent
                                   : l10n.addNoteHintSaved,
+                              hintMaxLines: 2,
+                              errorMaxLines: 3,
                             ),
                           ),
                         ),
@@ -592,69 +604,85 @@ class _CategoryGrid extends StatelessWidget {
     final theme = Theme.of(context);
     final accent = theme.colorScheme.primary;
     const all = SpendCategory.values;
-    return Column(
-      children: [
-        for (var row = 0; row < all.length; row += 3)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final (i, c) in all.skip(row).take(3).indexed) ...[
-                    if (i > 0) const SizedBox(width: 8),
-                    Expanded(
-                      child: TestId(
-                        'add-cat-${c.id}',
-                        button: true,
-                        selected: selected == c,
-                        child: Material(
-                          color: selected == c
-                              ? context.palette.pillBackground
-                              : theme.colorScheme.surface,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
+    // One size for the nine labels: each word whole in its cell (a third of
+    // the row, less the gaps and padding), smaller only when it must.
+    return LayoutBuilder(
+      builder: (context, box) {
+        final scaler = wholeWordsScaler(
+          context,
+          texts: [for (final c in all) c.label(l10n)],
+          style: theme.textTheme.bodySmall,
+          available: (box.maxWidth - 16) / 3 - 16,
+        );
+        return Column(
+          children: [
+            for (var row = 0; row < all.length; row += 3)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      for (final (i, c) in all.skip(row).take(3).indexed) ...[
+                        if (i > 0) const SizedBox(width: 8),
+                        Expanded(
+                          child: TestId(
+                            'add-cat-${c.id}',
+                            button: true,
+                            selected: selected == c,
+                            child: Material(
                               color: selected == c
-                                  ? accent
-                                  : theme.colorScheme.outlineVariant,
-                              width: selected == c ? 2 : 1,
-                            ),
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(12),
-                            onTap: () => onPick(c),
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(minHeight: 72),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      c.icon,
-                                      color: selected == c ? accent : null,
+                                  ? context.palette.pillBackground
+                                  : theme.colorScheme.surface,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                side: BorderSide(
+                                  color: selected == c
+                                      ? accent
+                                      : theme.colorScheme.outlineVariant,
+                                  width: selected == c ? 2 : 1,
+                                ),
+                              ),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(12),
+                                onTap: () => onPick(c),
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(
+                                    minHeight: 72,
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8),
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          c.icon,
+                                          color: selected == c ? accent : null,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          c.label(l10n),
+                                          textAlign: TextAlign.center,
+                                          style: theme.textTheme.bodySmall,
+                                          textScaler: scaler,
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      c.label(l10n),
-                                      textAlign: TextAlign.center,
-                                      style: theme.textTheme.bodySmall,
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                ],
+                      ],
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ),
-      ],
+          ],
+        );
+      },
     );
   }
 }

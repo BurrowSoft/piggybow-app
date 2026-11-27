@@ -80,8 +80,12 @@ void main() {
     testWidgets(
       'A1 just opened, keyboard open: the amount and Add in reach ($c)',
       (tester) async {
-        await open(tester, c, keyboard: 300);
+        await open(tester, c);
         await tester.tapId('tl-empty-add');
+        // The keyboard comes up once the sheet is open (the amount is
+        // focused); before that, the tab bar is in reach.
+        tester.view.viewInsets = const FakeViewPadding(bottom: 300 * 3);
+        await tester.pumpAndSettle();
         await expectSoundLayout(tester, reason: 'A1');
         final screen = tester.view.physicalSize / tester.view.devicePixelRatio;
         final add = tester.getRect(byId('add-submit'));
@@ -111,12 +115,13 @@ void main() {
         expectOnlyAllowedColours(tester, [preview], reason: 'A2 preview');
         await reveal(tester, 'add-cat-fun');
         await tester.tap(byId('add-cat-fun'));
+        await tester.pump();
+        expect(find.text(longestCategory), findsWidgets);
         await reveal(tester, 'add-feel-not-really');
         await tester.tap(byId('add-feel-not-really'));
         await reveal(tester, 'add-note');
         await tester.enterId('add-note', note80);
         await tester.pumpAndSettle();
-        expect(find.text(longestCategory), findsWidgets);
         await checkSheet(tester, 'A2');
       },
     );

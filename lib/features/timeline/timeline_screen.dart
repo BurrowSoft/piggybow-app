@@ -119,7 +119,14 @@ class _TimelineScreenState extends State<TimelineScreen>
                               'tl-filter-${f.name}',
                               button: true,
                               selected: _filter == f,
-                              child: Text(label),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  label,
+                                  maxLines: 1,
+                                  softWrap: false,
+                                ),
+                              ),
                             ),
                           ),
                       ],
