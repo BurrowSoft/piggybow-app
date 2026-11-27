@@ -18,7 +18,11 @@ A Flutter app for Android and iPhone, by BurrowSoft.
   ```
 
 - Checks CI runs too: `flutter analyze`, `dart run tool/check_l10n.dart`,
-  `dart run tool/check_hardcoded_text.dart`.
+  `dart run tool/check_hardcoded_text.dart`, `dart run tool/check_hidden_chars.dart`.
+- On-device tests run on a CI emulator only (`.github/workflows/emulator.yaml`,
+  started by hand or by the `emulator` label): it builds the APK it tests from
+  the commit under test and keeps only the evidence (logs and screenshots) for
+  3 days.
 - Every user-facing string lives in `lib/l10n/app_en.arb`.
 
 ## How this repo started

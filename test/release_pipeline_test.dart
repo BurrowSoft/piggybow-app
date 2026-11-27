@@ -17,7 +17,9 @@ void main() {
   // The Reviewer, 1.3.0: the tracker check runs in every release build,
   // after the build and before anything is uploaded.
   test('verifyNoTrackingDeps runs in the release build, before the upload', () {
-    final check = workflow.indexOf('./gradlew --no-daemon verifyNoTrackingDeps');
+    final check = workflow.indexOf(
+      './gradlew --no-daemon verifyNoTrackingDeps',
+    );
     expect(check, greaterThan(workflow.indexOf('flutter build appbundle')));
     expect(check, lessThan(workflow.indexOf('actions/upload-artifact')));
     expect(
@@ -49,9 +51,10 @@ void main() {
 
   // The Reviewer, round 3 B3: the R8 mapping is checked and kept with the AAB.
   // The repo is public: an artifact is downloadable by anyone signed in to
-  // GitHub. The release AAB is the only one, for 3 days; no workflow uploads
-  // an APK, the mapping or a report.
-  test('the AAB is the only artifact anywhere, kept 3 days; R8 mapping checked first', () {
+  // GitHub. Decision 31: two uploads only, each kept 3 days: the release AAB,
+  // and the emulator job's evidence (never a build: emulator_workflow_test).
+  // No workflow uploads an APK, the mapping or a report.
+  test('two artifacts only, the AAB and the emulator evidence, 3 days each; R8 mapping checked first', () {
     const mapping = 'build/app/outputs/mapping/prodRelease/mapping.txt';
     final check = workflow.indexOf('M=$mapping');
     expect(check, greaterThan(workflow.indexOf('flutter build appbundle')));
@@ -67,12 +70,14 @@ void main() {
     expect(step, contains('retention-days: 3'));
     expect(step, isNot(contains('mapping.txt')));
     final uploads = {
-      for (final f in Directory('.github/workflows').listSync().whereType<File>())
+      for (final f in Directory(
+        '.github/workflows',
+      ).listSync().whereType<File>())
         f.uri.pathSegments.last: 'actions/upload-artifact'
             .allMatches(f.readAsStringSync())
             .length,
     }..removeWhere((_, n) => n == 0);
-    expect(uploads, {'release-aab.yaml': 1});
+    expect(uploads, {'release-aab.yaml': 1, 'emulator.yaml': 1});
   });
 
   test('manual only, from master, the prod flavour with its env', () {
