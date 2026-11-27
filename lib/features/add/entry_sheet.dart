@@ -65,6 +65,9 @@ class _EntrySheetState extends State<EntrySheet> {
   bool _tried = false;
   bool _busy = false;
 
+  /// The last Add, Save or Delete failed in the store.
+  bool _failed = false;
+
   bool get _editing => widget.editing != null;
 
   String get _locale => context.readSession.device.localeName;
@@ -89,7 +92,9 @@ class _EntrySheetState extends State<EntrySheet> {
     // A save shows where it goes: its own goal when it has one, else the
     // active goal (where a new save goes).
     final goalId = e?.goalId;
-    final goal = goalId != null ? await store.goal(goalId) : await store.activeGoal();
+    final goal = goalId != null
+        ? await store.goal(goalId)
+        : await store.activeGoal();
     if (!mounted) return;
     final today = services.localDay.today;
     setState(() {
@@ -97,7 +102,9 @@ class _EntrySheetState extends State<EntrySheet> {
       _goalName = goal?.name;
       _today = today;
       _date = e?.date ?? today;
-      if (e != null) _amount.text = inputAmount(e.amountMinor, currency, _locale);
+      if (e != null) {
+        _amount.text = inputAmount(e.amountMinor, currency, _locale);
+      }
     });
   }
 
@@ -121,7 +128,8 @@ class _EntrySheetState extends State<EntrySheet> {
       null => null,
       AmountProblem.tooBig => l10n.addAmountTooBig,
       AmountProblem.invalid => l10n.addAmountError,
-      AmountProblem.empty || AmountProblem.zero => _tried ? l10n.addAmountError : null,
+      AmountProblem.empty ||
+      AmountProblem.zero => _tried ? l10n.addAmountError : null,
     };
   }
 
@@ -135,34 +143,59 @@ class _EntrySheetState extends State<EntrySheet> {
       setState(() => _tried = true);
       return;
     }
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _failed = false;
+    });
     final store = context.services.journal;
     final editing = widget.editing;
-    if (editing == null) {
-      await store.addEntry(
-        type: _type,
-        amountMinor: parsed.minor!,
-        currency: currency,
-        localDate: wireDate(date),
-        category: _category,
-        feeling: _feeling,
-        note: _note.text,
-      );
-    } else {
-      await store.updateEntry(
-        editing.copyWith(
+    try {
+      if (editing == null) {
+        await store.addEntry(
           type: _type,
           amountMinor: parsed.minor!,
-          category: _category,
-          clearCategory: _category == null,
-          feeling: _feeling,
-          clearFeeling: _feeling == null,
-          note: _note.text,
+          currency: currency,
           localDate: wireDate(date),
-        ),
-      );
+          category: _category,
+          feeling: _feeling,
+          note: _note.text,
+        );
+      } else {
+        await store.updateEntry(
+          editing.copyWith(
+            type: _type,
+            amountMinor: parsed.minor!,
+            category: _category,
+            clearCategory: _category == null,
+            feeling: _feeling,
+            clearFeeling: _feeling == null,
+            note: _note.text,
+            localDate: wireDate(date),
+          ),
+        );
+      }
+    } on Object catch (error, stack) {
+      _storeFailed(error, stack);
+      return;
     }
     if (mounted) Navigator.of(context).pop(true);
+  }
+
+  /// The store refused or failed: the sheet stays usable and says so once,
+  /// and the error is reported (crash reports scrub it).
+  void _storeFailed(Object error, StackTrace stack) {
+    FlutterError.reportError(
+      FlutterErrorDetails(
+        exception: error,
+        stack: stack,
+        library: 'entry sheet',
+      ),
+    );
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _failed = true;
+    });
   }
 
   Future<void> _delete() async {
@@ -193,7 +226,16 @@ class _EntrySheetState extends State<EntrySheet> {
       ),
     );
     if (ok != true || !mounted) return;
-    await context.services.journal.deleteEntry(widget.editing!.id);
+    setState(() {
+      _busy = true;
+      _failed = false;
+    });
+    try {
+      await context.services.journal.deleteEntry(widget.editing!.id);
+    } on Object catch (error, stack) {
+      _storeFailed(error, stack);
+      return;
+    }
     if (mounted) Navigator.of(context).pop(true);
   }
 
@@ -224,7 +266,10 @@ class _EntrySheetState extends State<EntrySheet> {
 
   String _symbol(String currency) {
     try {
-      return NumberFormat.simpleCurrency(locale: _locale, name: currency).currencySymbol;
+      return NumberFormat.simpleCurrency(
+        locale: _locale,
+        name: currency,
+      ).currencySymbol;
     } on Object {
       return currency;
     }
@@ -242,225 +287,292 @@ class _EntrySheetState extends State<EntrySheet> {
     final amountError = _amountError(l10n);
     return Material(
       color: theme.colorScheme.surface,
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 4, 16, 0),
-            child: Row(
-              children: [
-                TestId(
-                  'add-back',
-                  button: true,
-                  child: IconButton(
-                    icon: const Icon(Icons.close),
-                    tooltip: l10n.cancel,
-                    onPressed: () => Navigator.of(context).pop(false),
-                  ),
-                ),
-                Expanded(
-                  child: Semantics(
-                    header: true,
-                    child: Text(
-                      _editing ? l10n.editSheetLabel : l10n.addSheetLabel,
-                      style: theme.textTheme.titleLarge,
+      // Above the keyboard: the form scrolls, and Add stays in reach.
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 4, 16, 0),
+              child: Row(
+                children: [
+                  TestId(
+                    'add-back',
+                    button: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      tooltip: l10n.cancel,
+                      onPressed: () => Navigator.of(context).pop(false),
                     ),
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        _editing ? l10n.editSheetLabel : l10n.addSheetLabel,
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: currency == null || date == null || today == null
-                ? const SizedBox.shrink()
-                : ListView(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                    children: [
-                      SegmentedButton<EntryType>(
-                        showSelectedIcon: false,
-                        segments: [
-                          for (final (t, id, label) in [
-                            (EntryType.spent, 'add-seg-spent', l10n.addSegSpent),
-                            (EntryType.saved, 'add-seg-saved', l10n.addSegSaved),
-                          ])
-                            ButtonSegment(
-                              value: t,
-                              label: TestId(
-                                id,
-                                button: true,
-                                selected: _type == t,
-                                child: Text(label),
+            Expanded(
+              child: currency == null || date == null || today == null
+                  ? const SizedBox.shrink()
+                  : ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                      children: [
+                        SegmentedButton<EntryType>(
+                          showSelectedIcon: false,
+                          segments: [
+                            for (final (t, id, label) in [
+                              (
+                                EntryType.spent,
+                                'add-seg-spent',
+                                l10n.addSegSpent,
                               ),
-                            ),
-                        ],
-                        selected: {_type},
-                        onSelectionChanged: (s) => setState(() => _type = s.first),
-                      ),
-                      const SizedBox(height: 16),
-                      TestId(
-                        'add-amount',
-                        child: TextField(
-                          controller: _amount,
-                          autofocus: !_editing,
-                          keyboardType: TextInputType.numberWithOptions(
-                            decimal: minorDigitsOf(currency) > 0,
-                          ),
-                          inputFormatters: [_AmountFormatter(minorDigitsOf(currency))],
-                          onChanged: (_) => setState(() {}),
-                          // Typed text in ink, larger for the amount.
-                          style: context.inputText?.copyWith(fontSize: 24),
-                          decoration: InputDecoration(
-                            labelText: l10n.addAmountLabel,
-                            prefixText: '${_symbol(currency)} ',
-                            errorText: amountError,
-                          ),
-                        ),
-                      ),
-                      // How the amount was read, whenever it can be.
-                      if (amountError == null && parsed?.minor != null)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4, left: 12),
-                          child: TestId(
-                            'add-amount-preview',
-                            child: Text(
-                              l10n.addAmountPreview(
-                                formatMoney(parsed!.minor!, currency, _locale),
+                              (
+                                EntryType.saved,
+                                'add-seg-saved',
+                                l10n.addSegSaved,
                               ),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ),
-                        ),
-                      const SizedBox(height: 16),
-                      if (spend) ...[
-                        Text(l10n.addCategoryLabel, style: theme.textTheme.titleSmall),
-                        const SizedBox(height: 8),
-                        _CategoryGrid(
-                          selected: _category,
-                          onPick: (c) => setState(() => _category = c),
-                        ),
-                        if (_tried && _category == null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Semantics(
-                              liveRegion: true,
-                              child: Text(
-                                l10n.addCategoryError,
-                                style: theme.textTheme.bodySmall?.copyWith(
-                                  color: theme.colorScheme.error,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ] else
-                        Text(
-                          _goalName == null ? l10n.addNoGoal : l10n.addGoesTo(_goalName!),
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      const SizedBox(height: 16),
-                      TestId(
-                        'add-note',
-                        child: TextField(
-                          controller: _note,
-                          maxLength: maxNoteLength,
-                          textCapitalization: TextCapitalization.sentences,
-                          style: context.inputText,
-                          decoration: InputDecoration(
-                            labelText: l10n.addNoteLabel,
-                            hintText: spend ? l10n.addNoteHintSpent : l10n.addNoteHintSaved,
-                          ),
-                        ),
-                      ),
-                      if (spend) ...[
-                        const SizedBox(height: 8),
-                        Text(l10n.addFeelingLabel, style: theme.textTheme.titleSmall),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final (f, id, label) in [
-                              (Feeling.worthIt, 'add-feel-worth', l10n.feelWorth),
-                              (Feeling.notSure, 'add-feel-not-sure', l10n.feelNotSure),
-                              (Feeling.notReally, 'add-feel-not-really', l10n.feelNotReally),
                             ])
-                              TestId(
-                                id,
-                                button: true,
-                                selected: _feeling == f,
-                                child: ChoiceChip(
-                                  label: Text(label),
-                                  selected: _feeling == f,
-                                  showCheckmark: false,
-                                  // Tap again to clear: "Worth it?" is optional.
-                                  onSelected: (_) => setState(
-                                    () => _feeling = _feeling == f ? null : f,
-                                  ),
+                              ButtonSegment(
+                                value: t,
+                                label: TestId(
+                                  id,
+                                  button: true,
+                                  selected: _type == t,
+                                  child: Text(label),
                                 ),
                               ),
                           ],
+                          selected: {_type},
+                          onSelectionChanged: (s) =>
+                              setState(() => _type = s.first),
                         ),
-                      ],
-                      const SizedBox(height: 16),
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: TestId(
-                          'add-date',
-                          button: true,
-                          child: ActionChip(
-                            avatar: const Icon(Icons.calendar_today, size: 18),
-                            label: Text(_dateLabel(l10n, date, today)),
-                            onPressed: _pickDate,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-              child: _editing
-                  ? Row(
-                      children: [
+                        const SizedBox(height: 16),
                         TestId(
-                          'edit-delete',
-                          button: true,
-                          child: TextButton(
-                            onPressed: _busy ? null : _delete,
-                            child: Text(l10n.editDelete),
+                          'add-amount',
+                          child: TextField(
+                            controller: _amount,
+                            autofocus: !_editing,
+                            keyboardType: TextInputType.numberWithOptions(
+                              decimal: minorDigitsOf(currency) > 0,
+                            ),
+                            inputFormatters: [
+                              _AmountFormatter(minorDigitsOf(currency)),
+                            ],
+                            onChanged: (_) => setState(() {}),
+                            // Typed text in ink, larger for the amount.
+                            style: context.inputText?.copyWith(fontSize: 24),
+                            decoration: InputDecoration(
+                              labelText: l10n.addAmountLabel,
+                              prefixText: '${_symbol(currency)} ',
+                              errorText: amountError,
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
+                        // How the amount was read, whenever it can be.
+                        if (amountError == null && parsed?.minor != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, left: 12),
+                            child: TestId(
+                              'add-amount-preview',
+                              // One line, whole: smaller only if the largest
+                              // amount can't fit at 320 dp and 200 % text.
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: AlignmentDirectional.centerStart,
+                                child: Text(
+                                  l10n.addAmountPreview(
+                                    formatMoney(
+                                      parsed!.minor!,
+                                      currency,
+                                      _locale,
+                                    ),
+                                  ),
+                                  maxLines: 1,
+                                  softWrap: false,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        if (spend) ...[
+                          Text(
+                            l10n.addCategoryLabel,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          _CategoryGrid(
+                            selected: _category,
+                            onPick: (c) => setState(() => _category = c),
+                          ),
+                          if (_tried && _category == null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Semantics(
+                                liveRegion: true,
+                                child: Text(
+                                  l10n.addCategoryError,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ] else
+                          Text(
+                            _goalName == null
+                                ? l10n.addNoGoal
+                                : l10n.addGoesTo(_goalName!),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        const SizedBox(height: 16),
+                        TestId(
+                          'add-note',
+                          child: TextField(
+                            controller: _note,
+                            maxLength: maxNoteLength,
+                            textCapitalization: TextCapitalization.sentences,
+                            style: context.inputText,
+                            decoration: InputDecoration(
+                              labelText: l10n.addNoteLabel,
+                              hintText: spend
+                                  ? l10n.addNoteHintSpent
+                                  : l10n.addNoteHintSaved,
+                            ),
+                          ),
+                        ),
+                        if (spend) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            l10n.addFeelingLabel,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final (f, id, label) in [
+                                (
+                                  Feeling.worthIt,
+                                  'add-feel-worth',
+                                  l10n.feelWorth,
+                                ),
+                                (
+                                  Feeling.notSure,
+                                  'add-feel-not-sure',
+                                  l10n.feelNotSure,
+                                ),
+                                (
+                                  Feeling.notReally,
+                                  'add-feel-not-really',
+                                  l10n.feelNotReally,
+                                ),
+                              ])
+                                TestId(
+                                  id,
+                                  button: true,
+                                  selected: _feeling == f,
+                                  child: ChoiceChip(
+                                    label: Text(label),
+                                    selected: _feeling == f,
+                                    showCheckmark: false,
+                                    // Tap again to clear: "Worth it?" is optional.
+                                    onSelected: (_) => setState(
+                                      () => _feeling = _feeling == f ? null : f,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
                           child: TestId(
-                            'edit-save',
+                            'add-date',
                             button: true,
-                            child: FilledButton(
-                              onPressed: _busy ? null : _submit,
-                              child: Text(l10n.editSave),
+                            child: ActionChip(
+                              avatar: const Icon(
+                                Icons.calendar_today,
+                                size: 18,
+                              ),
+                              label: Text(_dateLabel(l10n, date, today)),
+                              onPressed: _pickDate,
                             ),
                           ),
                         ),
                       ],
-                    )
-                  : SizedBox(
-                      width: double.infinity,
-                      child: TestId(
-                        'add-submit',
-                        button: true,
-                        child: FilledButton(
-                          onPressed: _busy ? null : _submit,
-                          child: Text(l10n.addSubmit),
-                        ),
-                      ),
                     ),
             ),
-          ),
-        ],
+            if (_failed)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                child: Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    l10n.errGeneric,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+              ),
+            SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                child: _editing
+                    ? Row(
+                        children: [
+                          TestId(
+                            'edit-delete',
+                            button: true,
+                            child: TextButton(
+                              onPressed: _busy ? null : _delete,
+                              child: Text(l10n.editDelete),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: TestId(
+                              'edit-save',
+                              button: true,
+                              child: FilledButton(
+                                onPressed: _busy ? null : _submit,
+                                child: Text(l10n.editSave),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        child: TestId(
+                          'add-submit',
+                          button: true,
+                          child: FilledButton(
+                            onPressed: _busy ? null : _submit,
+                            child: Text(l10n.addSubmit),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -503,7 +615,9 @@ class _CategoryGrid extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
-                              color: selected == c ? accent : theme.colorScheme.outlineVariant,
+                              color: selected == c
+                                  ? accent
+                                  : theme.colorScheme.outlineVariant,
                               width: selected == c ? 2 : 1,
                             ),
                           ),
@@ -517,7 +631,10 @@ class _CategoryGrid extends StatelessWidget {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(c.icon, color: selected == c ? accent : null),
+                                    Icon(
+                                      c.icon,
+                                      color: selected == c ? accent : null,
+                                    ),
                                     const SizedBox(height: 4),
                                     Text(
                                       c.label(l10n),
@@ -554,7 +671,10 @@ class _AmountFormatter extends TextInputFormatter {
   final RegExp _allowed;
 
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     final pasted = newValue.text.length - oldValue.text.length > 1;
     return pasted || _allowed.hasMatch(newValue.text) ? newValue : oldValue;
   }

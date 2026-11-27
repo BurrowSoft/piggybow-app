@@ -372,4 +372,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(await stored(tester, app), hasLength(1));
   });
+
+  testWidgets('if the store fails, the sheet stays usable and says so', (
+    tester,
+  ) async {
+    final app = await openTimeline(tester);
+    await tester.tapId('tl-empty-add');
+    await tester.enterId('add-amount', '12');
+    await tester.tapId('add-cat-food');
+    // A store that can't write any more.
+    await tester.runAsync(app.journal.close);
+    await tester.tapId('add-submit');
+    expect(
+      tester.takeException(),
+      isNotNull,
+      reason: 'the failure is reported',
+    );
+    expect(
+      find.text('Something went wrong. Please try again.'),
+      findsOneWidget,
+    );
+    final button = tester.widget<FilledButton>(
+      find.descendant(
+        of: byId('add-submit'),
+        matching: find.byType(FilledButton),
+      ),
+    );
+    expect(
+      button.onPressed,
+      isNotNull,
+      reason: 'not frozen: Add can be tried again',
+    );
+  });
 }

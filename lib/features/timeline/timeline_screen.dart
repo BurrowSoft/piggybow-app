@@ -12,6 +12,7 @@ import '../../money/money.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../add/entry_sheet.dart';
+import '../../core/fit_text.dart';
 import '../shell/tab_top.dart';
 
 /// Every spend and save, newest day first, under day headers with that
@@ -84,7 +85,7 @@ class _TimelineScreenState extends State<TimelineScreen>
     return TestId.container(
       'timeline-screen',
       child: Scaffold(
-        appBar: AppBar(title: Text(l10n.tlTitle)),
+        appBar: AppBar(title: AppBarTitle(l10n.tlTitle)),
         floatingActionButton: all == null || all.isEmpty
             ? null
             : TestId(
@@ -282,6 +283,8 @@ class _Row extends StatelessWidget {
       // Spends in ink: never red, never a minus sign.
       amount = Text(
         money,
+        maxLines: 1,
+        softWrap: false,
         style: theme.textTheme.titleSmall?.copyWith(
           color: theme.colorScheme.onSurface,
         ),
@@ -295,6 +298,8 @@ class _Row extends StatelessWidget {
       icon = const _MiniRainbow();
       amount = Text(
         '+$money',
+        maxLines: 1,
+        softWrap: false,
         style: theme.textTheme.titleSmall?.copyWith(
           color: theme.colorScheme.primary,
         ),
@@ -309,28 +314,39 @@ class _Row extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: 56),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                SizedBox(width: 32, child: Center(child: icon)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: theme.textTheme.bodyLarge),
-                      if (subtitle != null)
-                        Text(
-                          subtitle,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
+            child: LayoutBuilder(
+              builder: (context, box) => Row(
+                children: [
+                  SizedBox(width: 32, child: Center(child: icon)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: theme.textTheme.bodyLarge),
+                        if (subtitle != null)
+                          Text(
+                            subtitle,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                amount,
-              ],
+                  const SizedBox(width: 12),
+                  // One line, at most half the row: a very large amount at
+                  // 200 % text gets smaller rather than pushing the note out.
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: amount,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
