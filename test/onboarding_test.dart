@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:piggybow/features/currency/currency_picker.dart';
+import 'package:piggybow/features/onboarding/onboarding_screens.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
+import 'package:piggybow/journal/journal_store.dart';
 import 'package:piggybow/pig/pig_mood.dart' show HappyPick;
 import 'package:piggybow/router.dart';
 import 'package:piggybow/session/app_session.dart' show Routes;
@@ -203,5 +205,38 @@ void main() {
     await tester.pumpAndSettle();
     expect(byId('currency-screen'), findsNothing);
     expect(await tester.runAsync(app.journal.currency), 'THB');
+  });
+
+  test('onboarding shows only over a blank journal', () async {
+    Future<JournalStore> open() async {
+      final store = await JournalStore.inMemory(clock: testClock);
+      addTearDown(store.close);
+      return store;
+    }
+
+    final blank = await open();
+    await blank.setCurrency('THB');
+    expect(await onboardedAtStart(blank), isFalse, reason: 'a first open');
+
+    final done = await open();
+    await done.setOnboarded();
+    expect(await onboardedAtStart(done), isTrue);
+
+    // A phone from before onboarding: its notes stay as they are.
+    final upgraded = await open();
+    await upgraded.addEntry(
+      type: EntryType.spent,
+      amountMinor: 100,
+      currency: 'THB',
+      localDate: '2026-10-02',
+      category: SpendCategory.food,
+    );
+    expect(await onboardedAtStart(upgraded), isTrue);
+    expect(await upgraded.onboarded(), isTrue, reason: 'and from then on');
+
+    // Stopped in O3, after O2 saved the picks.
+    final picked = await open();
+    await picked.setPicks({HappyPick.save});
+    expect(await onboardedAtStart(picked), isTrue);
   });
 }

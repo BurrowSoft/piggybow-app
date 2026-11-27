@@ -237,6 +237,13 @@ class JournalStore extends ChangeNotifier {
     if (goal.startMinor < 0) {
       throw ArgumentError.value(goal.startMinor, 'startMinor');
     }
+    // One active goal at a time: a second one is refused, whatever asks.
+    if (goal.status == GoalStatus.active) {
+      final active = await activeGoal();
+      if (active != null && active.id != goal.id) {
+        throw StateError('goal ${active.id} is already active');
+      }
+    }
     await _goals.record(goal.id).put(_db, goal.toMap());
     await _advance(goal.id);
     notifyListeners();

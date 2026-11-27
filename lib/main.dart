@@ -16,6 +16,7 @@ import 'core/sentry_setup.dart';
 import 'core/services.dart';
 import 'core/startup_trace.dart';
 import 'data/device_backend.dart';
+import 'features/onboarding/onboarding_screens.dart';
 import 'features/pig/pig_view.dart';
 import 'features/reminder/reminder_scheduler.dart';
 import 'fixtures/launch_fixture.dart';
@@ -126,7 +127,7 @@ Future<void> main() async {
     reminders: PlatformReminderScheduler(),
     notifications: const PlatformNotificationPermission(),
     appLock: appLock,
-    onboarded: await journal.onboarded(),
+    onboarded: await onboardedAtStart(journal),
   );
   // The pig's reaction to an Add lasts until the app goes to the background.
   AppLifecycleListener(onHide: () => services.lastAdd.value = null);

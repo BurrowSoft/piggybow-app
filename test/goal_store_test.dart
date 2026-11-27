@@ -182,4 +182,22 @@ void main() {
     expect(() => store.putGoal(bike(target: 0)), throwsArgumentError);
     expect(() => store.putGoal(bike(start: -1)), throwsArgumentError);
   });
+
+  test('one active goal at a time: a second one is refused', () async {
+    await store.putGoal(bike());
+    final trip = Goal(
+      id: 'g2',
+      name: 'Trip',
+      targetMinor: 500,
+      createdAt: DateTime.utc(2026, 10),
+      updatedAt: DateTime.utc(2026, 10),
+    );
+    await expectLater(store.putGoal(trip), throwsStateError);
+    expect(await store.goal('g2'), isNull, reason: 'nothing written');
+    // Editing the active one is fine; once it ends, a new one is too.
+    await store.putGoal((await g1()).copyWith(name: 'Red bike'));
+    await store.putGoal((await g1()).copyWith(status: GoalStatus.ended));
+    await store.putGoal(trip);
+    expect((await store.activeGoal())!.id, 'g2');
+  });
 }

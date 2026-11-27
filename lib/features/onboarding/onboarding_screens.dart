@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
+import '../../journal/journal_store.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
 import '../../pig/pig_mood.dart';
@@ -16,6 +17,17 @@ import '../../theme/theme.dart';
 import '../currency/currency_picker.dart';
 import '../goal/rainbow.dart';
 import '../pig/pig_view.dart';
+
+/// Whether onboarding is done, at start. It shows only over a blank journal:
+/// one with notes (a phone from before onboarding, or one stopped between
+/// O2 and the end of O3) counts as onboarded, and says so from then on, so
+/// onboarding never overwrites picks or adds a second goal.
+Future<bool> onboardedAtStart(JournalStore journal) async {
+  if (await journal.onboarded()) return true;
+  if (await journal.isBlank()) return false;
+  await journal.setOnboarded();
+  return true;
+}
 
 /// O1 Welcome (plan §3.1): the pig, happy, under a full rainbow; what the
 /// app is; that nothing leaves the phone; the currency, which can change
