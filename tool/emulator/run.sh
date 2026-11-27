@@ -91,3 +91,8 @@ echo "installed = built ($installed)"
 maestro --device "$SERIAL" test -e APP_ID="$APP_ID" --include-tags "$TAGS" \
   --test-output-dir "$OUT/maestro" --format junit --output "$OUT/maestro-junit.xml" \
   "$FLOWS"
+# Decision 45: the device's whole logcat (in Maestro's logs/) is evidence
+# only when a flow fails. Every flow passed if we get here (set -e), so the
+# logs go.
+find "$OUT/maestro" -type d -name logs -prune -exec rm -rf {} +
+echo "all flows passed: Maestro's logs/ left out of the evidence"

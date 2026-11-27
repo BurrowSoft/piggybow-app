@@ -227,6 +227,16 @@ steps:
     },
   );
 
+  // Decision 45: the logcat is evidence only when a flow fails.
+  test('run.sh: Maestro\'s logs are dropped only after every flow passed', () {
+    expect(run, contains('set -euo pipefail\n'));
+    final logs = run.indexOf(
+      'find "\$OUT/maestro" -type d -name logs -prune -exec rm -rf {} +',
+    );
+    expect(logs, greaterThan(run.indexOf('maestro --device')));
+    expect(run.substring(logs), isNot(contains('maestro --device')));
+  });
+
   test('both commits are logged: the app built and the flows run', () {
     expect(wf, contains(r'FLOWS_REF: ${{ steps.in.outputs.flows }}'));
     expect(run, contains(r'FLOWS_SHA=$(git -C "$FLOWS_DIR" rev-parse HEAD)'));
