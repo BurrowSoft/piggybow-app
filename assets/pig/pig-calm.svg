@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <title>Piggybow pig, set F (Mochi piggy bank, no ears): calm</title>
+  <ellipse cx="100" cy="184" rx="64" ry="6" fill="#2B2438" opacity="0.08"/>
+  <path d="M22 142 Q20 64 100 62 Q180 64 178 142 Q178 180 100 180 Q22 180 22 142 Z" fill="#F9C5D3"/>
+  <rect x="86" y="68" width="28" height="6" rx="3" fill="#D27D97"/>
+  <ellipse cx="46" cy="140" rx="12" ry="7.5" fill="#F48FAA" opacity="0.55"/>
+  <ellipse cx="154" cy="140" rx="12" ry="7.5" fill="#F48FAA" opacity="0.55"/>
+  <circle cx="62" cy="118" r="8.5" fill="#2B2438"/><circle cx="65.1" cy="114.9" r="2.7" fill="#FFFFFF"/>
+  <circle cx="138" cy="118" r="8.5" fill="#2B2438"/><circle cx="141.1" cy="114.9" r="2.7" fill="#FFFFFF"/>
+  <ellipse cx="100" cy="130" rx="20" ry="13" fill="#F3A3B9"/>
+  <ellipse cx="93" cy="130" rx="3" ry="4.5" fill="#C46A87"/>
+  <ellipse cx="107" cy="130" rx="3" ry="4.5" fill="#C46A87"/>
+  <path d="M93 152 Q100 159 107 152" stroke="#2B2438" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+</svg>

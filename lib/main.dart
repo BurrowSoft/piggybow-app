@@ -9,13 +9,16 @@ import 'core/app_config.dart';
 import 'core/app_lock.dart';
 import 'core/clock.dart';
 import 'core/device.dart';
+import 'core/local_day.dart';
 import 'core/local_prefs.dart';
 import 'core/sentry_setup.dart';
 import 'core/services.dart';
 import 'core/startup_trace.dart';
 import 'data/device_backend.dart';
 import 'features/reminder/reminder_scheduler.dart';
+import 'journal/journal_store.dart';
 import 'l10n/gen/app_localizations.dart';
+import 'money/currency.dart';
 import 'router.dart';
 import 'session/app_session.dart';
 
@@ -41,6 +44,11 @@ Future<void> main() async {
       : null;
   // FAKE_NOW pins the time in staging test builds (ignored in prod).
   final clock = Clock(fixed: config.fakeNow);
+  final journalLoad = JournalStore.open(clock: clock);
+  // "Today" follows the phone's own time zone, read now and on every resume.
+  final localDay = LocalDay(clock: clock, device: device);
+  final dayLoad = localDay.refresh();
+  AppLifecycleListener(onResume: () => unawaited(localDay.refresh()));
 
   StartupTrace.mark('prefs');
   final prefs = await prefsLoad;
@@ -73,9 +81,23 @@ Future<void> main() async {
   StartupTrace.mark('lock');
   if (lockLoad != null) await lockLoad;
 
+  StartupTrace.mark('journal');
+  await dayLoad;
+  final journal = await journalLoad;
+  // Until onboarding asks, the journal's currency is the phone's (else USD).
+  if (await journal.currency() == null) {
+    await journal.setCurrency(
+      defaultCurrency(
+        WidgetsBinding.instance.platformDispatcher.locale.toString(),
+      ),
+    );
+  }
+
   StartupTrace.mark('services');
   final services = AppServices(
     clock: clock,
+    localDay: localDay,
+    journal: journal,
     reminders: PlatformReminderScheduler(),
     appLock: appLock,
   );

@@ -3,6 +3,8 @@ import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 
+import 'clock.dart';
+
 /// Facts about the device the app reads at signup (and later in Me).
 abstract interface class DeviceContext {
   /// IANA zone, e.g. `Asia/Bangkok`.
@@ -13,6 +15,10 @@ abstract interface class DeviceContext {
 
   /// Language of the device, e.g. `th`.
   String get languageCode;
+
+  /// The phone's own locale (e.g. `th_TH`): numbers and money follow it,
+  /// whatever the app's language.
+  String get localeName;
 }
 
 class PlatformDeviceContext implements DeviceContext {
@@ -20,11 +26,15 @@ class PlatformDeviceContext implements DeviceContext {
 
   @override
   Future<String> timeZone() async {
+    String? name;
     try {
-      return (await FlutterTimezone.getLocalTimezone()).identifier;
+      name = (await FlutterTimezone.getLocalTimezone()).identifier;
     } on Object {
-      return 'UTC';
+      name = null;
     }
+    // No answer, or a name the zone database lacks (it would read as UTC):
+    // a zone at the phone's current offset instead.
+    return Clock.knownZoneOr(name, DateTime.now().timeZoneOffset);
   }
 
   @override
@@ -35,6 +45,9 @@ class PlatformDeviceContext implements DeviceContext {
 
   @override
   String get languageCode => PlatformDispatcher.instance.locale.languageCode;
+
+  @override
+  String get localeName => PlatformDispatcher.instance.locale.toString();
 }
 
 /// Notification permission (Android 13+, iOS), asked when the user finishes

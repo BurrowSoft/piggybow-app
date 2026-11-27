@@ -40,11 +40,14 @@ abstract final class SentryScrubber {
   };
 
   /// A value is a machine code only if it is a known code, or code-shaped
-  /// AND has a digit or `_` (`23505`, `some_code`): a single plain word like
-  /// "tired" could be what the user typed (#Sentry review M2).
+  /// with a letter AND a digit or `_` (`some_code`, `e42`): a single plain
+  /// word like "tired" could be what the person typed, and a bare number
+  /// could be an amount (never sent).
   static bool isSafeCode(String value) =>
       _knownCodes.contains(value) ||
-      (_codeShape.hasMatch(value) && RegExp(r'[0-9_]').hasMatch(value));
+      (_codeShape.hasMatch(value) &&
+          RegExp('[a-z]').hasMatch(value) &&
+          RegExp('[0-9_]').hasMatch(value));
 
   /// Tags the SDK sets itself; any other tag is dropped (L1).
   static const _allowedTags = {'event.origin', 'event.environment'};
