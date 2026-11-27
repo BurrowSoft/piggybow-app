@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 
 /// Decision 37: no hidden characters in the source. It fails on bidi
-/// controls (U+202A–202E, U+2066–2069), which can make code read differently
-/// from how it runs, and on zero-width or invisible characters (U+200B–200D,
-/// U+2060, U+FEFF), in every file git tracks: code, config, workflows, docs.
+/// controls (U+202A–202E, U+2066–2069) and direction marks (U+200E, U+200F,
+/// U+061C), which can make code read differently from how it runs; on
+/// zero-width or invisible characters (U+200B–200D, U+2060, U+FEFF); and on
+/// the line and paragraph separators (U+2028, U+2029) and the soft hyphen
+/// (U+00AD); in every file git tracks: code, config, workflows, docs.
 /// The no-break spaces U+00A0 and U+202F fail too, except in translation
 /// files, which may hold only the characters listed for them below. Where a
 /// string needs one of these, write it as an escape (backslash, u, 4 hex
@@ -37,8 +39,12 @@ void main() {
 const hidden = <int>{
   // Bidi embeddings, overrides and isolates.
   0x202A, 0x202B, 0x202C, 0x202D, 0x202E, 0x2066, 0x2067, 0x2068, 0x2069,
+  // Direction marks: left-to-right, right-to-left, Arabic letter.
+  0x200E, 0x200F, 0x061C,
   // Zero width: space, non-joiner, joiner, word joiner, no-break space (BOM).
   0x200B, 0x200C, 0x200D, 0x2060, 0xFEFF,
+  // Line and paragraph separators; the soft hyphen.
+  0x2028, 0x2029, 0x00AD,
   // No-break spaces, allowed only in translation files.
   0x00A0, 0x202F,
 };

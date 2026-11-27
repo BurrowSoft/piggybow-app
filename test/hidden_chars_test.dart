@@ -40,6 +40,20 @@ void main() {
     }
   });
 
+  test('direction marks, separators and the soft hyphen fail everywhere', () {
+    // Left-to-right, right-to-left and Arabic letter marks; the line and
+    // paragraph separators; the soft hyphen. Not even a translation may
+    // hold them.
+    for (final cp in [0x200E, 0x200F, 0x061C, 0x2028, 0x2029, 0x00AD]) {
+      expect(scanText('README.md', 'x${c(cp)}'), hasLength(1), reason: '$cp');
+      expect(
+        scanText('lib/l10n/app_th.arb', 'x${c(cp)}'),
+        hasLength(1),
+        reason: 'in a translation: $cp',
+      );
+    }
+  });
+
   test('a leading byte order mark fails unless the format needs one', () {
     expect(scanText('a.csv', '${c(0xFEFF)}a,b'), ['a.csv:1:1 U+FEFF']);
     expect(leadingBomAllowed, isEmpty, reason: 'none needed today');
