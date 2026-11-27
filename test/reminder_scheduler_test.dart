@@ -49,8 +49,9 @@ void main() {
 
   const copy = ReminderCopy(
     title: 'Piggybow',
-    body: 'How was today?',
+    bodies: ['One?', 'Two?', 'Three?'],
     channelName: 'Daily reminder',
+    channelDescription: 'A gentle evening nudge to note your day.',
   );
   final bangkok = tz.getLocation('Asia/Bangkok');
   final plan = [

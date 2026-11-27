@@ -46,6 +46,13 @@ class FakeReminderScheduler implements ReminderScheduler {
   int replaces = 0;
   int cancels = 0;
 
+  /// A test taps a reminder with `taps.value++`.
+  @override
+  final taps = ValueNotifier<int>(0);
+
+  @override
+  Future<void> listen() async {}
+
   @override
   Future<void> replaceAll(List<PlannedReminder> plan, ReminderCopy copy) async {
     replaces++;

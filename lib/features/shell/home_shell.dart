@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../router.dart';
+import '../add/entry_sheet.dart';
 import 'even_tab_bar.dart';
 import 'tab_top.dart';
 
@@ -24,10 +27,25 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   final _tabTop = {for (final tab in AppTab.values) tab: ValueNotifier(0)};
 
+  ValueListenable<int>? _taps;
+
   @override
   void initState() {
     super.initState();
     shellBarHidden.addListener(_barChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final taps = _taps = context.services.reminders.taps;
+      taps.addListener(_reminderTapped);
+      // A start from a reminder counted before the tabs were up.
+      if (taps.value > 0) _reminderTapped();
+    });
+  }
+
+  /// A reminder tapped: the Add sheet (plan §3.10). With the lock on, the
+  /// lock screen covers it until the person unlocks.
+  void _reminderTapped() {
+    if (mounted) showEntrySheet(context);
   }
 
   void _barChanged() {
@@ -37,6 +55,7 @@ class _HomeShellState extends State<HomeShell> {
   @override
   void dispose() {
     shellBarHidden.removeListener(_barChanged);
+    _taps?.removeListener(_reminderTapped);
     for (final ping in _tabTop.values) {
       ping.dispose();
     }
