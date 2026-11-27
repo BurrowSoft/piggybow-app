@@ -210,8 +210,19 @@ Future<double> settleForGolden(
   FocusManager.instance.primaryFocus?.unfocus();
   await tester.pumpAndSettle();
   final position = tester.state<ScrollableState>(scrollable).position;
-  position.jumpTo(end ? position.maxScrollExtent : 0);
-  await tester.pumpAndSettle();
+  if (!end) {
+    position.jumpTo(0);
+    await tester.pumpAndSettle();
+    return position.maxScrollExtent;
+  }
+  // A lazy list measures its far rows only once they're built, so its end
+  // can move after a jump: jump again until it stays put.
+  for (var i = 0; i < 10; i++) {
+    final extent = position.maxScrollExtent;
+    position.jumpTo(extent);
+    await tester.pumpAndSettle();
+    if (position.maxScrollExtent == extent) break;
+  }
   return position.maxScrollExtent;
 }
 
