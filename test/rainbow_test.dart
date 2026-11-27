@@ -8,7 +8,9 @@ import 'package:piggybow/features/goal/rainbow.dart';
 /// colours and the tracks, the motion (none under reduce-motion), and that
 /// it's read out only where it's given a label.
 class _Arcs implements Canvas {
-  final arcs = <({Color colour, double sweep})>[];
+  /// Each arc's colour as ARGB (Paint keeps 32-bit floats, so a Color read
+  /// back can differ from the one set in its last bits) and its sweep.
+  final arcs = <({int colour, double sweep})>[];
 
   @override
   void drawArc(
@@ -19,7 +21,7 @@ class _Arcs implements Canvas {
     Paint paint,
   ) {
     expect(startAngle, math.pi, reason: 'every arc starts at the left foot');
-    arcs.add((colour: paint.color, sweep: sweepAngle / math.pi));
+    arcs.add((colour: paint.color.toARGB32(), sweep: sweepAngle / math.pi));
   }
 
   @override
@@ -35,8 +37,14 @@ List<(int, double)> filled(double fill) {
   ).paint(canvas, const Size(240, 132));
   return [
     for (final a in canvas.arcs)
-      if (a.colour != Rainbow.trackLight)
-        (Rainbow.arcColours.indexOf(a.colour), a.sweep),
+      if (a.colour != Rainbow.trackLight.toARGB32())
+        (
+          Rainbow.arcColours
+              .map((c) => c.toARGB32())
+              .toList()
+              .indexOf(a.colour),
+          a.sweep,
+        ),
   ];
 }
 
@@ -65,9 +73,14 @@ void main() {
         fill: 0.5,
         track: track,
       ).paint(canvas, const Size(480, 264));
-      expect(canvas.arcs.where((a) => a.colour == track), hasLength(5));
       expect(
-        canvas.arcs.where((a) => a.colour == track).map((a) => a.sweep),
+        canvas.arcs.where((a) => a.colour == track.toARGB32()),
+        hasLength(5),
+      );
+      expect(
+        canvas.arcs
+            .where((a) => a.colour == track.toARGB32())
+            .map((a) => a.sweep),
         everyElement(1.0),
       );
     }

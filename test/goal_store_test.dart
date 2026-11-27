@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/journal/journal_store.dart';
@@ -147,7 +148,7 @@ void main() {
     final s = await save(300);
     expect(await store.goalProgress(await g1()), 300);
     final spend = await store.updateEntry(
-      s.copyWith(type: EntryType.spent, category: null),
+      s.copyWith(type: EntryType.spent, category: SpendCategory.food),
     );
     expect(spend.goalId, isNull);
     expect(await store.goalProgress(await g1()), 0);

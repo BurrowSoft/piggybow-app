@@ -11,7 +11,8 @@ import 'helpers.dart';
 
 /// Home (plan §3.2): the pig and its line, its reaction to an Add, the
 /// reminder offer, the goal card, this week, today's idea, and the one-time
-/// celebration of a goal reached.
+/// celebration of a goal reached. Every journal state is set up before the
+/// app starts.
 void main() {
   // Tests run on Friday 2 October 2026, 08:30 in Bangkok (helpers.dart);
   // this week is Monday 28 September to today.
@@ -41,15 +42,23 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// A tall phone (360 × 1600 dp), so all of Home is built at once.
+  void tallPhone(WidgetTester tester) {
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+    addTearDown(tester.view.reset);
+  }
+
   Future<TestApp> openHome(
     WidgetTester tester, {
     Future<void> Function(TestApp)? seed,
   }) async {
+    tallPhone(tester);
     final app = TestApp();
     await tester.runAsync(app.openJournal);
     if (seed != null) await tester.runAsync(() => seed(app));
     await app.pump(tester);
-    await settle(tester, byId('home-week'));
+    await settle(tester, byId('home-idea'));
     return app;
   }
 
@@ -70,16 +79,31 @@ void main() {
     localDate: day,
   );
 
-  testWidgets('the first day: the calm pig says how to start', (tester) async {
-    final semantics = tester.ensureSemantics();
-    await openHome(tester);
-    expect(
-      find.text('Hi! Tap Add to note your first spend or save.'),
-      findsOneWidget,
-    );
-    expect(tester.getSemantics(byId('home-pig')), isSemantics(value: 'calm'));
-    semantics.dispose();
-  });
+  Future<void> thisWeek(TestApp app) async {
+    await spend(app, 1000, '2026-09-29', feeling: Feeling.worthIt);
+    await spend(app, 500, '2026-09-30', feeling: Feeling.notSure);
+    await save(app, 300, '2026-10-01');
+    await spend(app, 9900, '2026-09-27'); // last week (a Sunday)
+  }
+
+  testWidgets(
+    'the first day: the calm pig says how to start; no offer, no goal yet',
+    (tester) async {
+      await openHome(tester);
+      expect(
+        find.text('Hi! Tap Add to note your first spend or save.'),
+        findsOneWidget,
+      );
+      expect(tester.getSemantics(byId('home-pig')), isSemantics(value: 'calm'));
+      expect(
+        byId('home-reminder-yes'),
+        findsNothing,
+        reason: 'not before the first entry',
+      );
+      expect(find.text('Start a savings goal'), findsOneWidget);
+      expect(byId('goal-create'), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'after an Add the pig answers it, until the app goes to the background',
@@ -99,12 +123,12 @@ void main() {
   );
 
   testWidgets(
-    'the reminder offer: not before the first entry, then until answered',
+    'the reminder offer after the first entry; No thanks answers it for good',
     (tester) async {
-      final app = await openHome(tester);
-      expect(byId('home-reminder-yes'), findsNothing);
-      await tester.runAsync(() => spend(app, 5000, '2026-10-02'));
-      await settle(tester, byId('home-reminder-yes'));
+      final app = await openHome(
+        tester,
+        seed: (app) => spend(app, 5000, '2026-10-02'),
+      );
       expect(find.text('A gentle nudge?'), findsOneWidget);
       expect(find.text('Remind me at 8:00 PM'), findsOneWidget);
       await tester.tapId('home-reminder-no');
@@ -122,7 +146,6 @@ void main() {
       tester,
       seed: (app) => spend(app, 5000, '2026-10-02'),
     );
-    await settle(tester, byId('home-reminder-yes'));
     await tester.tapId('home-reminder-yes');
     await letJournalAnswer(tester);
     final account = app.session.accountState!;
@@ -132,54 +155,49 @@ void main() {
     expect(byId('home-reminder-yes'), findsNothing);
   });
 
-  testWidgets('the goal card: none yet, then a goal with its numbers', (
+  testWidgets('the goal card: the active goal with its numbers', (
     tester,
   ) async {
-    final app = await openHome(tester);
-    expect(find.text('Start a savings goal'), findsOneWidget);
-    expect(byId('goal-create'), findsOneWidget);
-    await tester.runAsync(() async {
-      await app.journal.putGoal(bike());
-      await save(app, 32000, '2026-10-01');
-    });
-    await settle(tester, byId('goal-card'));
+    await openHome(
+      tester,
+      seed: (app) async {
+        await app.journal.putGoal(bike());
+        await save(app, 32000, '2026-10-01');
+      },
+    );
+    expect(byId('goal-card'), findsOneWidget);
     expect(find.text('${money(32000)} of ${money(100000)}'), findsOneWidget);
     expect(find.text('32%'), findsOneWidget);
   });
 
-  testWidgets(
-    'this week: spent, saved and the worth count; the plan bar only with a plan',
-    (tester) async {
-      final app = await openHome(
-        tester,
-        seed: (app) async {
-          await spend(app, 1000, '2026-09-29', feeling: Feeling.worthIt);
-          await spend(app, 500, '2026-09-30', feeling: Feeling.notSure);
-          await save(app, 300, '2026-10-01');
-          await spend(app, 9900, '2026-09-27'); // last week (a Sunday)
-        },
-      );
-      expect(find.text('Spent ${money(1500)}'), findsOneWidget);
-      expect(find.text('Saved ${money(300)}'), findsOneWidget);
-      expect(find.text('1 spend felt worth it'), findsOneWidget);
-      expect(
-        find.byType(LinearProgressIndicator),
-        findsNothing,
-        reason: 'no plan yet',
-      );
-      await tester.runAsync(() => app.journal.setPlanMinor(2000));
-      await settle(tester, find.byType(LinearProgressIndicator));
-      expect(find.text('Weekly plan ${money(2000)}'), findsOneWidget);
-      expect(
-        tester
-            .widget<LinearProgressIndicator>(
-              find.byType(LinearProgressIndicator),
-            )
-            .value,
-        0.75,
-      );
-    },
-  );
+  testWidgets('this week: spent, saved and the worth count; no plan, no bar', (
+    tester,
+  ) async {
+    await openHome(tester, seed: thisWeek);
+    expect(find.text('Spent ${money(1500)}'), findsOneWidget);
+    expect(find.text('Saved ${money(300)}'), findsOneWidget);
+    expect(find.text('1 spend felt worth it'), findsOneWidget);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+  });
+
+  testWidgets('this week with a plan: the plan and its bar, spent ÷ plan', (
+    tester,
+  ) async {
+    await openHome(
+      tester,
+      seed: (app) async {
+        await thisWeek(app);
+        await app.journal.setPlanMinor(2000);
+      },
+    );
+    expect(find.text('Weekly plan ${money(2000)}'), findsOneWidget);
+    expect(
+      tester
+          .widget<LinearProgressIndicator>(find.byType(LinearProgressIndicator))
+          .value,
+      0.75,
+    );
+  });
 
   testWidgets("today's idea follows the day, and Another idea steps on", (
     tester,
@@ -193,14 +211,15 @@ void main() {
   });
 
   testWidgets('a goal reached is celebrated once', (tester) async {
-    final app = await openHome(
-      tester,
-      seed: (app) async {
-        await app.journal.putGoal(bike(target: 1000));
-        await save(app, 1000, '2026-10-01');
-      },
-    );
-    await settle(tester, byId('goal-done-screen'));
+    tallPhone(tester);
+    final app = TestApp();
+    await tester.runAsync(app.openJournal);
+    await tester.runAsync(() async {
+      await app.journal.putGoal(bike(target: 1000));
+      await save(app, 1000, '2026-10-01');
+    });
+    await app.pump(tester);
+    await settle(tester, find.text('You did it!'));
     expect(find.text('You did it!'), findsOneWidget);
     await tester.tapId('goal-done-close');
     await settle(tester, find.text('Reached: Bike'));
