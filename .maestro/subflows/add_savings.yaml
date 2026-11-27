@@ -1,0 +1,27 @@
+# On goal detail: "Add savings" opens the sheet on Saved, going to the goal;
+# add ${AMOUNT}.
+# env: AMOUNT, GOAL (the goal's name, for the "Goes to" line)
+appId: ${APP_ID}
+---
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: goal-add-savings
+- tapOn:
+    id: goal-add-savings
+- assertVisible:
+    id: add-seg-saved
+    selected: true
+- assertVisible: ".*Goes to ${GOAL}.*"
+- runFlow:
+    file: paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: ${AMOUNT}
+      EXPECT: ".*${AMOUNT}.*"
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit

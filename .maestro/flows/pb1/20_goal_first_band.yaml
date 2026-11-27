@@ -1,0 +1,49 @@
+appId: ${APP_ID}
+name: PR 3 goal create, detail, Add savings, first band - the rainbow fills, the pig shows the band line, not the after-save reaction
+tags: [pb1, goal]
+---
+# Ids as in #18 (803b9df): goal-create (Home's empty card), goal-name /
+# goal-amount / goal-start / goal-submit (the form), goal-screen (detail),
+# goal-add-savings, goal-save-<id>, home-pig (mood = its semantics value),
+# home-pig-line, goal-card. The rainbow has no id: it's read by its label.
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env:
+      NAME: "Bike"
+      AMOUNT: "100"
+      START: "0"
+# Detail at 0 %
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- assertVisible: "Rainbow 0% filled.*"          # goalRainbowLabel (TalkBack)
+- runFlow:
+    file: ../../subflows/add_savings.yaml
+    env:
+      AMOUNT: "25"
+      GOAL: "Bike"
+# 25 % → band 1 complete (25 × 5 ≥ 100 × 1)
+- extendedWaitUntil:
+    visible: "Rainbow 25% filled.*"
+    timeout: 10000
+- assertVisible: ".*75.*to go.*"                 # goalToGo
+- assertVisible:
+    id: "goal-save-.*"
+- takeScreenshot: 20-goal-detail-25
+# Home: Delighted, and the band line beats pigAfterSave (spec §4.7 bubble priority)
+- tapOn:
+    id: tab-home
+- assertVisible:
+    id: home-pig
+    text: "(?i).*delighted.*"                   # the mood is the node's value
+- assertVisible:
+    id: home-pig-line
+    text: ".*Band 1 of 5.*"
+- assertNotVisible: ".*Into the rainbow it goes.*"
+- assertVisible:
+    id: goal-card
+    text: ".*25%.*"
+- takeScreenshot: 20-home-band-1

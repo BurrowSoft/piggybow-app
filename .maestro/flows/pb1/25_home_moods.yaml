@@ -1,0 +1,53 @@
+appId: ${APP_ID}
+name: PR 3 Home in each of the four moods, from pig-contract cases loaded as fixtures with the clock frozen at each case's now
+tags: [pb1, pig, fixtures]
+---
+# Sleepy (C6: the last entry added 113 h ago; Wed 2 Dec = rotation index 2)
+- runFlow:
+    file: ../../subflows/home_fixture.yaml
+    env:
+      FIXTURE: "C6"
+      MOOD: "sleepy"
+      LINE: ".*Snoozing till your next note.*"
+# Calm, first day (C1: no entries)
+- runFlow:
+    file: ../../subflows/home_fixture.yaml
+    env:
+      FIXTURE: "C1"
+      MOOD: "calm"
+      LINE: ".*Tap Add to note your first spend or save.*"
+# Calm, rotating (C2)
+- runFlow:
+    file: ../../subflows/home_fixture.yaml
+    env:
+      FIXTURE: "C2"
+      MOOD: "calm"
+      LINE: ".*Every note helps you see your money clearly.*"
+# Happy (C3: a save this week)
+- runFlow:
+    file: ../../subflows/home_fixture.yaml
+    env:
+      FIXTURE: "C3"
+      MOOD: "happy"
+      LINE: ".*You put something aside this week.*"
+# Delighted, all picks met (C4)
+- runFlow:
+    file: ../../subflows/home_fixture.yaml
+    env:
+      FIXTURE: "C4"
+      MOOD: "delighted"
+      LINE: ".*over the rainbow.*"
+# Delighted, band 2 (C9)
+- runFlow:
+    file: ../../subflows/home_fixture.yaml
+    env:
+      FIXTURE: "C9"
+      MOOD: "delighted"
+      LINE: ".*Band 2 of 5 colored in.*"
+# Delighted, a goal reached 2 h ago and then ended: any goal counts (C31)
+- runFlow:
+    file: ../../subflows/home_fixture.yaml
+    env:
+      FIXTURE: "C31"
+      MOOD: "delighted"
+      LINE: ".*You reached Trip!.*"
