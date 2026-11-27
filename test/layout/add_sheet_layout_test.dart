@@ -42,8 +42,22 @@ void main() {
       )
       .first;
 
-  Future<void> reveal(WidgetTester tester, String id) =>
-      tester.scrollUntilVisible(byId(id), 120, scrollable: sheetList());
+  /// Scrolls the sheet until [id] is on screen, then lets the frame settle:
+  /// a tap right after a scroll would use the old layout (and could land on
+  /// Add in the bar below).
+  Future<void> reveal(WidgetTester tester, String id) async {
+    await tester.scrollUntilVisible(byId(id), 120, scrollable: sheetList());
+    await tester.pumpAndSettle();
+  }
+
+  /// Taps a Timeline row near its top: a tall row's middle can sit under
+  /// the tab bar.
+  Future<void> openRow(WidgetTester tester, String id) async {
+    await tester.ensureVisible(byId(id));
+    await tester.pumpAndSettle();
+    await tester.tapAt(tester.getRect(byId(id)).topLeft + const Offset(24, 16));
+    await tester.pumpAndSettle();
+  }
 
   /// The checks on every part of the sheet, scrolled through top to bottom.
   Future<void> checkSheet(WidgetTester tester, String state) async {
@@ -182,7 +196,7 @@ void main() {
       tester,
     ) async {
       await open(tester, c, seed: seedFullSpend);
-      await tester.tapId('tl-row-entry-1');
+      await openRow(tester, 'tl-row-entry-1');
       await checkSheet(tester, 'A7');
       expect(find.text('Sep 28, 2026'), findsOneWidget);
       await tester.tap(byId('edit-delete'));

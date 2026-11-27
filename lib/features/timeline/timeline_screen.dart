@@ -322,38 +322,53 @@ class _Row extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: LayoutBuilder(
-              builder: (context, box) => Row(
-                children: [
-                  SizedBox(width: 32, child: Center(child: icon)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: theme.textTheme.bodyLarge),
-                        if (subtitle != null)
-                          Text(
-                            subtitle,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
+              builder: (context, box) {
+                // At large text the amount gets its own line under the note,
+                // so the note keeps room for whole words.
+                final stacked =
+                    MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+                // One line; a very large amount gets smaller rather than
+                // pushing the note out.
+                final oneLine = FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: amount,
+                );
+                return Row(
+                  children: [
+                    SizedBox(width: 32, child: Center(child: icon)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title, style: theme.textTheme.bodyLarge),
+                          if (subtitle != null)
+                            Text(
+                              subtitle,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                          ),
-                      ],
+                          if (stacked)
+                            Align(
+                              alignment: AlignmentDirectional.centerEnd,
+                              child: oneLine,
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // One line, at most half the row: a very large amount at
-                  // 200 % text gets smaller rather than pushing the note out.
-                  ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      alignment: AlignmentDirectional.centerEnd,
-                      child: amount,
-                    ),
-                  ),
-                ],
-              ),
+                    if (!stacked) ...[
+                      const SizedBox(width: 12),
+                      // At most half the row.
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
+                        child: oneLine,
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
           ),
         ),
