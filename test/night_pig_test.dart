@@ -7,7 +7,7 @@ import 'package:piggybow/pig/pig_mood.dart';
 
 import 'helpers.dart';
 
-/// Feature 2, the sleepy pig at night: from 22:00 to 05:59 on the phone's
+/// Feature 2, the sleepy pig at night: from 22:00 to 03:59 on the phone's
 /// clock, in its zone, Home's pig is the sleepy pig saying it's late. A
 /// reaction to what was just added wins for that visit, and a goal reached in
 /// the last 24 hours keeps its line. Never a word about spending.
@@ -23,11 +23,11 @@ void main() {
       expect(Clock.turnHours, containsAll([nightStartHour, nightEndHour]));
     });
 
-    test('night is 22:00 to 05:59', () {
-      for (final h in [22, 23, 0, 1, 5]) {
+    test('night is 22:00 to 03:59', () {
+      for (final h in [22, 23, 0, 1, 3]) {
         expect(isNight(h), isTrue, reason: '$h:00');
       }
-      for (final h in [6, 7, 12, 21]) {
+      for (final h in [4, 5, 6, 7, 12, 21]) {
         expect(isNight(h), isFalse, reason: '$h:00');
       }
     });
@@ -81,13 +81,14 @@ void main() {
     }
 
     // The phone's zone, not UTC: 22:00 in Bangkok is 15:00 UTC (daytime
-    // there), 05:59 is 22:59 UTC the day before (night there too), and
-    // 06:00 is 23:00 UTC (still night in UTC).
+    // there), 03:59 is 20:59 UTC the day before (daytime there too), and
+    // 05:00, an early riser's morning, is 22:00 UTC (night in UTC).
     for (final (time, night) in [
       ('21:59', false),
       ('22:00', true),
-      ('05:59', true),
-      ('06:00', false),
+      ('03:59', true),
+      ('04:00', false),
+      ('05:00', false),
     ]) {
       testWidgets('$time: ${night ? 'the night pig' : 'the pig as by day'}', (
         tester,

@@ -7,28 +7,28 @@ import 'package:piggybow/tips/tips.dart';
 import 'helpers.dart';
 
 /// Home reads again when the phone's day or the pig's night turns over (local
-/// midnight, 06:00 and 22:00), with one timer to the next turn, and when the
+/// midnight, 04:00 and 22:00), with one timer to the next turn, and when the
 /// app comes back. Today's idea shows it: it changes with the local date.
 void main() {
   group('Clock.untilNextTurn', () {
     Duration until(String utc, String zone) => Clock(fixed: DateTime.parse(utc)).untilNextTurn(zone);
 
-    test('Bangkok: 22:00, midnight and 06:00 are the turns', () {
+    test('Bangkok: 22:00, midnight and 04:00 are the turns', () {
       // 08:30 → 22:00.
       expect(until('2026-10-02T01:30:00Z', 'Asia/Bangkok'), const Duration(hours: 13, minutes: 30));
       // 23:00 → midnight.
       expect(until('2026-10-02T16:00:00Z', 'Asia/Bangkok'), const Duration(hours: 1));
-      // 05:59 → 06:00.
-      expect(until('2026-10-01T22:59:00Z', 'Asia/Bangkok'), const Duration(minutes: 1));
+      // 03:59 → 04:00.
+      expect(until('2026-10-01T20:59:00Z', 'Asia/Bangkok'), const Duration(minutes: 1));
       // On a turn: the next one, not this one.
       expect(until('2026-10-02T15:00:00Z', 'Asia/Bangkok'), const Duration(hours: 2));
     });
 
     test('a daylight-saving change in between counts: real time, not wall time', () {
-      // London, 29 March 2026: 00:30 GMT → 06:00 BST is 4 h 30 min (01:00 doesn't happen).
-      expect(until('2026-03-29T00:30:00Z', 'Europe/London'), const Duration(hours: 4, minutes: 30));
-      // London, 25 October 2026: 00:30 BST → 06:00 GMT is 6 h 30 min (01:00 happens twice).
-      expect(until('2026-10-24T23:30:00Z', 'Europe/London'), const Duration(hours: 6, minutes: 30));
+      // London, 29 March 2026: 00:30 GMT → 04:00 BST is 2 h 30 min (01:00 doesn't happen).
+      expect(until('2026-03-29T00:30:00Z', 'Europe/London'), const Duration(hours: 2, minutes: 30));
+      // London, 25 October 2026: 00:30 BST → 04:00 GMT is 4 h 30 min (01:00 happens twice).
+      expect(until('2026-10-24T23:30:00Z', 'Europe/London'), const Duration(hours: 4, minutes: 30));
     });
 
     test("midnight only: the repeats' catch-up turn", () {

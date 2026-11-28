@@ -14,7 +14,7 @@ import 'helpers.dart';
 /// written into the journal by the launch-fixture writer the on-device flows
 /// use, and read off Home: the pig's mood (its TalkBack label) and its line
 /// are what the pure function gives, with Home's night rule on top (22:00 to
-/// 05:59 on the phone: the sleepy pig saying it's late; C14 is at 00:00).
+/// 03:59 on the phone: the sleepy pig saying it's late; C14 is at 00:00).
 /// This pins Home to the contract, ended goals included (decision 53). Each
 /// case's now is the app's clock; its today is that instant's day in Bangkok
 /// (helpers.dart).

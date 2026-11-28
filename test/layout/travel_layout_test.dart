@@ -98,9 +98,10 @@ void main() {
       await open(tester, c);
       await travelSpend(tester, '39.12');
       expect(find.text('1 EUR ='), findsOneWidget);
-      // The amount and its two lines, at the top.
+      // The amount at the top, with no echo under it in another currency
+      // (it would only repeat the field).
       await sheetTop(tester);
-      expectOneLine(tester, '= ${eur(1234)}', reason: 'MC1 as spent');
+      expect(byId('add-amount-preview'), findsNothing, reason: 'MC1 as spent');
       // A sentence: it may wrap at large text (whole words: checkSheet).
       expect(
         find.text("That's ${thb(48274)} at this rate."),
