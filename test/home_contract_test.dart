@@ -13,9 +13,11 @@ import 'helpers.dart';
 /// Every case of the mood contract (test/contracts/pig_mood_cases.json),
 /// written into the journal by the launch-fixture writer the on-device flows
 /// use, and read off Home: the pig's mood (its TalkBack label) and its line
-/// are what the pure function gives. This pins Home to the contract, ended
-/// goals included (decision 53). Each case's now is the app's clock; its
-/// today is that instant's day in Bangkok (helpers.dart).
+/// are what the pure function gives, with Home's night rule on top (22:00 to
+/// 05:59 on the phone: the sleepy pig saying it's late; C14 is at 00:00).
+/// This pins Home to the contract, ended goals included (decision 53). Each
+/// case's now is the app's clock; its today is that instant's day in Bangkok
+/// (helpers.dart).
 void main() {
   final casesJson = File(fixtureCasesAsset).readAsStringSync();
   final contract = jsonDecode(casesJson) as Map<String, dynamic>;
@@ -51,20 +53,26 @@ void main() {
       expect(byId('goal-done-screen'), findsNothing);
 
       final l10n = AppLocalizations.of(tester.element(byId('home-screen')));
-      final mood = PigMood.values.byName(expected['mood'] as String);
+      final contractState = PigState(
+        PigMood.values.byName(expected['mood'] as String),
+        expected['line'] as String,
+        Map<String, Object>.from(expected['args'] as Map? ?? const {}),
+      );
+      final home = pigAtNight(
+        contractState,
+        night: isNight(app.clock.nowIn(app.localDay.zone).hour),
+        lastAdd: null,
+      );
+      final mood = home.mood;
       expect(
         tester.getSemantics(byId('home-pig')),
         isSemantics(label: pigA11yLabel(l10n, mood)),
       );
-      final line = pigLineText(
-        l10n,
-        expected['line'] as String,
-        Map<String, Object>.from(expected['args'] as Map? ?? const {}),
-      );
+      final line = pigLineText(l10n, home.lineKey, home.args);
       expect(
         find.descendant(of: byId('home-pig-line'), matching: find.text(line)),
         findsOneWidget,
-        reason: expected['line'] as String,
+        reason: home.lineKey,
       );
     });
   }
