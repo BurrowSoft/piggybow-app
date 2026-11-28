@@ -96,7 +96,6 @@ Future<void> main() async {
     account: backend,
     prefs: prefs,
     device: device,
-    aiEnabled: false,
     anonStart: true,
     clock: clock,
     shippedLocales: config.shippedLocaleCodes(

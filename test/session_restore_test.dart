@@ -17,7 +17,6 @@ AppSession sessionOn(
   account: backend,
   prefs: MemoryLocalPrefs(localeCode: 'en', welcomeSeen: true),
   device: FakeDevice(),
-  aiEnabled: false,
   shippedLocales: const ['en'],
 );
 

@@ -221,7 +221,6 @@ class TestApp {
       account: backend,
       prefs: prefs,
       device: device,
-      aiEnabled: false,
       anonStart: true,
       // No periodic retry timer in tests (none may be left pending).
       reconnectEvery: null,
