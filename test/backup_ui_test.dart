@@ -157,7 +157,7 @@ void main() {
     expect(tester.getSemantics(eye).id, isNot(tester.getSemantics(field).id), reason: 'not folded into the field');
     expect(
       tester.getSemantics(eye),
-      containsSemantics(tooltip: l10n.backupShowPassword, isButton: true, isFocusable: true, hasTapAction: true),
+      isSemantics(tooltip: l10n.backupShowPassword, isButton: true, isFocusable: true, hasTapAction: true),
     );
     expect(tester.getSemantics(field).label, isNot(contains(l10n.backupShowPassword)));
     // What TalkBack's double tap does.
@@ -165,7 +165,7 @@ void main() {
     await tester.pump();
     expect(
       tester.getSemantics(eye),
-      containsSemantics(tooltip: l10n.backupHidePassword, isButton: true, isFocusable: true, hasTapAction: true),
+      isSemantics(tooltip: l10n.backupHidePassword, isButton: true, isFocusable: true, hasTapAction: true),
     );
     semantics.dispose();
   });
