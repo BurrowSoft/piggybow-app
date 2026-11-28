@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "53a22187865c9c8e8e44dde17f5543b85e7fb959",
+  "ref": "feat/backup-ui",
+  "run_id": "46149894130",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -75,6 +75,114 @@
       "sha256": "11c1fcbf356cfb25c65740cb4db1ca75b55819ac36a9da79293f5cee8cad24a7",
       "bytes": 191588,
       "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty-end_dark_320x2.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (320 dp, text ×2, dark)",
+      "sha256": "70ce0c6530cdbbc8a504f844643733156460d97ed377a67e2ab039db9717d217",
+      "bytes": 167857,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty-end_light_320x2.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (320 dp, text ×2, light)",
+      "sha256": "59ef0deaab44b27a31459eb7234668072d9de33a8eea85b4e9e3793c618a87af",
+      "bytes": 168081,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty_dark_320x2.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (320 dp, text ×2, dark)",
+      "sha256": "ba652fcbc1684bee7e7f324327b700ae721e31fa68ee04c4d804eaafc1bcfb0c",
+      "bytes": 214905,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty_dark_360x1.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (360 dp, text ×1, dark)",
+      "sha256": "55093b7c2202d8b870724700c9e832662c1a9a78f9a86d600977a66853e304d4",
+      "bytes": 166617,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty_light_320x2.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (320 dp, text ×2, light)",
+      "sha256": "e228690209c359c8e53d7b68edfda0c4f560f7bbe97f51517513b808fa72fce7",
+      "bytes": 213704,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty_light_360x1.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (360 dp, text ×1, light)",
+      "sha256": "622f857c47e181a0359730b6823543b6dfd7d940cdc4821adef393d979551c24",
+      "bytes": 166953,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short-end_dark_320x2.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (320 dp, text ×2, dark)",
+      "sha256": "75ce1ddc07d047bc9efa4bcf68cf0b835e199ea55f2e0858fed6557c09de8cd3",
+      "bytes": 177863,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short-end_light_320x2.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (320 dp, text ×2, light)",
+      "sha256": "e96217745c6bdf46973d1b6269ba9034f54ed9f2c7297e2e60422413c1e1256d",
+      "bytes": 177665,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short_dark_320x2.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (320 dp, text ×2, dark)",
+      "sha256": "29b491872ffc6ca2b29299ef32487a5999392e5e3862b8ba6af1de764b754aba",
+      "bytes": 212681,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short_dark_360x1.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (360 dp, text ×1, dark)",
+      "sha256": "3bcd6f7e58ab596e54ac8d85ae304194c6ffae7a692566145353319911fbf0e6",
+      "bytes": 174581,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short_light_320x2.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (320 dp, text ×2, light)",
+      "sha256": "3bc290d65c279a99c8c326fdd52b7c58732035f47627f7ac4851012824434faa",
+      "bytes": 211286,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short_light_360x1.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (360 dp, text ×1, light)",
+      "sha256": "e758a5f4f9284fcc90b3411be6e6bbd96bfcafa9c675023829fb3901409cd5df",
+      "bytes": 174641,
+      "width": 1080,
       "height": 2340
     },
     {
@@ -747,8 +855,8 @@
       "file": "me_lock-after-restore_dark_320x2.png",
       "state": "M10",
       "test": "M10 the App lock row after a restore (320 dp, text ×2, dark)",
-      "sha256": "eedd30426587205bfe85cf04e27fc19e51f0f57d1b6246a4db5a1f355934a199",
-      "bytes": 198041,
+      "sha256": "c76c1ca819e5bbcf68f08677c12b101a76fd4ed7402f77992085272bdf2f3fc0",
+      "bytes": 158801,
       "width": 960,
       "height": 2340
     },
@@ -756,8 +864,8 @@
       "file": "me_lock-after-restore_light_320x2.png",
       "state": "M10",
       "test": "M10 the App lock row after a restore (320 dp, text ×2, light)",
-      "sha256": "7977aa8eaa55e4c0107fdb3207ddf1a9a5bd5676b0b29e24e5c77d3a3d1a1776",
-      "bytes": 198267,
+      "sha256": "aab7f826b42a8f3637123b0bd0b02d721c55823af5ffe9ac15d4b3c79d905c82",
+      "bytes": 158839,
       "width": 960,
       "height": 2340
     },
@@ -801,8 +909,8 @@
       "file": "me_notifications-off_dark_320x2.png",
       "state": "M3",
       "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, dark)",
-      "sha256": "f4f6becb97e13c283146e8157c33b2a6a5588b48885e6f8cdaf089032d481973",
-      "bytes": 184176,
+      "sha256": "e2779ab24571c7c85731ce4e36ebdde80fe0104dbc7ddb2b22a0035ddcdf2ad1",
+      "bytes": 203541,
       "width": 960,
       "height": 2340
     },
@@ -810,8 +918,8 @@
       "file": "me_notifications-off_light_320x2.png",
       "state": "M3",
       "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, light)",
-      "sha256": "f8b224787e2bbcbbc3ba0e20671af2377afb0152db8e2da4080ccffdf9d618b6",
-      "bytes": 184167,
+      "sha256": "148e5fdd20040ac95a2312a6af653a0aeb8413e85e8c61f67a717d287e82dc83",
+      "bytes": 204043,
       "width": 960,
       "height": 2340
     },
@@ -819,8 +927,8 @@
       "file": "me_plan-dialog-empty_dark_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
-      "sha256": "5e7b6e0da00bcc1a0612de3d0fb91f6415c7f9b80d400c40f7dbbe15210ff289",
-      "bytes": 166515,
+      "sha256": "f88a0cc2995b1add91b4f3e0d33637454ea081f7b93f90e3d448d8f1c7e27bae",
+      "bytes": 161707,
       "width": 960,
       "height": 2340
     },
@@ -828,8 +936,8 @@
       "file": "me_plan-dialog-empty_light_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
-      "sha256": "6d7d7b075553ee0a96105a9f38395605b3055e16ea67b28621589cdbd3b6c625",
-      "bytes": 168538,
+      "sha256": "16cd978e07cc457098d2ab8ff1ecc831713407856d9e4676a4fc74d024b42aa7",
+      "bytes": 163921,
       "width": 960,
       "height": 2340
     },
@@ -837,8 +945,8 @@
       "file": "me_plan-dialog-set_dark_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
-      "sha256": "852b0bbe9409d27f6b3c402b263db90cf1e489cec2b6220683f644e524245072",
-      "bytes": 174272,
+      "sha256": "9855801061be6617c963f9a83d133d394aff20480035e5dd7fe80a7735d19e1b",
+      "bytes": 175178,
       "width": 960,
       "height": 2340
     },
@@ -846,8 +954,8 @@
       "file": "me_plan-dialog-set_light_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
-      "sha256": "f630a770cb7d5fdbe5202aa7a29c15ffbe0a51593605920c63e0c00ca670e662",
-      "bytes": 175687,
+      "sha256": "b59efdbc4860708005cb0d4f5a896c906b2e78d8a14fe08f5579cd1a588dba34",
+      "bytes": 176803,
       "width": 960,
       "height": 2340
     },
@@ -1012,6 +1120,168 @@
       "bytes": 52392,
       "width": 960,
       "height": 960
+    },
+    {
+      "file": "restore_choose_dark_320x2.png",
+      "state": "RS1",
+      "test": "RS1 Restore: choose a file (320 dp, text ×2, dark)",
+      "sha256": "bcaae12267d9aafe7449403c625ac78110188fb1c175e492e4ead8ac9f8dbfee",
+      "bytes": 122170,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_choose_dark_360x1.png",
+      "state": "RS1",
+      "test": "RS1 Restore: choose a file (360 dp, text ×1, dark)",
+      "sha256": "6b7eaf01ef30c43eb4a87dc6afbabde45ff48bcc6018fda392ba87fa9ee1188c",
+      "bytes": 82479,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_choose_light_320x2.png",
+      "state": "RS1",
+      "test": "RS1 Restore: choose a file (320 dp, text ×2, light)",
+      "sha256": "f57e52548837f9cfa2c23b387a9acfa7d4ba87352ecc5c8c59f6ea8b4693ddbd",
+      "bytes": 120457,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_choose_light_360x1.png",
+      "state": "RS1",
+      "test": "RS1 Restore: choose a file (360 dp, text ×1, light)",
+      "sha256": "b04eda9517605c173a00a5deba98fc521e05db6c7ca2a8286bcf0fa10bbce772",
+      "bytes": 82104,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_done_dark_320x2.png",
+      "state": "RS4",
+      "test": "RS4 Restore: done (320 dp, text ×2, dark)",
+      "sha256": "7b04c9e9490226c272fd2be5e682748267664a075e019b9a73dfe79f082fd15d",
+      "bytes": 101013,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_done_dark_360x1.png",
+      "state": "RS4",
+      "test": "RS4 Restore: done (360 dp, text ×1, dark)",
+      "sha256": "e7d520ea7801277128b987ceb3e389b1a1e38584e21230bffcbe6fffa26d3f7a",
+      "bytes": 73081,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_done_light_320x2.png",
+      "state": "RS4",
+      "test": "RS4 Restore: done (320 dp, text ×2, light)",
+      "sha256": "6fd2b516d50196666b5c8ee73bf887dec690a4b5aeb17161307fb4e25f58b919",
+      "bytes": 100805,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_done_light_360x1.png",
+      "state": "RS4",
+      "test": "RS4 Restore: done (360 dp, text ×1, light)",
+      "sha256": "8535a211d05974df44447686b841fc8b25e1392dcfe99fdbabb4b6bcca6d365c",
+      "bytes": 73183,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_replace_dark_320x2.png",
+      "state": "RS3",
+      "test": "RS3 Restore: Replace everything? (320 dp, text ×2, dark)",
+      "sha256": "1406439c6071f8d8a6052c686001dc57c519ce06bdb70ff10b166775ae774045",
+      "bytes": 205973,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_replace_dark_360x1.png",
+      "state": "RS3",
+      "test": "RS3 Restore: Replace everything? (360 dp, text ×1, dark)",
+      "sha256": "c1d890a03c5a2962527bfcbf5f255f082c701946dae079c06d0612c6eff8af42",
+      "bytes": 153085,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_replace_light_320x2.png",
+      "state": "RS3",
+      "test": "RS3 Restore: Replace everything? (320 dp, text ×2, light)",
+      "sha256": "f4f7d636c0eadc8cd23fb8d76d523c592a4d59819b0388115c10d9196a032f8c",
+      "bytes": 207648,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_replace_light_360x1.png",
+      "state": "RS3",
+      "test": "RS3 Restore: Replace everything? (360 dp, text ×1, light)",
+      "sha256": "a9e02c50e828278200d7ccb1b7780f6f0a268ed9ed8d625d78422e775888f324",
+      "bytes": 156992,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password-end_dark_320x2.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (320 dp, text ×2, dark)",
+      "sha256": "5e1aa6b5c2a1078717cdb63947c1a3d6207c545ec50c5066cf94a59e4fd6e98f",
+      "bytes": 200594,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password-end_light_320x2.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (320 dp, text ×2, light)",
+      "sha256": "058bdb3ef50224d2412de0ef106c01c3b396baf18430a3c84c572b6a8a1de6ba",
+      "bytes": 200072,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password_dark_320x2.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (320 dp, text ×2, dark)",
+      "sha256": "6f9d2fa3af820bade4e7175d02feac4ddabcf92ede665951e50b6f3dde1dbd00",
+      "bytes": 203175,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password_dark_360x1.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (360 dp, text ×1, dark)",
+      "sha256": "ece4dc7091acf4e22fc5f9f53323fcd17fd725531050e5924f4a8cb92153687c",
+      "bytes": 132394,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password_light_320x2.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (320 dp, text ×2, light)",
+      "sha256": "63bda52bc3ce0d8452a847fce49a3b28bb46552b94054152ce6e1e8014d9b37d",
+      "bytes": 202103,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password_light_360x1.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (360 dp, text ×1, light)",
+      "sha256": "b464fb374a6fd934eda288661aadc6fa3d712a1af476b724270c7384303ffe33",
+      "bytes": 132369,
+      "width": 1080,
+      "height": 2340
     },
     {
       "file": "summary_empty-week_dark_360x1.png",
