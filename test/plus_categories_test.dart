@@ -243,6 +243,54 @@ void main() {
     expect(textIn('tl-row-${spend.id}', 'Coffee runs'), findsWidgets);
   });
 
+  // A repeat uses the built-in categories for now: with one of your own
+  // picked, the Repeat row says so and can't be tapped, and Add makes no
+  // repeat. Back on a built-in, the choice made is there again.
+  testWidgets('with your own category picked, Repeat is off and says why, and Add makes no repeat', (tester) async {
+    const why = 'Repeats use the built-in categories for now.';
+    ListTile row() => tester.widget<ListTile>(
+      find.descendant(of: byId('add-repeat'), matching: find.byType(ListTile)),
+    );
+    Future<void> reveal(String id) async {
+      await tester.ensureVisible(byId(id));
+      await tester.pumpAndSettle();
+    }
+
+    final o = await open(tester, plusOn: true, customs: [own('a', 'Coffee')]);
+    await tester.tapId('home-add');
+    await tester.enterId('add-amount', '45');
+    await reveal('add-cat-food');
+    await tester.tapId('add-cat-food');
+    await reveal('add-repeat');
+    await tester.tap(byId('add-repeat'));
+    await tester.pumpAndSettle();
+    await tester.tap(byId('repeat-choice-monthly'));
+    await tester.pumpAndSettle();
+    expect(textIn('add-repeat', 'Every month on day 2'), findsOneWidget);
+    expect(textIn('add-repeat', why), findsNothing);
+
+    await reveal('add-cat-custom-1');
+    await tester.tapId('add-cat-custom-1');
+    await reveal('add-repeat');
+    expect(textIn('add-repeat', why), findsOneWidget);
+    expect(textIn('add-repeat', "Doesn't repeat"), findsOneWidget);
+    expect(row().onTap, isNull);
+
+    await reveal('add-cat-food');
+    await tester.tapId('add-cat-food');
+    await reveal('add-repeat');
+    expect(textIn('add-repeat', 'Every month on day 2'), findsOneWidget);
+    expect(textIn('add-repeat', why), findsNothing);
+    expect(row().onTap, isNotNull);
+
+    await reveal('add-cat-custom-1');
+    await tester.tapId('add-cat-custom-1');
+    await tester.tapId('add-submit');
+    final spend = (await spends(tester, o.app)).single;
+    expect((spend.customCategory, spend.repeatId), ('${CustomCategory.idPrefix}a', null));
+    expect(await tester.runAsync(o.app.journal.repeats), isEmpty);
+  });
+
   testWidgets('the editor: a name is needed, and not one you have: your own '
       "or a built-in's, in any case", (tester) async {
     final o = await open(

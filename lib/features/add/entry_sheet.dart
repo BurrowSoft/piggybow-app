@@ -192,6 +192,9 @@ class _EntrySheetState extends State<EntrySheet> {
 
   bool get _hasCategory => _category != null || _custom != null;
 
+  /// A spend in a category of the person's own: it can't repeat yet.
+  bool get _ownCategory => _type == EntryType.spent && _custom != null;
+
   Future<(Set<SpendCategory>, List<CustomCategory>)> _readCategories() async {
     final store = context.services.journal;
     return (await store.hiddenBuiltIns(), await store.customCategories());
@@ -427,9 +430,10 @@ class _EntrySheetState extends State<EntrySheet> {
     final editing = widget.editing;
     try {
       if (editing == null) {
-        // A repeat stays in the home currency for now (wiring item 21): in
-        // another one, Add makes none.
-        final repeat = abroad ? null : scheduleFor(_repeat, date);
+        // A repeat stays in the home currency and the built-in categories for
+        // now: in another currency, or in a category of your own, Add makes
+        // none.
+        final repeat = abroad || _ownCategory ? null : scheduleFor(_repeat, date);
         await store.addEntry(
           type: _type,
           amountMinor: parsed.minor!,
@@ -1133,7 +1137,10 @@ class _EntrySheetState extends State<EntrySheet> {
                             choice: _repeat,
                             date: date,
                             onTap: _pickRepeat,
-                            off: abroad ? l10n.repeatHomeCurrencyOnly : null,
+                            // The home currency's reason first, when both apply.
+                            off: abroad
+                                ? l10n.repeatHomeCurrencyOnly
+                                : (_ownCategory ? l10n.repeatBuiltInCategoryOnly : null),
                           ),
                         ],
                         // Editing an entry of a repeat: which one, and

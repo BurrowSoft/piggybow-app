@@ -333,6 +333,30 @@ void main() {
     expect(await store.isBlank(), isTrue);
   });
 
+  test('a repeating spend in a category of your own is refused, and nothing is written', () async {
+    final mine = CustomCategory(
+      id: '${CustomCategory.idPrefix}a',
+      name: 'Coffee',
+      icon: CategoryIcon.coffee,
+      createdAt: clock.nowUtc(),
+    );
+    await store.putCustomCategory(mine);
+    await expectLater(
+      store.addEntry(
+        type: EntryType.spent,
+        amountMinor: 450,
+        currency: 'THB',
+        localDate: '2026-10-01',
+        customCategory: mine.id,
+        repeat: const RepeatSchedule.monthly(1),
+        today: '2026-10-01',
+      ),
+      throwsArgumentError,
+    );
+    expect(await store.entries(), isEmpty);
+    expect(await store.repeats(), isEmpty);
+  });
+
   test('Delete everything erases the repeats too', () async {
     await rent();
     expect(await store.isBlank(), isFalse);

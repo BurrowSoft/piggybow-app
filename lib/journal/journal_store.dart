@@ -288,6 +288,11 @@ class JournalStore extends ChangeNotifier {
     final now = _clock.nowUtc();
     final spend = type == EntryType.spent;
     if (spend && customCategory != null) await _checkCustom(customCategory);
+    // A repeat uses the built-in categories for now: the sheet offers none
+    // for a category of your own.
+    if (repeat != null && spend && customCategory != null) {
+      throw ArgumentError.value(customCategory, 'customCategory', 'a repeat uses a built-in category');
+    }
     final repeatId = repeat == null ? null : _newId();
     final converted = await _converted(amountMinor, currency, rate);
     if (repeat != null && converted != null) {
