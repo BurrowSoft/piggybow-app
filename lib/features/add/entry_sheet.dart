@@ -908,6 +908,9 @@ class _EntrySheetState extends State<EntrySheet> {
                                 child: TestId(
                                   'add-rate',
                                   child: TextField(
+                                    // Asks the keyboard not to learn from what is
+                                    // typed here (Android).
+                                    enableIMEPersonalizedLearning: false,
                                     controller: _rate,
                                     keyboardType:
                                         const TextInputType.numberWithOptions(
