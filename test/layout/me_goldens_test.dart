@@ -1,14 +1,16 @@
 // Goldens: Me (decision 44), at 320 dp ×2, light and dark, for PB UX & PM's
 // look at PR 4b: Me with no plan and with one, the notifications-off notice,
 // the plan dialog empty and with a plan, the picker, "Delete everything?",
-// Your privacy in a build without a Sentry DSN, "Not everything was
-// erased", and the App lock row after a restore (5c).
+// Your privacy in a build without a Sentry DSN (with the full policy's
+// link), "Not everything was erased", and the App lock row after a restore
+// (5c).
 @Tags(['golden'])
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:piggybow/core/app_config.dart';
 import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/pig/pig_mood.dart' show HappyPick;
 
@@ -46,9 +48,10 @@ void main() {
     int? plan,
     bool notificationsOff = false,
     AppLock? lock,
+    AppConfig config = const AppConfig(flavor: Flavor.staging),
   }) async {
     setLayout(tester, c);
-    final app = TestApp(currency: 'USD', appLock: lock)
+    final app = TestApp(currency: 'USD', appLock: lock, config: config)
       ..prefs.appearance = c.appearance;
     if (notificationsOff) app.notifications.grant = false;
     await tester.runAsync(app.openJournal);
@@ -175,8 +178,17 @@ void main() {
       );
     });
 
-    testWidgets('M8 Your privacy, no Sentry DSN ($c)', (tester) async {
-      await open(tester, c);
+    testWidgets("M8 Your privacy, no Sentry DSN, the policy's link ($c)", (
+      tester,
+    ) async {
+      await open(
+        tester,
+        c,
+        config: const AppConfig(
+          flavor: Flavor.staging,
+          privacyUrl: 'https://example.invalid/privacy',
+        ),
+      );
       await tester.tapId('me-privacy');
       await settle(tester, byId('me-privacy-screen'));
       expect(find.textContaining('crash report'), findsNothing);

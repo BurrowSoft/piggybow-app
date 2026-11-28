@@ -419,6 +419,41 @@ void main() {
     expect(find.textContaining('crash report'), findsOneWidget);
   });
 
+  testWidgets('privacy: no policy link without PRIVACY_URL', (tester) async {
+    await openMe(tester);
+    await tester.tapId('me-privacy');
+    await settle(tester, byId('me-privacy-screen'));
+    expect(byId('privacy-policy'), findsNothing);
+  });
+
+  testWidgets("privacy: the full policy's link, after the lines", (
+    tester,
+  ) async {
+    await openMe(
+      tester,
+      config: const AppConfig(
+        flavor: Flavor.staging,
+        privacyUrl: 'https://example.invalid/privacy',
+      ),
+    );
+    await tester.tapId('me-privacy');
+    await settle(tester, byId('me-privacy-screen'));
+    final link = byId('privacy-policy');
+    await tester.ensureVisible(link);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(
+        of: link,
+        matching: find.text('Read the full privacy policy'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(link).dy,
+      greaterThan(tester.getBottomLeft(find.text('No ads, no tracking.')).dy),
+    );
+  });
+
   testWidgets('help only with SUPPORT_URL; the version always', (
     tester,
   ) async {

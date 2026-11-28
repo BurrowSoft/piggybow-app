@@ -11,7 +11,7 @@ import 'layout_matrix.dart';
 /// Me in every layout case (plan §0.3, decision 43): its fullest state (all
 /// three picks, the largest plan, the reminder on with notifications off,
 /// help and the version), the plan dialog with its error, Your privacy with
-/// every line, and the picker.
+/// every line and the full policy's link, and the picker.
 void main() {
   setUpAll(loadAppFonts);
   setUp(() {
@@ -70,6 +70,7 @@ void main() {
               flavor: Flavor.staging,
               sentryDsn: 'https://key@example.invalid/1',
               supportUrl: 'https://example.invalid/support',
+              privacyUrl: 'https://example.invalid/privacy',
             ),
           )
           ..prefs.appearance = c.appearance
@@ -101,11 +102,22 @@ void main() {
       await expectSoundLayout(tester, reason: 'M2');
     });
 
-    testWidgets('M3 Your privacy, every line ($c)', (tester) async {
+    testWidgets("M3 Your privacy, every line and the policy's link ($c)", (
+      tester,
+    ) async {
       await open(tester, c);
       await tester.tapId('me-privacy');
       await settle(tester, byId('me-privacy-screen'));
       await checkScrolled(tester, 'me-privacy-screen', 'M3');
+      // The link ends the list: at the largest text it's below the fold.
+      final list = find
+          .descendant(
+            of: byId('me-privacy-screen'),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      await tester.scrollUntilVisible(byId('privacy-policy'), 200, scrollable: list);
+      expect(byId('privacy-policy'), findsOneWidget);
     });
 
     testWidgets('M4 the picker in Me ($c)', (tester) async {

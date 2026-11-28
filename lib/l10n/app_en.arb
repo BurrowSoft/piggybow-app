@@ -260,6 +260,7 @@
   "privacy3": "If the app crashes, it can send a crash report with technical details only, never your entries.",
   "privacy4": "Delete all my data, in Me, erases everything Piggybow stored on this phone. You can export a copy first.",
   "privacy5": "No ads, no tracking.",
+  "privacyPolicyLink": "Read the full privacy policy",
   "done": "Done",
   "save": "Save",
   "goalCreate": "Start my rainbow",
