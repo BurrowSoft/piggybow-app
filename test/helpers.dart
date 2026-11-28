@@ -120,6 +120,7 @@ class TestApp {
   TestApp({
     String deviceLanguage = 'en',
     String? deviceCountry = 'TH',
+    String deviceLocaleName = 'en_US',
     String? chosenLocale,
     String? deviceAccount,
     this.shippedLocales = const ['en'],
@@ -136,6 +137,7 @@ class TestApp {
        device = FakeDevice(
          languageCode: deviceLanguage,
          countryCode: deviceCountry,
+         localeName: deviceLocaleName,
        );
 
   /// The app's clock (the session and services); [MovableClock] to move it.

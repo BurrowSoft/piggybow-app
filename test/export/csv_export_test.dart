@@ -257,7 +257,7 @@ void main() {
     });
 
     test('a rate typed with a comma is written with "." (the file reads the same everywhere)', () {
-      final typed = parseRate('39,12', RateDirection.toHome).rate!;
+      final typed = parseRate('39,12', RateDirection.toHome, mark: ',').rate!;
       final text = rateText(typed, currency: 'EUR', home: 'THB');
       expect(text, '1 EUR = 39.12 THB');
       expect(roundTrip([trip(rateText: text)])[1].last, '1 EUR = 39.12 THB');

@@ -192,6 +192,7 @@ class _Days extends StatelessWidget {
           entry: entry,
           goal: goals[entry.goalId],
           locale: locale,
+          home: home,
         ),
       },
     );
@@ -277,11 +278,20 @@ class _DayHeader extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({required this.entry, required this.goal, required this.locale});
+  const _Row({
+    required this.entry,
+    required this.goal,
+    required this.locale,
+    required this.home,
+  });
 
   final Entry entry;
   final Goal? goal;
   final String locale;
+
+  /// The journal's home currency: an entry in another one shows its amount
+  /// there too, under its own (feature 19).
+  final String home;
 
   @override
   Widget build(BuildContext context) {
@@ -292,7 +302,7 @@ class _Row extends StatelessWidget {
     final String title;
     final String? subtitle;
     final Widget icon;
-    final Widget amount;
+    final Widget ownAmount;
     if (e.type == EntryType.spent) {
       final category = e.category!.label(l10n);
       final feeling = switch (e.feeling) {
@@ -305,7 +315,7 @@ class _Row extends StatelessWidget {
       subtitle = [category, ?feeling].join(' · ');
       icon = Icon(e.category!.icon, color: theme.colorScheme.onSurfaceVariant);
       // Spends in ink: never red, never a minus sign.
-      amount = Text(
+      ownAmount = Text(
         money,
         maxLines: 1,
         softWrap: false,
@@ -320,7 +330,7 @@ class _Row extends StatelessWidget {
       title = e.note.isNotEmpty ? e.note : savedFor;
       subtitle = e.note.isNotEmpty ? savedFor : null;
       icon = const _MiniRainbow();
-      amount = Text(
+      ownAmount = Text(
         '+$money',
         maxLines: 1,
         softWrap: false,
@@ -329,6 +339,24 @@ class _Row extends StatelessWidget {
         ),
       );
     }
+    // In another currency: "€12.34", and under it, muted, "= ฿482.74".
+    final Widget amount = e.convertedMinor == null
+        ? ownAmount
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              ownAmount,
+              Text(
+                l10n.addConverted(formatMoney(e.homeMinor, home, locale)),
+                maxLines: 1,
+                softWrap: false,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          );
     return TestId(
       'tl-row-${e.id}',
       button: true,
