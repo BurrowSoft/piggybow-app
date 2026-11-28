@@ -1,17 +1,27 @@
 // The pig-tip Edge Function: handler.ts with the real things
-// it talks to. Supabase sets SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for
-// every function; ANTHROPIC_API_KEY and TIP_REPORT_KEY are the project's own
-// secrets. None of them is ever logged.
+// it talks to. Supabase sets SUPABASE_URL and the project's keys for every
+// function (SUPABASE_SECRET_KEYS; the legacy SUPABASE_SERVICE_ROLE_KEY on
+// older projects); ANTHROPIC_API_KEY and TIP_REPORT_KEY are the project's
+// own secrets. None of them is ever logged.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
 import { type Filed, handle, type Take } from "./handler.ts";
+import { adminKeyFrom } from "./keys.ts";
 import { askModel, type Effort, isTipModel, type Reply } from "./model.ts";
 import { signerFor } from "./sign.ts";
 
-const admin = createClient(
+// The admin key: the project's default secret key, else the legacy
+// service-role key (keys.ts). Without one there's no client (supabase-js
+// refuses an empty key at start, and the function wouldn't run at all), and
+// every request gets 503.
+const adminKey = adminKeyFrom(
+  Deno.env.get("SUPABASE_SECRET_KEYS"),
+  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+);
+const admin = adminKey === null ? null : createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+  adminKey.key,
   { auth: { persistSession: false, autoRefreshToken: false } },
 );
 
@@ -30,6 +40,24 @@ const region = Deno.env.get("SB_REGION") ?? null;
 // one whose report couldn't be proved.
 const signer = await signerFor(Deno.env.get("TIP_REPORT_KEY"));
 
+// At start, names only: which of the variables this function expects are
+// set, which admin key it uses and whether it can sign. Never a value.
+console.log(JSON.stringify({
+  start: "pig-tip",
+  set: Object.fromEntries(
+    [
+      "SUPABASE_URL",
+      "SUPABASE_SECRET_KEYS",
+      "SUPABASE_SERVICE_ROLE_KEY",
+      "ANTHROPIC_API_KEY",
+      "TIP_REPORT_KEY",
+      "SB_REGION",
+    ].map((name) => [name, (Deno.env.get(name) ?? "") !== ""]),
+  ),
+  adminKey: adminKey?.from ?? "none",
+  signingKey: signer !== null,
+}));
+
 const filed: readonly Filed[] = ["ok", "cap", "used"];
 
 Deno.serve((req) =>
@@ -37,12 +65,12 @@ Deno.serve((req) =>
     async userId(authorization) {
       const jwt = authorization?.match(/^Bearer (.+)$/)?.[1];
       if (!jwt) return null;
-      const { data, error } = await admin.auth.getUser(jwt);
+      const { data, error } = await admin!.auth.getUser(jwt);
       if (error || !data.user || !data.user.is_anonymous) return null;
       return data.user.id;
     },
     async settings() {
-      const { data, error } = await admin
+      const { data, error } = await admin!
         .from("tip_settings")
         .select("enabled, model, effort, region")
         .eq("id", 1)
@@ -59,10 +87,11 @@ Deno.serve((req) =>
       if (only !== null && typeof only !== "string") return null;
       return { model: row.model, effort, region: only };
     },
+    admin: admin !== null,
     region,
     signer,
     async takeTip(uid, today) {
-      const { data, error } = await admin.rpc("take_tip", { uid, today });
+      const { data, error } = await admin!.rpc("take_tip", { uid, today });
       if (error) throw error;
       return data as Take;
     },
@@ -75,14 +104,14 @@ Deno.serve((req) =>
     // The caps and the report in one transaction (file_report); the report
     // row holds no one's id.
     async fileReport(uid, today, report) {
-      const { data, error } = await admin.rpc("file_report", { uid, today, ...report });
+      const { data, error } = await admin!.rpc("file_report", { uid, today, ...report });
       if (error) throw error;
       const answer = filed.find((f) => f === data);
       if (!answer) throw new Error("file_report: an unexpected answer");
       return answer;
     },
     async forget(uid) {
-      const { error } = await admin.auth.admin.deleteUser(uid);
+      const { error } = await admin!.auth.admin.deleteUser(uid);
       if (error) throw error;
     },
     today: () => new Date().toISOString().slice(0, 10),

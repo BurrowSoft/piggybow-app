@@ -18,6 +18,7 @@ function fake(over: Partial<Deps> = {}) {
   const deps: Deps = {
     userId: async (auth) => (auth === "Bearer good" ? UID : null),
     settings: async (): Promise<TipSettings | null> => ({ model: "claude-haiku-5-5", effort: "low", region: null }),
+    admin: true,
     region: "us-east-1",
     signer: SIGNER,
     takeTip: async (uid, today): Promise<Take> => {
@@ -121,6 +122,29 @@ Deno.test("204 outside the settings' region, or where the runtime says none", as
     const { deps } = fake({ settings: async () => ({ ...inUS, region: named }), region: where });
     assertEquals((await handle(post("/pig-tip", week), deps)).status, 200, `${named} ${where}`);
   }
+});
+
+Deno.test("503 without an admin key, on every route: no user looked up, nothing counted or deleted", async () => {
+  const looked: Array<string | null> = [];
+  const { deps, calls, logs, reports } = fake({
+    admin: false,
+    userId: async (auth) => {
+      looked.push(auth);
+      return UID;
+    },
+  });
+  const good = { tip: TIP, reason: "other", model: "claude-haiku-5-5", sig: SIG };
+  assertEquals((await handle(post("/pig-tip", week), deps)).status, 503);
+  assertEquals((await handle(post("/pig-tip/report", good), deps)).status, 503);
+  assertEquals((await handle(post("/pig-tip/forget"), deps)).status, 503);
+  assertEquals(looked, []);
+  assertEquals(calls, []);
+  assertEquals(reports, []);
+  assertEquals(logs, [
+    { route: "tip", status: 503, why: "no_admin_key" },
+    { route: "report", status: 503, why: "no_admin_key" },
+    { route: "forget", status: 503, why: "no_admin_key" },
+  ]);
 });
 
 Deno.test("503 without a signing key: no tip, nothing counted, no model asked, no report kept", async () => {
