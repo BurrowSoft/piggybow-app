@@ -24,7 +24,7 @@ on:
         required: false
         default: "smoke"
       kind:
-        description: "The APK: debug (staging debug), reminder-now (staging debug + REMINDER_NOW), release (staging release, no DSN), prod-release (the store's flavour and build: release + R8, no DSN, no network permission; a throwaway key), plus-rows (staging debug + PLUS_ENABLED + PLUS_FAKE_STORE: the paywall with prices that never buy), plus-owned (plus-rows + PLUS_ROWS_OWNED: Plus on with nothing bought, for the Plus-on rows), plus-probe (staging profile + PLUS_ENABLED, without ACCESS_NETWORK_STATE, on a Play Store image: does the app stay up once Play Billing starts?), tips-mock (staging debug + AI_TIPS_ENABLED + TIPS_TEST_URL=http://10.0.2.2:8787: pig tips from the tester's mock tips server, which the rows script starts on the runner)"
+        description: "The APK: debug (staging debug), reminder-now (staging debug + REMINDER_NOW), release (staging release, no DSN), prod-release (the store's flavour and build: release + R8, no DSN, INTERNET for pig tips only; a throwaway key), plus-rows (staging debug + PLUS_ENABLED + PLUS_FAKE_STORE: the paywall with prices that never buy), plus-owned (plus-rows + PLUS_ROWS_OWNED: Plus on with nothing bought, for the Plus-on rows), plus-probe (staging profile + PLUS_ENABLED, without ACCESS_NETWORK_STATE, on a Play Store image: does the app stay up once Play Billing starts?), tips-mock (staging debug + AI_TIPS_ENABLED + TIPS_TEST_URL=http://10.0.2.2:8787: pig tips from the tester's mock tips server, which the rows script starts on the runner)"
         type: choice
         options: [debug, reminder-now, release, prod-release, plus-rows, plus-owned, plus-probe, tips-mock]
         default: debug
@@ -191,7 +191,7 @@ jobs:
           set -euo pipefail
           if [ "$KIND" = prod-release ]; then
             # The store's flavour and build type: release with R8, env/prod.json's
-            # defines (no DSN), no network permission. Signed with a key made
+            # defines (no DSN), INTERNET for pig tips only. Signed with a key made
             # here and deleted right after: never the upload key (another
             # owner name), and the APK never leaves this job.
             trap 'rm -f "$RUNNER_TEMP/throwaway.jks"' EXIT
@@ -225,8 +225,8 @@ jobs:
             case "$KIND" in
               release) mode=--release; built=app-staging-release.apk ;;
               plus-probe)
-                # What the probe tests: the store build's permissions (no
-                # INTERNET, no ACCESS_NETWORK_STATE). The release overlay
+                # What the probe tests: the store build's permissions (INTERNET
+                # for pig tips, no ACCESS_NETWORK_STATE). The release overlay
                 # becomes this runner's profile overlay, never committed.
                 # Profile, not release: Plus is refused in release.
                 cp android/app/src/release/AndroidManifest.xml android/app/src/profile/AndroidManifest.xml

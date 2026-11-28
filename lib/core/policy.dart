@@ -11,6 +11,11 @@ abstract final class PolicyVersions {
   static const ai = '';
   static const age18 = '';
 
+  /// Pig tips' texts are final: the consent sheet's AI text and its 18+ line
+  /// have their versions. Until then, no release build offers tips
+  /// (AppConfig.aiTipsEnabled), whatever its env file says.
+  static const aiTextsFinal = ai != '' && age18 != '';
+
   /// Needed before anything is stored: none in v0.1.
   static const Map<ConsentKind, String> required = {};
 }

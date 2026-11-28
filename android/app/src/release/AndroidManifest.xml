@@ -1,15 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- v0.1 sends nothing, and the phone itself enforces it: a release
-         build has no network permission at all. INTERNET comes from the main
-         manifest and Sentry's library; ACCESS_NETWORK_STATE from Play
-         Billing's logging library, which v0.1 never starts (Plus is off).
-         Debug and profile builds keep INTERNET (src/debug, src/profile) for
-         the Flutter tool. app/build.gradle.kts fails a release build that
-         sets SENTRY_DSN or PLUS_ENABLED until this file changes too. -->
-    <uses-permission
-        android:name="android.permission.INTERNET"
-        tools:node="remove" />
+    <!-- A release build reaches the network for one thing only: pig tips,
+         once the person turns them on (lib/tips/tips_http.dart, the only code
+         that opens a connection: release_no_network_test). INTERNET comes from
+         the main manifest. ACCESS_NETWORK_STATE, from Play Billing's logging
+         library, stays out: dart:io doesn't need it, and Plus is off. Debug
+         and profile builds keep the network for the Flutter tool (src/debug,
+         src/profile). app/build.gradle.kts still fails a release build that
+         sets SENTRY_DSN or PLUS_ENABLED until this file and the store's texts
+         change too. -->
     <uses-permission
         android:name="android.permission.ACCESS_NETWORK_STATE"
         tools:node="remove" />

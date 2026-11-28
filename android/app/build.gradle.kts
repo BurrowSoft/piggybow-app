@@ -141,26 +141,26 @@ gradle.taskGraph.whenReady {
     }
 }
 
-// A release build sends nothing: src/release/AndroidManifest.xml removes
-// INTERNET and ACCESS_NETWORK_STATE. A release that would need the network
-// (a Sentry DSN, or Plus with Play Billing) stops here, so that file changes
-// in the same reviewed PR.
+// A release build reaches the network for pig tips only:
+// src/release/AndroidManifest.xml keeps INTERNET for them and removes
+// ACCESS_NETWORK_STATE, and the store's texts declare nothing else. A release
+// that would use the network for more (a Sentry DSN, or Plus with Play
+// Billing) stops here, so that file and those texts change in the same
+// reviewed PR.
 gradle.taskGraph.whenReady {
     val release = allTasks.any { it.name.contains("Release") }
     val dsn = dartDefines["SENTRY_DSN"].orEmpty().isNotBlank()
     val plus = dartDefines["PLUS_ENABLED"] == "true"
-    val tips = dartDefines["AI_TIPS_ENABLED"] == "true"
-    if (release && (dsn || plus || tips)) {
+    if (release && (dsn || plus)) {
         throw GradleException(
-            "this release build would need the network (" +
+            "this release build would use the network for more than pig tips (" +
                 listOfNotNull(
                     "SENTRY_DSN".takeIf { dsn },
                     "PLUS_ENABLED".takeIf { plus },
-                    "AI_TIPS_ENABLED".takeIf { tips },
                 ).joinToString() +
-                "), but src/release/AndroidManifest.xml removes INTERNET and " +
-                "ACCESS_NETWORK_STATE: change that file and " +
-                "android/expected-permissions.txt in the same PR",
+                "), but src/release/AndroidManifest.xml removes " +
+                "ACCESS_NETWORK_STATE and the store's texts declare pig tips only: " +
+                "change those and android/expected-permissions.txt in the same PR",
         )
     }
 }

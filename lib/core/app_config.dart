@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/services.dart' show appFlavor;
 import 'package:flutter/widgets.dart';
 
+import 'policy.dart';
+
 /// Build-time configuration, read from `--dart-define-from-file=env/<flavor>.json`.
 ///
 /// Only public values belong here (the Sentry DSN, page links, the pig tips
@@ -83,11 +85,11 @@ class AppConfig {
       privacyUrl: const String.fromEnvironment('PRIVACY_URL'),
       supportUrl: const String.fromEnvironment('SUPPORT_URL'),
       termsUrl: const String.fromEnvironment('TERMS_URL'),
-      // Pig tips: only with AI_TIPS_ENABLED, and never in a release build
-      // until the release that ships them (with INTERNET) lifts this; the
-      // Android build refuses it there too. kReleaseMode is a compile-time
-      // constant, so this is false in release whatever the env file says.
-      aiTipsEnabled: const bool.fromEnvironment('AI_TIPS_ENABLED') && !kReleaseMode,
+      // Pig tips: only with AI_TIPS_ENABLED, and in a release build only once
+      // their texts are final too (PolicyVersions.aiTextsFinal, the consent
+      // sheet's versions). Both are compile-time constants, so a release
+      // build has no tips before then, whatever its env file says.
+      aiTipsEnabled: const bool.fromEnvironment('AI_TIPS_ENABLED') && (!kReleaseMode || PolicyVersions.aiTextsFinal),
       tipsUrl: const String.fromEnvironment('TIPS_URL'),
       tipsAnonKey: const String.fromEnvironment('TIPS_ANON_KEY'),
       tipsRegion: const String.fromEnvironment('TIPS_REGION'),
