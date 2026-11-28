@@ -354,6 +354,35 @@ void main() {
     expect(lock.restoreNoticePending, isFalse);
   });
 
+  testWidgets('the App lock row follows the lock as it turns on and off', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+    addTearDown(tester.view.reset);
+    final lock = AppLock(
+      store: MemorySecretStore(),
+      biometrics: FakeBiometrics(),
+      iterations: 50,
+    );
+    final app = TestApp(appLock: lock);
+    await tester.runAsync(app.openJournal);
+    await app.pump(tester, location: '/me');
+    await settle(tester, byId('me-happy'));
+    Finder row(String state) {
+      return find.descendant(of: byId('me-lock'), matching: find.text(state));
+    }
+
+    expect(row('Off'), findsOneWidget);
+    // Turned on and off while Me stays open: the row follows each time.
+    await tester.runAsync(() => lock.setPin('2468'));
+    await tester.pumpAndSettle();
+    expect(row('On'), findsOneWidget);
+    await tester.runAsync(lock.clear);
+    await tester.pumpAndSettle();
+    expect(row('Off'), findsOneWidget);
+  });
+
   testWidgets('Delete everything, cancelled: nothing changes', (tester) async {
     final app = await openMe(
       tester,
