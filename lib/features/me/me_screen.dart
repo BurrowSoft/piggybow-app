@@ -689,6 +689,8 @@ class PrivacyScreen extends StatelessWidget {
       if (config.sentryDsn.isNotEmpty) l10n.privacy3,
       l10n.privacy4,
       l10n.privacy5,
+      // Builds with Plus offer the home-screen widget (feature 16).
+      if (config.plusEnabled) l10n.mePrivacyWidget,
     ];
     return TestId.container(
       'me-privacy-screen',

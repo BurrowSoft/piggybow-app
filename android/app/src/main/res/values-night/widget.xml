@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The home-screen widget in the dark (values/widget.xml has the rest):
+     lib/theme/theme.dart's dark plum, light ink, muted and accent, and
+     rainbow.dart's dark track. The arcs keep their colours. -->
+<resources>
+    <color name="widget_surface">#2B2438</color>
+    <color name="widget_ink">#FBF6F1</color>
+    <color name="widget_muted">#C9C1D4</color>
+    <color name="widget_accent">#D88AA6</color>
+    <color name="widget_on_accent">#2B2438</color>
+    <color name="widget_track">#3A3350</color>
+</resources>

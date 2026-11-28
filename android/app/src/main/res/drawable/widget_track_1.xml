@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget's rainbow, arc 1 of 5 (outer to inner), not yet reached: the track.
+     The app's geometry (lib/features/goal/rainbow.dart): a 240 x 132 box,
+     centre (120, 122), radius 108, 11 wide with round ends. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="73dp"
+    android:height="40dp"
+    android:viewportWidth="240"
+    android:viewportHeight="132">
+    <path
+        android:pathData="M12,122 A108,108 0 0,1 228,122"
+        android:strokeWidth="11"
+        android:strokeColor="@color/widget_track"
+        android:strokeLineCap="round" />
+</vector>

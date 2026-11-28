@@ -5,6 +5,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import com.burrowsoft.piggybow.widget.PiggybowWidget
+import com.burrowsoft.piggybow.widget.WidgetStore
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -67,6 +69,15 @@ class MainActivity : FlutterFragmentActivity() {
                     // The shortcut's action, once: taking it clears it.
                     result.success(launchAction)
                     launchAction = null
+                } else if (call.method == UPDATE_WIDGET) {
+                    // The home-screen widget's snapshot (lib/features/widget):
+                    // kept, then every widget on the home screen drawn from it.
+                    val snapshot = call.arguments as? String
+                    if (snapshot != null) {
+                        WidgetStore.save(this, snapshot)
+                        PiggybowWidget.drawAll(this)
+                    }
+                    result.success(null)
                 } else {
                     result.notImplemented()
                 }
@@ -100,5 +111,8 @@ class MainActivity : FlutterFragmentActivity() {
 
         // The shortcut's intent action (res/xml/shortcuts.xml, one per flavour).
         const val ACTION_ADD_SPEND = "com.burrowsoft.piggybow.action.ADD_SPEND"
+
+        // lib/features/widget/widget_sync.dart's ChannelWidgetBridge.method.
+        const val UPDATE_WIDGET = "updateWidget"
     }
 }
