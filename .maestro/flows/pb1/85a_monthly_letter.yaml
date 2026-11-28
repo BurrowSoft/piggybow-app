@@ -1,0 +1,79 @@
+appId: ${APP_ID}
+name: The monthly letter (#67) - none without last month's entries; on 2 December, November's letter with the saves, the most worth-it category and the days noted (no goal line); Me's switch hides and brings it back
+tags: [letter]
+# Run with zone UTC and fake_now=2026-12-02T05:00:00Z: the app's clock is
+# frozen at Wednesday 2 December (the letter shows on a month's first 7 days).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- assertNotVisible:
+    id: home-letter                               # no November entries yet
+# November: two worth-it Food spends, a Transport spend, a save; 3 days
+- runFlow:
+    file: ../../subflows/add_dated_prev_month.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "10", CAT: "food", FEEL: "worth", DAY: "Thursday, November 5, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated_prev_month.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "20", CAT: "food", FEEL: "worth", DAY: "Thursday, November 12, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated_prev_month.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "5", CAT: "transport", FEEL: "none", DAY: "Friday, November 20, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated_prev_month.yaml
+    env: { SEG: add-seg-saved, AMOUNT: "100", CAT: "none", FEEL: "none", DAY: "Friday, November 20, 2026" }
+# The letter
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-letter
+- assertVisible:
+    id: home-letter
+    text: "(?s).*Your November.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-letter-days
+- assertVisible:
+    id: home-letter-saved
+    text: "(?s).*You saved \\$100\\.00\\..*"
+- assertVisible:
+    id: home-letter-worth
+    text: "(?s).*What felt most worth it: Food & drinks\\..*"
+- assertVisible:
+    id: home-letter-days
+    text: "(?s).*You noted something on 3 days\\..*"
+- assertNotVisible:
+    id: home-letter-goals                         # no goal reached in November
+- takeScreenshot: 85-letter
+# Me's switch: off hides it, on brings it back
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-letters
+- assertVisible:
+    id: me-letters
+    checked: true
+- tapOn:
+    id: me-letters
+- tapOn:
+    id: tab-home
+- assertNotVisible:
+    id: home-letter
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-letters
+- tapOn:
+    id: me-letters
+- tapOn:
+    id: tab-home
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-letter
+- assertVisible:
+    id: home-letter

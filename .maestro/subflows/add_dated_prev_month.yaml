@@ -1,0 +1,57 @@
+# From Home: add one entry of ${AMOUNT} on a day of the PREVIOUS month through
+# the Add sheet's day picker ("Previous month" once), with a feeling for a
+# spend; back on Home after it.
+# env: SEG (add-seg-spent | add-seg-saved), AMOUNT, CAT (a category id, or
+#      "none" for a save), FEEL (worth | not-sure | not-really | none),
+#      DAY (the day as the picker reads it out, e.g. "Thursday, November 5, 2026")
+appId: ${APP_ID}
+---
+- tapOn:
+    id: home-add
+- tapOn:
+    id: ${SEG}
+- runFlow:
+    file: paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: ${AMOUNT}
+      EXPECT: ".*${AMOUNT}.*"
+- runFlow:
+    when:
+      true: ${CAT != "none"}
+    commands:
+      - runFlow:
+          file: reveal.yaml
+          env:
+            ID: add-cat-${CAT}
+      - tapOn:
+          id: add-cat-${CAT}
+- runFlow:
+    when:
+      true: ${FEEL != "none"}
+    commands:
+      - runFlow:
+          file: reveal.yaml
+          env:
+            ID: add-feel-${FEEL}
+      - tapOn:
+          id: add-feel-${FEEL}
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-date
+- tapOn:
+    id: add-date
+- tapOn: "Previous month"
+- tapOn: ".*${DAY}.*"
+- tapOn: "OK"
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000

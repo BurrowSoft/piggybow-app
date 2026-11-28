@@ -1,0 +1,26 @@
+appId: ${APP_ID}
+name: The monthly letter (#67) - "Thanks!" puts it away for the month, also after a relaunch (after 85a)
+tags: [letter]
+---
+- launchApp                                       # no clearState
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-letter-thanks
+- tapOn:
+    id: home-letter-thanks
+- assertNotVisible:
+    id: home-letter
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- assertNotVisible:
+    id: home-letter
+- takeScreenshot: 85-after-thanks

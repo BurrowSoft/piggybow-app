@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+name: The monthly letter (#67) at large text - after 85a, the letter at font scale 2.0, for a look
+tags: [letter]
+---
+- launchApp                                       # no clearState: 85a's entries
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-letter
+- takeScreenshot: 85-letter-x2
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-letter-thanks
+- takeScreenshot: 85-letter-x2-end
