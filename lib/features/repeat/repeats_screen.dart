@@ -396,7 +396,10 @@ class _RepeatScreenState extends State<RepeatScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(l10n.repeatChangesNote, style: muted),
+                  TestId.container(
+                    'repeat-changes',
+                    child: Text(l10n.repeatChangesNote, style: muted),
+                  ),
                   if (_failed) ...[
                     const SizedBox(height: 8),
                     Semantics(

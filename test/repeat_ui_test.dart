@@ -253,7 +253,11 @@ void main() {
       await tester.tapId('repeat-row-entry-1');
       await waitFor(tester, byId('repeat-amount'));
       expect(textIn('repeat-schedule', 'Every month on day 1'), findsOneWidget);
-      expect(find.text('Changes apply from the next one. Entries already added stay as they are.'), findsOneWidget);
+      await tester.revealId('repeat-changes');
+      expect(
+        textIn('repeat-changes', 'Changes apply from the next one. Entries already added stay as they are.'),
+        findsOneWidget,
+      );
       await tester.enterId('repeat-amount', '13000');
       await tester.tapId('repeat-save');
       await waitFor(tester, byId('repeat-row-entry-1'));
@@ -314,8 +318,10 @@ void main() {
       await waitFor(tester, byId('tl-row-repeat-entry-1-2026-10-01'));
       for (final id in ['tl-row-repeat-entry-1-2026-10-01', 'tl-row-entry-2']) {
         await tester.revealId(id);
-        expect(find.descendant(of: byId(id), matching: find.byIcon(Icons.repeat)), findsOneWidget, reason: id);
-        expect(tester.getSemantics(byId(id)).label, contains('Repeats every month'), reason: id);
+        final mark = find.descendant(of: byId(id), matching: find.byIcon(Icons.repeat));
+        expect(mark, findsOneWidget, reason: id);
+        // What TalkBack reads for the mark, with the row.
+        expect(tester.widget<Icon>(mark).semanticLabel, 'Repeats every month', reason: id);
       }
       expect(
         find.descendant(of: byId('tl-row-entry-3'), matching: find.byIcon(Icons.repeat)),
