@@ -4,6 +4,7 @@ import 'package:sembast/sembast_io.dart';
 import 'package:sembast/sembast_memory.dart';
 import 'package:uuid/uuid.dart';
 
+import '../backup/backup_snapshot.dart' show JournalSnapshot;
 import '../core/clock.dart';
 import '../goal/goal_progress.dart';
 import '../pig/pig_mood.dart' show HappyPick;
@@ -335,6 +336,151 @@ class JournalStore extends ChangeNotifier {
     });
     notifyListeners();
   }
+
+  // ------------------------------------------------------------- backups
+
+  /// The journal settings a backup carries (feature 21), by key, and every
+  /// `celebrated.<goal id>`. Every key this store writes is either here or in
+  /// [staysOnPhone] (a test reads this file to check), so whether a new
+  /// setting travels is a choice, never an accident.
+  static const travels = {
+    'currency',
+    'picks',
+    'plan_minor',
+    'onboarded',
+    'reminder_offer',
+  };
+
+  static const _travelsPrefix = 'celebrated.';
+
+  /// Journal settings that never leave this phone. None yet.
+  static const staysOnPhone = <String>{};
+
+  static bool travelsWith(String key) =>
+      travels.contains(key) || key.startsWith(_travelsPrefix);
+
+  /// Everything a backup carries of the journal, read in one transaction:
+  /// every entry and goal as this build writes them, and the settings that
+  /// travel. A record [checkSnapshot] would refuse (one an older build left
+  /// unreadable) stays out, so a backup made here always restores.
+  Future<JournalSnapshot> snapshot() => _db.transaction((txn) async {
+    final entries = await _entries.find(txn);
+    final goals = await _goals.find(txn);
+    final settings = await _settings.find(txn);
+    return JournalSnapshot(
+      entries: {
+        for (final s in entries)
+          if (_entryRecord(s.key, s.value) case final m?) s.key: m,
+      },
+      goals: {
+        for (final s in goals)
+          if (_goalRecord(s.key, s.value) case final m?) s.key: m,
+      },
+      settings: {
+        for (final s in settings)
+          if (_settingFits(s.key, s.value)) s.key: _plain(s.value),
+      },
+    );
+  });
+
+  /// [snapshot] as this store would write it. A [FormatException] for
+  /// anything it never writes: an entry or goal it can't read or would
+  /// refuse, a second active goal, a setting that doesn't travel or holds
+  /// the wrong kind of value.
+  static JournalSnapshot checkSnapshot(JournalSnapshot snapshot) {
+    final entries = <String, Map<String, Object?>>{};
+    for (final MapEntry(:key, :value) in snapshot.entries.entries) {
+      entries[key] =
+          _entryRecord(key, value) ?? (throw FormatException('entry $key'));
+    }
+    final goals = <String, Map<String, Object?>>{};
+    var active = 0;
+    for (final MapEntry(:key, :value) in snapshot.goals.entries) {
+      final record =
+          _goalRecord(key, value) ?? (throw FormatException('goal $key'));
+      if (record['status'] == GoalStatus.active.id && ++active > 1) {
+        throw const FormatException('a second active goal');
+      }
+      goals[key] = record;
+    }
+    final settings = <String, Object?>{};
+    for (final MapEntry(:key, :value) in snapshot.settings.entries) {
+      if (!_settingFits(key, value)) throw FormatException('setting $key');
+      settings[key] = _plain(value);
+    }
+    return JournalSnapshot(entries: entries, goals: goals, settings: settings);
+  }
+
+  /// The entry as this store writes it, or null for one it can't read or
+  /// would refuse.
+  static Map<String, Object?>? _entryRecord(String id, Map<String, Object?> m) {
+    final entry = id.isEmpty ? null : Entry.fromMap(id, m);
+    if (entry == null) return null;
+    try {
+      _check(entry);
+    } on ArgumentError {
+      return null;
+    }
+    return entry.toMap();
+  }
+
+  /// The goal as this store writes it, or null for one it can't read.
+  static Map<String, Object?>? _goalRecord(String id, Map<String, Object?> m) =>
+      id.isEmpty ? null : Goal.fromMap(id, m)?.toMap();
+
+  /// Replaces the whole journal with [snapshot] (a restore): every entry,
+  /// goal and travelling setting goes, and the snapshot's take their place,
+  /// stamps and all, so a restored rainbow doesn't celebrate again. All of
+  /// it is checked first ([checkSnapshot]: nothing is touched on a
+  /// [FormatException]); the writing is one transaction, so a failure
+  /// halfway leaves the journal exactly as it was. Settings that stay on the
+  /// phone are kept.
+  Future<void> replaceWith(
+    JournalSnapshot snapshot, {
+    @visibleForTesting Future<void> Function()? midway,
+  }) async {
+    final checked = checkSnapshot(snapshot);
+    await _db.transaction((txn) async {
+      await _entries.delete(txn);
+      await _goals.delete(txn);
+      for (final s in await _settings.find(txn)) {
+        if (travelsWith(s.key)) await _settings.record(s.key).delete(txn);
+      }
+      await midway?.call();
+      for (final MapEntry(:key, :value) in checked.entries.entries) {
+        await _entries.record(key).put(txn, value);
+      }
+      for (final MapEntry(:key, :value) in checked.goals.entries) {
+        await _goals.record(key).put(txn, value);
+      }
+      for (final MapEntry(:key, :value) in checked.settings.entries) {
+        await _settings.record(key).put(txn, value);
+      }
+    });
+    notifyListeners();
+  }
+
+  static final _currencyCode = RegExp(r'^[A-Z]{3}$');
+
+  static bool _settingFits(String key, Object? value) => switch (key) {
+    'currency' => value is String && _currencyCode.hasMatch(value),
+    'picks' => value is List && value.every((p) => p is String),
+    'plan_minor' => value is int && value > 0,
+    'onboarded' || 'reminder_offer' => value is bool,
+    _ =>
+      key.startsWith(_travelsPrefix) &&
+          key.length > _travelsPrefix.length &&
+          value is bool,
+  };
+
+  /// [value] as plain JSON: the store hands out read-only lists and maps.
+  static Object? _plain(Object? value) => switch (value) {
+    final List<Object?> list => [for (final v in list) _plain(v)],
+    final Map<String, Object?> map => {
+      for (final MapEntry(:key, :value) in map.entries) key: _plain(value),
+    },
+    _ => value,
+  };
 
   Future<void> close() => _db.close();
 
