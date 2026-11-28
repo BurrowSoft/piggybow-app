@@ -10,6 +10,7 @@ import 'features/me/me_screen.dart';
 import 'features/me/reached_goals_screen.dart';
 import 'features/onboarding/onboarding_screens.dart';
 import 'features/plus/plus_screen.dart';
+import 'features/repeat/repeats_screen.dart';
 import 'features/shell/home_shell.dart';
 import 'features/start/start_screen.dart';
 import 'features/summary/patterns_view.dart';
@@ -75,6 +76,10 @@ abstract final class MeRoutes {
 
   /// Categories: what the Add sheet offers.
   static const categories = '/me/categories';
+
+  /// Money → Repeating entries, and one repeat's page.
+  static const repeats = '/me/repeats';
+  static String repeat(String id) => '/me/repeats/$id';
 }
 
 /// A category of your own, made or edited (Plus), over everything: the Add
@@ -252,6 +257,17 @@ GoRouter buildRouter({
                             builder: (context, state) => GoalDetailScreen(
                               goalId: state.pathParameters['id']!,
                             ),
+                          ),
+                        ],
+                      ),
+                      GoRoute(
+                        path: 'repeats',
+                        builder: (context, state) => const RepeatsScreen(),
+                        routes: [
+                          GoRoute(
+                            path: ':id',
+                            builder: (context, state) =>
+                                RepeatScreen(repeatId: state.pathParameters['id']!),
                           ),
                         ],
                       ),

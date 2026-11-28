@@ -19,6 +19,7 @@ import 'package:piggybow/features/reminder/reminder_scheduler.dart';
 import 'package:piggybow/journal/journal_store.dart';
 import 'package:piggybow/router.dart';
 import 'package:piggybow/session/app_session.dart';
+import 'package:sembast/sembast.dart' show disableSembastCooperator;
 
 class FakeDevice implements DeviceContext {
   FakeDevice({
@@ -224,6 +225,12 @@ class TestApp {
   Future<void> openJournal() async {
     if (_journalOpen) return;
     _journalOpen = true;
+    // sembast pauses a long read for 100 µs every 4 ms of real time, on a
+    // timer: in a widget test that timer only fires when a pump moves the
+    // fake clock, so a read the app starts by itself (the repeats' catch-up
+    // at start) could stall between frames and finish after the test is
+    // done with the journal. In memory, nothing needs the pause.
+    disableSembastCooperator();
     journal = await JournalStore.inMemory(
       clock: clock,
       newId: () => 'entry-${++_ids}',

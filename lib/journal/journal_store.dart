@@ -165,6 +165,51 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// When Home's "Added from your repeats" was last put away with OK (UTC),
+  /// or null: the card shows what repeats added after it.
+  Future<DateTime?> repeatsSeenAt() async {
+    final v = await _settings.record('repeats_seen_at').get(_db);
+    return v is String ? DateTime.tryParse(v)?.toUtc() : null;
+  }
+
+  /// Entries the card showed that were "added" after that OK (under a clock
+  /// set ahead): seen all the same.
+  Future<Set<String>> repeatsSeenIds() async {
+    final v = await _settings.record('repeats_seen_ids').get(_db);
+    return v is List
+        ? {for (final id in v) ?(id is String ? id : null)}
+        : <String>{};
+  }
+
+  /// OK on Home's "Added from your repeats": everything it showed is seen.
+  /// The mark is now; entries "added" after now (under a clock that was set
+  /// ahead) are kept by id, those from earlier OKs too, so they stay put
+  /// away while the ones added later, in real time, still show. An id goes
+  /// once its entry is gone or the mark has passed it.
+  Future<void> markRepeatsSeen(Iterable<Entry> shown) async {
+    final now = _clock.nowUtc();
+    await _db.transaction((txn) async {
+      final kept = await _settings.record('repeats_seen_ids').get(txn);
+      final ids = <String>{
+        if (kept is List)
+          for (final id in kept) ?(id is String ? id : null),
+        for (final e in shown)
+          if (e.createdAt.isAfter(now)) e.id,
+      };
+      final still = <String>[];
+      for (final id in ids) {
+        final m = await _entries.record(id).get(txn);
+        final e = m == null ? null : Entry.fromMap(id, m);
+        if (e != null && e.createdAt.isAfter(now)) still.add(id);
+      }
+      await _settings
+          .record('repeats_seen_at')
+          .put(txn, now.toIso8601String());
+      await _settings.record('repeats_seen_ids').put(txn, still);
+    });
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------- entries
 
   /// Every entry, newest day first; within a day, the newest added first.

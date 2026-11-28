@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../core/button_label.dart';
 import '../../core/clock.dart';
-import '../../core/fit_text.dart';
 import '../../core/line_breaks.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
@@ -18,10 +17,12 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../money/currency.dart';
 import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show PigReaction;
+import '../../repeat/repeat.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../../theme/theme.dart';
 import '../plus/plus_screen.dart';
+import '../repeat/repeat_choice.dart';
 import 'add_again.dart';
 
 /// Opens the Add sheet on [start] (Spent unless said), or the Edit sheet for
@@ -130,6 +131,12 @@ class _EntrySheetState extends State<EntrySheet> {
   /// An edited entry can be added again today (its menu offers it).
   bool _canAddAgain = false;
 
+  /// Adding: how the new entry repeats (its day follows the picked day).
+  RepeatChoice _repeat = RepeatChoice.none;
+
+  /// Editing an entry of a repeat: that repeat (kept when stopped).
+  Repeat? _repeatOf;
+
   /// Add was pressed: missing fields now say so.
   bool _tried = false;
   bool _busy = false;
@@ -195,6 +202,8 @@ class _EntrySheetState extends State<EntrySheet> {
     // Adding: the quick amounts come from what was spent before.
     final entries = e == null ? await store.entries() : const <Entry>[];
     final floor = e == null ? 0 : await store.saveFloor(e);
+    final repeatId = e?.repeatId;
+    final repeat = repeatId == null ? null : await store.repeat(repeatId);
     if (!mounted) return;
     final (hidden, customs) = await _readCategories();
     if (!mounted) return;
@@ -215,6 +224,7 @@ class _EntrySheetState extends State<EntrySheet> {
             plus: services.plus?.active ?? false,
           );
       _saveFloor = floor;
+      _repeatOf = repeat;
       _today = today;
       _date = e?.date ?? today;
       if (e != null) {
@@ -302,6 +312,7 @@ class _EntrySheetState extends State<EntrySheet> {
     final editing = widget.editing;
     try {
       if (editing == null) {
+        final repeat = scheduleFor(_repeat, date);
         await store.addEntry(
           type: _type,
           amountMinor: parsed.minor!,
@@ -312,6 +323,9 @@ class _EntrySheetState extends State<EntrySheet> {
           feeling: _feeling,
           note: _note.text,
           goalId: spend ? null : _goalId,
+          // The first of a repeat: it adds the next ones on their days.
+          repeat: repeat,
+          today: repeat == null ? null : services.localDay.todayWire,
         );
         // The pig answers what was just added (plan §4.4).
         services.lastAdd.value = !spend
@@ -378,11 +392,26 @@ class _EntrySheetState extends State<EntrySheet> {
       });
       return;
     }
+    // An entry of a running repeat: deleting it doesn't stop the repeat.
+    final stillRepeats = _repeatOf?.running ?? false;
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
         title: Text(l10n.deleteEntryTitle),
-        content: Text(l10n.deleteEntryBody),
+        content: stillRepeats
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.deleteEntryBody),
+                  const SizedBox(height: 8),
+                  TestId(
+                    'delete-repeat-note',
+                    child: Text(l10n.repeatDeleteNote),
+                  ),
+                ],
+              )
+            : Text(l10n.deleteEntryBody),
         actions: [
           TestId(
             'delete-cancel',
@@ -431,7 +460,37 @@ class _EntrySheetState extends State<EntrySheet> {
       // No future days.
       lastDate: today,
     );
-    if (picked != null && mounted) setState(() => _date = dateOnly(picked));
+    if (picked == null || !mounted) return;
+    final day = dateOnly(picked);
+    setState(() {
+      _date = day;
+      // The repeat's day follows the picked day; "the last day" only while
+      // the picked day is its month's last.
+      if (!repeatChoicesFor(day).contains(_repeat)) {
+        _repeat = RepeatChoice.monthly;
+      }
+    });
+  }
+
+  /// Adding: how the entry repeats, from the choices for its day.
+  Future<void> _pickRepeat() async {
+    final date = _date;
+    if (date == null) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final picked = await showRepeatChoices(
+      context,
+      date: date,
+      dateLocale: context.readSession.dateLocale,
+      current: _repeat,
+    );
+    if (picked != null && mounted) setState(() => _repeat = picked);
+  }
+
+  /// "Manage": the sheet closes, and the repeat's page opens in Me.
+  void _manageRepeat(Repeat repeat) {
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop(false);
+    router.go(MeRoutes.repeat(repeat.id));
   }
 
   /// Add category (Plus): the paywall first without it, then the editor
@@ -832,6 +891,24 @@ class _EntrySheetState extends State<EntrySheet> {
                             ),
                           ),
                         ),
+                        // Adding only: whether it repeats, worded from the
+                        // picked day.
+                        if (!_editing) ...[
+                          const SizedBox(height: 8),
+                          _RepeatRow(
+                            choice: _repeat,
+                            date: date,
+                            onTap: _pickRepeat,
+                          ),
+                        ],
+                        // Editing an entry of a repeat: which one, and
+                        // where to change it.
+                        if (_editing && _repeatOf != null)
+                          _RepeatInfo(
+                            entry: widget.editing!,
+                            repeat: _repeatOf!,
+                            onManage: () => _manageRepeat(_repeatOf!),
+                          ),
                       ],
                     ),
             ),
@@ -1058,6 +1135,133 @@ class _CategoryGrid extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// The Add sheet's Repeat row: "Doesn't repeat", or the schedule the picked
+/// day makes, with the shorter-months hint for days 29 and 30.
+class _RepeatRow extends StatelessWidget {
+  const _RepeatRow({
+    required this.choice,
+    required this.date,
+    required this.onTap,
+  });
+
+  final RepeatChoice choice;
+  final DateTime date;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final schedule = scheduleFor(choice, date);
+    final value = schedule == null
+        ? l10n.repeatNone
+        : scheduleText(l10n, context.session.dateLocale, schedule);
+    final hint = scheduleHint(l10n, schedule);
+    return TestId(
+      'add-repeat',
+      button: true,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.repeat),
+        title: Text(l10n.addRepeat),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(value),
+            if (hint != null)
+              Text(
+                hint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+          ],
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+/// Editing an entry of a repeat: "Added by your repeat: Every month on day
+/// 1" (or that the repeat is stopped), with Manage while it runs. The
+/// repeat's first entry, the person's own, shows just its schedule.
+class _RepeatInfo extends StatelessWidget {
+  const _RepeatInfo({
+    required this.entry,
+    required this.repeat,
+    required this.onManage,
+  });
+
+  final Entry entry;
+  final Repeat repeat;
+  final VoidCallback onManage;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final schedule = scheduleText(
+      l10n,
+      context.session.dateLocale,
+      repeat.schedule,
+    );
+    final text = entry.auto
+        ? (repeat.running ? l10n.repeatFrom(schedule) : l10n.repeatFromStopped)
+        : (repeat.running ? schedule : null);
+    if (text == null) return const SizedBox.shrink();
+    final line = Row(
+      children: [
+        Icon(Icons.repeat, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+    final manage = repeat.running
+        ? TestId(
+            'edit-repeat-manage',
+            button: true,
+            child: TextButton(
+              onPressed: onManage,
+              child: ButtonLabel(l10n.repeatManage),
+            ),
+          )
+        : null;
+    // At large text Manage goes under the line, at its end, as a Timeline
+    // row's amount does: the line keeps the sheet's width.
+    final stacked = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: TestId.container(
+        'edit-repeat',
+        child: stacked
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  line,
+                  if (manage != null)
+                    Align(alignment: AlignmentDirectional.centerEnd, child: manage),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: line),
+                  ?manage,
+                ],
+              ),
+      ),
     );
   }
 }

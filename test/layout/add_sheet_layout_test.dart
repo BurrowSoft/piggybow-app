@@ -163,6 +163,13 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Enter an amount.'), findsOneWidget);
       await checkSheet(tester, 'A3');
+      // checkSheet ends at the sheet's end (the Repeat row): the category's
+      // error is above, out of the lazy list's reach at large text.
+      await tester.scrollUntilVisible(
+        find.text('Pick a category.'),
+        -120,
+        scrollable: sheetList(),
+      );
       expect(find.text('Pick a category.'), findsOneWidget);
     });
 

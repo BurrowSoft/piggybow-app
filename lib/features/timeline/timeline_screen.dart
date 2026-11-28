@@ -11,12 +11,14 @@ import '../../journal/entry.dart';
 import '../../journal/goal.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
+import '../../repeat/repeat.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../../theme/theme.dart';
 import '../add/add_again.dart';
 import '../add/entry_sheet.dart';
 import '../goal/take_out_sheet.dart';
+import '../repeat/repeat_choice.dart';
 import '../../core/fit_text.dart';
 import '../shell/tab_top.dart';
 import 'timeline_search.dart';
@@ -42,6 +44,9 @@ class _TimelineScreenState extends State<TimelineScreen>
 
   /// Your own categories by id (Plus): a spend in one shows its name and icon.
   Map<String, CustomCategory> _customs = const {};
+
+  /// The repeats that entries belong to (stopped ones too): their mark.
+  Map<String, Repeat> _repeats = const {};
   AppServices? _services;
 
   /// The search field is open. It stays open, with what's typed, through
@@ -81,6 +86,11 @@ class _TimelineScreenState extends State<TimelineScreen>
       if (g != null) goals[id] = g;
     }
     final customs = {for (final c in await store.customCategories()) c.id: c};
+    final repeats = <String, Repeat>{};
+    for (final id in {for (final e in entries) ?e.repeatId}) {
+      final r = await store.repeat(id);
+      if (r != null) repeats[id] = r;
+    }
     if (!mounted) return;
     setState(() {
       _entries = entries;
@@ -88,6 +98,7 @@ class _TimelineScreenState extends State<TimelineScreen>
       _customs = customs;
       // Nothing left to search: the field goes with the last entry.
       if (entries.isEmpty) _endSearch();
+      _repeats = repeats;
     });
   }
 
@@ -221,7 +232,12 @@ class _TimelineScreenState extends State<TimelineScreen>
                     // that leaves nothing stays as it was.
                     child: shown!.isEmpty && words.isNotEmpty
                         ? const _NoMatch()
-                        : _Days(entries: shown, goals: _goals, customs: _customs),
+                        : _Days(
+                            entries: shown,
+                            goals: _goals,
+                            customs: _customs,
+                            repeats: _repeats,
+                          ),
                   ),
                 ],
               ),
@@ -315,11 +331,13 @@ class _Days extends StatelessWidget {
     required this.entries,
     required this.goals,
     required this.customs,
+    required this.repeats,
   });
 
   final List<Entry> entries;
   final Map<String, Goal> goals;
   final Map<String, CustomCategory> customs;
+  final Map<String, Repeat> repeats;
 
   @override
   Widget build(BuildContext context) {
@@ -347,6 +365,7 @@ class _Days extends StatelessWidget {
           entry: entry,
           goal: goals[entry.goalId],
           customs: customs,
+          repeat: repeats[entry.repeatId],
           locale: locale,
         ),
       },
@@ -434,12 +453,17 @@ class _Row extends StatelessWidget {
     required this.entry,
     required this.goal,
     required this.customs,
+    required this.repeat,
     required this.locale,
   });
 
   final Entry entry;
   final Goal? goal;
   final Map<String, CustomCategory> customs;
+
+  /// The repeat the entry belongs to, if any: a small repeat mark after its
+  /// name, read out as "Repeats every month" (or week).
+  final Repeat? repeat;
   final String locale;
 
   @override
@@ -550,9 +574,34 @@ class _Row extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // In ink: the theme's bodyLarge is muted.
-                          Text(
-                            title,
+                          // In ink: the theme's bodyLarge is muted. A
+                          // repeat's mark follows the name (a WidgetSpan
+                          // scales with the text).
+                          Text.rich(
+                            TextSpan(
+                              text: title,
+                              children: [
+                                if (repeat case final r?)
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Padding(
+                                      padding: const EdgeInsetsDirectional.only(
+                                        start: 6,
+                                      ),
+                                      child: Icon(
+                                        Icons.repeat,
+                                        size: 16,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                        semanticLabel: repeatA11y(
+                                          l10n,
+                                          r.schedule.kind,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: theme.colorScheme.onSurface,
                             ),

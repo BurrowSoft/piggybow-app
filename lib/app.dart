@@ -6,6 +6,7 @@ import 'core/services.dart';
 import 'core/system_bars.dart';
 import 'features/lock/lock_screen.dart';
 import 'features/reminder/reminder_sync.dart';
+import 'features/repeat/repeat_catch_up.dart';
 import 'features/widget/widget_sync.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'session/app_session.dart';
@@ -35,51 +36,54 @@ class PiggybowApp extends StatelessWidget {
         services: services,
         child: SessionScope(
           session: session,
-          child: ReminderSync(
-            session: session,
+          child: RepeatCatchUp(
             services: services,
-            child: ListenableBuilder(
-              // Plus too: a theme shows only while Plus is active.
-              listenable: Listenable.merge([
-                session,
-                if (services.plus != null) services.plus!,
-              ]),
-              builder: (context, _) => MaterialApp.router(
-                onGenerateTitle: (context) =>
-                    AppLocalizations.of(context).appName,
-                debugShowCheckedModeBanner: false,
-                scrollBehavior: const AppScrollBehavior(),
-                theme: buildTheme(
-                  Brightness.light,
-                  disableAnimations: config.disableAnimations,
-                  plusPalette: _palette,
-                ),
-                darkTheme: buildTheme(
-                  Brightness.dark,
-                  disableAnimations: config.disableAnimations,
-                  plusPalette: _palette,
-                ),
-                // The user's choice, else the device language if shipped,
-                // else English (v0.1 ships English only).
-                locale: session.locale,
-                // Me → Appearance, this device only.
-                themeMode: session.themeMode,
-                supportedLocales: AppLocalizations.supportedLocales,
-                localizationsDelegates: AppLocalizations.localizationsDelegates,
-                routerConfig: router,
-                // See-through status and navigation bars over every page (the
-                // lock screen too); the lock screen and the app-switcher cover.
-                // The home-screen widget kept in step, in builds with Plus.
-                builder: (context, child) => WidgetSync(
-                  enabled: config.plusEnabled,
-                  session: session,
-                  services: services,
-                  plusActive: PlusActive(services.plus),
-                  child: PageSystemBars(
-                    child: LockGate(
-                      lock: services.appLock,
-                      session: session,
-                      child: child!,
+            child: ReminderSync(
+              session: session,
+              services: services,
+              child: ListenableBuilder(
+                // Plus too: a theme shows only while Plus is active.
+                listenable: Listenable.merge([
+                  session,
+                  if (services.plus != null) services.plus!,
+                ]),
+                builder: (context, _) => MaterialApp.router(
+                  onGenerateTitle: (context) =>
+                      AppLocalizations.of(context).appName,
+                  debugShowCheckedModeBanner: false,
+                  scrollBehavior: const AppScrollBehavior(),
+                  theme: buildTheme(
+                    Brightness.light,
+                    disableAnimations: config.disableAnimations,
+                    plusPalette: _palette,
+                  ),
+                  darkTheme: buildTheme(
+                    Brightness.dark,
+                    disableAnimations: config.disableAnimations,
+                    plusPalette: _palette,
+                  ),
+                  // The user's choice, else the device language if shipped,
+                  // else English (v0.1 ships English only).
+                  locale: session.locale,
+                  // Me → Appearance, this device only.
+                  themeMode: session.themeMode,
+                  supportedLocales: AppLocalizations.supportedLocales,
+                  localizationsDelegates: AppLocalizations.localizationsDelegates,
+                  routerConfig: router,
+                  // See-through status and navigation bars over every page (the
+                  // lock screen too); the lock screen and the app-switcher cover.
+                  // The home-screen widget kept in step, in builds with Plus.
+                  builder: (context, child) => WidgetSync(
+                    enabled: config.plusEnabled,
+                    session: session,
+                    services: services,
+                    plusActive: PlusActive(services.plus),
+                    child: PageSystemBars(
+                      child: LockGate(
+                        lock: services.appLock,
+                        session: session,
+                        child: child!,
+                      ),
                     ),
                   ),
                 ),
