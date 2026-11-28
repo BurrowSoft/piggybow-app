@@ -1,7 +1,7 @@
 {
-  "source_sha": "aface86e07c59ae098e620d44dc27df72763a0c5",
-  "ref": "aface86e07c59ae098e620d44dc27df72763a0c5",
-  "run_id": "46113004460",
+  "source_sha": "a17347569e48ac8f52241f854f52ce2687e97e68",
+  "ref": "a17347569e48ac8f52241f854f52ce2687e97e68",
+  "run_id": "46115346956",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -74,6 +74,24 @@
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, light)",
       "sha256": "11c1fcbf356cfb25c65740cb4db1ca75b55819ac36a9da79293f5cee8cad24a7",
       "bytes": 191588,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_save-toward_dark_320x2.png",
+      "state": "PG2",
+      "test": "PG2 the Add sheet: Save toward (320 dp, text ×2, dark)",
+      "sha256": "24f8f83621987391562c67057fd2514974f637818396ae97f2723eccb5ccab95",
+      "bytes": 115922,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_save-toward_light_320x2.png",
+      "state": "PG2",
+      "test": "PG2 the Add sheet: Save toward (320 dp, text ×2, light)",
+      "sha256": "09d98b00b39167d47dbb91bf8466e2a2398b2cd9e991b7368b3ed13f2e54c303",
+      "bytes": 116702,
       "width": 960,
       "height": 2340
     },
@@ -243,8 +261,8 @@
       "file": "goal-done_celebration_dark_320x2.png",
       "state": "X1",
       "test": "G3 the celebration (320 dp, text ×2, dark)",
-      "sha256": "510c7f9659c45627a2e42101b73cbf7880ec29cbb4fe235ce52d16d0321a9234",
-      "bytes": 195630,
+      "sha256": "fa769d1a54f9ab5ab489f3ede6da8932402d957ed652911e89815fa81f60e076",
+      "bytes": 198792,
       "width": 960,
       "height": 2340
     },
@@ -252,8 +270,8 @@
       "file": "goal-done_celebration_light_320x2.png",
       "state": "X1",
       "test": "G3 the celebration (320 dp, text ×2, light)",
-      "sha256": "ab7056997e715850bbeaf4e280dc4ee6ac2ce3495ea824efc5bd1a2fd3b64aae",
-      "bytes": 187528,
+      "sha256": "3db04654337d0c1a7cc312c03fb4c52f7b4fda15c09a6079b1cd18db4e8d9773",
+      "bytes": 190703,
       "width": 960,
       "height": 2340
     },
@@ -297,8 +315,8 @@
       "file": "home_delighted_dark_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig delighted (contract C4) (320 dp, text ×2, dark)",
-      "sha256": "8f07ef40ed019ca00cfa9d6c7b9cce069aea24333b8d829ae25cd35772d6e0e5",
-      "bytes": 168399,
+      "sha256": "96913608fc573d7298f295c9f15ec9f6ebd79fde762dac06ad5f4332e3de812a",
+      "bytes": 171748,
       "width": 960,
       "height": 2340
     },
@@ -306,8 +324,8 @@
       "file": "home_delighted_light_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig delighted (contract C4) (320 dp, text ×2, light)",
-      "sha256": "187a282ec886477ad7eab2e6213c38c331b0e9bb15da79e8f0a4189e51c0bca6",
-      "bytes": 168344,
+      "sha256": "aaa45f23150c58c59f090b99039c66215d675bd71d471e7d142960850c8f37a1",
+      "bytes": 171152,
       "width": 960,
       "height": 2340
     },
@@ -333,8 +351,8 @@
       "file": "home_first-day_dark_320x2.png",
       "state": "H1",
       "test": "H1 Home on the first day (320 dp, text ×2, dark)",
-      "sha256": "19e6b55d96a23f164baec0c72ead253fc312485c3e12fe8846af5e0a311f0e9e",
-      "bytes": 174313,
+      "sha256": "3ebfd2e6c30672bf6cdc00362b5f0ccd1e6d04403886a4e71e8f931f44ca0d9d",
+      "bytes": 177528,
       "width": 960,
       "height": 2340
     },
@@ -342,8 +360,8 @@
       "file": "home_first-day_light_320x2.png",
       "state": "H1",
       "test": "H1 Home on the first day (320 dp, text ×2, light)",
-      "sha256": "e96d429d0a4593626c1a5d68800812da6f3089f1c543d57ae98a2fb73cef84c7",
-      "bytes": 174695,
+      "sha256": "3dacb4a435ebce05db7493045a120940995863d6fcfc41a6f2f707328449fa9f",
+      "bytes": 177833,
       "width": 960,
       "height": 2340
     },
@@ -387,8 +405,8 @@
       "file": "home_full_dark_320x2.png",
       "state": "H2",
       "test": "H2 Home full: a plan, the offer, a long goal, large amounts (320 dp, text ×2, dark)",
-      "sha256": "5668885fa9f56829eb2ed70e12d6cd7975face22fbbef8e20760f146fdf01280",
-      "bytes": 160058,
+      "sha256": "441cabe29c75f050bec9c79475a0752a5ec2a434e18ecc6753ba0bda2bb99688",
+      "bytes": 163266,
       "width": 960,
       "height": 2340
     },
@@ -396,8 +414,8 @@
       "file": "home_full_light_320x2.png",
       "state": "H2",
       "test": "H2 Home full: a plan, the offer, a long goal, large amounts (320 dp, text ×2, light)",
-      "sha256": "79b2ff0cdd81835997a2bfa8e53283fb6b6fbc2cb9056a900fe4a45295e31ebf",
-      "bytes": 159772,
+      "sha256": "59cde403e5558ba05f03344fed66939520da2a21a39c126cf140c328e303b97f",
+      "bytes": 162950,
       "width": 960,
       "height": 2340
     },
@@ -423,8 +441,8 @@
       "file": "home_happy_dark_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig happy (contract C3) (320 dp, text ×2, dark)",
-      "sha256": "5668885fa9f56829eb2ed70e12d6cd7975face22fbbef8e20760f146fdf01280",
-      "bytes": 160058,
+      "sha256": "441cabe29c75f050bec9c79475a0752a5ec2a434e18ecc6753ba0bda2bb99688",
+      "bytes": 163266,
       "width": 960,
       "height": 2340
     },
@@ -432,8 +450,26 @@
       "file": "home_happy_light_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig happy (contract C3) (320 dp, text ×2, light)",
-      "sha256": "79b2ff0cdd81835997a2bfa8e53283fb6b6fbc2cb9056a900fe4a45295e31ebf",
-      "bytes": 159772,
+      "sha256": "59cde403e5558ba05f03344fed66939520da2a21a39c126cf140c328e303b97f",
+      "bytes": 162950,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_new-goal_dark_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, dark)",
+      "sha256": "96c5270fe65fb82c3df6fc4cb6b03df09e965d8fd4ea330be5208789f124d363",
+      "bytes": 184101,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_new-goal_light_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, light)",
+      "sha256": "4e6cec57259bb0f80115b6a3075f784312f49c5dd9c9548558caa0edad172f22",
+      "bytes": 184696,
       "width": 960,
       "height": 2340
     },
@@ -477,8 +513,8 @@
       "file": "home_reached_dark_320x2.png",
       "state": "H4",
       "test": "H4/H5 Home after a goal was reached: \"Reached:\" and the longest line (320 dp, text ×2, dark)",
-      "sha256": "113a0f863a1fecb8834261c92401bbc39b220d349157df94060b456f366a9b4d",
-      "bytes": 174986,
+      "sha256": "628511e338faaf9b86541db150d0f75ff4cddd966e4acc4d3d6ab346602a9f7f",
+      "bytes": 178312,
       "width": 960,
       "height": 2340
     },
@@ -486,8 +522,8 @@
       "file": "home_reached_light_320x2.png",
       "state": "H4",
       "test": "H4/H5 Home after a goal was reached: \"Reached:\" and the longest line (320 dp, text ×2, light)",
-      "sha256": "74461888cbf9ca57ce5ddd1a8c3ca0c40be85f8dda7aaf7b165e5e1c3dfb3757",
-      "bytes": 174898,
+      "sha256": "d507a6db340b17c56744cfb74a049049cebf6c35623b7242a293ebba6c5959d9",
+      "bytes": 177636,
       "width": 960,
       "height": 2340
     },
@@ -513,8 +549,8 @@
       "file": "home_sleepy_dark_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, dark)",
-      "sha256": "a758a2ce75ca8c12f98db5a4152a045220e50cf3c974be673fd18e5a4b6d2089",
-      "bytes": 159633,
+      "sha256": "05bdb3d3ad228f77b0010c031ad8e85b3734545c8c3ad761b879fbcb1ceeda0b",
+      "bytes": 163191,
       "width": 960,
       "height": 2340
     },
@@ -522,8 +558,26 @@
       "file": "home_sleepy_light_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, light)",
-      "sha256": "7b2be9e7bd2deeac50abc49928ec64d74ade9eaeebab83b0f9f0e244b2e7a905",
-      "bytes": 159109,
+      "sha256": "2ab26dc2922ca7af16458ecb275ac5313d020b3dc400c3379101dee826332276",
+      "bytes": 162520,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_two-goals_dark_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, dark)",
+      "sha256": "83896c3cd90cec4967a9b4705b92d4fdd8246fa6f6c4bb5757b7e3161783fa43",
+      "bytes": 176035,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_two-goals_light_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, light)",
+      "sha256": "073a5afd051c76ef6a589e6e812111c359049d62c2ea98e8560822a8fdd99b51",
+      "bytes": 177307,
       "width": 960,
       "height": 2340
     },
@@ -675,8 +729,8 @@
       "file": "me-privacy_lines_dark_320x2.png",
       "state": "M8",
       "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, dark)",
-      "sha256": "1420cc1afdd0002b5243d098e934fe75967f4943b2eeee738323bf52ff9401f9",
-      "bytes": 219144,
+      "sha256": "c1626b89620c2d07acddcf066ba044b58ec5ccfd353c30d866a6b986bf250b54",
+      "bytes": 219407,
       "width": 960,
       "height": 2340
     },
@@ -684,8 +738,8 @@
       "file": "me-privacy_lines_light_320x2.png",
       "state": "M8",
       "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
-      "sha256": "30f94d7c74549d940c1016ce1690abcacc1b4dca621692719659ec9a39a3ebbc",
-      "bytes": 219885,
+      "sha256": "7f53820a8ac6d70f078d56794856f56ee16845289ef2dd873a46233ae76df3dd",
+      "bytes": 220169,
       "width": 960,
       "height": 2340
     },
@@ -924,11 +978,29 @@
       "height": 2340
     },
     {
+      "file": "me_reached-row_dark_320x2.png",
+      "state": "PG3",
+      "test": "PG3 Me's Reached goals row (320 dp, text ×2, dark)",
+      "sha256": "01a7e0e1d388f41650b2aa765203d09b67d4b3bd41680d1530aad7d396b8189a",
+      "bytes": 179273,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_reached-row_light_320x2.png",
+      "state": "PG3",
+      "test": "PG3 Me's Reached goals row (320 dp, text ×2, light)",
+      "sha256": "044f53860c125d5e481e79111f0f7c7acfc2bb18ab4411ab919ff077a0806909",
+      "bytes": 179991,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "pig_calm_dark_200x1.png",
       "state": "P2",
       "test": "the pig, calm (dark)",
-      "sha256": "59b9ea7bc0ec454916c4a3dccab124e2b0678c82a9cff6463ffe3458e63cbb65",
-      "bytes": 18158,
+      "sha256": "228594fafb4d4f0fecdbf5f478cf12a3f1a2f6f56c5e98cc6d1178599dc975d1",
+      "bytes": 22527,
       "width": 600,
       "height": 600
     },
@@ -936,8 +1008,8 @@
       "file": "pig_calm_light_200x1.png",
       "state": "P2",
       "test": "the pig, calm (light)",
-      "sha256": "010c1aafe233425d14ba308aa71b316b569db67fcaf64149083a9cd373906737",
-      "bytes": 16404,
+      "sha256": "7e5e991273ad969a41c3eab413c4d3bd62e8d18ff319ec392f67257a25ecc7a5",
+      "bytes": 19940,
       "width": 600,
       "height": 600
     },
@@ -945,8 +1017,8 @@
       "file": "pig_delighted_dark_200x1.png",
       "state": "P4",
       "test": "the pig, delighted (dark)",
-      "sha256": "e5f022cc53772cfbbba13ee149a2005ed3b2a4df1f5e878c615d5b3ab12ef779",
-      "bytes": 22636,
+      "sha256": "62c1ff57077ce658157446e53accf2449b0456ef541684263781d10db72f0195",
+      "bytes": 26593,
       "width": 600,
       "height": 600
     },
@@ -954,8 +1026,8 @@
       "file": "pig_delighted_light_200x1.png",
       "state": "P4",
       "test": "the pig, delighted (light)",
-      "sha256": "2aad91d1670ff2b2e75ea6e81bf01065e471671d672e19c6216c49ba3b18f8cc",
-      "bytes": 19995,
+      "sha256": "470d50dd1183b236d67cf8ee7e702cc64a78aed7f1ff17a40525b71b4d36f8d7",
+      "bytes": 23370,
       "width": 600,
       "height": 600
     },
@@ -963,8 +1035,8 @@
       "file": "pig_happy_dark_200x1.png",
       "state": "P3",
       "test": "the pig, happy (dark)",
-      "sha256": "5371de1db8dbe57dcb85edacf8426450e98e97b845e94d01a50e8c0946c51e98",
-      "bytes": 18472,
+      "sha256": "a1bbb283451f370c6d065ca1a54a6396de01c060f1e550ce75b0fc5f4bf498cd",
+      "bytes": 22823,
       "width": 600,
       "height": 600
     },
@@ -972,8 +1044,8 @@
       "file": "pig_happy_light_200x1.png",
       "state": "P3",
       "test": "the pig, happy (light)",
-      "sha256": "ab72266af6a4316bf43582de8a1a39a17fd3c0ae939c243794268cc28ac80490",
-      "bytes": 16473,
+      "sha256": "e43d43b9adccf14f99983f1660283244a2bfbba0900f7e603c57b2243fc6bae5",
+      "bytes": 20019,
       "width": 600,
       "height": 600
     },
@@ -981,8 +1053,8 @@
       "file": "pig_sleepy_dark_200x1.png",
       "state": "P1",
       "test": "the pig, sleepy (dark)",
-      "sha256": "5adeed27dd94069861f0aee14c2fb9f0cf1895e468a13726a5fbd773e1abdf65",
-      "bytes": 18968,
+      "sha256": "8f8b439d6254794a1508a318c780d67b1ef652611c4a59521b6feacc8f0b53f3",
+      "bytes": 23302,
       "width": 600,
       "height": 600
     },
@@ -990,8 +1062,8 @@
       "file": "pig_sleepy_light_200x1.png",
       "state": "P1",
       "test": "the pig, sleepy (light)",
-      "sha256": "51604d343c2598aa4576db06430f1f908df1583fb067615aaad6211080fb9e72",
-      "bytes": 16873,
+      "sha256": "b92940de4bc635972fde12dc109a0e17e41bb21d8a2127d069a9e4fc38488279",
+      "bytes": 20371,
       "width": 600,
       "height": 600
     },
@@ -1017,8 +1089,8 @@
       "file": "plus_offer_dark_320x2.png",
       "state": "PL1",
       "test": "PL1 the paywall, the offer (320 dp, text ×2, dark)",
-      "sha256": "34b303a074065a82d18dc98ad8dc3bef422bbd51ff6f69c99239c40d565c04bc",
-      "bytes": 205170,
+      "sha256": "14b2094953b53421e4e7d1078dd1bcc23230358a46938d6852cb34f78f799c0a",
+      "bytes": 207855,
       "width": 960,
       "height": 2340
     },
@@ -1026,8 +1098,8 @@
       "file": "plus_offer_light_320x2.png",
       "state": "PL1",
       "test": "PL1 the paywall, the offer (320 dp, text ×2, light)",
-      "sha256": "a7eeef92e24690159b8373440d43af1a6089b52fdb045c5ab2387d640f326922",
-      "bytes": 204018,
+      "sha256": "16da99462733a87b9cb0461a79bf6c8190e7cf181b40e21122bed8324dbac81c",
+      "bytes": 206148,
       "width": 960,
       "height": 2340
     },
@@ -1035,8 +1107,8 @@
       "file": "plus_on-end_dark_320x2.png",
       "state": "PL3",
       "test": "PL3 the paywall with Plus on (320 dp, text ×2, dark)",
-      "sha256": "207a3c610c8725114e769497f1391b3cf05cbc067003b38d2a8edb1ae5ef20ce",
-      "bytes": 185107,
+      "sha256": "216a96edb1b8efcf07fb4d7a003239aa9e921cc603b46374c2146ec2c87802d1",
+      "bytes": 187563,
       "width": 960,
       "height": 2340
     },
@@ -1044,8 +1116,8 @@
       "file": "plus_on-end_light_320x2.png",
       "state": "PL3",
       "test": "PL3 the paywall with Plus on (320 dp, text ×2, light)",
-      "sha256": "45b6ff2833c199e92aba25bca6d84d535874211476dbf5d8e9a76f8ae0670a68",
-      "bytes": 184133,
+      "sha256": "227f1a775fabd264c6645530e1cd8a659bcd3661ab67500d058eca869f8eee19",
+      "bytes": 186354,
       "width": 960,
       "height": 2340
     },
@@ -1053,8 +1125,8 @@
       "file": "plus_on_dark_320x2.png",
       "state": "PL3",
       "test": "PL3 the paywall with Plus on (320 dp, text ×2, dark)",
-      "sha256": "5fa5bf98a678dbc5f533cccacbf19dd02c6c1f28d16d7d188d62c7d72ac68800",
-      "bytes": 185335,
+      "sha256": "314094b35a056bb6c64f6a15a9aaaf7f8e853d3ffe94eee7f27be6dfed16d42c",
+      "bytes": 187720,
       "width": 960,
       "height": 2340
     },
@@ -1062,8 +1134,8 @@
       "file": "plus_on_light_320x2.png",
       "state": "PL3",
       "test": "PL3 the paywall with Plus on (320 dp, text ×2, light)",
-      "sha256": "58e580ac672f3a008418cb8a505bf17289036da7042e0a4856177ecbddf2bd0b",
-      "bytes": 184271,
+      "sha256": "d815cd939d57398df26c663179afbec1491217d25ecdb8d37ed728fcae475d5b",
+      "bytes": 186441,
       "width": 960,
       "height": 2340
     },
@@ -1071,8 +1143,8 @@
       "file": "plus_pending_dark_320x2.png",
       "state": "PL2",
       "test": "PL2 a pending payment's note (320 dp, text ×2, dark)",
-      "sha256": "e218cef31b7cf48b20aa295f47a7b84a4dbb9357b75970f0dc2e53e0c56c6e3e",
-      "bytes": 212718,
+      "sha256": "8c06995bb87ae6d6a7a25a4bf159c57ed779a3008ab251bc7a7a1cb3bdd9d381",
+      "bytes": 209312,
       "width": 960,
       "height": 2340
     },
@@ -1080,8 +1152,8 @@
       "file": "plus_pending_light_320x2.png",
       "state": "PL2",
       "test": "PL2 a pending payment's note (320 dp, text ×2, light)",
-      "sha256": "8b2b34b63e6f44ac1160e17b1423ccf280149d3ef35a2f24244f21c3aa186357",
-      "bytes": 213513,
+      "sha256": "489afa3426cbc960d40b9f0ed0ddf66b7942cc80f4ce24ccb26cfc4af4c3d950",
+      "bytes": 210840,
       "width": 960,
       "height": 2340
     },
@@ -1156,6 +1228,24 @@
       "bytes": 52392,
       "width": 960,
       "height": 960
+    },
+    {
+      "file": "reached_list_dark_320x2.png",
+      "state": "PG4",
+      "test": "PG4 the Reached goals list (320 dp, text ×2, dark)",
+      "sha256": "8a5994e28b576789d609a0a09a7c5076b3afec82cdcbda7c0e35a8b64fae60a5",
+      "bytes": 114686,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "reached_list_light_320x2.png",
+      "state": "PG4",
+      "test": "PG4 the Reached goals list (320 dp, text ×2, light)",
+      "sha256": "12c1848211b0b3df0db642a00ee3fe672bb1c5fe2901be696cc83fa7cd4c5d20",
+      "bytes": 114450,
+      "width": 960,
+      "height": 2340
     },
     {
       "file": "summary_empty-week_dark_360x1.png",
@@ -1314,8 +1404,8 @@
       "file": "timeline_empty_dark_320x2.png",
       "state": "C1",
       "test": "C1 empty: the pig and the first-entry button (320 dp, text ×2, dark)",
-      "sha256": "15d50f8bc8e364524b67774622a2c854ba5ec52cb4c34c1832d2095abe7db03a",
-      "bytes": 129302,
+      "sha256": "9e18132ab3bdfee7c2ad8a5639b616fb6b8d239e6663bccd3fc316e4977f4687",
+      "bytes": 132168,
       "width": 960,
       "height": 2340
     },
@@ -1323,8 +1413,8 @@
       "file": "timeline_empty_light_320x2.png",
       "state": "C1",
       "test": "C1 empty: the pig and the first-entry button (320 dp, text ×2, light)",
-      "sha256": "699d9c8553e10f1597493eae1b45077cc5701b7f5e9cd7b66d9aed65697b44ac",
-      "bytes": 128264,
+      "sha256": "aeab37ddffc2182b319bd15cb7345818eed3a89ceae0e6a0e5a99b06f3889027",
+      "bytes": 130764,
       "width": 960,
       "height": 2340
     },
