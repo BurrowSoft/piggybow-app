@@ -27,8 +27,10 @@ const ICON = readFileSync(path.join(SRC, 'icon.svg'), 'utf8');
 const PIG = readFileSync(path.join(SRC, 'pig-calm.svg'), 'utf8');
 
 // ---------------------------------------------------------------- SVG subset ----
-// rect (x, y, width, height, rx), ellipse, circle, path (M L H V Q A Z, absolute; circular A),
-// fill / stroke / stroke-width / opacity, and <g transform="translate(a,b) scale(s)">.
+// rect (x, y, width, height, rx), ellipse, circle, path (M L H V Q A Z, absolute; circular A; one
+// subpath), each with fill, stroke, stroke-width, stroke-linecap and stroke-linejoin (round only)
+// and opacity; and <g transform="..."> with translate() and scale(), where a negative scale mirrors.
+// Anything else throws, so a shape is never drawn anywhere but where the SVG puts it.
 
 function attrsOf(s) {
   const a = {};
@@ -38,36 +40,143 @@ function attrsOf(s) {
   return a;
 }
 
-/** Every drawable element, with its group's transform (x' = s*x + tx). */
+const GEOMETRY = {
+  path: ['d'],
+  ellipse: ['cx', 'cy', 'rx', 'ry'],
+  circle: ['cx', 'cy', 'r'],
+  rect: ['x', 'y', 'width', 'height', 'rx'],
+};
+const PAINT = ['fill', 'stroke', 'stroke-width', 'stroke-linecap', 'stroke-linejoin', 'opacity'];
+
+/**
+ * A group's transform as x' = sx * x + tx, y' = sy * y + ty: translate() and scale() only (a
+ * negative scale mirrors), composed left to right as SVG does. Anything else throws.
+ */
+function transformOf(text) {
+  const t = { tx: 0, ty: 0, sx: 1, sy: 1 };
+  const step = /\s*(translate|scale)\(\s*(-?\d*\.?\d+)(?:(?:\s*,\s*|\s+)(-?\d*\.?\d+))?\s*\)\s*/y;
+  for (let at = 0; at < text.length; at = step.lastIndex) {
+    step.lastIndex = at;
+    const m = step.exec(text);
+    if (!m) throw new Error(`transform="${text}": only translate() and scale() are supported`);
+    const a = +m[2];
+    const b = m[3] === undefined ? null : +m[3];
+    if (m[1] === 'translate') {
+      t.tx += t.sx * a;
+      t.ty += t.sy * (b ?? 0);
+    } else {
+      t.sx *= a;
+      t.sy *= b ?? a;
+    }
+  }
+  return t;
+}
+
+/** Every drawable element, with the transform of the groups around it (x' = sx*x + tx, y' = sy*y + ty). */
 function shapesOf(svg) {
-  const unsupported = /<(text|image|use|linearGradient|radialGradient|polygon|polyline|line|filter|mask|clipPath)\b/i.exec(svg);
+  const unsupported = /<(text|image|use|defs|style|symbol|pattern|linearGradient|radialGradient|polygon|polyline|line|filter|mask|clipPath)\b/i.exec(svg);
   if (unsupported) throw new Error('unsupported element <' + unsupported[1] + '>');
   const viewBox = /viewBox="([^"]+)"/.exec(svg)[1].trim().split(/[\s,]+/).map(Number);
   const out = [];
-  const stack = [{ tx: 0, ty: 0, s: 1 }];
+  const stack = [{ tx: 0, ty: 0, sx: 1, sy: 1 }];
   const re = /<(\/?)(g|ellipse|circle|rect|path)\b([^>]*?)\/?>/g;
   let m;
   while ((m = re.exec(svg))) {
     const [, close, tag, raw] = m;
     const t = stack[stack.length - 1];
+    const a = attrsOf(raw);
     if (tag === 'g') {
       if (close) {
         stack.pop();
         continue;
       }
-      const a = attrsOf(raw);
-      const tr = /translate\(([-\d.]+)[ ,]+([-\d.]+)\)/.exec(a.transform || '');
-      const sc = /scale\(([-\d.]+)\)/.exec(a.transform || '');
-      const tx = tr ? +tr[1] : 0;
-      const ty = tr ? +tr[2] : 0;
-      const s = sc ? +sc[1] : 1;
-      stack.push({ tx: t.tx + t.s * tx, ty: t.ty + t.s * ty, s: t.s * s });
+      const other = Object.keys(a).filter((k) => k !== 'transform');
+      if (other.length) throw new Error(`<g ${other.join(' ')}>: a group here only moves, scales and mirrors`);
+      const g = transformOf(a.transform ?? '');
+      const next = { tx: t.tx + t.sx * g.tx, ty: t.ty + t.sy * g.ty, sx: t.sx * g.sx, sy: t.sy * g.sy };
+      if (Math.abs(next.sx) !== Math.abs(next.sy)) throw new Error(`transform="${a.transform}": scale both ways alike (a mirror is fine)`);
+      stack.push(next);
       continue;
     }
     if (close) continue;
-    out.push({ tag, a: attrsOf(raw), t: { ...t } });
+    const unknown = Object.keys(a).filter((k) => !GEOMETRY[tag].includes(k) && !PAINT.includes(k));
+    if (unknown.length) throw new Error(`<${tag} ${unknown.join(' ')}>: not supported`);
+    if (a.fill === undefined) throw new Error(`<${tag}>: give its fill (or fill="none")`);
+    if (a.stroke && a.stroke !== 'none' && a['stroke-width'] === undefined) throw new Error(`<${tag}>: a stroke needs its stroke-width`);
+    for (const k of ['stroke-linecap', 'stroke-linejoin']) {
+      if (a[k] !== undefined && a[k] !== 'round') throw new Error(`<${tag} ${k}="${a[k]}">: only round is supported`);
+    }
+    if (tag === 'path' && (a.d.match(/m/gi) ?? []).length !== 1) throw new Error('<path>: one subpath per path');
+    out.push({ tag, a, t: { ...t } });
   }
+  if (stack.length !== 1) throw new Error('a <g> is never closed');
   return { viewBox, shapes: out };
+}
+
+/**
+ * The pig's body (its one filled path without a stroke) and its ears: filled and stroked paths,
+ * the outer ear in the body's colour, the inner ear in another. Exactly one body and two of each.
+ */
+function pigParts(shapes) {
+  const filled = shapes.filter((s) => s.tag === 'path' && s.a.fill !== 'none');
+  const bodies = filled.filter((s) => !s.a.stroke);
+  if (bodies.length !== 1) throw new Error(`one body (a filled path without a stroke) expected, ${bodies.length} found`);
+  const [body] = bodies;
+  const ears = filled.filter((s) => s.a.stroke);
+  const outer = ears.filter((s) => s.a.fill === body.a.fill);
+  const inner = ears.filter((s) => s.a.fill !== body.a.fill);
+  if (outer.length !== 2 || inner.length !== 2) {
+    throw new Error(`two ears expected, each an outer and an inner path: ${outer.length} outer and ${inner.length} inner found`);
+  }
+  return { body, outer, inner };
+}
+
+/** Points along a shape's edge in the SVG's own units (after its groups), and half its stroke. */
+function edgeOf({ tag, a, t }) {
+  let pts;
+  if (tag === 'path') {
+    pts = flatten(a.d).flatMap((p) => p.pts);
+  } else if (tag === 'rect') {
+    const x = +(a.x || 0);
+    const y = +(a.y || 0);
+    pts = [
+      [x, y],
+      [x + +a.width, y],
+      [x, y + +a.height],
+      [x + +a.width, y + +a.height],
+    ];
+  } else {
+    const rx = +(a.rx ?? a.r);
+    const ry = +(a.ry ?? a.r);
+    pts = Array.from({ length: 360 }, (_, i) => [+a.cx + rx * Math.cos((i * Math.PI) / 180), +a.cy + ry * Math.sin((i * Math.PI) / 180)]);
+  }
+  const half = a.stroke && a.stroke !== 'none' ? (Math.abs(t.sx) * +a['stroke-width']) / 2 : 0;
+  return { pts: pts.map(([x, y]) => [t.sx * x + t.tx, t.sy * y + t.ty]), half };
+}
+
+/** How far the shapes reach from (cx, cy), strokes included, in the SVG's own units. */
+function reach(shapes, cx, cy) {
+  let r = 0;
+  for (const s of shapes) {
+    const { pts, half } = edgeOf(s);
+    for (const [x, y] of pts) r = Math.max(r, Math.hypot(x - cx, y - cy) + half);
+  }
+  return r;
+}
+
+/** The box the shapes cover, strokes included, in the SVG's own units: [x0, y0, x1, y1]. */
+function extent(shapes) {
+  const box = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const s of shapes) {
+    const { pts, half } = edgeOf(s);
+    for (const [x, y] of pts) {
+      box[0] = Math.min(box[0], x - half);
+      box[1] = Math.min(box[1], y - half);
+      box[2] = Math.max(box[2], x + half);
+      box[3] = Math.max(box[3], y + half);
+    }
+  }
+  return box;
 }
 
 const fmt = (n) => {
@@ -103,20 +212,32 @@ function pathData({ tag, a }) {
 
 const argb = (hex) => '#FF' + hex.slice(1).toUpperCase();
 
-/** One VectorDrawable <path> for a shape, in colour or in white (monochrome). */
-function vectorPath(shape, { white = false, outline = 0 } = {}) {
+/**
+ * One VectorDrawable <path> for a shape: its fill and its stroke as the SVG gives them, in colour or
+ * in white (monochrome). With [outline], only a white line along its edge; [open] leaves off the
+ * closing segment and rounds the line's ends.
+ */
+function vectorPath(shape, { white = false, outline = 0, open = false } = {}) {
   const { a } = shape;
-  const d = pathData(shape);
+  let d = pathData(shape);
+  if (open) {
+    if (!/\s*Z\s*$/i.test(d)) throw new Error('only a closed path can be left open');
+    d = d.replace(/\s*Z\s*$/i, '');
+  }
   const alpha = a.opacity !== undefined && !white ? ` android:fillAlpha="${a.opacity}" android:strokeAlpha="${a.opacity}"` : '';
   if (outline) {
-    return `<path android:strokeColor="#FFFFFFFF" android:strokeWidth="${outline}" android:strokeLineJoin="round" android:pathData="${d}"/>`;
+    const cap = open ? ' android:strokeLineCap="round"' : '';
+    return `<path android:strokeColor="#FFFFFFFF" android:strokeWidth="${outline}"${cap} android:strokeLineJoin="round" android:pathData="${d}"/>`;
   }
+  const colour = (c) => (white ? '#FFFFFFFF' : argb(c));
+  const fill = a.fill !== 'none' ? ` android:fillColor="${colour(a.fill)}"` : '';
+  let stroke = '';
   if (a.stroke && a.stroke !== 'none') {
-    const colour = white ? '#FFFFFFFF' : argb(a.stroke);
-    return `<path android:strokeColor="${colour}" android:strokeWidth="${a['stroke-width']}" android:strokeLineCap="round"${alpha} android:pathData="${d}"/>`;
+    stroke = ` android:strokeColor="${colour(a.stroke)}" android:strokeWidth="${a['stroke-width']}"`;
+    if (a['stroke-linecap']) stroke += ` android:strokeLineCap="${a['stroke-linecap']}"`;
+    if (a['stroke-linejoin']) stroke += ` android:strokeLineJoin="${a['stroke-linejoin']}"`;
   }
-  const colour = white ? '#FFFFFFFF' : argb(a.fill);
-  return `<path android:fillColor="${colour}"${alpha} android:pathData="${d}"/>`;
+  return `<path${fill}${stroke}${alpha} android:pathData="${d}"/>`;
 }
 
 /** Wraps paths in nested groups: the outer placement, then each shape's own SVG group transform. */
@@ -124,11 +245,11 @@ function grouped(shapes, render) {
   const lines = [];
   let open = null;
   for (const sh of shapes) {
-    const key = `${sh.t.tx},${sh.t.ty},${sh.t.s}`;
+    const key = `${sh.t.tx},${sh.t.ty},${sh.t.sx},${sh.t.sy}`;
     if (key !== open) {
       if (open !== null) lines.push('        </group>');
       lines.push(
-        `        <group android:translateX="${fmt(sh.t.tx)}" android:translateY="${fmt(sh.t.ty)}" android:scaleX="${fmt(sh.t.s)}" android:scaleY="${fmt(sh.t.s)}">`,
+        `        <group android:translateX="${fmt(sh.t.tx)}" android:translateY="${fmt(sh.t.ty)}" android:scaleX="${fmt(sh.t.sx)}" android:scaleY="${fmt(sh.t.sy)}">`,
       );
       open = key;
     }
@@ -166,8 +287,11 @@ if (iconArt.length !== icon.shapes.length - 1) throw new Error("icon.svg: the 51
 // Adaptive icon: a 108 dp canvas whose visible centre is 72 dp (the 512 tile maps onto it), with a
 // 66 dp safe circle. The art's farthest point (the outer arc's top, stroke included) is about 229
 // units from the centre; 0.94 of the tile keeps it near 30 dp from the centre, inside the 33 dp safe radius.
+// The ears reach less far. Checked here, so no art leaves the circle unnoticed.
 const ADAPTIVE = (72 / 512) * 0.94;
 const adaptiveShift = (108 - 512 * ADAPTIVE) / 2;
+const adaptiveReach = reach(iconArt, 256, 256) * ADAPTIVE;
+if (adaptiveReach > 33) throw new Error(`the icon's art reaches ${adaptiveReach.toFixed(1)} dp from the centre, past the 33 dp safe radius`);
 
 const foreground = vector({
   comment: 'Adaptive icon foreground: the rainbow and the pig from icon.svg, inside the 66 dp safe zone.',
@@ -180,13 +304,17 @@ const foreground = vector({
 });
 
 // Monochrome (themed icons, Android 13+): only the alpha counts, so the face is drawn as lines:
-// the arcs, the body's outline, the slot, the eyes, the snout's outline, the nostrils and the mouth.
-// The shadow and the cheeks are left out.
+// the arcs, the body's outline, each ear's outer edge (open where it meets the head), the slot, the
+// eyes, the snout's outline, the nostrils and the mouth. The shadow, the cheeks and the inner ears
+// are left out.
+const iconPig = pigParts(iconArt);
 function monochromeShape(s) {
   const { tag, a } = s;
   if (tag === 'ellipse' && a.cy === '184') return null; // shadow
   if (tag === 'ellipse' && (a.cx === '46' || a.cx === '154')) return null; // cheeks
-  if (tag === 'path' && a.fill && a.fill !== 'none') return vectorPath(s, { outline: 7 }); // body
+  if (iconPig.inner.includes(s)) return null; // inner ears
+  if (iconPig.outer.includes(s)) return vectorPath(s, { outline: 7, open: true }); // ears
+  if (s === iconPig.body) return vectorPath(s, { outline: 7 }); // body
   if (tag === 'ellipse' && a.rx === '20') return vectorPath(s, { outline: 4 }); // snout
   return vectorPath(s, { white: true });
 }
@@ -203,20 +331,23 @@ const monochrome = vector({
   ),
 });
 
-// The notification's small icon: white on clear, one even-odd path, so the snout, the eyes and the
-// coin slot are holes in the dome. Pig units (0-200) mapped into 24 dp with 1 dp of padding.
+// The notification's small icon: white on clear. The dome is one even-odd path, so the snout, the
+// eyes and the coin slot are holes in it; the ears are their outer shapes in white, the flopped one
+// in its mirrored group (each path fills on its own, so where an ear meets the dome stays white).
+// The dome and the ears fitted into 24 dp with 1 dp of padding, centred.
 const pig = shapesOf(PIG);
-const body = pig.shapes.find((s) => s.tag === 'path' && s.a.fill && s.a.fill !== 'none');
+const { body, outer: ears } = pigParts(pig.shapes);
 const holes = [
   { tag: 'circle', a: { cx: '62', cy: '118', r: '9' } },
   { tag: 'circle', a: { cx: '138', cy: '118', r: '9' } },
   { tag: 'ellipse', a: { cx: '100', cy: '132', rx: '21', ry: '14' } },
   { tag: 'rect', a: { x: '84', y: '70', width: '32', height: '7', rx: '3.5' } },
 ];
-const NOTE = 22 / 156; // the body is 156 units wide (x 22-178)
+const noteBox = extent([body, ...ears]);
+const NOTE = 22 / Math.max(noteBox[2] - noteBox[0], noteBox[3] - noteBox[1]);
 const notification = `<?xml version="1.0" encoding="utf-8"?>
-<!-- The reminder's small icon: the pig's dome in white on clear (the system colours it), with the
-     eyes, the snout and the coin slot cut out.
+<!-- The reminder's small icon: the pig's dome and ears in white on clear (the system colours it),
+     with the eyes, the snout and the coin slot cut out.
      Generated by tool/icons/generate.mjs from tool/icons/src; edit those, not this file. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
@@ -226,9 +357,10 @@ const notification = `<?xml version="1.0" encoding="utf-8"?>
     <group
         android:scaleX="${fmt(NOTE)}"
         android:scaleY="${fmt(NOTE)}"
-        android:translateX="${fmt(1 - 22 * NOTE)}"
-        android:translateY="${fmt(12 - 121 * NOTE)}">
+        android:translateX="${fmt(12 - ((noteBox[0] + noteBox[2]) / 2) * NOTE)}"
+        android:translateY="${fmt(12 - ((noteBox[1] + noteBox[3]) / 2) * NOTE)}">
         <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd" android:pathData="${[body, ...holes].map(pathData).join(' ')}"/>
+${grouped(ears, (s) => vectorPath(s, { white: true }))}
     </group>
 </vector>
 `;
@@ -244,9 +376,12 @@ const splashPig = vector({
   body: grouped(pig.shapes, (s) => vectorPath(s)),
 });
 
-// ... and Android 12+'s splash icon: 288 dp, art within the 192 dp circle. The pig's farthest point
-// is about 98 units from its centre (100, 121); 0.92 keeps it about 90 dp from the centre.
+// ... and Android 12+'s splash icon: 288 dp, art within the 192 dp circle (the system clips the rest).
+// The pig's farthest point, the raised ear's tip, is about 102 units from its centre (100, 121); 0.92
+// keeps it about 94 dp from the centre. Checked here, like the launcher icon's.
 const SPLASH12 = 0.92;
+const splashReach = reach(pig.shapes, 100, 121) * SPLASH12;
+if (splashReach > 96) throw new Error(`the splash pig reaches ${splashReach.toFixed(1)} dp from the centre, past the 96 dp circle`);
 const splashIcon = vector({
   comment: 'Android 12+ splash icon: the calm pig, inside the 192 dp circle of a 288 dp canvas.',
   size: 288,
@@ -354,28 +489,29 @@ function rasterShapes(svg) {
   return {
     viewBox,
     shapes: shapes.map(({ tag, a, t }) => {
-      const X = (x) => t.s * x + t.tx;
-      const Y = (y) => t.s * y + t.ty;
+      const X = (x) => t.sx * x + t.tx;
+      const Y = (y) => t.sy * y + t.ty;
+      const k = Math.abs(t.sx); // the scale's size, the same both ways (shapesOf checks)
       const sh = {
         op: a.opacity !== undefined ? +a.opacity : 1,
         fill: a.fill === undefined ? [0, 0, 0] : hex(a.fill),
         stroke: a.stroke ? hex(a.stroke) : null,
-        sw: (a['stroke-width'] ? +a['stroke-width'] : 0) * t.s,
+        sw: (a['stroke-width'] ? +a['stroke-width'] : 0) * k,
         segs: [],
       };
       if (tag === 'ellipse' || tag === 'circle') {
         const cx = X(+a.cx);
         const cy = Y(+a.cy);
-        const rx = t.s * +(a.rx ?? a.r);
-        const ry = t.s * +(a.ry ?? a.r);
+        const rx = k * +(a.rx ?? a.r);
+        const ry = k * +(a.ry ?? a.r);
         sh.inside = (x, y) => ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1;
         sh.bb = [cx - rx, cy - ry, cx + rx, cy + ry];
       } else if (tag === 'rect') {
-        const x0 = X(+(a.x || 0));
-        const y0 = Y(+(a.y || 0));
-        const w = t.s * +a.width;
-        const h = t.s * +a.height;
-        const r = t.s * +(a.rx || 0);
+        const w = k * +a.width;
+        const h = k * +a.height;
+        const x0 = X(+(a.x || 0)) - (t.sx < 0 ? w : 0); // a mirror puts the rect's x at its right edge
+        const y0 = Y(+(a.y || 0)) - (t.sy < 0 ? h : 0);
+        const r = k * +(a.rx || 0);
         sh.inside = (x, y) => {
           if (x < x0 || x > x0 + w || y < y0 || y > y0 + h) return false;
           const dx = Math.max(x0 + r - x, 0, x - (x0 + w - r));
@@ -561,3 +697,5 @@ for (const [suffix, px] of [
 
 console.log(written.join('\n'));
 console.log(`${written.length} files`);
+console.log(`adaptive icon: the art reaches ${adaptiveReach.toFixed(1)} dp from the centre (safe radius 33 dp)`);
+console.log(`Android 12 splash: the pig reaches ${splashReach.toFixed(1)} dp from the centre (circle radius 96 dp)`);
