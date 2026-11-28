@@ -25,6 +25,24 @@ List<String> unpinned(String yaml) => [
       m.group(1)!,
 ];
 
+/// A workflow's jobs, from `jobs:` on: each job's id and its own lines.
+Map<String, String> jobsOf(String yaml) {
+  final lines = yaml.split('\n');
+  final start = lines.indexOf('jobs:');
+  if (start < 0) return const {};
+  final jobs = <String, StringBuffer>{};
+  StringBuffer? current;
+  for (final line in lines.skip(start + 1)) {
+    final id = RegExp(r'^  ([\w-]+):\s*$').firstMatch(line)?.group(1);
+    if (id != null) {
+      current = jobs[id] = StringBuffer();
+    } else {
+      current?.writeln(line);
+    }
+  }
+  return {for (final e in jobs.entries) e.key: e.value.toString()};
+}
+
 void main() {
   String read(File f) => f.readAsStringSync().replaceAll('\r\n', '\n');
   final workflows = {
@@ -252,5 +270,22 @@ steps:
       }
     }
     expect(downloads, greaterThanOrEqualTo(3), reason: 'downloads found');
+  });
+
+  // A secret only in an environment, which gives it to runs from master
+  // only: each job that reads one, GITHUB_TOKEN aside, names its
+  // environment, so no other job can read it.
+  test('every job that reads a secret runs in an environment', () {
+    final secret = RegExp(r'secrets\.(?!GITHUB_TOKEN\b)\w+');
+    final environment = RegExp(r'^    environment:', multiLine: true);
+    final readers = <String>[];
+    for (final w in workflows.entries) {
+      for (final j in jobsOf(w.value).entries) {
+        if (!secret.hasMatch(j.value)) continue;
+        readers.add('${w.key} ${j.key}');
+        expect(environment.hasMatch(j.value), isTrue, reason: '${w.key}: job ${j.key}');
+      }
+    }
+    expect(readers, containsAll(['release-aab.yaml aab', 'supabase-staging.yaml deploy', 'pig-tips-run.yaml run']));
   });
 }

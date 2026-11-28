@@ -10,9 +10,12 @@ name: Release AAB
 # has INTERNET for pig tips only, and not the network state
 # (android/app/src/release/AndroidManifest.xml).
 #
-# Secrets (the owner, repo Settings → Secrets → Actions; never in this repo):
+# The upload key's secrets are the play-upload environment's (the owner, repo
+# Settings → Environments → play-upload; never in this repo, and not
+# repository secrets, so no other workflow can read them):
 # PIGGYBOW_UPLOAD_KEYSTORE_B64, PIGGYBOW_UPLOAD_STORE_PASSWORD,
-# PIGGYBOW_UPLOAD_KEY_ALIAS, PIGGYBOW_UPLOAD_KEY_PASSWORD.
+# PIGGYBOW_UPLOAD_KEY_ALIAS, PIGGYBOW_UPLOAD_KEY_PASSWORD. The environment
+# gives them only to runs from master.
 on:
   workflow_dispatch:
     inputs:
@@ -23,7 +26,8 @@ on:
         description: versionName, as in pubspec.yaml before the +
         required: true
 
-# Read-only: the build needs the code; the upload key comes from secrets.
+# Read-only: the build needs the code; the upload key comes from the
+# play-upload environment's secrets.
 permissions:
   contents: read
 
@@ -31,6 +35,9 @@ jobs:
   aab:
     name: signed prod AAB
     runs-on: ubuntu-latest
+    # The upload key: this environment's secrets, for runs from master only
+    # (see the top of this file).
+    environment: play-upload
     timeout-minutes: 40
     steps:
       - name: From master only
