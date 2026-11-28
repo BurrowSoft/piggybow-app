@@ -1,7 +1,7 @@
 {
-  "source_sha": "b4916f41bd87bb84ac7c678a0117d69c2d9c2f74",
-  "ref": "b4916f41bd87bb84ac7c678a0117d69c2d9c2f74",
-  "run_id": "46149037492",
+  "source_sha": "d3343583d75df0f0d268f4066871b2cd351c9725",
+  "ref": "d3343583d75df0f0d268f4066871b2cd351c9725",
+  "run_id": "46150391683",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -836,25 +836,25 @@
     {
       "file": "me-privacy_lines-end_dark_320x2.png",
       "state": "M8",
-      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, dark)",
-      "sha256": "c6b3ea9b007abd3d48cbc5b79cd883412c2db1c46e55c23b642e04c25d4ac67b",
-      "bytes": 205219,
+      "test": "M8 Your privacy, no Sentry DSN, the policy's link (320 dp, text ×2, dark)",
+      "sha256": "c76cd224d1b20045a85674ee070911ec41c10777b588f0b046697f73b1d0a7d5",
+      "bytes": 201058,
       "width": 960,
       "height": 2340
     },
     {
       "file": "me-privacy_lines-end_light_320x2.png",
       "state": "M8",
-      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
-      "sha256": "6d4a43f2894d7a5999c8fe61527b55246e994d8ecc81c81de888d63ee84fbb92",
-      "bytes": 206503,
+      "test": "M8 Your privacy, no Sentry DSN, the policy's link (320 dp, text ×2, light)",
+      "sha256": "81067d6ecc96d597a5119ad498475a1ec9af92b1c1795c0a9bee5dafcebe5044",
+      "bytes": 202219,
       "width": 960,
       "height": 2340
     },
     {
       "file": "me-privacy_lines_dark_320x2.png",
       "state": "M8",
-      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, dark)",
+      "test": "M8 Your privacy, no Sentry DSN, the policy's link (320 dp, text ×2, dark)",
       "sha256": "c1626b89620c2d07acddcf066ba044b58ec5ccfd353c30d866a6b986bf250b54",
       "bytes": 219407,
       "width": 960,
@@ -863,7 +863,7 @@
     {
       "file": "me-privacy_lines_light_320x2.png",
       "state": "M8",
-      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
+      "test": "M8 Your privacy, no Sentry DSN, the policy's link (320 dp, text ×2, light)",
       "sha256": "7f53820a8ac6d70f078d56794856f56ee16845289ef2dd873a46233ae76df3dd",
       "bytes": 220169,
       "width": 960,
