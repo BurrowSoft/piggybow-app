@@ -78,8 +78,9 @@ class LaunchFixture {
   /// The app's clock for this process: frozen at [now] once written.
   late final FixtureClock clock = FixtureClock(now);
 
-  /// The fixture [id] (a contract case from [casesJson], or R0, R32, R100);
-  /// an unknown id gives a fixture whose [error] names it.
+  /// The fixture [id] (a contract case from [casesJson], R0, R32, R100, or
+  /// the store screenshots' STORE1 and STORE2); an unknown id gives a
+  /// fixture whose [error] names it.
   static LaunchFixture byId(String id, String casesJson) {
     final rainbow = const {'R0': 0, 'R32': 32000, 'R100': 100000}[id];
     if (rainbow != null) {
@@ -88,6 +89,15 @@ class LaunchFixture {
         DateTime.utc(2026, 12, 2, 5),
         '2026-12-02',
         (store, clock) => _writeRainbow(store, clock, rainbow, '2026-12-02'),
+      );
+    }
+    final storeStart = const {'STORE1': 30000, 'STORE2': 127000}[id];
+    if (storeStart != null) {
+      return LaunchFixture._(
+        id,
+        storeNow,
+        '2026-11-18',
+        (store, clock) => _writeStore(store, clock, startMinor: storeStart),
       );
     }
     final contract = jsonDecode(casesJson) as Map<String, dynamic>;
@@ -272,6 +282,139 @@ Future<void> _writeRainbow(
     );
   }
   if ((await store.goal(id))?.reachedAt != null) await store.markCelebrated(id);
+}
+
+/// The store screenshots' frozen instant (decision 34): Wednesday 18
+/// November 2026, 12:00 in the flows' zone (UTC+7). A Wednesday, as the
+/// plan's week has Monday to Wednesday, and day 322 of the year, so Home's
+/// idea of the day is tip02.
+final storeNow = DateTime.utc(2026, 11, 18, 5);
+
+/// One adult's everyday week in US dollars, brand-free (no shop, app or
+/// people's names), as testing/play-screenshots-plan.md §3 has it, moved to
+/// the week of Monday 16 November: (created, day, type, amount, category,
+/// feeling, note). The saves go to the active goal.
+final _storeEntries =
+    <(DateTime, String, EntryType, int, SpendCategory?, Feeling?, String)>[
+      // Last week (Friday).
+      (
+        DateTime.utc(2026, 11, 13, 11),
+        '2026-11-13',
+        EntryType.saved,
+        12000,
+        null,
+        null,
+        'Birthday money',
+      ),
+      // Monday.
+      (
+        DateTime.utc(2026, 11, 16, 2, 10),
+        '2026-11-16',
+        EntryType.spent,
+        4500,
+        SpendCategory.home,
+        Feeling.notSure,
+        'Internet bill',
+      ),
+      (
+        DateTime.utc(2026, 11, 16, 12, 40),
+        '2026-11-16',
+        EntryType.spent,
+        3200,
+        SpendCategory.fun,
+        Feeling.worthIt,
+        'Concert tickets',
+      ),
+      // Tuesday.
+      (
+        DateTime.utc(2026, 11, 17, 1, 30),
+        '2026-11-17',
+        EntryType.spent,
+        625,
+        SpendCategory.food,
+        Feeling.notReally,
+        'Coffee and a pastry',
+      ),
+      (
+        DateTime.utc(2026, 11, 17, 10, 15),
+        '2026-11-17',
+        EntryType.spent,
+        6240,
+        SpendCategory.groceries,
+        Feeling.worthIt,
+        'Groceries for the week',
+      ),
+      (
+        DateTime.utc(2026, 11, 17, 12, 50),
+        '2026-11-17',
+        EntryType.saved,
+        6000,
+        null,
+        null,
+        'Sold an old jacket',
+      ),
+      // Wednesday, today.
+      (
+        DateTime.utc(2026, 11, 18, 1, 20),
+        '2026-11-18',
+        EntryType.spent,
+        275,
+        SpendCategory.transport,
+        null,
+        'Bus to work',
+      ),
+      (
+        DateTime.utc(2026, 11, 18, 4, 45),
+        '2026-11-18',
+        EntryType.spent,
+        1450,
+        SpendCategory.food,
+        Feeling.worthIt,
+        'Lunch with a friend',
+      ),
+    ];
+
+/// STORE1 and STORE2: the plan's journal. Picks {save} (the pig Happy for
+/// this week's save), a $250.00 weekly plan (it shows without the plan pick,
+/// decision 34), and "Trip to Japan", $1,500.00, created on 1 November with
+/// [startMinor] already saved: $300.00 for STORE1 (with the saves, $480.00,
+/// 32 %), $1,270.00 for STORE2 ($1,450.00, one $50.00 save from reached).
+/// Its first bands are stamped on 1 November, so the pig isn't Delighted.
+Future<void> _writeStore(
+  JournalStore store,
+  FixtureClock clock, {
+  required int startMinor,
+}) async {
+  clock.now = DateTime.utc(2026, 11, 1, 3);
+  await store.setCurrency('USD');
+  await store.setPicks({HappyPick.save});
+  await store.setPlanMinor(25000);
+  // The reminder offer was answered long ago: Home opens on the pig, the
+  // goal, the week and the idea, with no one-time prompt in the shots.
+  await store.answerReminderOffer();
+  await store.putGoal(
+    Goal(
+      id: store.newId(),
+      name: 'Trip to Japan',
+      targetMinor: 150000,
+      startMinor: startMinor,
+      createdAt: clock.now,
+      updatedAt: clock.now,
+    ),
+  );
+  for (final (at, day, type, minor, category, feeling, note)
+      in _storeEntries) {
+    clock.now = at;
+    await store.addEntry(
+      type: type,
+      amountMinor: minor,
+      currency: 'USD',
+      localDate: day,
+      category: category,
+      feeling: feeling,
+      note: note,
+    );
+  }
 }
 
 /// Shown instead of the app when a fixture can't load: the tester's flows

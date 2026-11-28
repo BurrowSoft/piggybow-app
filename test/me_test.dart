@@ -289,11 +289,8 @@ void main() {
     await app.pump(tester, location: '/me');
     await settle(tester, byId('me-happy'));
     final id = app.session.user!.id;
-    // The lock on, with a PIN, for this account.
-    await tester.runAsync(() async {
-      await lock.switchUser(id);
-      await lock.setPin('2468');
-    });
+    // The lock on, with a PIN (the phone's, not the account's).
+    await tester.runAsync(() => lock.setPin('2468'));
     await tester.pumpAndSettle();
     expect(lock.enabled, isTrue);
     await tester.tapId('me-theme-dark');
@@ -305,7 +302,7 @@ void main() {
     expect(find.text('Not everything was erased'), findsOneWidget);
     expect(lock.enabled, isTrue, reason: 'the lock still on');
     expect(
-      secrets.values['app_lock.$id.pin_hash'],
+      secrets.values['app_lock.pin_hash'],
       isNotNull,
       reason: 'its PIN',
     );
@@ -331,6 +328,59 @@ void main() {
     await waitFor(tester, find.text('Not everything was erased'));
     expect(find.text('Not everything was erased'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('after a restore, the lock row says so until opened', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+    addTearDown(tester.view.reset);
+    // The settings said "on"; the PIN didn't come with the backup.
+    final lock = AppLock(
+      store: MemorySecretStore(),
+      biometrics: FakeBiometrics(),
+      mirror: MemoryLockMirror(on: true),
+      iterations: 50,
+    );
+    await tester.runAsync(lock.load);
+    final app = TestApp(appLock: lock);
+    await tester.runAsync(app.openJournal);
+    await app.pump(tester, location: '/me');
+    await settle(tester, byId('me-happy'));
+    final notice = find.text('Off after a restore. Turn it on again.');
+    expect(notice, findsOneWidget);
+    await tester.tapId('me-lock');
+    expect(lock.restoreNoticePending, isFalse);
+  });
+
+  testWidgets('the App lock row follows the lock as it turns on and off', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+    addTearDown(tester.view.reset);
+    final lock = AppLock(
+      store: MemorySecretStore(),
+      biometrics: FakeBiometrics(),
+      iterations: 50,
+    );
+    final app = TestApp(appLock: lock);
+    await tester.runAsync(app.openJournal);
+    await app.pump(tester, location: '/me');
+    await settle(tester, byId('me-happy'));
+    Finder row(String state) {
+      return find.descendant(of: byId('me-lock'), matching: find.text(state));
+    }
+
+    expect(row('Off'), findsOneWidget);
+    // Turned on and off while Me stays open: the row follows each time.
+    await tester.runAsync(() => lock.setPin('2468'));
+    await tester.pumpAndSettle();
+    expect(row('On'), findsOneWidget);
+    await tester.runAsync(lock.clear);
+    await tester.pumpAndSettle();
+    expect(row('Off'), findsOneWidget);
   });
 
   testWidgets('Delete everything, cancelled: nothing changes', (tester) async {

@@ -44,6 +44,12 @@ Future<bool> showEntrySheet(
   return saved == true;
 }
 
+/// Entry sheets up now: a reminder tapped while one is opens no other.
+var _sheetsOpen = 0;
+
+/// Whether an entry sheet (adding or editing) is up.
+bool get entrySheetOpen => _sheetsOpen > 0;
+
 /// A full-height sheet: Spent or Saved, the amount, a spend's category and
 /// feeling (or a save's goal), a note and the day.
 class EntrySheet extends StatefulWidget {
@@ -83,6 +89,7 @@ class _EntrySheetState extends State<EntrySheet> {
   @override
   void initState() {
     super.initState();
+    _sheetsOpen++;
     final e = widget.editing;
     if (e != null) {
       _category = e.category;
@@ -118,6 +125,7 @@ class _EntrySheetState extends State<EntrySheet> {
 
   @override
   void dispose() {
+    _sheetsOpen--;
     _amount.dispose();
     _note.dispose();
     super.dispose();

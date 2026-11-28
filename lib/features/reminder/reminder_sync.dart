@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../core/clock.dart';
 import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../session/app_session.dart';
@@ -42,6 +43,7 @@ class _ReminderSyncState extends State<ReminderSync> {
   void initState() {
     super.initState();
     _session.addListener(_onSession);
+    _services.journal.addListener(_onJournal);
     _lifecycle = AppLifecycleListener(onResume: _schedule);
     _onSession();
   }
@@ -49,6 +51,7 @@ class _ReminderSyncState extends State<ReminderSync> {
   @override
   void dispose() {
     _session.removeListener(_onSession);
+    _services.journal.removeListener(_onJournal);
     _lifecycle.dispose();
     super.dispose();
   }
@@ -65,6 +68,32 @@ class _ReminderSyncState extends State<ReminderSync> {
       s?.timeZone,
       _session.locale.languageCode,
     );
+  }
+
+  /// Whether an entry was added today, as of the last plan: today's
+  /// reminder is left out once one is (plan §4.7).
+  bool? _addedToday;
+
+  /// Only a change in "an entry was added today" re-plans.
+  Future<void> _onJournal() async {
+    try {
+      final added = await _entryAddedToday();
+      if (mounted && added != _addedToday) _schedule();
+    } on Object {
+      // A journal that can't be read leaves the plan as it is: never break
+      // the app over a reminder. The next change, start or resume re-plans.
+    }
+  }
+
+  /// Whether an entry was added today, in the phone's own zone.
+  Future<bool> _entryAddedToday() async {
+    final day = _services.localDay;
+    for (final e in await _services.journal.entries()) {
+      if (wireDate(Clock.localDateOf(e.createdAt, day.zone)) == day.todayWire) {
+        return true;
+      }
+    }
+    return false;
   }
 
   void _onSession() {
@@ -110,18 +139,21 @@ class _ReminderSyncState extends State<ReminderSync> {
         return;
       }
       final l10n = lookupAppLocalizations(_session.locale);
+      final addedToday = _addedToday = await _entryAddedToday();
       await scheduler.replaceAll(
         planReminders(
           on: true,
           time: state.reminderTime,
-          location: _location(state.timeZone),
+          // The phone's own zone, live (LocalDay), as "today" is everywhere.
+          location: _location(_services.localDay.zone),
           nowUtc: _services.clock.nowUtc(),
-          checkedInToday: false,
+          checkedInToday: addedToday,
         ),
         ReminderCopy(
-          title: l10n.appName,
-          body: l10n.reminderBody,
-          channelName: l10n.meReminder,
+          title: l10n.notifTitle,
+          bodies: [l10n.notifBody1, l10n.notifBody2, l10n.notifBody3],
+          channelName: l10n.reminderChannelName,
+          channelDescription: l10n.reminderChannelDesc,
         ),
       );
     } on Object {

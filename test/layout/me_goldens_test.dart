@@ -1,16 +1,18 @@
 // Goldens: Me (decision 44), at 320 dp ×2, light and dark, for PB UX & PM's
 // look at PR 4b: Me with no plan and with one, the notifications-off notice,
 // the plan dialog empty and with a plan, the picker, "Delete everything?",
-// Your privacy in a build without a Sentry DSN, and "Not everything was
-// erased".
+// Your privacy in a build without a Sentry DSN, "Not everything was
+// erased", and the App lock row after a restore (5c).
 @Tags(['golden'])
 library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/pig/pig_mood.dart' show HappyPick;
 
+import '../app_lock_test.dart' show FakeBiometrics;
 import '../helpers.dart';
 import '../helpers/fonts.dart';
 import 'layout_matrix.dart';
@@ -43,9 +45,11 @@ void main() {
     LayoutCase c, {
     int? plan,
     bool notificationsOff = false,
+    AppLock? lock,
   }) async {
     setLayout(tester, c);
-    final app = TestApp(currency: 'USD')..prefs.appearance = c.appearance;
+    final app = TestApp(currency: 'USD', appLock: lock)
+      ..prefs.appearance = c.appearance;
     if (notificationsOff) app.notifications.grant = false;
     await tester.runAsync(app.openJournal);
     await tester.runAsync(() async {
@@ -210,6 +214,39 @@ void main() {
         screen: 'me',
         state: 'delete-failed',
         stateId: 'M9',
+      );
+    });
+
+    testWidgets('M10 the App lock row after a restore ($c)', (tester) async {
+      // The settings said "on"; the PIN didn't come with the backup.
+      final lock = AppLock(
+        store: MemorySecretStore(),
+        biometrics: FakeBiometrics(),
+        mirror: MemoryLockMirror(on: true),
+        iterations: 50,
+      );
+      await tester.runAsync(lock.load);
+      await open(tester, c, lock: lock);
+      // Me scrolled to Privacy & security: its header at the top. The list
+      // builds lazily, so it scrolls there first.
+      final header = find.text('Privacy & security');
+      await tester.scrollUntilVisible(
+        header,
+        200,
+        scrollable: listIn('me-screen'),
+      );
+      await Scrollable.ensureVisible(tester.element(header));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Off after a restore. Turn it on again.'),
+        findsOneWidget,
+      );
+      await expectLayoutGolden(
+        tester,
+        c,
+        screen: 'me',
+        state: 'lock-after-restore',
+        stateId: 'M10',
       );
     });
   }

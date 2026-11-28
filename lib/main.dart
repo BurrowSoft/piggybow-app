@@ -49,6 +49,7 @@ Future<void> main() async {
           store: const KeystoreSecretStore(),
           biometrics: DeviceBiometrics(),
           firstRun: const PrefsFirstRunMarker(),
+          mirror: const PrefsLockMirror(),
         )
       : null;
   // Staging only, compiled out of store builds (kLaunchFixtures is a
@@ -78,7 +79,7 @@ Future<void> main() async {
     timeZone: await timeZoneLoad,
     country: device.countryCode,
   );
-  final lockLoad = appLock?.load(userId: backend.currentUser?.id);
+  final lockLoad = appLock?.load();
 
   final session = AppSession(
     auth: backend,
@@ -132,6 +133,8 @@ Future<void> main() async {
     appLock: appLock,
     onboarded: await onboardedAtStart(journal),
   );
+  // A reminder tapped, or the start it made, opens the Add sheet.
+  unawaited(services.reminders.listen());
   // The pig's reaction to an Add lasts until the app goes to the background.
   AppLifecycleListener(onHide: () => services.lastAdd.value = null);
 

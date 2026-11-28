@@ -212,7 +212,7 @@ void main() {
         expect(byId('home-reminder-yes'), findsOneWidget);
         // The offer's buttons (decision 57): one line at the end when both
         // fit, else full width, the yes on top and No thanks 8 dp under it.
-        final pair = tester.renderObject<RenderButtonPair>(
+        final pair = tester.renderObject<RenderButtonRow>(
           find.byType(ButtonPair),
         );
         final yes = tester.getRect(byId('home-reminder-yes'));

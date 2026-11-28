@@ -9,10 +9,12 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 1.1 C, app lock (specs/1.1-features.md; decision 171): a 4–6 digit PIN,
-/// optional biometrics, "lock after" a time away. The PIN is stored only as a
-/// salted PBKDF2 hash in the platform keystore and never leaves the phone.
-/// Off by default; behind AppConfig.appLockEnabled until it's released.
+import '../lock_rules/lock_rules.dart' show LockState, lockState;
+
+/// The app lock (plan §3.11): a 4–6 digit PIN, optional fingerprint or face,
+/// "lock after" a time away. The PIN is stored only as a salted PBKDF2 hash
+/// in the platform keystore (secure storage, never backed up) and never
+/// leaves the phone. Off until the person turns it on in Me.
 enum LockAfter {
   immediately(Duration.zero),
   oneMinute(Duration(minutes: 1)),
@@ -34,20 +36,29 @@ abstract interface class SecretStore {
 class KeystoreSecretStore implements SecretStore {
   const KeystoreSecretStore();
 
-  static const _storage = FlutterSecureStorage();
+  /// On iOS, this iPhone's keychain only (decision 21): a restore to
+  /// another phone arrives with no PIN, so the lock is off, never locked
+  /// out. Android's keystore never leaves the phone, and the backup rules
+  /// leave the plugin's files out (decision 72).
+  @visibleForTesting
+  static const storage = FlutterSecureStorage(
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.unlocked_this_device,
+    ),
+  );
 
   @override
-  Future<String?> read(String key) => _storage.read(key: key);
+  Future<String?> read(String key) => storage.read(key: key);
 
   @override
   Future<void> write(String key, String value) =>
-      _storage.write(key: key, value: value);
+      storage.write(key: key, value: value);
 
   @override
-  Future<void> delete(String key) => _storage.delete(key: key);
+  Future<void> delete(String key) => storage.delete(key: key);
 
   @override
-  Future<void> deleteAll() => _storage.deleteAll();
+  Future<void> deleteAll() => storage.deleteAll();
 }
 
 class MemorySecretStore implements SecretStore {
@@ -101,6 +112,60 @@ class MemoryFirstRunMarker implements FirstRunMarker {
   Future<void> markSeen() async => wasSeen = true;
 }
 
+/// What the phone's backup carries of the lock (decision 17): a plain
+/// setting that says it's on. The PIN never goes with it, so a restore
+/// shows as "on" with no PIN.
+abstract interface class LockMirror {
+  Future<bool> lockOn();
+  Future<void> setLockOn(bool on);
+
+  /// Me's App lock row says "Off after a restore" until it's opened.
+  Future<bool> restoreNotice();
+  Future<void> setRestoreNotice(bool pending);
+}
+
+class PrefsLockMirror implements LockMirror {
+  const PrefsLockMirror();
+
+  static const _on = 'app_lock.on';
+  static const _notice = 'app_lock.restore_notice';
+
+  @override
+  Future<bool> lockOn() async =>
+      (await SharedPreferences.getInstance()).getBool(_on) ?? false;
+
+  @override
+  Future<void> setLockOn(bool on) async =>
+      (await SharedPreferences.getInstance()).setBool(_on, on);
+
+  @override
+  Future<bool> restoreNotice() async =>
+      (await SharedPreferences.getInstance()).getBool(_notice) ?? false;
+
+  @override
+  Future<void> setRestoreNotice(bool pending) async =>
+      (await SharedPreferences.getInstance()).setBool(_notice, pending);
+}
+
+class MemoryLockMirror implements LockMirror {
+  MemoryLockMirror({this.on = false, this.notice = false});
+
+  bool on;
+  bool notice;
+
+  @override
+  Future<bool> lockOn() async => on;
+
+  @override
+  Future<void> setLockOn(bool on) async => this.on = on;
+
+  @override
+  Future<bool> restoreNotice() async => notice;
+
+  @override
+  Future<void> setRestoreNotice(bool pending) async => notice = pending;
+}
+
 enum BiometricKind { faceId, touchId, other }
 
 /// Fingerprint / face, when the device has them enrolled.
@@ -114,6 +179,14 @@ abstract interface class Biometrics {
   /// [BiometricKind.other] everywhere else, and on an iPhone with neither set
   /// up, where naming one could be wrong.
   Future<BiometricKind> kind();
+
+  /// Whether the phone has a screen lock of its own (a PIN, pattern or
+  /// password, or a fingerprint or face), so Forgot PIN can ask for it.
+  Future<bool> screenLockSet();
+
+  /// The phone's own screen lock, whichever kind it has (decision 19): true
+  /// when the person passed, false when they cancelled or failed.
+  Future<bool> authenticateWithScreenLock(String reason);
 }
 
 class DeviceBiometrics implements Biometrics {
@@ -138,6 +211,34 @@ class DeviceBiometrics implements Biometrics {
         localizedReason: reason,
         options: const AuthenticationOptions(
           biometricOnly: true,
+          stickyAuth: true,
+        ),
+      );
+    } on Object {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> screenLockSet() async {
+    try {
+      // Android: the keyguard is secure or biometrics are enrolled; iOS: a
+      // passcode is set.
+      return await _auth.isDeviceSupported();
+    } on Object {
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> authenticateWithScreenLock(String reason) async {
+    try {
+      return await _auth.authenticate(
+        localizedReason: reason,
+        options: const AuthenticationOptions(
+          // The phone's PIN, pattern or password counts, not only a finger
+          // or a face.
+          biometricOnly: false,
           stickyAuth: true,
         ),
       );
@@ -183,39 +284,35 @@ class AppLock extends ChangeNotifier {
     required this.store,
     required this.biometrics,
     FirstRunMarker? firstRun,
+    LockMirror? mirror,
     DateTime Function()? now,
     this.iterations = 60000,
   }) : firstRun = firstRun ?? MemoryFirstRunMarker(),
+       mirror = mirror ?? MemoryLockMirror(),
        _now = now ?? DateTime.now;
 
   final SecretStore store;
   final Biometrics biometrics;
   final FirstRunMarker firstRun;
+
+  /// "On" in the settings the phone's backup carries (decision 17).
+  final LockMirror mirror;
   final DateTime Function() _now;
 
   /// PBKDF2 rounds (tests use fewer).
   final int iterations;
 
-  /// App lock belongs to the account on this phone, so
-  /// its keys carry the user id (`app_lock.<uid>.pin_hash`). Without one
-  /// (no account known yet, tests): the pre-0.9.2 device-wide keys, which
-  /// the first account to load them adopts.
-  String? _uid;
-  static String _key(String? uid, String name) =>
-      uid == null ? 'app_lock.$name' : 'app_lock.$uid.$name';
-  static const _names = ['pin_hash', 'pin_salt', 'settings', 'fails'];
-  String get _kHash => _key(_uid, 'pin_hash');
-  String get _kSalt => _key(_uid, 'pin_salt');
+  /// The lock belongs to this phone, not to an account (decision 70): one
+  /// set of keys, all in secure storage.
+  static const _kHash = 'app_lock.pin_hash';
+
+  /// The salt's own key before row 19; read for an older PIN, then removed.
+  static const _kSalt = 'app_lock.pin_salt';
+  static const _kSettings = 'app_lock.settings';
+  static const _kFails = 'app_lock.fails';
 
   /// The stored PIN since row 19: `v2:<salt b64>:<hash b64>` in pin_hash.
   static const _v2 = 'v2:';
-  String get _kSettings => _key(_uid, 'settings');
-  String get _kFails => _key(_uid, 'fails');
-
-  /// The account changed and its settings are being read: LockGate covers
-  /// the app meanwhile, so the journal never shows before the lock.
-  bool get switching => _switching;
-  bool _switching = false;
 
   /// 5 wrong PINs → a 30 s wait, doubling after each further wrong one.
   static const maxTries = 5;
@@ -223,7 +320,7 @@ class AppLock extends ChangeNotifier {
 
   bool _enabled = false;
   bool _biometricsOn = false;
-  bool _planWhenLocked = false;
+  bool _mayResetPin = false;
   LockAfter _lockAfter = LockAfter.immediately;
   bool _locked = false;
   int _fails = 0;
@@ -237,16 +334,21 @@ class AppLock extends ChangeNotifier {
 
   bool get enabled => _enabled;
 
+  /// The lock was on before a restore that brought no PIN: Me's row says
+  /// so until it's opened ([dismissRestoreNotice]).
+  bool get restoreNoticePending => _restoreNotice;
+  bool _restoreNotice = false;
+
   /// On, or being turned on: what leaving the app (and the cover) must
   /// follow. [enabled] stays false until the PIN is stored.
   bool get on => _enabled || _arming != null;
   bool get biometricsOn => _biometricsOn;
-
-  /// 1.2: the lock screen's help card may open My safety plan, read-only
-  /// (Me → App lock, "Show my safety plan without unlocking"). Off by
-  /// default; turning it on asks for the PIN first; off with the lock.
-  bool get planWhenLocked => _enabled && _planWhenLocked;
   LockAfter get lockAfter => _lockAfter;
+
+  /// Forgot PIN: the phone's own screen lock let the person in, so a new PIN
+  /// may be chosen ([resetPin]). Still locked until it is. Leaving the app
+  /// takes it back.
+  bool get mayResetPin => _mayResetPin;
 
   /// The lock screen is up.
   bool get locked => on && _locked;
@@ -261,60 +363,24 @@ class AppLock extends ChangeNotifier {
     return left > Duration.zero ? left : null;
   }
 
-  /// Reads the stored state; a cold start with the lock on starts locked.
-  /// [userId]: the account whose lock this is (the stored session's at a
-  /// cold start), so the lock is up before the first frame.
-  Future<void> load({String? userId}) async {
-    _uid = userId;
+  /// Reads the stored state; a cold start with the lock on starts locked,
+  /// so the lock is up before the first frame.
+  Future<void> load() async {
     if (!await firstRun.seen()) {
       // A lock left in the keystore by an earlier install: not this one's.
       await clear();
       await firstRun.markSeen();
       return;
     }
-    // A cold start with a stored session: the account that was signed in
-    // when 0.9.1 set the device-wide lock.
-    await _readCurrent(adoptLegacy: true);
+    await _read();
   }
 
-  /// Another account (or none) on this phone: its own lock, or none.
-  /// Nothing is erased; signing out keeps each account's lock (M-02).
-  Future<void> switchUser(String? userId) async {
-    if (userId == _uid) return;
-    _switching = true;
-    notifyListeners();
-    _uid = userId;
-    _resetMemory();
-    try {
-      if (userId != null) {
-        await _readCurrent();
-        // Just signed in with the password: on, but not asked for the PIN
-        // right away; it locks the next time the app comes back.
-        _locked = false;
-      }
-    } finally {
-      _switching = false;
-      notifyListeners();
-    }
-  }
-
-  /// Delete account (or the account deleted elsewhere): that account's lock
-  /// goes with it.
-  Future<void> forget(String userId) async {
-    for (final n in _names) {
-      await store.delete(_key(userId, n));
-    }
-    if (_uid == userId) {
-      _resetMemory();
-      notifyListeners();
-    }
-  }
-
-  /// Delete everything (plan §3.8): every PIN, setting and count this lock
-  /// kept in secure storage, for every id, legacy ones included. The lock
-  /// is off afterwards.
+  /// Delete everything (plan §3.8), and Forgot PIN's erase after it: every
+  /// PIN, setting and count this lock kept in secure storage. The lock is
+  /// off afterwards.
   Future<void> eraseAll() async {
     await store.deleteAll();
+    await _mirrorOn(false);
     _resetMemory();
     notifyListeners();
   }
@@ -322,7 +388,7 @@ class AppLock extends ChangeNotifier {
   void _resetMemory() {
     _enabled = false;
     _biometricsOn = false;
-    _planWhenLocked = false;
+    _mayResetPin = false;
     _lockAfter = LockAfter.immediately;
     _locked = false;
     _fails = 0;
@@ -330,28 +396,14 @@ class AppLock extends ChangeNotifier {
     _awaySince = null;
   }
 
-  /// The current account's stored lock. The pre-0.9.2 device-wide one is
-  /// adopted only by [adoptLegacy]: the cold start of a session that was
-  /// already signed in when 0.9.1 set it. Any other account (a sign-in
-  /// after the upgrade) must never inherit someone else's PIN (UX, review):
-  /// the old keys are then discarded.
-  Future<void> _readCurrent({bool adoptLegacy = false}) async {
-    final uid = _uid;
-    final legacyHash = await store.read(_key(null, 'pin_hash'));
-    if (uid != null && legacyHash != null) {
-      final adopt = adoptLegacy && await store.read(_kHash) == null;
-      for (final n in _names) {
-        final v = await store.read(_key(null, n));
-        if (adopt && v != null) await store.write(_key(uid, n), v);
-        await store.delete(_key(null, n));
-      }
-    }
-    _enabled = (await store.read(_kHash)) != null;
+  Future<void> _read() async {
+    final pin = (await store.read(_kHash)) != null;
+    _enabled = pin;
+    await _checkRestore(pin: pin);
     final settings = await store.read(_kSettings);
     if (settings != null) {
       final s = jsonDecode(settings) as Map<String, dynamic>;
       _biometricsOn = s['biometrics'] == true;
-      _planWhenLocked = s['planWhenLocked'] == true;
       _lockAfter = LockAfter.values.firstWhere(
         (l) => l.name == s['lockAfter'],
         orElse: () => LockAfter.immediately,
@@ -366,6 +418,50 @@ class AppLock extends ChangeNotifier {
     }
     _locked = _enabled;
     notifyListeners();
+  }
+
+  /// A restore brings the settings but never the PIN (decision 17): "on"
+  /// with no PIN is one. The lock is off, and Me says so until its row is
+  /// opened. A PIN with the setting off (a write that failed) sets it
+  /// again. Best effort: a PIN alone decides the lock.
+  Future<void> _checkRestore({required bool pin}) async {
+    try {
+      final mirrored = await mirror.lockOn();
+      final state = lockState(prefsLockOn: mirrored, pinExists: pin);
+      if (state == LockState.offAfterRestore) {
+        await mirror.setLockOn(false);
+        await mirror.setRestoreNotice(true);
+      } else if (pin && !mirrored) {
+        await mirror.setLockOn(true);
+      }
+      _restoreNotice = !pin && await mirror.restoreNotice();
+    } on Object {
+      // The notice is a courtesy; the lock follows the PIN alone.
+    }
+  }
+
+  /// "On" or "off" in the backed-up settings. Turning the lock on or off
+  /// answers any restore notice. Best effort, as above.
+  Future<void> _mirrorOn(bool on) async {
+    _restoreNotice = false;
+    try {
+      await mirror.setLockOn(on);
+      await mirror.setRestoreNotice(false);
+    } on Object {
+      // Then a restore goes unnoticed; the lock itself is unaffected.
+    }
+  }
+
+  /// Me's App lock row was opened: its after-restore line has been read.
+  Future<void> dismissRestoreNotice() async {
+    if (!_restoreNotice) return;
+    _restoreNotice = false;
+    notifyListeners();
+    try {
+      await mirror.setRestoreNotice(false);
+    } on Object {
+      // At worst it shows once more at the next start.
+    }
   }
 
   static bool validPin(String pin) => RegExp(r'^\d{4,6}$').hasMatch(pin);
@@ -404,6 +500,7 @@ class AppLock extends ChangeNotifier {
       await _saveFails(0, null);
       _enabled = true;
       await _saveSettings();
+      await _mirrorOn(true);
     } finally {
       _arming = null;
       done.complete();
@@ -415,14 +512,6 @@ class AppLock extends ChangeNotifier {
   Future<bool> unlockWithPin(String pin) async {
     final ok = await _checkPin(pin);
     if (ok) _locked = false;
-    notifyListeners();
-    return ok;
-  }
-
-  /// The person confirms it's them (turning on "without unlocking"):
-  /// [unlockWithPin]'s check and wait, without unlocking anything.
-  Future<bool> confirmPin(String pin) async {
-    final ok = await _checkPin(pin);
     notifyListeners();
     return ok;
   }
@@ -478,20 +567,53 @@ class AppLock extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setPlanWhenLocked({required bool on}) async {
-    _planWhenLocked = on;
-    await _saveSettings();
-    notifyListeners();
-  }
-
   Future<void> setLockAfter(LockAfter value) async {
     _lockAfter = value;
     await _saveSettings();
     notifyListeners();
   }
 
-  /// Off: this account's PIN and settings are erased (Me → App lock off,
-  /// and "Forgot PIN?" before it signs out). A plain sign-out keeps them.
+  /// Forgot PIN's first path (decision 19): the phone's own screen lock. A
+  /// pass lets a new PIN be chosen ([resetPin]); nothing is unlocked yet.
+  Future<bool> verifyWithScreenLock(String reason) async {
+    final ok = await biometrics.authenticateWithScreenLock(reason);
+    _mayResetPin = ok && locked;
+    notifyListeners();
+    return _mayResetPin;
+  }
+
+  /// Forgot PIN's erase is running: the lock screen stays up until it's
+  /// done, even after the PIN is gone, so a step that still fails is said
+  /// there ("Not everything was erased") and never skipped.
+  bool get erasing => _erasing;
+  bool _erasing = false;
+
+  void setErasing({required bool on}) {
+    if (_erasing == on) return;
+    _erasing = on;
+    notifyListeners();
+  }
+
+  /// Leaves the new-PIN step for the PIN pad, without a new PIN.
+  void cancelResetPin() {
+    if (!_mayResetPin) return;
+    _mayResetPin = false;
+    notifyListeners();
+  }
+
+  /// The new PIN after the phone's screen lock let the person in: stored in
+  /// place of the forgotten one, the wrong tries forgotten, and unlocked.
+  /// Only after [verifyWithScreenLock] passed.
+  Future<void> resetPin(String pin) async {
+    if (!_mayResetPin) {
+      throw StateError("A new PIN only after the phone's screen lock");
+    }
+    await setPin(pin);
+    _mayResetPin = false;
+    notifyListeners();
+  }
+
+  /// Off: the PIN and settings are erased (Me → App lock off).
   Future<void> clear() async {
     // A PIN still being stored lands first, then goes: otherwise its write
     // could follow the erase and turn the lock back on (review N5).
@@ -500,6 +622,7 @@ class AppLock extends ChangeNotifier {
     for (final k in [_kHash, _kSalt, _kSettings, _kFails]) {
       await store.delete(k);
     }
+    await _mirrorOn(false);
     _resetMemory();
     notifyListeners();
   }
@@ -512,8 +635,15 @@ class AppLock extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// The app went to the background.
-  void wentAway() => _awaySince ??= _now();
+  /// The app went to the background. A new PIN not yet chosen after the
+  /// phone's screen lock has to wait for it again.
+  void wentAway() {
+    _awaySince ??= _now();
+    if (_mayResetPin) {
+      _mayResetPin = false;
+      notifyListeners();
+    }
+  }
 
   /// The app came back: locks when it was away at least [lockAfter].
   void cameBack() {
@@ -531,7 +661,6 @@ class AppLock extends ChangeNotifier {
     jsonEncode({
       'biometrics': _biometricsOn,
       'lockAfter': _lockAfter.name,
-      'planWhenLocked': _planWhenLocked,
     }),
   );
 
