@@ -8,7 +8,7 @@ import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
-import '../../router.dart';
+import '../../session/app_session.dart' show Routes;
 import '../../session/session_scope.dart';
 import '../onboarding/onboarding_screens.dart' show onboardedAtStart;
 

@@ -166,16 +166,15 @@ void main() {
           () => sealBackup(json, 'correct horse', kdf: fast),
         ))!;
 
-    Future<Object?> outcome(String text, String password) => tester.runAsync(
-      () async {
-        try {
-          await readBackup(text, password, hooks: direct);
-          return null;
-        } on Object catch (error) {
-          return error;
-        }
-      },
-    );
+    Future<Object?> outcome(String text, String password) =>
+        tester.runAsync<Object?>(() async {
+          try {
+            await readBackup(text, password, hooks: direct);
+            return null;
+          } on Object catch (error) {
+            return error;
+          }
+        });
 
     Map<String, Object?> edited(void Function(Map<String, dynamic>) change) {
       final copy = jsonDecode(jsonEncode(good)) as Map<String, dynamic>;
