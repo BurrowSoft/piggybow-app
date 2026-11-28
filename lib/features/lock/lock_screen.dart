@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/app_lock.dart';
 import '../../core/button_label.dart';
+import '../../core/button_pair.dart';
 import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
@@ -558,35 +559,41 @@ class ForgotPinDialog extends StatelessWidget {
               ]
             : [Text(l10n.lockForgotBodyEraseOnly)],
       ),
-      // Stacked when they don't fit a line: the main way back on top.
-      actionsOverflowDirection: VerticalDirection.up,
       actions: [
-        TestId(
-          'lock-forgot-cancel',
-          button: true,
-          child: TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: ButtonLabel(l10n.cancel),
-          ),
-        ),
-        TestId(
-          'lock-forgot-erase',
-          button: true,
-          child: TextButton(
-            onPressed: () => Navigator.of(context).pop(ForgotPinChoice.erase),
-            child: ButtonLabel(l10n.lockForgotErase),
-          ),
-        ),
-        if (device)
-          TestId(
-            'lock-forgot-device',
-            button: true,
-            child: FilledButton(
-              onPressed: () =>
-                  Navigator.of(context).pop(ForgotPinChoice.screenLock),
-              child: ButtonLabel(l10n.lockForgotUseDevice),
+        // On one line when they fit; else full width, the main way back on
+        // top, so the labels wrap little and both paths stay readable
+        // (decision 71).
+        ButtonRow(
+          children: [
+            TestId(
+              'lock-forgot-cancel',
+              button: true,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: ButtonLabel(l10n.cancel),
+              ),
             ),
-          ),
+            TestId(
+              'lock-forgot-erase',
+              button: true,
+              child: TextButton(
+                onPressed: () =>
+                    Navigator.of(context).pop(ForgotPinChoice.erase),
+                child: ButtonLabel(l10n.lockForgotErase),
+              ),
+            ),
+            if (device)
+              TestId(
+                'lock-forgot-device',
+                button: true,
+                child: FilledButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(ForgotPinChoice.screenLock),
+                  child: ButtonLabel(l10n.lockForgotUseDevice),
+                ),
+              ),
+          ],
+        ),
       ],
     );
   }

@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/app_lock.dart';
+import 'package:piggybow/core/button_pair.dart';
 
 import '../app_lock_test.dart' show FakeBiometrics;
 import '../helpers.dart';
@@ -74,6 +75,24 @@ void main() {
       await open(tester, c);
       await tester.tapId('lock-forgot');
       tester.expectScreen('lock-forgot-device');
+      // On one line, or full width with the main way back on top
+      // (decision 71).
+      final row = tester.renderObject<RenderButtonRow>(find.byType(ButtonRow));
+      final main = tester.getRect(byId('lock-forgot-device'));
+      final erase = tester.getRect(byId('lock-forgot-erase'));
+      final cancel = tester.getRect(byId('lock-forgot-cancel'));
+      if (row.stacked) {
+        expect(main.bottom, lessThanOrEqualTo(erase.top), reason: 'L2 order');
+        expect(erase.bottom, lessThanOrEqualTo(cancel.top));
+        expect(erase.width, moreOrLessEquals(main.width));
+        expect(cancel.width, moreOrLessEquals(main.width));
+      } else {
+        expect(erase.right, lessThanOrEqualTo(main.left), reason: 'L2 row');
+        expect(cancel.right, lessThanOrEqualTo(erase.left));
+      }
+      if (c.width == 320 && c.textScale == 2) {
+        expect(row.stacked, isTrue, reason: 'L2 at 320 ×2: no room');
+      }
       await golden(tester, c, 'forgot', 'L2');
     });
 
