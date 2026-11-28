@@ -53,6 +53,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
   int? _plan;
   String? _currency;
   bool _granted = true;
+  bool _letters = true;
   (String, String)? _version;
   AppServices? _services;
   AppLifecycleListener? _lifecycle;
@@ -95,12 +96,14 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final picks = await store.picks();
     final plan = await store.planMinor();
     final currency = await store.currency() ?? 'USD';
+    final letters = await store.lettersOn();
     final granted = await services.notifications.granted();
     if (!mounted) return;
     setState(() {
       _picks = picks;
       _plan = plan;
       _currency = currency;
+      _letters = letters;
       _granted = granted;
     });
   }
@@ -219,6 +222,16 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                         ? l10n.mePlanNotSet
                         : formatMoney(plan, currency, locale),
                     onTap: () => _editPlan(currency, locale),
+                  ),
+                  // Home's monthly letter from the pig (on unless switched off).
+                  TestId(
+                    'me-letters',
+                    child: SwitchListTile(
+                      title: Text(l10n.meLetters),
+                      value: _letters,
+                      onChanged: (on) =>
+                          context.services.journal.setLettersOn(on),
+                    ),
                   ),
                   _Section(l10n.meSecMoney),
                   _Row(

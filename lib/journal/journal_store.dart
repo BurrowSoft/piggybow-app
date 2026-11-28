@@ -121,6 +121,25 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Whether Home shows the pig's monthly letter (Me → Your pig): on until
+  /// it's switched off. Delete everything clears it with the journal.
+  Future<bool> lettersOn() async =>
+      await _settings.record('letters_off').get(_db) != true;
+
+  Future<void> setLettersOn(bool on) async {
+    await _settings.record('letters_off').put(_db, !on);
+    notifyListeners();
+  }
+
+  /// The month (YYYY-MM) whose letter "Thanks!" put away.
+  Future<String?> letterDismissed() async =>
+      await _settings.record('letter_dismissed').get(_db) as String?;
+
+  Future<void> dismissLetter(String month) async {
+    await _settings.record('letter_dismissed').put(_db, month);
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------- entries
 
   /// Every entry, newest day first; within a day, the newest added first.
