@@ -15,22 +15,27 @@ import 'helpers.dart';
 /// drew an opaque black bar behind the gesture handle (the Play dry run);
 /// Android 15+ already draws the app there.
 void main() {
-  /// What the app last asked the system for, as both bars show it.
-  void expectPageSystemBars(bool dark, String where) {
+  /// What the app last asked the system for, as both bars show it. Android
+  /// takes the status bar's fields from what's at the top of the screen and
+  /// the navigation bar's from what's at the bottom: under an AppBar
+  /// ([statusBar] false) the status bar is the AppBar's own style.
+  void expectPageSystemBars(bool dark, String where, {bool statusBar = true}) {
     final style = SystemChrome.latestStyle!;
     final icons = dark ? Brightness.light : Brightness.dark;
-    expect(style.statusBarColor, Colors.transparent, reason: where);
-    expect(
-      style.statusBarIconBrightness,
-      icons,
-      reason: '$where: Android status icons',
-    );
-    expect(
-      style.statusBarBrightness,
-      dark ? Brightness.dark : Brightness.light,
-      reason: '$where: iOS status icons',
-    );
-    expect(style.systemStatusBarContrastEnforced, isFalse, reason: where);
+    if (statusBar) {
+      expect(style.statusBarColor, Colors.transparent, reason: where);
+      expect(
+        style.statusBarIconBrightness,
+        icons,
+        reason: '$where: Android status icons',
+      );
+      expect(
+        style.statusBarBrightness,
+        dark ? Brightness.dark : Brightness.light,
+        reason: '$where: iOS status icons',
+      );
+      expect(style.systemStatusBarContrastEnforced, isFalse, reason: where);
+    }
     expect(
       style.systemNavigationBarColor,
       Colors.transparent,
@@ -135,7 +140,7 @@ void main() {
       expectPageSystemBars(dark, 'O1');
     });
 
-    testWidgets('Home: see-through bars, icons for $appearance', (
+    testWidgets('Home: see-through navigation bar, icons for $appearance', (
       tester,
     ) async {
       await forgetTheLastStyle(tester);
@@ -144,7 +149,9 @@ void main() {
       await app.pump(tester);
       await tester.pumpAndSettle();
       expect(byId('home-screen'), findsOneWidget);
-      expectPageSystemBars(dark, 'Home');
+      // Home has an AppBar: the status bar is its style.
+      expect(find.byType(AppBar), findsOneWidget);
+      expectPageSystemBars(dark, 'Home', statusBar: false);
     });
 
     testWidgets('the celebration: see-through bars, icons for $appearance', (
