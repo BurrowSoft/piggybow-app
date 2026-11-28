@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "b491d5b86c138e78ffdef5cb448cba6cfaacaf9a",
+  "ref": "b491d5b86c138e78ffdef5cb448cba6cfaacaf9a",
+  "run_id": "46131212616",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -684,6 +684,42 @@
       "file": "me-privacy_lines_light_320x2.png",
       "state": "M8",
       "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
+      "sha256": "7f53820a8ac6d70f078d56794856f56ee16845289ef2dd873a46233ae76df3dd",
+      "bytes": 220169,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_widget-line-end_dark_320x2.png",
+      "state": "WG1",
+      "test": "WG1 Your privacy with Plus: the widget's line (320 dp, text ×2, dark)",
+      "sha256": "1772eb87c8bcea05b052474f9e38f4175cf7d413e7c6260250c1c00cee3fd193",
+      "bytes": 207247,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_widget-line-end_light_320x2.png",
+      "state": "WG1",
+      "test": "WG1 Your privacy with Plus: the widget's line (320 dp, text ×2, light)",
+      "sha256": "a0bc4afd83084968de58425011e2fbc2522eaea36a09ebafeb43c53f08c3dd94",
+      "bytes": 208167,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_widget-line_dark_320x2.png",
+      "state": "WG1",
+      "test": "WG1 Your privacy with Plus: the widget's line (320 dp, text ×2, dark)",
+      "sha256": "c1626b89620c2d07acddcf066ba044b58ec5ccfd353c30d866a6b986bf250b54",
+      "bytes": 219407,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_widget-line_light_320x2.png",
+      "state": "WG1",
+      "test": "WG1 Your privacy with Plus: the widget's line (320 dp, text ×2, light)",
       "sha256": "7f53820a8ac6d70f078d56794856f56ee16845289ef2dd873a46233ae76df3dd",
       "bytes": 220169,
       "width": 960,
