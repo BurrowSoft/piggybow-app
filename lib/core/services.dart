@@ -8,6 +8,7 @@ import '../pig/pig_mood.dart' show PigReaction;
 import 'app_lock.dart';
 import 'clock.dart';
 import 'device.dart';
+import 'launch_actions.dart';
 import 'local_day.dart';
 import 'staging_tools.dart';
 
@@ -20,6 +21,7 @@ class AppServices {
     required this.journal,
     required this.reminders,
     required this.notifications,
+    required this.launchActions,
     this.appLock,
     this.plus,
     this.plusStore,
@@ -40,6 +42,9 @@ class AppServices {
 
   /// Asking for, and reading, the permission to show notifications.
   final NotificationPermission notifications;
+
+  /// The home-screen shortcut, "Add a spend" (Android).
+  final LaunchActions launchActions;
 
   /// What was just added, for the pig's reaction (plan §4.4): set after an
   /// Add, cleared when the app goes to the background.

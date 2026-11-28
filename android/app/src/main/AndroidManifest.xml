@@ -41,6 +41,9 @@
             </intent-filter>
             <!-- No deep links: a link never opens a screen inside the app. -->
             <meta-data android:name="flutter_deeplinking_enabled" android:value="false"/>
+            <!-- The home-screen shortcut, "Add a spend": an explicit intent to
+                 this activity, never a link (res/xml/shortcuts.xml). -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
         </activity>
         <receiver
             android:exported="false"

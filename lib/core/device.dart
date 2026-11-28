@@ -72,6 +72,12 @@ const settingsChannel = 'com.burrowsoft.piggybow/settings';
 const openNotificationSettingsMethod = 'openNotificationSettings';
 const androidSdkMethod = 'androidSdk';
 
+/// The home-screen shortcut's hand-over (launch_actions.dart): Flutter takes
+/// the action MainActivity keeps, and MainActivity says when one is waiting.
+const takeLaunchActionMethod = 'takeLaunchAction';
+const launchActionMethod = 'launchAction';
+const addSpendAction = 'addSpend';
+
 /// The phone's Android version as its SDK level (26 = Android 8), read once at
 /// start-up; null where there is none to read (iOS, a test) or the call
 /// fails.

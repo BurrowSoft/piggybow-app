@@ -10,6 +10,7 @@ import 'core/app_config.dart';
 import 'core/app_lock.dart';
 import 'core/clock.dart';
 import 'core/device.dart';
+import 'core/launch_actions.dart';
 import 'core/local_day.dart';
 import 'core/local_prefs.dart';
 import 'core/sentry_setup.dart';
@@ -137,11 +138,14 @@ Future<void> main() async {
     journal: journal,
     reminders: PlatformReminderScheduler(),
     notifications: const PlatformNotificationPermission(),
+    launchActions: PlatformLaunchActions(),
     appLock: appLock,
     onboarded: await onboardedAtStart(journal),
   );
   // A reminder tapped, or the start it made, opens the Add sheet.
   unawaited(services.reminders.listen());
+  // So does the home-screen shortcut, "Add a spend" (on Home, on Spent).
+  unawaited(services.launchActions.listen());
   // The pig's reaction to an Add lasts until the app goes to the background.
   AppLifecycleListener(onHide: () => services.lastAdd.value = null);
 
