@@ -24,7 +24,6 @@ abstract final class Routes {
   static const signup = '/signup';
   static const checkEmail = '/check-email';
   static const signin = '/signin';
-  static const reset = '/reset';
   static const setup = '/setup';
   static const home = '/home';
 
@@ -43,7 +42,6 @@ abstract final class Routes {
     signup,
     checkEmail,
     signin,
-    reset,
   };
 }
 

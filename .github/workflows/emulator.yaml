@@ -161,10 +161,17 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-          cache: gradle
-          cache-dependency-path: |
-            app/android/*.gradle*
-            app/android/gradle/wrapper/gradle-wrapper.properties
+      # Gradle's downloads from ci.yaml's master runs (see the cache steps
+      # there), restored only: this run builds a PR's code, so it never saves.
+      - name: Gradle's downloads (restore only)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-apk-${{ hashFiles('app/android/**/*.gradle*', 'app/android/gradle.properties', 'app/android/gradle/wrapper/gradle-wrapper.properties', 'app/pubspec.lock') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-apk-
       - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: 3.47.5

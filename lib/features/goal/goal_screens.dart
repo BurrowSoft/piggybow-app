@@ -187,112 +187,114 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
       onboarding ? 'onb-goal' : 'goal-edit-screen',
       child: Scaffold(
         appBar: AppBar(title: onboarding ? null : Text(l10n.goalTitle)),
-        body: currency == null
-            ? const SizedBox.shrink()
-            : ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  if (onboarding) ...[
-                    Text(
-                      l10n.onbGoalTitle,
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(l10n.onbGoalBody, style: theme.textTheme.bodyLarge),
-                    const SizedBox(height: 16),
-                  ],
-                  TestId(
-                    'goal-name',
-                    child: TextField(
-                      controller: _name,
-                      autofocus: !editing && !onboarding,
-                      textCapitalization: TextCapitalization.sentences,
-                      // Up to 3 lines, so a long name is seen whole, but one
-                      // line of text: it shows in one-line places (decision
-                      // 61). Enter is Done; a pasted break becomes a space.
-                      minLines: 1,
-                      maxLines: 3,
-                      keyboardType: TextInputType.text,
-                      textInputAction: TextInputAction.done,
-                      inputFormatters: const [LineBreaksAsSpaces()],
-                      maxLength: goalNameMax,
-                      style: context.inputText,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        labelText: l10n.goalNameLabel,
-                        hintText: l10n.goalNameHint,
-                        hintMaxLines: 2,
-                        errorText: _nameError(l10n),
-                        errorMaxLines: 3,
+        body: SafeArea(
+          child: currency == null
+              ? const SizedBox.shrink()
+              : ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    if (onboarding) ...[
+                      Text(
+                        l10n.onbGoalTitle,
+                        style: theme.textTheme.headlineSmall,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TestId(
-                    'goal-amount',
-                    child: TextField(
-                      controller: _target,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      style: context.inputText,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        labelText: l10n.goalAmountLabel,
-                        errorText: _targetError(l10n),
-                        errorMaxLines: 3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TestId(
-                    'goal-start',
-                    child: TextField(
-                      controller: _start,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      style: context.inputText,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        // One line, whole: smaller only if it must.
-                        label: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(l10n.goalStartLabel),
-                        ),
-                        errorText: _startError(l10n),
-                        errorMaxLines: 3,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  TestId(
-                    onboarding ? 'onb-goal-start' : 'goal-submit',
-                    button: true,
-                    child: FilledButton(
-                      onPressed: _busy ? null : _submit,
-                      child: ButtonLabel(
-                        onboarding
-                            ? l10n.onbGoalStart
-                            : editing
-                            ? l10n.goalSave
-                            : l10n.goalCreate,
-                      ),
-                    ),
-                  ),
-                  if (onboarding) ...[
-                    const SizedBox(height: 8),
+                      const SizedBox(height: 8),
+                      Text(l10n.onbGoalBody, style: theme.textTheme.bodyLarge),
+                      const SizedBox(height: 16),
+                    ],
                     TestId(
-                      'onb-goal-later',
-                      button: true,
-                      child: TextButton(
-                        onPressed: _busy ? null : _later,
-                        child: ButtonLabel(l10n.onbGoalLater),
+                      'goal-name',
+                      child: TextField(
+                        controller: _name,
+                        autofocus: !editing && !onboarding,
+                        textCapitalization: TextCapitalization.sentences,
+                        // Up to 3 lines, so a long name is seen whole, but one
+                        // line of text: it shows in one-line places (decision
+                        // 61). Enter is Done; a pasted break becomes a space.
+                        minLines: 1,
+                        maxLines: 3,
+                        keyboardType: TextInputType.text,
+                        textInputAction: TextInputAction.done,
+                        inputFormatters: const [LineBreaksAsSpaces()],
+                        maxLength: goalNameMax,
+                        style: context.inputText,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          labelText: l10n.goalNameLabel,
+                          hintText: l10n.goalNameHint,
+                          hintMaxLines: 2,
+                          errorText: _nameError(l10n),
+                          errorMaxLines: 3,
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    TestId(
+                      'goal-amount',
+                      child: TextField(
+                        controller: _target,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: context.inputText,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          labelText: l10n.goalAmountLabel,
+                          errorText: _targetError(l10n),
+                          errorMaxLines: 3,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TestId(
+                      'goal-start',
+                      child: TextField(
+                        controller: _start,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        style: context.inputText,
+                        onChanged: (_) => setState(() {}),
+                        decoration: InputDecoration(
+                          // One line, whole: smaller only if it must.
+                          label: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(l10n.goalStartLabel),
+                          ),
+                          errorText: _startError(l10n),
+                          errorMaxLines: 3,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TestId(
+                      onboarding ? 'onb-goal-start' : 'goal-submit',
+                      button: true,
+                      child: FilledButton(
+                        onPressed: _busy ? null : _submit,
+                        child: ButtonLabel(
+                          onboarding
+                              ? l10n.onbGoalStart
+                              : editing
+                              ? l10n.goalSave
+                              : l10n.goalCreate,
+                        ),
+                      ),
+                    ),
+                    if (onboarding) ...[
+                      const SizedBox(height: 8),
+                      TestId(
+                        'onb-goal-later',
+                        button: true,
+                        child: TextButton(
+                          onPressed: _busy ? null : _later,
+                          child: ButtonLabel(l10n.onbGoalLater),
+                        ),
+                      ),
+                    ],
                   ],
-                ],
-              ),
+                ),
+        ),
       ),
     );
   }
@@ -421,105 +423,108 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
               ),
           ],
         ),
-        body: goal == null
-            ? const SizedBox.shrink()
-            : ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                children: [
-                  Builder(
-                    builder: (context) {
-                      final percent = goalPercent(
-                        progressMinor: _progress,
-                        targetMinor: goal.targetMinor,
-                      );
-                      return Rainbow(
-                        percent: percent,
-                        semanticLabel: l10n.goalRainbowLabel(
-                          percent,
-                          money(_progress),
-                          money(goal.targetMinor),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  WholeWordsText(
-                    l10n.goalCardProgress(
-                      money(_progress),
-                      money(goal.targetMinor),
+        body: SafeArea(
+          child: goal == null
+              ? const SizedBox.shrink()
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                  children: [
+                    Builder(
+                      builder: (context) {
+                        final percent = goalPercent(
+                          progressMinor: _progress,
+                          targetMinor: goal.targetMinor,
+                        );
+                        return Rainbow(
+                          percent: percent,
+                          semanticLabel: l10n.goalRainbowLabel(
+                            percent,
+                            money(_progress),
+                            money(goal.targetMinor),
+                          ),
+                        );
+                      },
                     ),
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onSurface,
-                    ),
-                  ),
-                  if (!goalReached(
-                    progressMinor: _progress,
-                    targetMinor: goal.targetMinor,
-                  ))
-                    WholeWordsText(
-                      l10n.goalToGo(money(goal.targetMinor - _progress)),
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  if (goal.status == GoalStatus.active) ...[
                     const SizedBox(height: 16),
-                    TestId(
-                      'goal-add-savings',
-                      button: true,
-                      child: FilledButton.icon(
-                        // This goal's own: with several, the sheet starts on it.
-                        onPressed: () => showEntrySheet(
-                          context,
-                          start: EntryType.saved,
-                          goalId: goal.id,
+                    WholeWordsText(
+                      l10n.goalCardProgress(
+                        money(_progress),
+                        money(goal.targetMinor),
+                      ),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    if (!goalReached(
+                      progressMinor: _progress,
+                      targetMinor: goal.targetMinor,
+                    ))
+                      WholeWordsText(
+                        l10n.goalToGo(money(goal.targetMinor - _progress)),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
-                        icon: const Icon(Icons.add),
-                        label: Text(l10n.goalAddSavings),
                       ),
-                    ),
-                  ],
-                  // No saves yet: no header over nothing (decision 57).
-                  if (_saves.isNotEmpty) ...[
-                    const SizedBox(height: 24),
-                    Semantics(
-                      header: true,
-                      child: Text(
-                        l10n.goalSavesHeader,
-                        style: theme.textTheme.titleSmall,
+                    if (goal.status == GoalStatus.active) ...[
+                      const SizedBox(height: 16),
+                      TestId(
+                        'goal-add-savings',
+                        button: true,
+                        child: FilledButton.icon(
+                          // This goal's own: with several, the sheet starts
+                          // on it.
+                          onPressed: () => showEntrySheet(
+                            context,
+                            start: EntryType.saved,
+                            goalId: goal.id,
+                          ),
+                          icon: const Icon(Icons.add),
+                          label: Text(l10n.goalAddSavings),
+                        ),
                       ),
-                    ),
-                  ],
-                  for (final e in _saves)
-                    TestId(
-                      'goal-save-${e.id}',
-                      button: true,
-                      child: InkWell(
-                        onTap: () => showEntrySheet(context, editing: e),
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(minHeight: 56),
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            child: _SaveRow(
-                              title: e.note.isNotEmpty
-                                  ? e.note
-                                  : l10n.tlSavedRow,
-                              day: dayLabel(
-                                l10n,
-                                context.session.dateLocale,
-                                e.date,
-                                today: context.services.localDay.today,
+                    ],
+                    // No saves yet: no header over nothing (decision 57).
+                    if (_saves.isNotEmpty) ...[
+                      const SizedBox(height: 24),
+                      Semantics(
+                        header: true,
+                        child: Text(
+                          l10n.goalSavesHeader,
+                          style: theme.textTheme.titleSmall,
+                        ),
+                      ),
+                    ],
+                    for (final e in _saves)
+                      TestId(
+                        'goal-save-${e.id}',
+                        button: true,
+                        child: InkWell(
+                          onTap: () => showEntrySheet(context, editing: e),
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minHeight: 56),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: _SaveRow(
+                                title: e.note.isNotEmpty
+                                    ? e.note
+                                    : l10n.tlSavedRow,
+                                day: dayLabel(
+                                  l10n,
+                                  context.session.dateLocale,
+                                  e.date,
+                                  today: context.services.localDay.today,
+                                ),
+                                amount: '+${money(e.amountMinor)}',
                               ),
-                              amount: '+${money(e.amountMinor)}',
                             ),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              ),
+                  ],
+                ),
+        ),
       ),
     );
   }

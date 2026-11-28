@@ -136,6 +136,9 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
           'home-add',
           button: true,
           child: FloatingActionButton.extended(
+            // Timeline has an Add button too, and the shell keeps both tabs
+            // alive: one tag each, or a route over the shell finds two heroes.
+            heroTag: 'home-add',
             onPressed: () => showEntrySheet(context),
             icon: const Icon(Icons.add),
             label: Text(l10n.homeAdd),
