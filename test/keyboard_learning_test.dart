@@ -12,8 +12,14 @@ import 'helpers.dart';
 /// screens show it on the fields they build.
 void main() {
   group('the lib/ scan', () {
+    // A text field's constructor, named ones (CupertinoTextField.borderless)
+    // and type arguments (Autocomplete<String>) included. The search and
+    // autocomplete widgets build their own fields: used here, they need
+    // one the flag reaches.
     final call = RegExp(
-      r'\b(TextField|TextFormField|CupertinoTextField|EditableText)\(',
+      r'\b(TextField|TextFormField|CupertinoTextField|CupertinoSearchTextField'
+      r'|EditableText|SearchBar|SearchAnchor|Autocomplete|RawAutocomplete)'
+      r'(<[^<>()]*>)?(\.\w+)?\(',
     );
     const flag = 'enableIMEPersonalizedLearning: false';
 
@@ -42,6 +48,21 @@ void main() {
         missingIn(
           'TextFormField(\n  decoration: InputDecoration(labelText: x),\n'
           '  enableIMEPersonalizedLearning: false,\n)',
+        ),
+        isEmpty,
+      );
+      // A named constructor, and a search field.
+      expect(missingIn('CupertinoTextField.borderless(controller: c)'), [
+        '1: CupertinoTextField',
+      ]);
+      expect(missingIn('SearchAnchor.bar(suggestionsBuilder: s)'), [
+        '1: SearchAnchor',
+      ]);
+      // Autocomplete with type arguments, its own field flagged inside.
+      expect(
+        missingIn(
+          'Autocomplete<String>(\n  fieldViewBuilder: (c, t, f, s) => '
+          'TextField(enableIMEPersonalizedLearning: false, controller: t),\n)',
         ),
         isEmpty,
       );
@@ -113,6 +134,10 @@ void main() {
       expectOff(tester, 'me-plan-amount');
       await tester.tapId('me-plan-cancel');
       await tester.tapId('me-happy');
+      // Its picks come from the journal, a few frames later.
+      for (var i = 0; i < 40 && byId('onb-pick-plan').evaluate().isEmpty; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
       await tester.tapId('onb-pick-plan');
       await tester.revealId('onb-plan');
       expectOff(tester, 'onb-plan');
