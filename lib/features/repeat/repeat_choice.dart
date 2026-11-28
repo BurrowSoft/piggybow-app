@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../journal/category.dart';
 import '../../journal/entry.dart';
@@ -124,10 +125,12 @@ Future<RepeatChoice?> showRepeatChoices(
               'repeat-choice-${c.id}',
               button: true,
               selected: c == current,
-              // A ListTile: each choice at least 48 dp tall.
+              // A ListTile: each choice at least 48 dp tall. Whole words
+              // ("Wednesday" at 320 dp and 200 % text), smaller only if
+              // they must be.
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                title: Text(label(c)),
+                title: WholeWordsText(label(c)),
                 subtitle: c == RepeatChoice.monthly
                     ? switch (scheduleHint(l10n, scheduleFor(c, date))) {
                         final hint? => Text(hint),

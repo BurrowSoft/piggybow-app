@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/button_label.dart';
 import '../../core/clock.dart';
+import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../journal/category.dart';
@@ -65,7 +66,7 @@ class _RepeatsScreenState extends State<RepeatsScreen> {
     return TestId.container(
       'me-repeats-screen',
       child: Scaffold(
-        appBar: AppBar(title: Text(l10n.meRepeats)),
+        appBar: AppBar(title: AppBarTitle(l10n.meRepeats)),
         body: repeats == null
             ? const SizedBox.shrink()
             : repeats.isEmpty
@@ -232,10 +233,13 @@ class _RepeatScreenState extends State<RepeatScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
-        title: Text(
+        // Whole words, as the plan dialog's title: "repeating" at 320 dp and
+        // 200 % text, smaller only if it must be.
+        title: WholeWordsText(
           l10n.repeatStopTitle(
             repeatName(l10n, note: r.note, category: r.category),
           ),
+          style: Theme.of(dialog).textTheme.headlineSmall,
         ),
         content: Text(l10n.repeatStopBody),
         actions: [
@@ -305,7 +309,8 @@ class _RepeatScreenState extends State<RepeatScreen> {
       'repeat-screen',
       child: Scaffold(
         appBar: AppBar(
-          title: Text(
+          // One line, all of it: a repeat's name can be a long note.
+          title: AppBarTitle(
             r == null
                 ? l10n.meRepeats
                 : repeatName(l10n, note: r.note, category: r.category),
