@@ -230,10 +230,11 @@ void main() {
     expect(byId('sum-patterns-teaser'), findsNothing);
   });
 
-  test('no guilt: every line, with sample categories and days, passes the '
-      'copy check, with no number, advice or judgement', () {
+  test('no guilt: every line passes the copy check, with no advice or '
+      'judgement; the patterns themselves have no number', () {
     final en = lookupAppLocalizations(const Locale('en'));
-    final lines = [
+    // The window is named ("the last 8 weeks"); a pattern never counts.
+    final copy = [
       en.sumPatterns,
       en.sumPatternsSeeAll,
       en.patternsWindow,
@@ -244,6 +245,8 @@ void main() {
       en.patternsPlusBody,
       en.patternsPlusSee,
       en.patternsPlusHide,
+    ];
+    final patterns = [
       for (final c in SpendCategory.values)
         for (final pattern in [
           FeelingPattern.categoryWorth(c.id),
@@ -262,10 +265,12 @@ void main() {
         dateLocale: 'en_US',
       ),
     ];
-    expect(lines, contains(food));
-    expect(lines, contains(saturday));
+    expect(patterns, contains(food));
+    expect(patterns, contains(saturday));
+    for (final text in patterns) {
+      expect(RegExp(r'\d').hasMatch(text), isFalse, reason: '"$text": a number');
+    }
     final never = [
-      r'\d',
       '%',
       r'\bshould\b',
       r'\btry\b',
@@ -282,7 +287,7 @@ void main() {
       r'\bwatch\b',
       r'\bnot really\b',
     ];
-    for (final text in lines) {
+    for (final text in [...copy, ...patterns]) {
       expect(findGuilt({'line': text}), isEmpty, reason: text);
       for (final p in never) {
         expect(
