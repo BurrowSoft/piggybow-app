@@ -6,7 +6,7 @@ import 'package:piggybow/summary/summary.dart' show SummaryEntry;
 /// spends felt in the last 8 weeks, by category and by weekday. Nothing below
 /// 20 spends with a feeling; 5 per category; 4 per weekday over 3 different
 /// days; "mostly worth it" at 60 % and 15 points above all spends; "mixed"
-/// when no feeling has half and two have a quarter. "Not really" is never a
+/// when no feeling has half. "Not really" is never a
 /// pattern. Only the type, category, feeling and day are read: the input has
 /// no notes, no time of day, and amounts don't count.
 void main() {
@@ -128,13 +128,22 @@ void main() {
       );
     });
 
-    test('mixed: no feeling has half, and two have a quarter', () {
+    test('mixed: no feeling has half', () {
       expect(
         patterns([
           ...filler(15),
           ...times(2, spend('worth_it', category: 'shopping')),
           ...times(2, spend('not_sure', category: 'shopping')),
           spend('not_really', category: 'shopping'),
+        ]),
+        found([const FeelingPattern.categoryMixed('shopping')]),
+      );
+      // 45 / 45 / 10 is mixed too.
+      expect(
+        patterns([
+          ...times(9, spend('worth_it', category: 'shopping')),
+          ...times(9, spend('not_sure', category: 'shopping')),
+          ...times(2, spend('not_really', category: 'shopping')),
         ]),
         found([const FeelingPattern.categoryMixed('shopping')]),
       );
@@ -257,6 +266,23 @@ void main() {
           const FeelingPattern.weekdayWorth(DateTime.saturday),
         ]),
       );
+    });
+
+    test('the same label: by id, so the order never moves', () {
+      // A custom category named like a built-in one, given first or last.
+      final food = times(5, spend('worth_it'));
+      final custom = times(5, spend('worth_it', category: 'c:food'));
+      FeelingPatterns sameLabel(List<SummaryEntry> entries) => feelingPatterns(
+        entries: entries,
+        today: today,
+        categoryLabel: (id) => id == 'c:food' ? 'Food' : labels[id] ?? id,
+      );
+      const order = [
+        FeelingPattern.categoryWorth('c:food'),
+        FeelingPattern.categoryWorth('food'),
+      ];
+      expect(sameLabel([...filler(15), ...food, ...custom]), found(order));
+      expect(sameLabel([...filler(15), ...custom, ...food]), found(order));
     });
 
     test('the overall line only when nothing more specific shows', () {

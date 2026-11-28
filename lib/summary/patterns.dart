@@ -34,10 +34,9 @@ const patternsShare = 60;
 /// …and at least this many points above the share across all of them.
 const patternsAboveOverall = 15;
 
-/// "Mixed": no feeling at this share (%) or more, and at least two at
-/// [patternsMixedEach] % or more.
+/// "Mixed": no feeling at this share (%) or more. (With three feelings and
+/// none at half, the top two always have more than a quarter each.)
 const patternsMixedTop = 50;
-const patternsMixedEach = 25;
 
 /// At most this many patterns show.
 const patternsMax = 3;
@@ -150,11 +149,11 @@ class _Counts {
   bool worthAbove(_Counts all, int points) =>
       (worth * all.felt - all.worth * felt) * 100 >= points * felt * all.felt;
 
-  bool get mixed {
-    final shares = [worth, notSure, notReally];
-    if (shares.any((n) => n * 100 >= felt * patternsMixedTop)) return false;
-    return shares.where((n) => n * 100 >= felt * patternsMixedEach).length >= 2;
-  }
+  bool get mixed => [
+    worth,
+    notSure,
+    notReally,
+  ].every((n) => n * 100 < felt * patternsMixedTop);
 }
 
 DateTime _date(String iso) => DateTime.parse('${iso}T00:00:00Z');
@@ -203,11 +202,13 @@ FeelingPatterns feelingPatterns({
   final mixed = <(FeelingPattern, _Counts, String)>[];
   for (final MapEntry(key: id, value: c) in byCategory.entries) {
     if (c.felt < patternsMinPerCategory) continue;
-    final label = categoryLabel(id).toLowerCase();
+    // The label, then the id: a custom category named like a built-in one
+    // still has one place.
+    final key = 'a${categoryLabel(id).toLowerCase()}\u0000$id';
     if (standsOut(c)) {
-      worth.add((FeelingPattern.categoryWorth(id), c, 'a$label'));
+      worth.add((FeelingPattern.categoryWorth(id), c, key));
     } else if (c.mixed) {
-      mixed.add((FeelingPattern.categoryMixed(id), c, 'a$label'));
+      mixed.add((FeelingPattern.categoryMixed(id), c, key));
     }
   }
   for (final MapEntry(key: day, value: c) in byWeekday.entries) {
@@ -219,7 +220,8 @@ FeelingPatterns feelingPatterns({
   }
 
   // The strongest first: the larger worth-it share, then more spends, then
-  // categories (by label) before weekdays (Monday first). Mixed ones after.
+  // categories (by label, then id) before weekdays (Monday first). Mixed ones
+  // after.
   int byStrength(
     (FeelingPattern, _Counts, String) a,
     (FeelingPattern, _Counts, String) b,
