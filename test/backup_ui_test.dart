@@ -32,12 +32,15 @@ void main() {
   /// Lets real file work finish (the cache folder runs on real time),
   /// pumping between, until [done].
   Future<void> settleIo(WidgetTester tester, bool Function() done) async {
-    for (var i = 0; i < 200 && !done(); i++) {
+    // Real time for the file calls (a busy CI runner is slow), frames
+    // between; up to 6 s.
+    for (var i = 0; i < 300 && !done(); i++) {
       await tester.runAsync(
-        () => Future<void>.delayed(const Duration(milliseconds: 5)),
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
       );
       await tester.pump(const Duration(milliseconds: 16));
     }
+    expect(done(), isTrue, reason: 'the file work finished in time');
     await tester.pumpAndSettle();
   }
 
@@ -103,14 +106,16 @@ void main() {
     await tester.enterId('backup-again', 'correct horse');
     await tester.tap(byId('backup-go'));
     await tester.pump();
-    // Done once the sheet was shown and the file deleted after it.
+    // Done once the sheet was shown, the file deleted after it, and the
+    // button no longer busy.
     final export = Directory('${backup.cache.path}/export');
     await settleIo(
       tester,
       () =>
           backup.shared.isNotEmpty &&
           export.existsSync() &&
-          export.listSync().isEmpty,
+          export.listSync().isEmpty &&
+          find.text(l10n.backupAction).evaluate().isNotEmpty,
     );
     tester.expectScreen('backup-screen');
     expect(byId('backup-error'), findsNothing);
