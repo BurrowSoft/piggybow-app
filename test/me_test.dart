@@ -330,6 +330,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('after a restore, the lock row says so until opened', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+    addTearDown(tester.view.reset);
+    // The settings said "on"; the PIN didn't come with the backup.
+    final lock = AppLock(
+      store: MemorySecretStore(),
+      biometrics: FakeBiometrics(),
+      mirror: MemoryLockMirror(on: true),
+      iterations: 50,
+    );
+    await tester.runAsync(lock.load);
+    final app = TestApp(appLock: lock);
+    await tester.runAsync(app.openJournal);
+    await app.pump(tester, location: '/me');
+    await settle(tester, byId('me-happy'));
+    final notice = find.text('Off after a restore. Turn it on again.');
+    expect(notice, findsOneWidget);
+    await tester.tapId('me-lock');
+    expect(lock.restoreNoticePending, isFalse);
+  });
+
   testWidgets('Delete everything, cancelled: nothing changes', (tester) async {
     final app = await openMe(
       tester,

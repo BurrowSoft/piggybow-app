@@ -49,6 +49,7 @@ Future<void> main() async {
           store: const KeystoreSecretStore(),
           biometrics: DeviceBiometrics(),
           firstRun: const PrefsFirstRunMarker(),
+          mirror: const PrefsLockMirror(),
         )
       : null;
   // Staging only, compiled out of store builds (kLaunchFixtures is a

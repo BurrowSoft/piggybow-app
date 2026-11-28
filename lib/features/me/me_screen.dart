@@ -67,6 +67,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
       if (!mounted) return;
       final services = _services = context.services;
       services.journal.addListener(_load);
+      services.appLock?.addListener(_lockChanged);
       // Notifications can be turned on or off outside the app.
       _lifecycle = AppLifecycleListener(onResume: _load);
       _load();
@@ -77,8 +78,14 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
   @override
   void dispose() {
     _services?.journal.removeListener(_load);
+    _services?.appLock?.removeListener(_lockChanged);
     _lifecycle?.dispose();
     super.dispose();
+  }
+
+  /// The App lock row follows the lock: on, off, or off after a restore.
+  void _lockChanged() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _load() async {
@@ -281,10 +288,13 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                         l10n,
                         lockRowKey(
                           lockOn: lock.enabled,
-                          restoreNoticePending: false,
+                          restoreNoticePending: lock.restoreNoticePending,
                         ),
                       ),
-                      onTap: () => context.push(MeRoutes.lock),
+                      onTap: () {
+                        unawaited(lock.dismissRestoreNotice());
+                        context.push(MeRoutes.lock);
+                      },
                     ),
                   _Row(
                     id: 'me-export',

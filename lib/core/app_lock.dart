@@ -9,6 +9,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../lock_rules/lock_rules.dart' show LockState, lockState;
+
 /// The app lock (plan §3.11): a 4–6 digit PIN, optional fingerprint or face,
 /// "lock after" a time away. The PIN is stored only as a salted PBKDF2 hash
 /// in the platform keystore (secure storage, never backed up) and never
@@ -108,6 +110,60 @@ class MemoryFirstRunMarker implements FirstRunMarker {
 
   @override
   Future<void> markSeen() async => wasSeen = true;
+}
+
+/// What the phone's backup carries of the lock (decision 17): a plain
+/// setting that says it's on. The PIN never goes with it, so a restore
+/// shows as "on" with no PIN.
+abstract interface class LockMirror {
+  Future<bool> lockOn();
+  Future<void> setLockOn(bool on);
+
+  /// Me's App lock row says "Off after a restore" until it's opened.
+  Future<bool> restoreNotice();
+  Future<void> setRestoreNotice(bool pending);
+}
+
+class PrefsLockMirror implements LockMirror {
+  const PrefsLockMirror();
+
+  static const _on = 'app_lock.on';
+  static const _notice = 'app_lock.restore_notice';
+
+  @override
+  Future<bool> lockOn() async =>
+      (await SharedPreferences.getInstance()).getBool(_on) ?? false;
+
+  @override
+  Future<void> setLockOn(bool on) async =>
+      (await SharedPreferences.getInstance()).setBool(_on, on);
+
+  @override
+  Future<bool> restoreNotice() async =>
+      (await SharedPreferences.getInstance()).getBool(_notice) ?? false;
+
+  @override
+  Future<void> setRestoreNotice(bool pending) async =>
+      (await SharedPreferences.getInstance()).setBool(_notice, pending);
+}
+
+class MemoryLockMirror implements LockMirror {
+  MemoryLockMirror({this.on = false, this.notice = false});
+
+  bool on;
+  bool notice;
+
+  @override
+  Future<bool> lockOn() async => on;
+
+  @override
+  Future<void> setLockOn(bool on) async => this.on = on;
+
+  @override
+  Future<bool> restoreNotice() async => notice;
+
+  @override
+  Future<void> setRestoreNotice(bool pending) async => notice = pending;
 }
 
 enum BiometricKind { faceId, touchId, other }
@@ -228,14 +284,19 @@ class AppLock extends ChangeNotifier {
     required this.store,
     required this.biometrics,
     FirstRunMarker? firstRun,
+    LockMirror? mirror,
     DateTime Function()? now,
     this.iterations = 60000,
   }) : firstRun = firstRun ?? MemoryFirstRunMarker(),
+       mirror = mirror ?? MemoryLockMirror(),
        _now = now ?? DateTime.now;
 
   final SecretStore store;
   final Biometrics biometrics;
   final FirstRunMarker firstRun;
+
+  /// "On" in the settings the phone's backup carries (decision 17).
+  final LockMirror mirror;
   final DateTime Function() _now;
 
   /// PBKDF2 rounds (tests use fewer).
@@ -272,6 +333,11 @@ class AppLock extends ChangeNotifier {
   Future<void>? _arming;
 
   bool get enabled => _enabled;
+
+  /// The lock was on before a restore that brought no PIN: Me's row says
+  /// so until it's opened ([dismissRestoreNotice]).
+  bool get restoreNoticePending => _restoreNotice;
+  bool _restoreNotice = false;
 
   /// On, or being turned on: what leaving the app (and the cover) must
   /// follow. [enabled] stays false until the PIN is stored.
@@ -314,6 +380,7 @@ class AppLock extends ChangeNotifier {
   /// off afterwards.
   Future<void> eraseAll() async {
     await store.deleteAll();
+    await _mirrorOn(false);
     _resetMemory();
     notifyListeners();
   }
@@ -330,7 +397,9 @@ class AppLock extends ChangeNotifier {
   }
 
   Future<void> _read() async {
-    _enabled = (await store.read(_kHash)) != null;
+    final pin = (await store.read(_kHash)) != null;
+    _enabled = pin;
+    await _checkRestore(pin: pin);
     final settings = await store.read(_kSettings);
     if (settings != null) {
       final s = jsonDecode(settings) as Map<String, dynamic>;
@@ -349,6 +418,50 @@ class AppLock extends ChangeNotifier {
     }
     _locked = _enabled;
     notifyListeners();
+  }
+
+  /// A restore brings the settings but never the PIN (decision 17): "on"
+  /// with no PIN is one. The lock is off, and Me says so until its row is
+  /// opened. A PIN with the setting off (a write that failed) sets it
+  /// again. Best effort: a PIN alone decides the lock.
+  Future<void> _checkRestore({required bool pin}) async {
+    try {
+      final mirrored = await mirror.lockOn();
+      final state = lockState(prefsLockOn: mirrored, pinExists: pin);
+      if (state == LockState.offAfterRestore) {
+        await mirror.setLockOn(false);
+        await mirror.setRestoreNotice(true);
+      } else if (pin && !mirrored) {
+        await mirror.setLockOn(true);
+      }
+      _restoreNotice = !pin && await mirror.restoreNotice();
+    } on Object {
+      // The notice is a courtesy; the lock follows the PIN alone.
+    }
+  }
+
+  /// "On" or "off" in the backed-up settings. Turning the lock on or off
+  /// answers any restore notice. Best effort, as above.
+  Future<void> _mirrorOn(bool on) async {
+    _restoreNotice = false;
+    try {
+      await mirror.setLockOn(on);
+      await mirror.setRestoreNotice(false);
+    } on Object {
+      // Then a restore goes unnoticed; the lock itself is unaffected.
+    }
+  }
+
+  /// Me's App lock row was opened: its after-restore line has been read.
+  Future<void> dismissRestoreNotice() async {
+    if (!_restoreNotice) return;
+    _restoreNotice = false;
+    notifyListeners();
+    try {
+      await mirror.setRestoreNotice(false);
+    } on Object {
+      // At worst it shows once more at the next start.
+    }
   }
 
   static bool validPin(String pin) => RegExp(r'^\d{4,6}$').hasMatch(pin);
@@ -387,6 +500,7 @@ class AppLock extends ChangeNotifier {
       await _saveFails(0, null);
       _enabled = true;
       await _saveSettings();
+      await _mirrorOn(true);
     } finally {
       _arming = null;
       done.complete();
@@ -508,6 +622,7 @@ class AppLock extends ChangeNotifier {
     for (final k in [_kHash, _kSalt, _kSettings, _kFails]) {
       await store.delete(k);
     }
+    await _mirrorOn(false);
     _resetMemory();
     notifyListeners();
   }
