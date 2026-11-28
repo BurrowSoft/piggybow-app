@@ -1,0 +1,39 @@
+appId: ${APP_ID}
+name: Goal target date and pace (#60) at large text - after flow 79a (its goal kept), the pace line on the goal's detail and the date in the edit form at font scale 2.0, for a look
+tags: [pace]
+---
+- launchApp                                       # no clearState: flow 79a's goal
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-card
+- tapOn:
+    id: goal-card
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-outlook
+- assertVisible:
+    id: goal-outlook
+    text: "(?s).*About 12 weeks to go\\s+at this pace.*"
+- takeScreenshot: 79-pace-line-x2
+- tapOn:
+    id: goal-menu
+- tapOn:
+    id: goal-edit
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-target-date
+- assertVisible:
+    id: goal-target-date
+    text: "(?s).*Nov 30,\\s+2026.*"
+- takeScreenshot: 79-form-date-x2

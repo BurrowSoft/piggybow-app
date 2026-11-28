@@ -1,0 +1,60 @@
+appId: ${APP_ID}
+name: Goal target date and pace (#60) - no line once reached; no line when the pace is over 52 weeks (after flow 79a, its goal kept)
+tags: [pace]
+---
+- launchApp                                       # no clearState: flow 79a's goal (Bike, 325 of 1000)
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-card
+- tapOn:
+    id: goal-card
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+# Reached: no line
+- runFlow:
+    file: ../../subflows/add_savings.yaml
+    env: { AMOUNT: "675", GOAL: "Bike" }
+- extendedWaitUntil:
+    visible:
+      id: goal-done-screen
+    timeout: 10000
+- tapOn:
+    id: goal-done-close
+- extendedWaitUntil:
+    visible:
+      id: "goal-screen|home-add"
+    timeout: 10000
+- runFlow:
+    when:
+      visible:
+        id: goal-screen
+    commands:
+      - assertNotVisible:
+          id: goal-outlook
+      - takeScreenshot: 79-reached-no-line
+      - tapOn: "Back"
+# Over 52 weeks: House, 10000, a save of 10 now -> ceil(9990 x 4 / 10) weeks: no line
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env: { NAME: "House", AMOUNT: "10000", START: "0" }
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/add_savings.yaml
+    env: { AMOUNT: "10", GOAL: "House" }
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- assertNotVisible:
+    id: goal-outlook
+- takeScreenshot: 79-far-no-line

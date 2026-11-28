@@ -1,0 +1,148 @@
+appId: ${APP_ID}
+name: Goal target date and pace (#60) - O3 has no date row; the form's date (today not pickable, × removes it); "Target - date" with no recent saves; "About N weeks to go at this pace" after a save; Edit keeps the date
+tags: [pace]
+# Run with zone UTC and fake_now=2026-11-28T05:00:00Z: the app's clock is
+# frozen at Saturday 28 November 2026.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+# Onboarding's first goal (O3): no date row
+- tapOn:
+    id: onb-start
+- tapOn:
+    id: onb-pick-save
+- tapOn:
+    id: onb-continue
+- extendedWaitUntil:
+    visible:
+      id: onb-goal-later
+    timeout: 10000
+- assertNotVisible:
+    id: goal-target-date
+- tapOn:
+    id: onb-goal-later
+- tapOn:
+    id: tab-home
+# The goal form: Bike, 1000, already 100, a target date
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-create
+- tapOn:
+    id: goal-create
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: goal-name, TEXT: "Bike", EXPECT: ".*Bike.*" }
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: goal-amount, TEXT: "1000", EXPECT: ".*1000.*" }
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: goal-start, TEXT: "100", EXPECT: ".*100.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-target-date
+- tapOn:
+    id: goal-target-date
+- assertVisible:
+    text: ".*Saturday, November 28, 2026.*"
+    enabled: false                                # today can't be picked
+- tapOn: ".*Monday, November 30, 2026.*"
+- tapOn: "OK"
+- assertVisible:
+    id: goal-target-date
+    text: "(?s).*Nov 30, 2026.*"
+# × removes it (read out as "Remove target date"), then pick it again
+- assertVisible:
+    id: goal-target-date-remove
+    text: "(?s).*Remove target date.*"
+- tapOn:
+    id: goal-target-date-remove
+- assertNotVisible:
+    id: goal-target-date
+    text: "(?s).*Nov 30, 2026.*"
+- tapOn:
+    id: goal-target-date
+- tapOn: ".*Monday, November 30, 2026.*"
+- tapOn: "OK"
+- takeScreenshot: 79-form-date
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-submit
+- tapOn:
+    id: goal-submit
+- extendedWaitUntil:
+    visible:
+      id: "goal-card|goal-screen"
+    timeout: 10000
+- runFlow:
+    when:
+      visible:
+        id: goal-card
+    commands:
+      - tapOn:
+          id: goal-card
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+# No saves yet, a date ahead: the target line
+- assertVisible:
+    id: goal-outlook
+    text: "(?s).*Target: Nov 30, 2026.*"
+- takeScreenshot: 79-target-line
+# A save now (225; the 100 already saved doesn't count): 675 left, ceil(675 x 4 / 225) = 12
+- runFlow:
+    file: ../../subflows/add_savings.yaml
+    env: { AMOUNT: "225", GOAL: "Bike" }
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- assertVisible:
+    id: goal-outlook
+    text: "(?s).*About 12 weeks to go at this pace.*"
+- assertNotVisible: "(?i).*behind.*"
+- takeScreenshot: 79-pace-line
+# Edit shows the date; saving untouched keeps it
+- tapOn:
+    id: goal-menu
+- tapOn:
+    id: goal-edit
+- extendedWaitUntil:
+    visible:
+      id: goal-edit-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-target-date
+- assertVisible:
+    id: goal-target-date
+    text: "(?s).*Nov 30, 2026.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-submit
+- tapOn:
+    id: goal-submit
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- tapOn:
+    id: goal-menu
+- tapOn:
+    id: goal-edit
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-target-date
+- assertVisible:
+    id: goal-target-date
+    text: "(?s).*Nov 30, 2026.*"                  # still there after the save
+- tapOn:
+    text: "Back"
+    above:
+      id: goal-target-date
