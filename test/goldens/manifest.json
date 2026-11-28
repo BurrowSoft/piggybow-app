@@ -1,10 +1,46 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "aa4b8569a6a1df3f082921945f0981a033fe3071",
+  "ref": "aa4b8569a6a1df3f082921945f0981a033fe3071",
+  "run_id": "46125483027",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
+    {
+      "file": "add-sheet_edit-locked_dark_320x2.png",
+      "state": "TG5",
+      "test": "TG5 a save the goal needs: Delete tapped, the sheet says why (320 dp, text ×2, dark)",
+      "sha256": "32fa1b7ae09ff0be199aa4e636a54bd20b6774516a2118d69b3253bc12f27cc6",
+      "bytes": 182001,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_edit-locked_light_320x2.png",
+      "state": "TG5",
+      "test": "TG5 a save the goal needs: Delete tapped, the sheet says why (320 dp, text ×2, light)",
+      "sha256": "1b5e0271107ded58c1a7cb8fad2f3c8e931ab316c764f8c3d860b8b8fac89325",
+      "bytes": 181498,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_edit-lowered_dark_320x2.png",
+      "state": "TG6",
+      "test": "TG6 a save the goal needs: lowered below it, the amount says why (320 dp, text ×2, dark)",
+      "sha256": "7445af79213218fc0cb3e0fa4234ec86f929a020502f34c3a63d0c1e6b6e63a4",
+      "bytes": 172297,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_edit-lowered_light_320x2.png",
+      "state": "TG6",
+      "test": "TG6 a save the goal needs: lowered below it, the amount says why (320 dp, text ×2, light)",
+      "sha256": "ed8dab3220abd5882c3b529eae01062b95dc6a07fe8205d5b21abc5263034426",
+      "bytes": 172497,
+      "width": 960,
+      "height": 2340
+    },
     {
       "file": "add-sheet_saved-goal-end_dark_320x2.png",
       "state": "A5",
@@ -189,8 +225,8 @@
       "file": "goal-detail_32_dark_320x2.png",
       "state": "D2",
       "test": "G2 the goal detail with its saves (320 dp, text ×2, dark)",
-      "sha256": "5cabdc84c77ab067cb5205966fbb7d48cf8d0b4ceae58b8a85d2faf041bf5e85",
-      "bytes": 192869,
+      "sha256": "2cadea10876a7b32a5b7553fe89640bca2d9cf2f095da05eab6e21e106f49baa",
+      "bytes": 184059,
       "width": 960,
       "height": 2340
     },
@@ -198,8 +234,8 @@
       "file": "goal-detail_32_light_320x2.png",
       "state": "D2",
       "test": "G2 the goal detail with its saves (320 dp, text ×2, light)",
-      "sha256": "0a2366c200d63bdc14fa1a005dba2019940076dfefdbc13ea3c6df9d2325eacf",
-      "bytes": 186598,
+      "sha256": "c9c2916351fb3526bcf4ccb1c7dfe4fb5bf259e596fa6eda1475022a6dee6bbf",
+      "bytes": 177686,
       "width": 960,
       "height": 2340
     },
@@ -207,8 +243,8 @@
       "file": "goal-detail_reached_dark_320x2.png",
       "state": "D3",
       "test": "G4 a reached goal's detail is read-only (320 dp, text ×2, dark)",
-      "sha256": "581f49edc53c2f44fcb1265ffd1eb1be03b0d71c35ef5b8011fdd22b86f72649",
-      "bytes": 141535,
+      "sha256": "eedd159d35ed333d3c66d11f9e45fb3fa2221b287e12ad9ce196cf3b53538ba7",
+      "bytes": 156028,
       "width": 960,
       "height": 2340
     },
@@ -216,8 +252,44 @@
       "file": "goal-detail_reached_light_320x2.png",
       "state": "D3",
       "test": "G4 a reached goal's detail is read-only (320 dp, text ×2, light)",
-      "sha256": "86a3a93b025eeade888c367c3833aa0903376f4b19211478ded4cd3f3b759c62",
-      "bytes": 133757,
+      "sha256": "ae16dd3ca411f9c2ce25e1562d4773c9036a5c0b3166cee12d27a2b97f1e7d75",
+      "bytes": 148363,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_taken-out-end_dark_320x2.png",
+      "state": "TG2",
+      "test": "TG2 the goal: Take out, and a taken-out row (320 dp, text ×2, dark)",
+      "sha256": "99acd3ee7d7e9b1de13206a109c64cbd022b195fd84ab86c6640a541ac296832",
+      "bytes": 162436,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_taken-out-end_light_320x2.png",
+      "state": "TG2",
+      "test": "TG2 the goal: Take out, and a taken-out row (320 dp, text ×2, light)",
+      "sha256": "2863f14205faf11203d937bfee557484b8b9dfebe4f88ae52bfd1a7f5a1368fc",
+      "bytes": 162590,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_taken-out_dark_320x2.png",
+      "state": "TG2",
+      "test": "TG2 the goal: Take out, and a taken-out row (320 dp, text ×2, dark)",
+      "sha256": "ee8be15d69ed7dc2d610e6c908438ccd125b003ccb2fc08fe7fa2cf719db41a8",
+      "bytes": 175062,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_taken-out_light_320x2.png",
+      "state": "TG2",
+      "test": "TG2 the goal: Take out, and a taken-out row (320 dp, text ×2, light)",
+      "sha256": "ed46395da8c335dd0982ea187775084d6454d72d8bb617848da0b95fd7d2d850",
+      "bytes": 169968,
       "width": 960,
       "height": 2340
     },
@@ -258,11 +330,29 @@
       "height": 2340
     },
     {
+      "file": "goal-edit_start-locked_dark_320x2.png",
+      "state": "TG7",
+      "test": "TG7 the goal's editor: Already saved below what was taken out beyond its saves (320 dp, text ×2, dark)",
+      "sha256": "d9930996ccc9fe0317e9a30c7133318cb1e1ba0851c4cb3a8429952f6735e7ca",
+      "bytes": 168581,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_start-locked_light_320x2.png",
+      "state": "TG7",
+      "test": "TG7 the goal's editor: Already saved below what was taken out beyond its saves (320 dp, text ×2, light)",
+      "sha256": "24d195d6cd571c7fe2815bcc9b086519b71642291af9eb1f9d45f3aeddf633c3",
+      "bytes": 168661,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "goal-end_dialog_dark_320x2.png",
       "state": "E1",
       "test": "G5 the End goal dialog (320 dp, text ×2, dark)",
-      "sha256": "42b489f8b8bd83cb4dc2aadad91ec03175ab8080d98d9e376f472b0ea46dd251",
-      "bytes": 154085,
+      "sha256": "234f1b154c3b6683cee86887fe68d6f485f51408ec02f2476fc069d39558cf13",
+      "bytes": 164710,
       "width": 960,
       "height": 2340
     },
@@ -270,8 +360,8 @@
       "file": "goal-end_dialog_light_320x2.png",
       "state": "E1",
       "test": "G5 the End goal dialog (320 dp, text ×2, light)",
-      "sha256": "96d1623134dab17fea32fce0eeb21824bf31b35eb7a9dfaf7bf49db852f63111",
-      "bytes": 154525,
+      "sha256": "40e42de207807985035feef6b318962e0c66091c6782e94454bf00244a19f4d5",
+      "bytes": 165763,
       "width": 960,
       "height": 2340
     },
@@ -1167,6 +1257,42 @@
       "height": 2340
     },
     {
+      "file": "summary_taken-out_dark_320x2.png",
+      "state": "TG4",
+      "test": "TG4 Summary: Taken out, its own line (320 dp, text ×2, dark)",
+      "sha256": "85087f3c02ac7ac86ace392f4c6d8780145e919d593e1dd7ab640a977eb20f87",
+      "bytes": 132923,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_taken-out_light_320x2.png",
+      "state": "TG4",
+      "test": "TG4 Summary: Taken out, its own line (320 dp, text ×2, light)",
+      "sha256": "bd62f0b6dc9c3ab0ec0ea1b3332d34737727eac1ea8b297fb454107989008bc1",
+      "bytes": 132634,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "take-out_too-much_dark_320x2.png",
+      "state": "TG1",
+      "test": "TG1 the take-out sheet: more than you've saved (320 dp, text ×2, dark)",
+      "sha256": "8d0bac501934053282aae3f9b1c0994a8e2023257351a38a201b0598b24dc79f",
+      "bytes": 125541,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "take-out_too-much_light_320x2.png",
+      "state": "TG1",
+      "test": "TG1 the take-out sheet: more than you've saved (320 dp, text ×2, light)",
+      "sha256": "51ca067dc3c9f2ac72a4524c7334101f63f6720724a4db5201eccd827ba3d386",
+      "bytes": 125556,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "timeline_empty_dark_320x2.png",
       "state": "C1",
       "test": "C1 empty: the pig and the first-entry button (320 dp, text ×2, dark)",
@@ -1217,6 +1343,24 @@
       "test": "C2 three days with the stress data (320 dp, text ×2, light)",
       "sha256": "456e6ce7f3eaf601734902c879efea1727321ea42a25ca8472b1a0e734b5710e",
       "bytes": 213378,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_taken-out_dark_320x2.png",
+      "state": "TG3",
+      "test": "TG3 Timeline: the taken-out row (320 dp, text ×2, dark)",
+      "sha256": "4db53983a1873012c06c22a34d9988d3baea1e1d251758368bcf13ab6a0671a9",
+      "bytes": 167132,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_taken-out_light_320x2.png",
+      "state": "TG3",
+      "test": "TG3 Timeline: the taken-out row (320 dp, text ×2, light)",
+      "sha256": "0051303766e85601df58e7922343b4038b5b89d981700d0aaee69e3e36f6ec78",
+      "bytes": 168007,
       "width": 960,
       "height": 2340
     }
