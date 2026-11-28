@@ -1,0 +1,6 @@
+appId: ${APP_ID}
+name: Setup only - a fresh launch through onboarding to Home, at whatever font scale is set (run it at 1.0 before a large-text flow)
+tags: [setup]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml

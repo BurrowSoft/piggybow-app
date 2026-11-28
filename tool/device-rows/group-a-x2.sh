@@ -12,6 +12,9 @@ cleanup(){
 trap cleanup EXIT
 
 install_verify || exit $?
+# Onboarding at 1.0 first (its Continue is off-screen at 2.0), then 2.0
+A shell settings put system font_scale 1.0
+mf flows/pb1/99_to_home.yaml || { row PA-3 FAIL "setup: onboarding to Home at 1.0"; exit 1; }
 A shell settings put system font_scale 2.0; sleep 2
 if mf flows/pb1/87c_plus_paywall_large_text.yaml; then
   row PA-3 PASS "flow 87c: the paywall at font scale 2.0 (shots 87-paywall-x2, -plan-x2, -end-x2)"
