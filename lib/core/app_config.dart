@@ -77,11 +77,10 @@ class AppConfig {
           flavor == Flavor.staging &&
           const bool.fromEnvironment('PLUS_FAKE_STORE') &&
           const bool.fromEnvironment('PLUS_ROWS_OWNED'),
-      // Never in a release build until the privacy policy and Help describe
-      // the backup file (UX): kReleaseMode is a compile-time true there.
-      backupFileEnabled:
-          !kReleaseMode &&
-          const bool.fromEnvironment('BACKUP_FILE', defaultValue: true),
+      // In every build, the store build included: the privacy policy and
+      // Help describe the backup file. Only BACKUP_FILE=false turns it off,
+      // and no env file says so (backup_ui_test).
+      backupFileEnabled: const bool.fromEnvironment('BACKUP_FILE', defaultValue: true),
       privacyUrl: const String.fromEnvironment('PRIVACY_URL'),
       supportUrl: const String.fromEnvironment('SUPPORT_URL'),
       termsUrl: const String.fromEnvironment('TERMS_URL'),

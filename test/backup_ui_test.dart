@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -127,30 +128,68 @@ void main() {
     expect(backup.shared, hasLength(1));
   });
 
-  testWidgets('a release build: no backup rows in Me, no "Moving from '
-      'another phone?" on the first screen', (tester) async {
-    const release = AppConfig(flavor: Flavor.prod, backupFileEnabled: false);
-    final me = TestApp(config: release);
+  testWidgets('with the backup file off (BACKUP_FILE=false): no backup rows '
+      'in Me, no "Moving from another phone?" on the first screen', (tester) async {
+    const off = AppConfig(flavor: Flavor.prod, backupFileEnabled: false);
+    final me = TestApp(config: off);
     await me.pump(tester, location: '/me');
     await tester.revealId('me-export');
     expect(byId('me-export'), findsOneWidget);
     expect(byId('me-backup'), findsNothing);
     expect(byId('me-restore'), findsNothing);
 
-    final fresh = TestApp(config: release, onboarded: false);
+    final fresh = TestApp(config: off, onboarded: false);
     await fresh.pump(tester);
     tester.expectScreen('onb-welcome');
     expect(byId('onb-restore'), findsNothing);
+  });
 
-    // And it's off in every release build, whatever an env file says.
+  // TalkBack: the eye is a node of its own, a focusable button that says
+  // what it does, and acting on it shows the password. The field's own
+  // node doesn't swallow it.
+  testWidgets('the password eye is its own TalkBack node: "Show password", '
+      'then "Hide password"', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final app = TestApp();
+    await app.pump(tester, location: MeRoutes.backup);
+    final eye = find.descendant(of: byId('backup-show'), matching: find.byType(IconButton));
+    final field = find.descendant(of: byId('backup-password'), matching: find.byType(EditableText));
+    expect(tester.getSemantics(eye).id, isNot(tester.getSemantics(field).id), reason: 'not folded into the field');
+    expect(
+      tester.getSemantics(eye),
+      containsSemantics(tooltip: l10n.backupShowPassword, isButton: true, isFocusable: true, hasTapAction: true),
+    );
+    expect(tester.getSemantics(field).label, isNot(contains(l10n.backupShowPassword)));
+    // What TalkBack's double tap does.
+    tester.semantics.tap(find.semantics.byPredicate((n) => n.tooltip == l10n.backupShowPassword));
+    await tester.pump();
+    expect(
+      tester.getSemantics(eye),
+      containsSemantics(tooltip: l10n.backupHidePassword, isButton: true, isFocusable: true, hasTapAction: true),
+    );
+    semantics.dispose();
+  });
+
+  test('backupTooShort is a plural: one character, or characters', () {
+    expect(l10n.backupTooShort(1), 'Use at least 1 character.');
+    expect(l10n.backupTooShort(8), 'Use at least 8 characters.');
+  });
+
+  // The store build has it: on unless BACKUP_FILE=false, which no env file
+  // says (the release build takes env/prod.json and no other define,
+  // release_pipeline_test).
+  test('the store build has the backup file: on by default, and no env file '
+      'turns it off', () {
     final source = File('lib/core/app_config.dart').readAsStringSync();
     expect(
       source,
-      contains(
-        'backupFileEnabled:\n          !kReleaseMode &&\n'
-        "          const bool.fromEnvironment('BACKUP_FILE'",
-      ),
+      contains("backupFileEnabled: const bool.fromEnvironment('BACKUP_FILE', defaultValue: true),"),
     );
+    expect(RegExp(r'backupFileEnabled:[^,]*kReleaseMode').hasMatch(source), isFalse);
+    for (final name in ['dev', 'staging', 'prod']) {
+      final env = jsonDecode(File('env/$name.json').readAsStringSync()) as Map<String, dynamic>;
+      expect(env['BACKUP_FILE'] ?? 'true', 'true', reason: 'env/$name.json');
+    }
   });
 
   testWidgets('on a new phone, from the first screen: straight in, then Home', (

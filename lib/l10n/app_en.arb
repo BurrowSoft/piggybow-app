@@ -352,7 +352,7 @@
   "backupHidePassword": "Hide password",
   "backupHint": "A few words together are easy to remember and hard to guess.",
   "backupNoRecovery": "Piggybow can't recover this password. Without it, this backup can't be opened.",
-  "backupTooShort": "Use at least {count} characters.",
+  "backupTooShort": "{count, plural, one{Use at least {count} character.} other{Use at least {count} characters.}}",
   "@backupTooShort": {"placeholders": {"count": {"type": "int"}}},
   "backupMismatch": "The two passwords aren't the same.",
   "backupAction": "Back up",

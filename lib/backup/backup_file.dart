@@ -32,6 +32,11 @@ const backupVersion = 1;
 /// A larger file isn't a Piggybow backup.
 const backupMaxBytes = 50 * 1024 * 1024;
 
+/// How every backup file starts, whatever its version: [sealBackup] writes
+/// the format first. The picker reads no further than this into a file
+/// that starts otherwise.
+const backupHeaderPrefix = '{"format":"$backupFormat"';
+
 /// Argon2id's cost, carried in each file so later versions can raise it.
 class BackupKdf {
   const BackupKdf({
@@ -41,7 +46,8 @@ class BackupKdf {
   });
 
   /// What version 1 writes: OWASP's Argon2id minimum (19 MiB, 2 passes, 1
-  /// lane), until it is timed on phones.
+  /// lane), kept as the setting rather than tuned to a phone's timing. A
+  /// file sealed at another cost within [withinBounds] opens with its own.
   static const v1 = BackupKdf(memoryKiB: 19456, iterations: 2, parallelism: 1);
 
   final int memoryKiB;

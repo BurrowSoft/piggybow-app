@@ -256,6 +256,29 @@ void main() {
       }
     });
 
+    test("version 1 seals at OWASP's minimum; a file sealed at another cost "
+        'within bounds opens with its own', () async {
+      expect(
+        (BackupKdf.v1.memoryKiB, BackupKdf.v1.iterations, BackupKdf.v1.parallelism),
+        (19456, 2, 1),
+      );
+      for (final kdf in const [
+        BackupKdf(memoryKiB: 64, iterations: 3, parallelism: 2),
+        BackupKdf(memoryKiB: 256, iterations: 1, parallelism: 4),
+        BackupKdf(memoryKiB: 32, iterations: 4, parallelism: 1),
+      ]) {
+        final file = await sealBackup(journal, 'correct horse', kdf: kdf);
+        expect(file, startsWith(backupHeaderPrefix));
+        final stored = (jsonDecode(file) as Map<String, Object?>)['kdf'] as Map<String, Object?>;
+        expect(
+          (stored['memoryKiB'], stored['iterations'], stored['parallelism']),
+          (kdf.memoryKiB, kdf.iterations, kdf.parallelism),
+          reason: 'the cost travels in the file',
+        );
+        expect(await openBackup(file, 'correct horse'), journal);
+      }
+    });
+
     test('larger than the cap: not a backup', () async {
       await expectLater(
         openBackup('x' * (backupMaxBytes + 1), 'x'),
