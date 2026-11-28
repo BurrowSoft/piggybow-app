@@ -42,7 +42,7 @@ void main() {
 
   /// The width both need side by side: their own widths plus the 8 dp.
   Future<double> rowWidth(WidgetTester tester) async {
-    await tester.pumpWidget(pair(1000));
+    await tester.pumpWidget(pair(600));
     return rect(tester, 'no').width + 8 + rect(tester, 'yes').width;
   }
 
@@ -50,20 +50,20 @@ void main() {
     tester,
   ) async {
     final needed = await rowWidth(tester);
-    expect(needed, lessThan(1000));
+    expect(needed, lessThan(600));
     final no = rect(tester, 'no'), yes = rect(tester, 'yes');
     expect(render(tester).stacked, isFalse);
-    expect(yes.right, 1000, reason: 'at the end of the line');
+    expect(yes.right, 600, reason: 'at the end of the line');
     expect(no.right + 8, moreOrLessEquals(yes.left));
     expect(no.center.dy, moreOrLessEquals(yes.center.dy));
-    expect(render(tester).size, Size(1000, yes.height));
+    expect(render(tester).size, Size(600, yes.height));
     expect(render(tester).getMaxIntrinsicWidth(double.infinity), needed);
   });
 
   testWidgets('right to left: the end is the left, No thanks nearer start', (
     tester,
   ) async {
-    await tester.pumpWidget(pair(1000, direction: TextDirection.rtl));
+    await tester.pumpWidget(pair(600, direction: TextDirection.rtl));
     final no = rect(tester, 'no'), yes = rect(tester, 'yes');
     expect(render(tester).stacked, isFalse);
     expect(yes.left, 0);
