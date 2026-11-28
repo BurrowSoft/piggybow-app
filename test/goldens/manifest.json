@@ -1,10 +1,46 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "c7377327551a674bfbceb6ecae70415d44e9acb3",
+  "ref": "feat/quick-amounts",
+  "run_id": "46121632345",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
+    {
+      "file": "add-sheet_quick-amounts_dark_320x2.png",
+      "state": "Q1",
+      "test": "the Add sheet with 3 quick amounts, 320 dp ×2, dark",
+      "sha256": "809c89abea086abf5abd8d5a68c6bf3649dc6a81eac39d941092fc864ba035fe",
+      "bytes": 163190,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_quick-amounts_dark_360x1.png",
+      "state": "Q1",
+      "test": "the Add sheet with 3 quick amounts, 360 dp ×1, dark",
+      "sha256": "65537bd72c27f48729241b2a2b68ae707bc06d42b272af97df91222c3b658356",
+      "bytes": 153693,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_quick-amounts_light_320x2.png",
+      "state": "Q1",
+      "test": "the Add sheet with 3 quick amounts, 320 dp ×2, light",
+      "sha256": "81f098569859054b2442cb40a86fc12043c84f25fadd512a38a99767f9203ace",
+      "bytes": 163841,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_quick-amounts_light_360x1.png",
+      "state": "Q1",
+      "test": "the Add sheet with 3 quick amounts, 360 dp ×1, light",
+      "sha256": "97709274f23acab7a3c5e09b423d97bcee07171748cfe36072c23af38200ebed",
+      "bytes": 155058,
+      "width": 1080,
+      "height": 2340
+    },
     {
       "file": "add-sheet_saved-goal-end_dark_320x2.png",
       "state": "A5",
