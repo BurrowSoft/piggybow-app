@@ -1,7 +1,7 @@
 {
-  "source_sha": "b50d064e8ccd5e0b6aab47c73926dbea2fffe87d",
-  "ref": "b50d064e8ccd5e0b6aab47c73926dbea2fffe87d",
-  "run_id": "46166946472",
+  "source_sha": "f475684d3b9c92421edbcc48ed6fd5d7076e08aa",
+  "ref": "f475684d3b9c92421edbcc48ed6fd5d7076e08aa",
+  "run_id": "46176711729",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -2378,6 +2378,24 @@
       "test": "PG4 the Reached goals list (320 dp, text ×2, light)",
       "sha256": "12c1848211b0b3df0db642a00ee3fe672bb1c5fe2901be696cc83fa7cd4c5d20",
       "bytes": 114450,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_own-categories_dark_320x2.png",
+      "state": "PC6",
+      "test": "PC6 a repeat's page in your own category (320 dp, text ×2, dark)",
+      "sha256": "876f6e156b8c4924c1ac5c7f83483250f39f5482e8ed1441ccecfb180370216d",
+      "bytes": 172543,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_own-categories_light_320x2.png",
+      "state": "PC6",
+      "test": "PC6 a repeat's page in your own category (320 dp, text ×2, light)",
+      "sha256": "ae50b6730365289a2bfa570426e044e3c42cdb3d335059b1e39dbda927f3920e",
+      "bytes": 173015,
       "width": 960,
       "height": 2340
     },
