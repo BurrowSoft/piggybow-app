@@ -49,6 +49,25 @@ class Clock {
   /// The user's local calendar date (a date-only DateTime, no time part).
   DateTime todayIn(String timeZone) => dateOnly(nowIn(timeZone));
 
+  /// The local hours in [timeZone] at which what Home shows can change: the
+  /// day turns over at midnight, and the pig's night runs 22:00 to 06:00.
+  static const turnHours = [0, 6, 22];
+
+  /// How long until the next of [hours] (wall-clock, in [timeZone]) after
+  /// now: a real interval, so a daylight-saving change in between counts.
+  Duration untilNextTurn(String timeZone, {List<int> hours = turnHours}) {
+    final location = _location(timeZone);
+    final now = tz.TZDateTime.from(nowUtc(), location);
+    tz.TZDateTime? next;
+    for (var day = 0; day <= 1; day++) {
+      for (final hour in hours) {
+        final at = tz.TZDateTime(location, now.year, now.month, now.day + day, hour);
+        if (at.isAfter(now) && (next == null || at.isBefore(next))) next = at;
+      }
+    }
+    return next!.difference(now);
+  }
+
   /// The calendar date of [instant] in [timeZone] (unknown or null → UTC).
   static DateTime localDateOf(DateTime instant, String? timeZone) {
     _ensureTimeZones();

@@ -26,6 +26,7 @@ import '../shell/tab_top.dart';
 import 'delete_dialogs.dart';
 import 'me_actions.dart';
 import 'me_app_lock_section.dart';
+import 'pig_name_dialog.dart';
 import 'theme_picker.dart';
 
 /// A pick's title, as O2 and Me's subtitle name it.
@@ -59,6 +60,8 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
 
   /// How many goals were reached (Reached goals shows from the first).
   int _reached = 0;
+  bool _yesterdayFeel = true;
+  bool _letters = true;
   (String, String)? _version;
   AppServices? _services;
   AppLifecycleListener? _lifecycle;
@@ -104,6 +107,8 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final picks = await store.picks();
     final plan = await store.planMinor();
     final currency = await store.currency() ?? 'USD';
+    final yesterdayFeel = await store.yesterdayFeelOn();
+    final letters = await store.lettersOn();
     final granted = await services.notifications.granted();
     final reached = (await store.reachedGoals()).length;
     if (!mounted) return;
@@ -111,6 +116,8 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
       _picks = picks;
       _plan = plan;
       _currency = currency;
+      _yesterdayFeel = yesterdayFeel;
+      _letters = letters;
       _granted = granted;
       _reached = reached;
     });
@@ -160,6 +167,15 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
       on: true,
       time: ReminderTime(picked.hour, picked.minute),
     );
+  }
+
+  /// Me → Your pig → Name: kept as typed (trimmed, at most 20 characters);
+  /// emptied, the pig has no name.
+  Future<void> _editPigName() async {
+    final session = context.readSession;
+    final result = await editPigName(context, current: session.pigName);
+    if (result == null) return;
+    await session.setPigName(result.name);
   }
 
   Future<void> _editPlan(String currency, String locale) async {
@@ -255,6 +271,12 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                   ],
                   _Section(l10n.meSecPig),
                   _Row(
+                    id: 'me-pig-name',
+                    title: l10n.mePigName,
+                    subtitle: session.pigName ?? l10n.mePigNameNone,
+                    onTap: _editPigName,
+                  ),
+                  _Row(
                     id: 'me-happy',
                     title: l10n.meHappy,
                     subtitle: happySubtitle(
@@ -279,6 +301,26 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                       subtitle: l10n.meReachedGoalsCount(_reached),
                       onTap: () => context.push(MeRoutes.reached),
                     ),
+                  // Home's "How did yesterday feel?" (on unless switched off).
+                  TestId(
+                    'me-yesterday-feel',
+                    child: SwitchListTile(
+                      title: Text(l10n.meYesterdayFeel),
+                      value: _yesterdayFeel,
+                      onChanged: (on) =>
+                          context.services.journal.setYesterdayFeelOn(on),
+                    ),
+                  ),
+                  // Home's monthly letter from the pig (on unless switched off).
+                  TestId(
+                    'me-letters',
+                    child: SwitchListTile(
+                      title: Text(l10n.meLetters),
+                      value: _letters,
+                      onChanged: (on) =>
+                          context.services.journal.setLettersOn(on),
+                    ),
+                  ),
                   _Section(l10n.meSecMoney),
                   _Row(
                     id: 'me-currency',

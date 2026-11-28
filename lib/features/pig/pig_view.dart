@@ -121,6 +121,7 @@ String pigLineText(
     'pigSleepy1' => l10n.pigSleepy1,
     'pigSleepy2' => l10n.pigSleepy2,
     'pigSleepy3' => l10n.pigSleepy3,
+    'homeNightLine' => l10n.homeNightLine,
     'pigAfterSpend' => l10n.pigAfterSpend,
     'pigAfterWorth' => l10n.pigAfterWorth,
     'pigAfterNotSure' => l10n.pigAfterNotSure,

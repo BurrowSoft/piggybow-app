@@ -35,6 +35,11 @@ abstract interface class LocalPrefs {
 
   /// The device account (DeviceBackend) as JSON: its id and settings. Null
   /// before the first start, and after Delete.
+  /// The pig's name (feature 1), this device only; null: none. Not journal
+  /// data: never in the export. Delete everything clears it with the rest.
+  String? get pigName;
+  Future<void> setPigName(String? value);
+
   String? get deviceAccount;
   Future<void> setDeviceAccount(String? json);
 
@@ -58,6 +63,7 @@ class SharedLocalPrefs implements LocalPrefs {
   static const _welcomeKey = 'device.welcome_seen';
   static const _appearanceKey = 'device.appearance';
   static const _paletteKey = 'device.palette';
+  static const _pigNameKey = 'device.pig_name';
   static const _accountKey = 'device.account_on_device';
   static const _sessionEndedNoEmailKey = 'device.session_ended_no_email';
   static const _deviceAccountKey = 'device.account';
@@ -112,6 +118,14 @@ class SharedLocalPrefs implements LocalPrefs {
       : _prefs.setString(_paletteKey, value);
 
   @override
+  String? get pigName => _prefs.getString(_pigNameKey);
+
+  @override
+  Future<void> setPigName(String? value) => value == null
+      ? _prefs.remove(_pigNameKey)
+      : _prefs.setString(_pigNameKey, value);
+
+  @override
   String? get deviceAccount => _prefs.getString(_deviceAccountKey);
 
   @override
@@ -129,6 +143,7 @@ class MemoryLocalPrefs implements LocalPrefs {
     sessionEndedNoEmail = false;
     appearance = null;
     palette = null;
+    pigName = null;
     deviceAccount = null;
     patternsTeaserHidden = false;
   }
@@ -163,6 +178,12 @@ class MemoryLocalPrefs implements LocalPrefs {
 
   @override
   Future<void> setPalette(String? value) async => palette = value;
+
+  @override
+  String? pigName;
+
+  @override
+  Future<void> setPigName(String? value) async => pigName = value;
 
   @override
   String? deviceAccount;

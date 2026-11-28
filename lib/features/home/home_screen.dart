@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
 import '../../core/button_label.dart';
 import '../../core/button_pair.dart';
+import '../../core/clock.dart' show wireDate;
 import '../../core/fit_text.dart';
 import '../../core/plan_bar.dart';
 import '../../core/semantics_id.dart';
@@ -16,10 +18,13 @@ import '../../journal/entry.dart';
 import '../../journal/goal.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
+import '../../pig/monthly_letter.dart';
 import '../../pig/pig_mood.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
+import '../../summary/noted_days.dart';
 import '../../summary/summary.dart';
+import '../../theme/theme.dart';
 import '../../tips/tips.dart';
 import '../add/entry_sheet.dart';
 import '../goal/rainbow.dart';
@@ -47,9 +52,19 @@ class _HomeData {
     required this.plan,
     required this.offerAnswered,
     required this.currency,
+    required this.unfeltYesterday,
+    required this.customs,
+    required this.letter,
   });
 
   final List<Entry> entries;
+
+  /// Your own categories by id, for their names (a built-in's is the app's).
+  final Map<String, CustomCategory> customs;
+
+  /// Up to three of yesterday's spends with no feeling yet, for "How did
+  /// yesterday feel?"; empty when Me switched it off or "Not now" hid it today.
+  final List<Entry> unfeltYesterday;
   final List<Goal> goals;
 
   /// The active goals, oldest first, and each one's progress by id.
@@ -59,12 +74,26 @@ class _HomeData {
   final int? plan;
   final bool offerAnswered;
   final String currency;
+
+  /// The pig's letter about last month, in a month's first days; null when
+  /// there's none to show.
+  final MonthlyLetter? letter;
 }
 
 class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
   _HomeData? _data;
   AppServices? _services;
+
+  /// "Another idea" picks, for the day they were picked on ([_readDay]): a
+  /// new day starts on its own idea.
   int? _tip;
+  String? _readDay;
+
+  /// Home reads again at the next local turn (Clock.turnHours) and when the
+  /// app comes back: what it shows depends on the phone's day and hour, not
+  /// only on the journal.
+  Timer? _turn;
+  AppLifecycleListener? _lifecycle;
 
   @override
   AppTab get tab => AppTab.home;
@@ -78,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       services.journal.addListener(_load);
       services.localDay.addListener(_load);
       services.lastAdd.addListener(_rebuild);
+      _lifecycle = AppLifecycleListener(onResume: _load);
       _load();
     });
   }
@@ -87,7 +117,18 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     _services?.journal.removeListener(_load);
     _services?.localDay.removeListener(_load);
     _services?.lastAdd.removeListener(_rebuild);
+    _lifecycle?.dispose();
+    _turn?.cancel();
     super.dispose();
+  }
+
+  /// One timer to the next turn of the day in the phone's zone, set again
+  /// after every read.
+  void _armTurn() {
+    final services = _services;
+    if (services == null || !mounted) return;
+    _turn?.cancel();
+    _turn = Timer(services.clock.untilNextTurn(services.localDay.zone), _load);
   }
 
   void _rebuild() {
@@ -96,9 +137,26 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
 
   Future<void> _load() async {
     final store = context.services.journal;
+    final localDay = context.services.localDay;
     final entries = await store.entries();
     final goals = await store.goals();
     final actives = await store.activeGoals();
+    // Yesterday on this phone (its own time zone): its spends with no feeling
+    // yet, in the order they were added, three at most. Never a count of the
+    // rest.
+    final today = localDay.today;
+    final yesterday = wireDate(DateTime(today.year, today.month, today.day - 1));
+    final ask = await store.yesterdayFeelOn() &&
+        await store.yesterdayFeelHiddenOn() != localDay.todayWire;
+    final unfelt = ask
+        ? ([
+            for (final e in entries)
+              if (e.type == EntryType.spent && e.localDate == yesterday && e.feeling == null) e,
+          ]..sort((a, b) => a.createdAt.compareTo(b.createdAt)))
+            .take(3)
+            .toList()
+        : const <Entry>[];
+    final currency = await store.currency() ?? 'USD';
     final data = _HomeData(
       entries: entries,
       goals: goals,
@@ -107,7 +165,18 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       picks: await store.picks(),
       plan: await store.planMinor(),
       offerAnswered: await store.reminderOfferAnswered(),
-      currency: await store.currency() ?? 'USD',
+      currency: currency,
+      unfeltYesterday: unfelt,
+      customs: {for (final c in await store.customCategories()) c.id: c},
+      letter: monthlyLetter(
+        today: localDay.today,
+        entries: entries,
+        goals: goals,
+        currency: currency,
+        zone: localDay.zone,
+        on: await store.lettersOn(),
+        dismissed: await store.letterDismissed(),
+      ),
     );
     // A goal just reached is celebrated once (plan §3.4); an ended goal
     // never is.
@@ -121,7 +190,13 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       }
     }
     if (!mounted) return;
-    setState(() => _data = data);
+    final day = localDay.todayWire;
+    setState(() {
+      _data = data;
+      if (_readDay != day) _tip = null;
+      _readDay = day;
+    });
+    _armTurn();
   }
 
   @override
@@ -151,6 +226,17 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                 children: [
                   _Pig(data: data),
+                  // Right under the pig's bubble: the pig hands it over.
+                  if (data.letter case final letter?) ...[
+                    const SizedBox(height: 16),
+                    _LetterCard(
+                      letter: letter,
+                      currency: data.currency,
+                      customs: data.customs,
+                      onThanks: () =>
+                          context.services.journal.dismissLetter(letter.key),
+                    ),
+                  ],
                   if (data.entries.isNotEmpty &&
                       !data.offerAnswered &&
                       context.session.accountState?.reminderOn != true) ...[
@@ -178,6 +264,18 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
                   ],
                   const SizedBox(height: 16),
                   _WeekCard(data: data),
+                  if (data.unfeltYesterday.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _YesterdayCard(
+                      spends: data.unfeltYesterday,
+                      customs: data.customs,
+                      // As the edit sheet sets it; the pig doesn't react.
+                      onAnswer: (spend, feeling) => context.services.journal
+                          .updateEntry(spend.copyWith(feeling: feeling)),
+                      onLater: () => context.services.journal
+                          .hideYesterdayFeel(context.services.localDay.todayWire),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   _IdeaCard(
                     tip: _tip ?? tipForDay(context.services.localDay.today),
@@ -205,7 +303,7 @@ class _Pig extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final services = context.services;
-    final state = pigMood(
+    final day = pigMood(
       picks: data.picks,
       planMinor: data.plan,
       entries: [
@@ -231,7 +329,15 @@ class _Pig extends StatelessWidget {
       now: services.clock.nowUtc(),
       today: services.localDay.todayWire,
     );
-    final key = pigBubbleKey(state, services.lastAdd.value);
+    // 22:00 to 05:59 on the phone's clock, in its zone: the sleepy pig.
+    final lastAdd = services.lastAdd.value;
+    final state = pigAtNight(
+      day,
+      night: isNight(services.clock.nowIn(services.localDay.zone).hour),
+      lastAdd: lastAdd,
+    );
+    final key = pigBubbleKey(state, lastAdd);
+    final name = context.session.pigName;
     return Column(
       children: [
         // Its own node, read before the line: "Your pig looks calm." (R2).
@@ -241,6 +347,21 @@ class _Pig extends StatelessWidget {
           label: pigA11yLabel(l10n, state.mood),
           child: PigView(mood: state.mood),
         ),
+        // Its name, if it has one (feature 1): small and muted, above the
+        // speech box.
+        if (name != null) ...[
+          const SizedBox(height: 4),
+          TestId.container(
+            'home-pig-name',
+            child: Text(
+              name,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: context.palette.mutedText),
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
         TestId.container(
           'home-pig-line',
@@ -506,8 +627,8 @@ class _GoalCard extends StatelessWidget {
   }
 }
 
-/// This week (Monday to today): spent, saved, the plan bar, and the spends
-/// that felt worth it.
+/// This week (Monday to today): spent, saved, the plan bar, the spends that
+/// felt worth it, and from 2 days on, how many days had an entry (feature 6).
 class _WeekCard extends StatelessWidget {
   const _WeekCard({required this.data});
 
@@ -519,19 +640,24 @@ class _WeekCard extends StatelessWidget {
     final theme = Theme.of(context);
     final locale = context.session.device.localeName;
     final today = context.services.localDay.todayWire;
+    final period = periodContaining(PeriodKind.week, today);
     final week = summarize(
-      period: periodContaining(PeriodKind.week, today),
+      period: period,
       today: today,
       entries: [for (final e in data.entries) SummaryEntry.of(e)],
       planMinor: data.plan,
       locale: context.session.dateLocale,
-      categoryLabel: (id) => SpendCategory.fromId(id)?.label(l10n) ?? id,
+      categoryLabel: (id) => categoryName(l10n, id, data.customs),
     );
     String money(int minor) => formatMoney(minor, data.currency, locale);
     final ink = theme.textTheme.bodyLarge?.copyWith(
       color: theme.colorScheme.onSurface,
     );
     final percent = week.planPercent;
+    final noted = notedDays([for (final e in data.entries) e.localDate], period);
+    final muted = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     return TestId.container(
       'home-week',
       child: Card(
@@ -552,24 +678,250 @@ class _WeekCard extends StatelessWidget {
               ),
               if (percent != null && data.plan != null) ...[
                 const SizedBox(height: 12),
-                Text(
-                  l10n.weekPlan(money(data.plan!)),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                Text(l10n.weekPlan(money(data.plan!)), style: muted),
                 const SizedBox(height: 6),
                 PlanBar(percent: percent),
               ],
               if (week.worth > 0) ...[
                 const SizedBox(height: 12),
-                Text(
-                  l10n.weekWorth(week.worth),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                Text(l10n.weekWorth(week.worth), style: muted),
+              ],
+              if (noted >= notedDaysMin) ...[
+                const SizedBox(height: 12),
+                TestId(
+                  'home-week-noted',
+                  child: Text(l10n.weekNotedDays(noted), style: muted),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// How did yesterday feel? Up to three of yesterday's spends with no feeling
+/// yet, each with the three feelings. An answer is that spend's feeling, as
+/// the edit sheet sets it, and its row goes; the card goes with the last one.
+/// "Not now" hides it until tomorrow. It never counts the rest, and never
+/// mentions how anything felt.
+class _YesterdayCard extends StatelessWidget {
+  const _YesterdayCard({
+    required this.spends,
+    required this.customs,
+    required this.onAnswer,
+    required this.onLater,
+  });
+
+  final List<Entry> spends;
+
+  /// Your own categories by id: a spend in one is named as you typed it.
+  final Map<String, CustomCategory> customs;
+  final void Function(Entry spend, Feeling feeling) onAnswer;
+  final VoidCallback onLater;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final locale = context.session.device.localeName;
+    return TestId.container(
+      'home-yesterday',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.yesterdayFeelTitle, style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              // The cards' body style (decision 57).
+              Text(
+                l10n.yesterdayFeelBody,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              for (final spend in spends) ...[
+                const SizedBox(height: 16),
+                TestId.container(
+                  'home-yesterday-${spend.id}',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      LayoutBuilder(
+                        builder: (context, box) {
+                          final title = Text(
+                            spend.note.isNotEmpty
+                                ? spend.note
+                                : categoryName(l10n, spend.categoryId ?? '', customs),
+                            style: theme.textTheme.bodyLarge,
+                          );
+                          // Spends in ink: never red, never a minus sign. One
+                          // line; a very large amount gets smaller rather than
+                          // pushing the title out.
+                          final amount = FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Text(
+                              formatMoney(spend.amountMinor, spend.currency, locale),
+                              maxLines: 1,
+                              softWrap: false,
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                          );
+                          // At large text the amount gets its own line under
+                          // the title, as on Timeline, so the title keeps
+                          // whole words.
+                          if (MediaQuery.textScalerOf(context).scale(1) >= 1.3) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                title,
+                                Align(alignment: AlignmentDirectional.centerEnd, child: amount),
+                              ],
+                            );
+                          }
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: title),
+                              const SizedBox(width: 8),
+                              // At most half the row.
+                              ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
+                                child: amount,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final (feeling, label) in [
+                            (Feeling.worthIt, l10n.feelWorth),
+                            (Feeling.notSure, l10n.feelNotSure),
+                            (Feeling.notReally, l10n.feelNotReally),
+                          ])
+                            TestId(
+                              'home-yesterday-${spend.id}-${feeling.id}',
+                              button: true,
+                              child: ChoiceChip(
+                                label: Text(label),
+                                selected: false,
+                                onSelected: (_) => onAnswer(spend, feeling),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
               ],
+              const SizedBox(height: 8),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TestId(
+                  'home-yesterday-later',
+                  button: true,
+                  child: TextButton(
+                    onPressed: onLater,
+                    child: ButtonLabel(l10n.yesterdayFeelLater),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The pig's letter about last month, in a month's first days: the facts that
+/// apply as bullets, warmest first, the days always last; "Thanks!" puts it
+/// away for that month.
+class _LetterCard extends StatelessWidget {
+  const _LetterCard({
+    required this.letter,
+    required this.currency,
+    required this.customs,
+    required this.onThanks,
+  });
+
+  final MonthlyLetter letter;
+  final String currency;
+
+  /// Your own categories by id: the "worth it" one may be one of them.
+  final Map<String, CustomCategory> customs;
+  final VoidCallback onThanks;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final locale = context.session.device.localeName;
+    final month = DateFormat.MMMM(intlDateLocale(locale)).format(letter.month);
+    final body = theme.textTheme.bodyMedium;
+    final muted = body?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final goals = letter.goalsReached;
+    final facts = <(String, String)>[
+      if (goals.length == 1)
+        ('home-letter-goals', l10n.letterGoal(goals.single))
+      else if (goals.length > 1)
+        ('home-letter-goals', l10n.letterGoals(goals.length)),
+      if (letter.savedMinor > 0)
+        ('home-letter-saved', l10n.letterSaved(formatMoney(letter.savedMinor, currency, locale))),
+      if (letter.worthCategoryId case final id?)
+        ('home-letter-worth', l10n.letterWorth(categoryName(l10n, id, customs))),
+      ('home-letter-days', l10n.letterDays(letter.days)),
+    ];
+    return TestId.container(
+      'home-letter',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.letterTitle(month), style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              // The cards' body style (decision 57).
+              Text(l10n.letterHello(month), style: muted),
+              const SizedBox(height: 4),
+              for (final (id, fact) in facts)
+                TestId.container(
+                  id,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ExcludeSemantics(child: Text('•', style: body)),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(fact, style: body)),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              Text(l10n.letterBye, style: muted),
+              const SizedBox(height: 8),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TestId(
+                  'home-letter-thanks',
+                  button: true,
+                  child: TextButton(
+                    onPressed: onThanks,
+                    child: ButtonLabel(l10n.letterThanks),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

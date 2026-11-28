@@ -122,6 +122,45 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Whether Home asks how yesterday's spends felt (Me → Your pig): on until
+  /// it's switched off. Delete everything clears it with the journal.
+  Future<bool> yesterdayFeelOn() async =>
+      await _settings.record('yesterday_feel_off').get(_db) != true;
+
+  Future<void> setYesterdayFeelOn(bool on) async {
+    await _settings.record('yesterday_feel_off').put(_db, !on);
+    notifyListeners();
+  }
+
+  /// The day (YYYY-MM-DD) "Not now" hid that question: it stays hidden for
+  /// the rest of that day.
+  Future<String?> yesterdayFeelHiddenOn() async =>
+      await _settings.record('yesterday_feel_hidden').get(_db) as String?;
+
+  Future<void> hideYesterdayFeel(String today) async {
+    await _settings.record('yesterday_feel_hidden').put(_db, today);
+    notifyListeners();
+  }
+
+  /// Whether Home shows the pig's monthly letter (Me → Your pig): on until
+  /// it's switched off. Delete everything clears it with the journal.
+  Future<bool> lettersOn() async =>
+      await _settings.record('letters_off').get(_db) != true;
+
+  Future<void> setLettersOn(bool on) async {
+    await _settings.record('letters_off').put(_db, !on);
+    notifyListeners();
+  }
+
+  /// The month (YYYY-MM) whose letter "Thanks!" put away.
+  Future<String?> letterDismissed() async =>
+      await _settings.record('letter_dismissed').get(_db) as String?;
+
+  Future<void> dismissLetter(String month) async {
+    await _settings.record('letter_dismissed').put(_db, month);
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------- entries
 
   /// Every entry, newest day first; within a day, the newest added first.
