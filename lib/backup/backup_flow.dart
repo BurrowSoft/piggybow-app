@@ -21,6 +21,7 @@ import 'package:share_plus/share_plus.dart';
 import '../core/services.dart';
 import '../data/models.dart' show ReminderTime;
 import '../journal/journal_store.dart';
+import '../pig/pig_name.dart' show normalizePigName;
 import '../session/app_session.dart';
 import '../theme/palettes.dart';
 import 'backup_file.dart';
@@ -172,8 +173,8 @@ Future<BackupSnapshot> readBackup(
 
 /// Replaces the journal with [backup]'s (one transaction: all of it or none)
 /// and applies the settings that travel: a language this build offers, a
-/// known appearance and theme, and the reminder's time, with the reminder
-/// off. The app lock stays as it is. Onboarding is the screen's to settle.
+/// known appearance and theme, the pig's name when the file has one, and
+/// the reminder's time, with the reminder off. The app lock stays as it is. Onboarding is the screen's to settle.
 Future<void> restoreBackup(
   AppServices services,
   AppSession session,
@@ -207,6 +208,9 @@ Future<void> restoreBackup(
   // while Plus is active here, as any theme does.
   final palette = paletteByName(prefs.palette);
   if (palette != null) await step(() => session.setPalette(palette));
+  // The pig's name (schema 2): a file with none keeps this phone's.
+  final pigName = normalizePigName(prefs.pigName);
+  if (pigName != null) await step(() => session.setPigName(pigName));
   final reminder = prefs.restoredReminder;
   await step(
     () => session.updateReminder(on: reminder.on, time: reminder.time),

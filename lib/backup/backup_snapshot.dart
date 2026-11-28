@@ -1,8 +1,8 @@
 // Feature 21, what a backup file carries: the plaintext that backup_file.dart
-// seals, schema 1. The person's journal (every entry and goal, their own
-// categories, and the journal settings that travel) and the few settings
-// that matter outside it:
-// language, appearance, the chosen theme and the reminder's time.
+// seals, schema 2. The person's journal (every entry, goal and repeat, their
+// own categories, and the journal settings that travel) and the few settings
+// that matter outside it: language, appearance, the chosen theme, the pig's
+// name and the reminder's time.
 //
 // Never in it: the app lock (its PIN, settings and fail count in secure
 // storage, and its plain app_lock.* markers), the device account and its id,
@@ -13,19 +13,37 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../core/local_prefs.dart';
 import '../data/models.dart' show ReminderTime;
+import '../pig/pig_name.dart' show normalizePigName;
 import 'backup_file.dart' show BackupTooNew, NotABackup;
 
-/// The plaintext's schema this build writes and the newest it reads.
-const backupSchema = 1;
+/// The plaintext's schema this build writes and the newest it reads. 2:
+/// repeats (E), entries in another currency with their rate and home amount
+/// (#74), and the pig's name.
+const backupSchema = 2;
 
 /// One older schema's step to the next: it gets schema n's JSON and returns
 /// schema n + 1's.
 typedef BackupMigration = Map<String, Object?> Function(Map<String, Object?>);
 
-/// Each older schema's step, by the schema it upgrades. Empty while 1 is the
-/// only schema; the build that writes schema 2 adds `1: …` here, so files from
-/// this one still restore.
-const Map<int, BackupMigration> backupMigrations = {};
+/// Each older schema's step, by the schema it upgrades, so a file from an
+/// older build still restores.
+const Map<int, BackupMigration> backupMigrations = {1: _schema1To2};
+
+/// Schema 1 → 2: a schema 1 file has no repeats and no pig's name. Its
+/// entries and settings read as they are (schema 2 only adds to them).
+Map<String, Object?> _schema1To2(Map<String, Object?> m) {
+  final journal = m['journal'];
+  final prefs = m['prefs'];
+  if (journal is! Map<String, Object?> || prefs is! Map<String, Object?>) {
+    throw const NotABackup();
+  }
+  return {
+    ...m,
+    'schema': 2,
+    'journal': {...journal, 'repeats': const <String, Object?>{}},
+    'prefs': {...prefs, 'pig_name': null},
+  };
+}
 
 /// The journal as JournalStore keeps it (JournalStore.snapshot).
 class JournalSnapshot {
@@ -33,6 +51,7 @@ class JournalSnapshot {
     required this.entries,
     required this.goals,
     this.categories = const {},
+    this.repeats = const {},
     required this.settings,
   });
 
@@ -44,6 +63,10 @@ class JournalSnapshot {
 
   /// Your own categories (#49), hidden ones too, by id.
   final Map<String, Map<String, Object?>> categories;
+
+  /// The repeats (E), stopped ones too (their entries still name them), by
+  /// id.
+  final Map<String, Map<String, Object?>> repeats;
 
   /// The journal settings that travel (JournalStore.travelsWith).
   final Map<String, Object?> settings;
@@ -57,6 +80,7 @@ class PrefsSnapshot {
     required this.palette,
     required this.reminderTime,
     required this.reminderWasOn,
+    this.pigName,
   });
 
   /// What this phone has now: [prefs]' named fields, and the reminder.
@@ -70,6 +94,7 @@ class PrefsSnapshot {
     palette: prefs.palette,
     reminderTime: reminderTime,
     reminderWasOn: reminderOn,
+    pigName: normalizePigName(prefs.pigName),
   );
 
   /// The app's language code; null: the phone's.
@@ -86,6 +111,10 @@ class PrefsSnapshot {
   /// Whether the reminder was on. A restore sets it off either way
   /// ([restoredReminder]) and says so when it was on.
   final bool reminderWasOn;
+
+  /// The pig's name (feature 1); null: none. A restore sets it only when
+  /// the file has one.
+  final String? pigName;
 
   /// The reminder as a restore sets it: off, at the backup's time. The new
   /// phone has to grant notifications itself.
@@ -106,6 +135,7 @@ class BackupSnapshot {
       'entries': journal.entries,
       'goals': journal.goals,
       'categories': journal.categories,
+      'repeats': journal.repeats,
       'settings': journal.settings,
     },
     'prefs': {
@@ -114,6 +144,7 @@ class BackupSnapshot {
       'palette': prefs.palette,
       'reminder_time': prefs.reminderTime.wire,
       'reminder_on': prefs.reminderWasOn,
+      'pig_name': prefs.pigName,
     },
   };
 
@@ -152,6 +183,7 @@ class BackupSnapshot {
         categories: journal.containsKey('categories')
             ? _records(journal['categories'])
             : const {},
+        repeats: _records(journal['repeats']),
         settings: _map(journal['settings']),
       ),
       prefs: PrefsSnapshot(
@@ -160,6 +192,7 @@ class BackupSnapshot {
         palette: _optionalString(prefs['palette']),
         reminderTime: _time(prefs['reminder_time']),
         reminderWasOn: _bool(prefs['reminder_on']),
+        pigName: _optionalString(prefs['pig_name']),
       ),
     );
   }

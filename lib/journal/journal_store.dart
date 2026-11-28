@@ -1086,24 +1086,37 @@ class JournalStore extends ChangeNotifier {
     'yesterday_feel_off',
     'letters_off',
     'letter_dismissed',
+    // Home's "Added from your repeats" put away (E), so a restore doesn't
+    // show those entries again; and the last rate per currency (#74), to
+    // fill in the next one (UX, 28 Nov).
+    'repeats_seen_at',
+    'repeats_seen_ids',
+    'rates',
   };
 
   static const _travelsPrefix = 'celebrated.';
 
   /// Journal settings that never leave this phone: today's "Not now" on
-  /// Home's yesterday question, a one-day state (UX, 28 Nov).
-  static const staysOnPhone = {'yesterday_feel_hidden'};
+  /// Home's yesterday question, a one-day state (UX, 28 Nov); and the
+  /// journal's format, this database's own (#74), never a backup's.
+  static const staysOnPhone = {'yesterday_feel_hidden', 'format'};
 
   /// The stores a backup carries. A new store is a choice too: the test that
   /// classifies the settings checks every store this file opens.
-  static const backedUpStores = {'entries', 'goals', 'categories', 'settings'};
+  static const backedUpStores = {
+    'entries',
+    'goals',
+    'categories',
+    'repeats',
+    'settings',
+  };
 
   static bool travelsWith(String key) =>
       travels.contains(key) || key.startsWith(_travelsPrefix);
 
   /// Everything a backup carries of the journal, read in one transaction:
-  /// every entry, goal and category of your own as this build writes them,
-  /// and the settings that travel. A record [checkSnapshot] would refuse
+  /// every entry, goal, category of your own and repeat as this build
+  /// writes them, and the settings that travel. A record [checkSnapshot] would refuse
   /// (one an older build left unreadable, a spend in a category that isn't
   /// there) stays out, so a backup made here always restores.
   Future<JournalSnapshot> snapshot() => _db.transaction((txn) async {
@@ -1113,6 +1126,7 @@ class JournalStore extends ChangeNotifier {
       for (final s in await _categories.find(txn))
         s.key: ?_categoryRecord(s.key, s.value),
     };
+    final repeats = await _repeats.find(txn);
     final settings = await _settings.find(txn);
     return JournalSnapshot(
       entries: {
@@ -1123,6 +1137,7 @@ class JournalStore extends ChangeNotifier {
       },
       goals: {for (final s in goals) s.key: ?_goalRecord(s.key, s.value)},
       categories: categories,
+      repeats: {for (final s in repeats) s.key: ?_repeatRecord(s.key, s.value)},
       settings: {
         for (final s in settings)
           if (_settingFits(s.key, s.value)) s.key: _plain(s.value),
@@ -1134,8 +1149,8 @@ class JournalStore extends ChangeNotifier {
   /// anything it never writes: an entry, goal or category of your own it
   /// can't read or would refuse, a spend in a category of your own the
   /// backup doesn't carry, two of your own with the same name, a second
-  /// active goal, a setting that doesn't travel or holds the wrong kind of
-  /// value.
+  /// active goal, a repeat it can't read or would refuse, a setting that
+  /// doesn't travel or holds the wrong kind of value.
   static JournalSnapshot checkSnapshot(JournalSnapshot snapshot) {
     final categories = <String, Map<String, Object?>>{};
     final names = <String>{};
@@ -1167,6 +1182,11 @@ class JournalStore extends ChangeNotifier {
       }
       goals[key] = record;
     }
+    final repeats = <String, Map<String, Object?>>{};
+    for (final MapEntry(:key, :value) in snapshot.repeats.entries) {
+      repeats[key] =
+          _repeatRecord(key, value) ?? (throw FormatException('repeat $key'));
+    }
     final settings = <String, Object?>{};
     for (final MapEntry(:key, :value) in snapshot.settings.entries) {
       if (!_settingFits(key, value)) throw FormatException('setting $key');
@@ -1176,6 +1196,7 @@ class JournalStore extends ChangeNotifier {
       entries: entries,
       goals: goals,
       categories: categories,
+      repeats: repeats,
       settings: settings,
     );
   }
@@ -1207,12 +1228,13 @@ class JournalStore extends ChangeNotifier {
   /// The entry as this store writes it, or null for one it can't read, would
   /// refuse, or can't show: a currency this build doesn't list (its money
   /// can't be formatted) or an amount over [maxAmountMinor] (its edit sheet
-  /// can't open).
+  /// can't open), at home too (#74: the store never converts past it).
   static Map<String, Object?>? _entryRecord(String id, Map<String, Object?> m) {
     final entry = id.isEmpty ? null : Entry.fromMap(id, m);
     if (entry == null ||
         !supportedCurrencies.contains(entry.currency) ||
-        entry.amountMinor > maxAmountMinor) {
+        entry.amountMinor > maxAmountMinor ||
+        entry.homeMinor > maxAmountMinor) {
       return null;
     }
     try {
@@ -1221,6 +1243,24 @@ class JournalStore extends ChangeNotifier {
       return null;
     }
     return entry.toMap();
+  }
+
+  /// The repeat as this store writes it, or null for one it can't read,
+  /// would refuse, or can't show: a currency this build doesn't list or an
+  /// amount over [maxAmountMinor].
+  static Map<String, Object?>? _repeatRecord(String id, Map<String, Object?> m) {
+    final repeat = id.isEmpty ? null : Repeat.fromMap(id, m);
+    if (repeat == null ||
+        !supportedCurrencies.contains(repeat.currency) ||
+        repeat.amountMinor > maxAmountMinor) {
+      return null;
+    }
+    try {
+      _checkRepeat(repeat);
+    } on ArgumentError {
+      return null;
+    }
+    return repeat.toMap();
   }
 
   /// The goal as this store writes it, or null for one it can't read or
@@ -1235,13 +1275,13 @@ class JournalStore extends ChangeNotifier {
     return goal.toMap();
   }
 
-  /// Replaces the whole journal with [snapshot] (a restore): every entry,
-  /// goal and travelling setting goes, and the snapshot's take their place,
-  /// stamps and all, so a restored rainbow doesn't celebrate again. All of
-  /// it is checked first ([checkSnapshot]: nothing is touched on a
-  /// [FormatException]); the writing is one transaction, so a failure
-  /// halfway leaves the journal exactly as it was. Settings that stay on the
-  /// phone are kept.
+  /// Replaces the whole journal with [snapshot] (a restore): every entry, goal,
+  /// repeat and travelling setting goes, and the snapshot's take their place,
+  /// stamps and all, so a restored rainbow doesn't celebrate again. All of it
+  /// is checked first ([checkSnapshot]: nothing is touched on a
+  /// [FormatException]); the writing is one transaction, so a failure halfway
+  /// leaves the journal exactly as it was. Settings that stay on the phone are
+  /// kept.
   Future<void> replaceWith(
     JournalSnapshot snapshot, {
     @visibleForTesting Future<void> Function()? midway,
@@ -1251,6 +1291,7 @@ class JournalStore extends ChangeNotifier {
       await _entries.delete(txn);
       await _goals.delete(txn);
       await _categories.delete(txn);
+      await _repeats.delete(txn);
       for (final s in await _settings.find(txn)) {
         if (travelsWith(s.key)) await _settings.record(s.key).delete(txn);
       }
@@ -1263,6 +1304,9 @@ class JournalStore extends ChangeNotifier {
       }
       for (final MapEntry(:key, :value) in checked.goals.entries) {
         await _goals.record(key).put(txn, value);
+      }
+      for (final MapEntry(:key, :value) in checked.repeats.entries) {
+        await _repeats.record(key).put(txn, value);
       }
       for (final MapEntry(:key, :value) in checked.settings.entries) {
         await _settings.record(key).put(txn, value);
@@ -1280,6 +1324,20 @@ class JournalStore extends ChangeNotifier {
     // whose letter was put away.
     'yesterday_feel_off' || 'letters_off' => value is bool,
     'letter_dismissed' => value is String && _wireMonth.hasMatch(value),
+    // Home's repeats card put away (E): when (UTC), and the entries it
+    // showed ahead of a clock set forward.
+    'repeats_seen_at' => value is String && DateTime.tryParse(value) != null,
+    'repeats_seen_ids' =>
+      value is List && value.every((id) => id is String && id.isNotEmpty),
+    // The last rate per currency (#74): ones this build reads, for
+    // currencies it lists.
+    'rates' =>
+      value is Map &&
+          value.entries.every(
+            (r) =>
+                supportedCurrencies.contains(r.key) &&
+                Rate.fromMap(r.value) != null,
+          ),
     'hidden_categories' =>
       value is List && value.every((id) => SpendCategory.fromId(id) != null),
     _ =>

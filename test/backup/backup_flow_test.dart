@@ -54,6 +54,7 @@ void main() {
     String? locale = 'th',
     String? appearance = 'dark',
     String? palette = 'plum',
+    String? pigName = 'Oink',
   }) async {
     final journal = (await tester.runAsync(() async {
       final other = await JournalStore.inMemory(clock: testClock);
@@ -79,6 +80,7 @@ void main() {
         palette: palette,
         reminderTime: const ReminderTime(21, 30),
         reminderWasOn: true,
+        pigName: pigName,
       ),
     );
   }
@@ -136,18 +138,21 @@ void main() {
     expect(app.session.locale.languageCode, 'th');
     expect(app.session.themeMode, ThemeMode.dark);
     expect(app.session.chosenPalette, PlusPalette.plum);
+    expect(app.session.pigName, 'Oink');
     expect(app.session.accountState!.reminderOn, isFalse);
     expect(app.session.accountState!.reminderTime.wire, '21:30');
   });
 
-  testWidgets('a language this build doesn\'t offer, or a look it doesn\'t '
-      'know, is left as it is', (tester) async {
+  testWidgets('a language this build doesn\'t offer, a look it doesn\'t '
+      'know, or no pig\'s name, is left as it is', (tester) async {
     final app = await start(tester);
+    await tester.runAsync(() => app.session.setPigName('Piggy'));
     final backup = await fromAnotherPhone(
       tester,
       locale: 'xx',
       appearance: 'purple',
       palette: 'plaid',
+      pigName: null,
     );
     await tester.runAsync(
       () => restoreBackup(app.services, app.session, backup),
@@ -155,6 +160,7 @@ void main() {
     expect(app.session.locale.languageCode, 'en');
     expect(app.session.themeMode, ThemeMode.system);
     expect(app.session.chosenPalette, isNull);
+    expect(app.session.pigName, 'Piggy');
   });
 
   testWidgets('a file that can\'t restore says why, before anything is '

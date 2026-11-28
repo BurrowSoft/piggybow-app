@@ -12,7 +12,9 @@ import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/journal/journal_store.dart';
 import 'package:piggybow/money/money.dart' show maxAmountMinor;
+import 'package:piggybow/money/rate.dart';
 import 'package:piggybow/pig/pig_mood.dart' show HappyPick;
+import 'package:piggybow/repeat/repeat.dart' show RepeatSchedule;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Feature 21, what a backup carries: the whole journal comes back exactly,
@@ -55,9 +57,10 @@ void main() {
   );
 
   /// A journal with everything a backup carries: spends (Thai, emoji and
-  /// longest notes, with and without a feeling, one in your own category),
-  /// saves to the active goal (a band stamped) and a take-out, a reached and
-  /// an ended goal, your own category, a hidden built-in, and every setting.
+  /// longest notes, with and without a feeling, one in your own category,
+  /// one in euros), saves to the active goal (a band stamped) and a
+  /// take-out, a reached and an ended goal, your own category, a hidden
+  /// built-in, a repeat, and every setting.
   Future<void> fill(JournalStore s) async {
     await s.setCurrency('THB');
     await s.setPicks({HappyPick.save, HappyPick.worth});
@@ -113,6 +116,27 @@ void main() {
       currency: 'THB',
       localDate: '2026-11-28',
     );
+    // Schema 2: a repeat (E) and Home's card for it put away; a spend in
+    // euros at its rate (#74), which keeps the last rate.
+    await s.addEntry(
+      type: EntryType.spent,
+      amountMinor: 1200000,
+      currency: 'THB',
+      localDate: '2026-11-27',
+      category: SpendCategory.home,
+      note: 'Rent',
+      repeat: const RepeatSchedule.monthly(27),
+      today: '2026-11-28',
+    );
+    await s.markRepeatsSeen(const []);
+    await s.addEntry(
+      type: EntryType.spent,
+      amountMinor: 1234,
+      currency: 'EUR',
+      localDate: '2026-11-27',
+      category: SpendCategory.food,
+      rate: const Rate(units: 3912, scale: 2, direction: RateDirection.toHome),
+    );
   }
 
   /// Another journal, so a restore has something to replace.
@@ -145,9 +169,15 @@ void main() {
     test('brings the journal back exactly, through a sealed file', () async {
       await fill(store);
       final before = await store.snapshot();
-      expect(before.entries, hasLength(6));
+      expect(before.entries, hasLength(8));
       expect(before.goals, hasLength(3));
       expect(before.categories.keys, ['c:bubble']);
+      expect(before.repeats, hasLength(1));
+      expect(
+        before.entries.values.where((e) => e['home_minor'] == 48274),
+        hasLength(1),
+        reason: 'EUR 12.34 at 39.12, at home',
+      );
       expect(
         before.entries.values.where((e) => e['type'] == 'withdraw'),
         hasLength(1),
@@ -177,6 +207,32 @@ void main() {
       expect(back.prefs.localeCode, 'th');
       expect(back.prefs.appearance, 'dark');
       expect(back.prefs.palette, isNull);
+    });
+
+    test("the pig's name comes back, and none is none", () {
+      Map<String, Object?> file(String? name) =>
+          jsonDecode(
+                jsonEncode(
+                  BackupSnapshot(
+                    journal: const JournalSnapshot(
+                      entries: {},
+                      goals: {},
+                      settings: {},
+                    ),
+                    prefs: PrefsSnapshot(
+                      localeCode: null,
+                      appearance: null,
+                      palette: null,
+                      reminderTime: const ReminderTime(21, 30),
+                      reminderWasOn: false,
+                      pigName: name,
+                    ),
+                  ).toJson(),
+                ),
+              )
+              as Map<String, Object?>;
+      expect(BackupSnapshot.fromJson(file('Oink 🐷')).prefs.pigName, 'Oink 🐷');
+      expect(BackupSnapshot.fromJson(file(null)).prefs.pigName, isNull);
     });
 
     test('a failure halfway leaves the old journal exactly as it was', () async {
@@ -235,6 +291,36 @@ void main() {
         categories: good.categories,
         settings: {...good.settings, key: value},
       );
+
+      JournalSnapshot withEuro(void Function(Map<String, Object?>) change) {
+        final entries = {
+          for (final MapEntry(:key, :value) in good.entries.entries)
+            key: {...value},
+        };
+        change(entries.values.firstWhere((m) => m['currency'] == 'EUR'));
+        return JournalSnapshot(
+          entries: entries,
+          goals: good.goals,
+          categories: good.categories,
+          repeats: good.repeats,
+          settings: good.settings,
+        );
+      }
+
+      JournalSnapshot withRepeat(void Function(Map<String, Object?>) change) {
+        final repeats = {
+          for (final MapEntry(:key, :value) in good.repeats.entries)
+            key: {...value},
+        };
+        change(repeats.values.single);
+        return JournalSnapshot(
+          entries: good.entries,
+          goals: good.goals,
+          categories: good.categories,
+          repeats: repeats,
+          settings: good.settings,
+        );
+      }
 
       final bubble = good.categories['c:bubble']!;
       JournalSnapshot withCategories(
@@ -324,6 +410,48 @@ void main() {
           'letter_dismissed',
           '2026-13',
         ),
+        // Schema 2: repeats (E) and money in another currency (#74), as the
+        // store writes them.
+        'an unreadable repeat': withRepeat((m) => m['kind'] = 'yearly'),
+        'a repeat over the cap': withRepeat(
+          (m) => m['amount_minor'] = maxAmountMinor + 1,
+        ),
+        'a repeat in a currency this build doesn\'t list': withRepeat(
+          (m) => m['currency'] = 'XYZ',
+        ),
+        'a repeating spend with no category': withRepeat(
+          (m) => m['category'] = null,
+        ),
+        'a repeat with no id': JournalSnapshot(
+          entries: good.entries,
+          goals: good.goals,
+          categories: good.categories,
+          repeats: {'': good.repeats.values.single},
+          settings: good.settings,
+        ),
+        'a rate this build can\'t read': withEuro(
+          (m) => m['rate'] = {'units': 0, 'scale': 2, 'dir': 'to_home'},
+        ),
+        'a rate without its home amount': withEuro(
+          (m) => m.remove('home_minor'),
+        ),
+        'a home amount over the cap': withEuro(
+          (m) => m['home_minor'] = maxAmountMinor + 1,
+        ),
+        'a last rate this build can\'t read': withSetting('rates', {
+          'EUR': {'units': -1, 'scale': 2, 'dir': 'to_home'},
+        }),
+        'a last rate for a currency this build doesn\'t list': withSetting(
+          'rates',
+          {
+            'XYZ': {'units': 3912, 'scale': 2, 'dir': 'to_home'},
+          },
+        ),
+        'a seen mark that isn\'t a time': withSetting(
+          'repeats_seen_at',
+          'soon',
+        ),
+        'seen ids that aren\'t ids': withSetting('repeats_seen_ids', [1]),
       };
       for (final MapEntry(key: what, value: snapshot) in bad.entries) {
         await expectLater(
@@ -369,6 +497,7 @@ void main() {
         'device.welcome_seen': true,
         'device.locale': 'th',
         'device.appearance': 'dark',
+        'device.pig_name': 'Oink',
       });
       final local = await SharedLocalPrefs.load();
       await fill(store);
@@ -394,6 +523,7 @@ void main() {
       }
       expect(json, contains('"locale":"th"'));
       expect(json, contains('"appearance":"dark"'));
+      expect(json, contains('"pig_name":"Oink"'));
     });
 
     test('every journal setting the store writes is classified: it travels '
@@ -462,7 +592,12 @@ void main() {
         'an entry with no id': edited(
           (m) => part(m, 'journal')['entries'] = {'': <String, Object?>{}},
         ),
+        'no repeats': edited((m) => part(m, 'journal').remove('repeats')),
+        'repeats as a list': edited((m) => part(m, 'journal')['repeats'] = []),
         'no prefs': edited((m) => m.remove('prefs')),
+        'a pig name as a number': edited(
+          (m) => part(m, 'prefs')['pig_name'] = 3,
+        ),
         'a time past midnight': edited(
           (m) => part(m, 'prefs')['reminder_time'] = '25:00',
         ),
@@ -491,22 +626,36 @@ void main() {
     });
 
     test('an older schema is migrated first, and a missing step refuses', () {
+      const next = backupSchema + 1;
       final migrated = BackupSnapshot.fromJson(
         json(),
-        schema: 2,
+        schema: next,
         migrations: {
-          1: (m) => {
+          backupSchema: (m) => {
             ...m,
-            'schema': 2,
+            'schema': next,
             'prefs': {...m['prefs']! as Map<String, Object?>, 'palette': 'p'},
           },
         },
       );
       expect(migrated.prefs.palette, 'p');
       expect(
-        () => BackupSnapshot.fromJson(json(), schema: 2, migrations: const {}),
+        () => BackupSnapshot.fromJson(json(), schema: next, migrations: const {}),
         throwsA(isA<NotABackup>()),
       );
+    });
+
+    test('a schema 1 file, from before repeats, still reads: no repeats and '
+        'no pig name', () {
+      final one = jsonDecode(jsonEncode(json())) as Map<String, Object?>;
+      one['schema'] = 1;
+      (one['journal']! as Map<String, Object?>).remove('repeats');
+      (one['prefs']! as Map<String, Object?>).remove('pig_name');
+      final back = BackupSnapshot.fromJson(one);
+      expect(back.journal.repeats, isEmpty);
+      expect(back.prefs.pigName, isNull);
+      expect(back.prefs.localeCode, 'th');
+      expect(back.prefs.reminderTime.wire, '21:30');
     });
   });
 }
