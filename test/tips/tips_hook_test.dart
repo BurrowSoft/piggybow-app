@@ -42,6 +42,23 @@ void main() {
     }
   });
 
+  // One source for the consent versions: the sheet records the ones the
+  // release gate waits for, never a version of its own, and it's the only
+  // place tips are turned on.
+  test('the consent sheet records PolicyVersions.ai and .age18, with no version literal', () {
+    final sheet = read('lib/features/tips/tips_ui.dart');
+    expect(sheet, contains('aiVersion: PolicyVersions.ai,'));
+    expect(sheet, contains('age18Version: PolicyVersions.age18,'));
+    expect(RegExp(r'''['"](ai|age18)[-_]''').hasMatch(sheet), isFalse, reason: 'a version literal');
+    expect(RegExp(r'''Version: ['"]''').hasMatch(sheet), isFalse, reason: 'a version literal');
+    final turnsOn = [
+      for (final f in Directory('lib').listSync(recursive: true).whereType<File>())
+        if (f.path.endsWith('.dart') && f.readAsStringSync().contains('.turnOn('))
+          f.path.replaceAll('\\', '/'),
+    ];
+    expect(turnsOn, ['lib/features/tips/tips_ui.dart']);
+  });
+
   test('TIPS_TEST_URL is read once in the app, inside if (kTipsTestHook)', () {
     final readers = [
       for (final f in Directory('lib').listSync(recursive: true).whereType<File>())
