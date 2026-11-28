@@ -115,9 +115,9 @@ void main() {
   Future<List<Entry>> stored(WidgetTester tester, TestApp app) async =>
       (await tester.runAsync(app.journal.entries))!;
 
-  /// The lines under the amount: how it was read ([asTyped]), and, in
-  /// another currency, the amount at home ([atHome], formatted) in its
-  /// sentence.
+  /// How the amount was read ([asTyped]), under it; and, in another
+  /// currency, the amount at home ([atHome], formatted) in its sentence,
+  /// under the rate (UX's order).
   Future<void> expectLines(
     WidgetTester tester, {
     required String asTyped,
@@ -128,6 +128,7 @@ void main() {
     if (atHome == null) {
       expect(byId('add-converted'), findsNothing);
     } else {
+      await show(tester, 'add-converted');
       expect(
         inSheet(find.text("That's $atHome at this rate.")),
         findsOneWidget,

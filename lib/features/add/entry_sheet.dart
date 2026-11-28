@@ -867,36 +867,6 @@ class _EntrySheetState extends State<EntrySheet> {
                               ),
                             ),
                           ),
-                        // In another currency: the amount at home, as it
-                        // will be counted, once the rate is read. A sentence
-                        // (UX), so it can't be read as a second sum; it
-                        // wraps at large text.
-                        if (abroad && amountError == null && converted != null)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 2, left: 12),
-                            child: TestId(
-                              'add-converted',
-                              child: Text(
-                                l10n.travelHomeAmount(
-                                  formatMoney(converted, home!, _locale),
-                                ),
-                                style: muted,
-                              ),
-                            ),
-                          ),
-                        // By the picked category's id: a built-in or your
-                        // own (#49).
-                        if (spend && !_editing && _hasCategory)
-                          _QuickAmounts(
-                            amounts: quickAmounts(
-                              _entries,
-                              categoryId: (_category?.id ?? _custom)!,
-                              currency: currency,
-                            ),
-                            currency: currency,
-                            locale: _locale,
-                            onUse: (minor) => _useQuickAmount(minor, currency),
-                          ),
                         const SizedBox(height: 8),
                         // The entry's currency: the home one unless another
                         // is picked (feature 19).
@@ -975,6 +945,38 @@ class _EntrySheetState extends State<EntrySheet> {
                             ],
                           ),
                         ],
+                        // In another currency: the amount at home, as it
+                        // will be counted, once the rate is read. A sentence
+                        // (UX), so it can't be read as a second sum; it
+                        // wraps at large text. Under the rate it comes from
+                        // (UX).
+                        if (abroad && amountError == null && converted != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 4, left: 12),
+                            child: TestId(
+                              'add-converted',
+                              child: Text(
+                                l10n.travelHomeAmount(
+                                  formatMoney(converted, home!, _locale),
+                                ),
+                                style: muted,
+                              ),
+                            ),
+                          ),
+                        // By the picked category's id: a built-in or your
+                        // own (#49). After the money being typed: its
+                        // currency, rate and amount at home (UX).
+                        if (spend && !_editing && _hasCategory)
+                          _QuickAmounts(
+                            amounts: quickAmounts(
+                              _entries,
+                              categoryId: (_category?.id ?? _custom)!,
+                              currency: currency,
+                            ),
+                            currency: currency,
+                            locale: _locale,
+                            onUse: (minor) => _useQuickAmount(minor, currency),
+                          ),
                         const SizedBox(height: 16),
                         if (spend) ...[
                           Text(
