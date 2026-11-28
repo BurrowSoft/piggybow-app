@@ -279,6 +279,8 @@ class _TakeOutSheetState extends State<TakeOutSheet> {
                           'takeout-amount',
                           child: TextField(
                             controller: _amount,
+                            // Keyboard learning off, as on every field (#75).
+                            enableIMEPersonalizedLearning: false,
                             autofocus: !_editing,
                             keyboardType: TextInputType.numberWithOptions(
                               decimal: minorDigitsOf(currency) > 0,
@@ -327,6 +329,8 @@ class _TakeOutSheetState extends State<TakeOutSheet> {
                           'takeout-note',
                           child: TextField(
                             controller: _note,
+                            // Keyboard learning off, as on every field (#75).
+                            enableIMEPersonalizedLearning: false,
                             maxLength: maxNoteLength,
                             minLines: 1,
                             maxLines: 3,

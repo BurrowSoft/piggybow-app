@@ -240,4 +240,45 @@ void main() {
     })!;
     expect(s.goalId, isNull);
   });
+
+  // Wiring item 5 (#61 with #47): with two goals, a take-out never counts as
+  // a save for the default goal, and each take-out stays within its own goal.
+  Goal laptop() => Goal(
+    id: 'g2',
+    name: 'Laptop',
+    targetMinor: 100000,
+    createdAt: DateTime.utc(2026, 9, 2),
+    updatedAt: DateTime.utc(2026, 9, 2),
+  );
+  Future<Entry> saveToLaptop(int minor) => store.addEntry(
+    type: EntryType.saved,
+    amountMinor: minor,
+    currency: 'USD',
+    localDate: '2026-10-01',
+    goalId: 'g2',
+  );
+
+  test('with two goals, the default goal reads saves only, never a take-out', () async {
+    await store.putGoal(bike());
+    await store.putGoal(laptop(), allowAnother: true);
+    await save(3000); // Bike: the oldest, with no save yet
+    clock.now = clock.now.add(const Duration(minutes: 1));
+    await saveToLaptop(2000);
+    expect((await store.activeGoal())!.id, 'g2');
+    clock.now = clock.now.add(const Duration(minutes: 1));
+    await takeOut(1000); // out of Bike, after both saves
+    expect((await store.activeGoal())!.id, 'g2');
+  });
+
+  test('with two goals, each take-out stays within its own goal', () async {
+    await store.putGoal(bike());
+    await store.putGoal(laptop(), allowAnother: true);
+    await save(300);
+    await saveToLaptop(500);
+    await expectLater(takeOut(400), throwsStateError);
+    await takeOut(300);
+    await store.takeOut(goalId: 'g2', amountMinor: 500, currency: 'USD', localDate: '2026-10-02');
+    expect(await progress(), 0);
+    expect(await store.goalProgress((await store.goal('g2'))!), 0);
+  });
 }

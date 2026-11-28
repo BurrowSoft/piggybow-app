@@ -10,11 +10,13 @@ import '../../l10n/gen/app_localizations.dart';
 /// category of your own while Plus is off ([plus]: your own categories are
 /// Plus's); a save while the goal it went to ([goal]) is still active, or
 /// when it went to none. A save whose goal was reached or ended doesn't
-/// offer it.
-bool canAddAgain(Entry entry, Goal? goal, {required bool plus}) =>
-    entry.type == EntryType.saved
-        ? entry.goalId == null || goal?.status == GoalStatus.active
-        : entry.customCategory == null || plus;
+/// offer it, and money taken out of savings never does (UX: addEntry
+/// refuses a withdrawal anyway).
+bool canAddAgain(Entry entry, Goal? goal, {required bool plus}) => switch (entry.type) {
+  EntryType.spent => entry.customCategory == null || plus,
+  EntryType.saved => entry.goalId == null || goal?.status == GoalStatus.active,
+  EntryType.withdraw => false,
+};
 
 /// [entry] again, dated today: the same type, amount, category (built-in or
 /// your own) and note. The feeling is asked fresh (none yet). A save goes to

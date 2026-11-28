@@ -97,6 +97,8 @@ TipRequest buildTipRequest({
       saves++;
       continue;
     }
+    // Money taken out of savings is never spending (nor a save).
+    if (e.type != EntryType.spent) continue;
     spent += e.amountMinor;
     final key =
         e.category?.id ?? (e.customCategory == null ? null : tipYoursBucket);

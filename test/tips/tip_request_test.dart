@@ -207,4 +207,28 @@ void main() {
     expect(r.feelings.values, everyElement(0));
     expect(r.saves, 0);
   });
+
+  // Wiring item 9 (#54 with #61): money taken out of savings is neither
+  // spending nor a save.
+  test('a take-out is never spending, nor a save', () {
+    final out = Entry(
+      id: 'entry-out',
+      type: EntryType.withdraw,
+      amountMinor: 90000,
+      currency: 'THB',
+      localDate: today,
+      createdAt: DateTime.utc(2026, 10, 1),
+      updatedAt: DateTime.utc(2026, 10, 1),
+      goalId: 'goal-secret',
+    );
+    final r = build([
+      entry(today, 5000, category: SpendCategory.food),
+      out,
+      entry(today, 2000, type: EntryType.saved),
+    ], planMinor: 10000);
+    expect(r.planPercent, 50);
+    expect(r.saves, 1);
+    expect(r.categoryShares, {'food': 100});
+    expect(r.feelings['none'], 1);
+  });
 }

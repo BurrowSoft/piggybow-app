@@ -271,4 +271,31 @@ void main() {
     final copy = (await entries(tester, app)).firstWhere((e) => e.id != 'entry-1');
     expect((copy.type, copy.goalId, copy.amountMinor), (EntryType.saved, 'goal-2', 20000));
   });
+
+  // Wiring item 8 (#56 with #61): money taken out of savings is never added
+  // again (UX).
+  testWidgets('a take-out offers no Add again', (tester) async {
+    final app = await open(
+      tester,
+      seed: (app) async {
+        await app.journal.putGoal(bike());
+        await app.journal.addEntry(
+          type: EntryType.saved,
+          amountMinor: 20000,
+          currency: 'THB',
+          localDate: '2026-09-29',
+        );
+        await app.journal.takeOut(
+          goalId: 'goal-1',
+          amountMinor: 5000,
+          currency: 'THB',
+          localDate: '2026-09-30',
+        );
+      },
+    );
+    expect((await entries(tester, app)).map((e) => e.type), contains(EntryType.withdraw));
+    await longPress(tester, 'tl-row-entry-2');
+    expect(byId('tl-repeat'), findsNothing);
+    expect(await entries(tester, app), hasLength(2));
+  });
 }
