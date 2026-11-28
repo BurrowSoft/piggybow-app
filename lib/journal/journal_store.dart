@@ -132,16 +132,30 @@ class JournalStore extends ChangeNotifier {
     return v is String ? DateTime.tryParse(v)?.toUtc() : null;
   }
 
-  /// OK on Home's "Added from your repeats": everything added so far is seen.
-  /// [newest] is when the newest of what it showed was added: when that's
-  /// after now (added under a clock that was set ahead), it's the mark, so
-  /// those go too.
-  Future<void> markRepeatsSeen({DateTime? newest}) async {
+  /// Entries the card showed that were "added" after that OK (under a clock
+  /// set ahead): seen all the same.
+  Future<Set<String>> repeatsSeenIds() async {
+    final v = await _settings.record('repeats_seen_ids').get(_db);
+    return v is List
+        ? {for (final id in v) ?(id is String ? id : null)}
+        : <String>{};
+  }
+
+  /// OK on Home's "Added from your repeats": everything it showed is seen.
+  /// The mark is now; entries in [shown] "added" after now (under a clock
+  /// that was set ahead) are kept by id, so they go too while the ones added
+  /// later, in real time, still show.
+  Future<void> markRepeatsSeen(Iterable<Entry> shown) async {
     final now = _clock.nowUtc();
-    final at = newest != null && newest.isAfter(now) ? newest : now;
-    await _settings
-        .record('repeats_seen_at')
-        .put(_db, at.toUtc().toIso8601String());
+    await _db.transaction((txn) async {
+      await _settings
+          .record('repeats_seen_at')
+          .put(txn, now.toIso8601String());
+      await _settings.record('repeats_seen_ids').put(txn, [
+        for (final e in shown)
+          if (e.createdAt.isAfter(now)) e.id,
+      ]);
+    });
     notifyListeners();
   }
 

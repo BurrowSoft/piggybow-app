@@ -173,7 +173,7 @@ void main() {
       expect(await tester.runAsync(app.journal.repeatsSeenAt), isNotNull);
     });
 
-    testWidgets('OK puts away what was added under a clock set ahead', (tester) async {
+    testWidgets('OK puts away what was added under a clock set ahead; what comes later still shows', (tester) async {
       // The clock says 1 January 2027: the catch-up adds Nov, Dec and Jan,
       // each "added" then.
       final clock = MovableClock(DateTime.utc(2027, 1, 1, 2));
@@ -187,7 +187,34 @@ void main() {
       clock.now = DateTime.utc(2026, 10, 2, 1, 30);
       await tester.tapId('home-repeats-ok');
       expect(byId('home-repeats'), findsNothing);
-      expect(await tester.runAsync(app.journal.repeatsSeenAt), DateTime.utc(2027, 1, 1, 2));
+      expect(await tester.runAsync(app.journal.repeatsSeenAt), clock.now);
+      expect(await tester.runAsync(app.journal.repeatsSeenIds), {
+        'repeat-entry-1-2026-11-01',
+        'repeat-entry-1-2026-12-01',
+        'repeat-entry-1-2027-01-01',
+      });
+
+      // A weekly gym from today, Friday 2 October; a week later, on resume,
+      // its next one shows (the false-clock ones stay put away).
+      await tester.runAsync(
+        () => app.journal.addEntry(
+          type: EntryType.spent,
+          amountMinor: 50000,
+          currency: 'THB',
+          localDate: '2026-10-02',
+          category: SpendCategory.health,
+          note: 'Gym',
+          repeat: const RepeatSchedule.weekly(5),
+          today: '2026-10-02',
+        ),
+      );
+      clock.now = DateTime.utc(2026, 10, 9, 1, 30);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await waitFor(tester, byId('home-repeats'));
+      expect(byId('home-repeats-repeat-entry-3-2026-10-09'), findsOneWidget);
+      expect(byId('home-repeats-repeat-entry-1-2026-11-01'), findsNothing);
+      expect(byId('home-repeats-more'), findsNothing);
     });
 
     testWidgets('more than 3: "and N more" opens Timeline', (tester) async {

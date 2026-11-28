@@ -104,10 +104,14 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     final goals = await store.goals();
     final active = await store.activeGoal();
     final seen = await store.repeatsSeenAt();
+    final seenIds = await store.repeatsSeenIds();
     final data = _HomeData(
       addedByRepeats: [
         for (final e in entries)
-          if (e.auto && (seen == null || e.createdAt.isAfter(seen))) e,
+          if (e.auto &&
+              (seen == null || e.createdAt.isAfter(seen)) &&
+              !seenIds.contains(e.id))
+            e,
       ],
       entries: entries,
       goals: goals,
@@ -330,13 +334,9 @@ class _RepeatsCard extends StatelessWidget {
                     'home-repeats-ok',
                     button: true,
                     child: TextButton(
-                      // All of them, "and N more" too: the newest one's
-                      // time is the mark, even after a clock set ahead.
-                      onPressed: () => context.services.journal.markRepeatsSeen(
-                        newest: added
-                            .map((e) => e.createdAt)
-                            .reduce((a, b) => a.isAfter(b) ? a : b),
-                      ),
+                      // All of them, "and N more" too.
+                      onPressed: () =>
+                          context.services.journal.markRepeatsSeen(added),
                       child: ButtonLabel(l10n.repeatAddedOk),
                     ),
                   ),
