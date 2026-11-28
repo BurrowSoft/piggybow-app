@@ -150,26 +150,30 @@ class PiggybowWidget : AppWidgetProvider() {
             R.drawable.widget_track_4, R.drawable.widget_track_5,
         )
 
-        /** The app, as from its icon (with the lock on, the lock screen first). */
+        /**
+         * The app, from the widget: its own action, so a running app hears
+         * it (onNewIntent) and the lock, if on, comes back first.
+         */
         private fun openApp(context: Context): PendingIntent = PendingIntent.getActivity(
             context,
             REQUEST_OPEN,
             Intent(context, MainActivity::class.java)
-                .setAction(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setAction(MainActivity.ACTION_OPEN_FROM_WIDGET)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
         /**
-         * "Add a spend": the same action as the home-screen shortcut, which
-         * the app answers with the Add sheet on Spent.
+         * "Add a spend": the home-screen shortcut's own action (#58), which
+         * the app answers with the Add sheet on Spent; from the widget, the
+         * lock, if on, comes back first.
          */
         private fun addSpend(context: Context): PendingIntent = PendingIntent.getActivity(
             context,
             REQUEST_ADD,
             Intent(context, MainActivity::class.java)
-                .setAction(ACTION_ADD_SPEND)
+                .setAction(MainActivity.ACTION_ADD_SPEND)
+                .putExtra(MainActivity.EXTRA_FROM_WIDGET, true)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
@@ -187,13 +191,6 @@ class PiggybowWidget : AppWidgetProvider() {
             val at = WidgetFaces.nextDay(ZonedDateTime.now()).toInstant().toEpochMilli()
             alarms.set(AlarmManager.RTC, at, nextDayIntent(context))
         }
-
-        /**
-         * The home-screen shortcut's action (PR #58's res/xml/shortcuts.xml
-         * and MainActivity.ACTION_ADD_SPEND): until that lands, the app just
-         * opens.
-         */
-        private const val ACTION_ADD_SPEND = "com.burrowsoft.piggybow.action.ADD_SPEND"
 
         private const val REQUEST_OPEN = 1
         private const val REQUEST_ADD = 2

@@ -52,7 +52,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="@drawable/widget_add_background"
-            android:contentDescription="@string/widget_add"
+            android:contentDescription="@string/shortcut_add_long"
             android:padding="12dp"
             android:src="@drawable/widget_add"
             android:visibility="gone" />

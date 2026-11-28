@@ -30,12 +30,18 @@ class MainActivity : FlutterFragmentActivity() {
         if (noteLaunchAction(intent)) settings?.invokeMethod(LAUNCH_ACTION, null)
     }
 
-    // "Add a spend" from the shortcut, unless Android is replaying an old
-    // start from the recent apps.
+    // "Add a spend" from the shortcut or the widget's "+", or the widget
+    // itself, unless Android is replaying an old start from the recent apps.
+    // From the widget, Flutter brings the app lock back first.
     private fun noteLaunchAction(intent: Intent?): Boolean {
-        if (intent == null || intent.action != ACTION_ADD_SPEND) return false
+        if (intent == null) return false
         if ((intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0) return false
-        launchAction = ADD_SPEND
+        val fromWidget = intent.getBooleanExtra(EXTRA_FROM_WIDGET, false)
+        launchAction = when (intent.action) {
+            ACTION_ADD_SPEND -> if (fromWidget) WIDGET_ADD_SPEND else ADD_SPEND
+            ACTION_OPEN_FROM_WIDGET -> WIDGET_OPEN
+            else -> return false
+        }
         return true
     }
 
@@ -108,9 +114,16 @@ class MainActivity : FlutterFragmentActivity() {
         const val TAKE_LAUNCH_ACTION = "takeLaunchAction"
         const val LAUNCH_ACTION = "launchAction"
         const val ADD_SPEND = "addSpend"
+        const val WIDGET_ADD_SPEND = "widgetAddSpend"
+        const val WIDGET_OPEN = "widgetOpen"
 
         // The shortcut's intent action (res/xml/shortcuts.xml, one per flavour).
         const val ACTION_ADD_SPEND = "com.burrowsoft.piggybow.action.ADD_SPEND"
+
+        // The home-screen widget's taps (widget/PiggybowWidget.kt): the app,
+        // and the "+" (ACTION_ADD_SPEND with this extra).
+        const val ACTION_OPEN_FROM_WIDGET = "com.burrowsoft.piggybow.action.OPEN_FROM_WIDGET"
+        const val EXTRA_FROM_WIDGET = "com.burrowsoft.piggybow.extra.FROM_WIDGET"
 
         // lib/features/widget/widget_sync.dart's ChannelWidgetBridge.method.
         const val UPDATE_WIDGET = "updateWidget"

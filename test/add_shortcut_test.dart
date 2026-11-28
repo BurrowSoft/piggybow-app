@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/core/device.dart';
+import 'package:piggybow/core/launch_actions.dart';
 import 'package:piggybow/features/add/entry_sheet.dart';
 import 'package:piggybow/journal/entry.dart';
 
@@ -92,6 +94,8 @@ void main() {
       expect(kotlin, contains('TAKE_LAUNCH_ACTION = "$takeLaunchActionMethod"'));
       expect(kotlin, contains('LAUNCH_ACTION = "$launchActionMethod"'));
       expect(kotlin, contains('ADD_SPEND = "$addSpendAction"'));
+      expect(kotlin, contains('WIDGET_ADD_SPEND = "$widgetAddSpendAction"'));
+      expect(kotlin, contains('WIDGET_OPEN = "$widgetOpenAction"'));
     });
 
     test("each flavour's shortcut opens its own app, with MainActivity's action", () {
@@ -130,6 +134,41 @@ void main() {
       ]) {
         expect(File('android/app/src/main/res/$icon').existsSync(), isTrue, reason: icon);
       }
+    });
+  });
+
+  // Wiring item 15 (#72 with #58): the widget's taps arrive as launch
+  // actions, and from the widget the lock is asked for first.
+  group('from the widget', () {
+    TestWidgetsFlutterBinding.ensureInitialized();
+    const channel = MethodChannel(settingsChannel);
+
+    /// What one start with [action] does: the locks asked for, and whether
+    /// an Add a spend waits.
+    Future<(int, bool)> take(String? action) async {
+      final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(
+        channel,
+        (call) async => call.method == takeLaunchActionMethod ? action : null,
+      );
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      var locks = 0;
+      final launch = PlatformLaunchActions(onFromWidget: () => locks++);
+      await launch.listen();
+      return (locks, launch.addSpendPending.value);
+    }
+
+    test("the widget's +: the lock first, then Add a spend", () async {
+      expect(await take(widgetAddSpendAction), (1, true));
+    });
+
+    test('the widget itself: the lock first, and nothing to add', () async {
+      expect(await take(widgetOpenAction), (1, false));
+    });
+
+    test('the shortcut, or no action: the lock as it is', () async {
+      expect(await take(addSpendAction), (0, true));
+      expect(await take(null), (0, false));
     });
   });
 }

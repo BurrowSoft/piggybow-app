@@ -3,9 +3,11 @@ import 'package:flutter/services.dart' show MethodChannel;
 
 import 'device.dart';
 
-/// The home-screen shortcut (Android): "Add a spend" starts the app, or
-/// brings it back, with an action MainActivity.kt keeps until Flutter takes
-/// it. The shell answers it with Home and the Add sheet on Spent.
+/// The home-screen shortcut and widget (Android): "Add a spend" starts the
+/// app, or brings it back, with an action MainActivity.kt keeps until
+/// Flutter takes it. The shell answers it with Home and the Add sheet on
+/// Spent. From the widget (its "+" or the widget itself), the app lock, if
+/// on, comes back first.
 abstract class LaunchActions {
   /// An "Add a spend" not yet answered.
   ValueListenable<bool> get addSpendPending;
@@ -18,6 +20,12 @@ abstract class LaunchActions {
 }
 
 class PlatformLaunchActions implements LaunchActions {
+  PlatformLaunchActions({this.onFromWidget});
+
+  /// The app opened from the home-screen widget: main.dart locks the app
+  /// lock now, so the lock screen always comes first (UX).
+  final VoidCallback? onFromWidget;
+
   final _addSpend = ValueNotifier<bool>(false);
 
   @override
@@ -43,7 +51,11 @@ class PlatformLaunchActions implements LaunchActions {
 
   Future<void> _take(MethodChannel channel) async {
     try {
-      if (await channel.invokeMethod<String>(takeLaunchActionMethod) == addSpendAction) {
+      final action = await channel.invokeMethod<String>(takeLaunchActionMethod);
+      if (action == widgetAddSpendAction || action == widgetOpenAction) {
+        onFromWidget?.call();
+      }
+      if (action == addSpendAction || action == widgetAddSpendAction) {
         _addSpend.value = true;
       }
     } on Object {

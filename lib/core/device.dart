@@ -78,6 +78,11 @@ const takeLaunchActionMethod = 'takeLaunchAction';
 const launchActionMethod = 'launchAction';
 const addSpendAction = 'addSpend';
 
+/// The home-screen widget's taps (MainActivity.kt): its "+", and the widget
+/// itself. Either way the app lock, if on, comes back first.
+const widgetAddSpendAction = 'widgetAddSpend';
+const widgetOpenAction = 'widgetOpen';
+
 /// The phone's Android version as its SDK level (26 = Android 8), read once at
 /// start-up; null where there is none to read (iOS, a test) or the call
 /// fails.

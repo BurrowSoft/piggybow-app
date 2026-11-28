@@ -66,7 +66,28 @@ void main() {
         RegExp('<string name="$name">([^<]*)</string>').firstMatch(res)!.group(1)!.replaceAll(r"\'", "'");
     expect(string('widget_description'), arb['widgetDescription']);
     expect(string('widget_tap_to_open'), arb['widgetLocked']);
-    expect(string('widget_add'), arb['widgetAdd']);
+    // The widget's + says what #58's shortcut says: one "Add a spend".
+    expect(res, isNot(contains('name="widget_add"')));
+    for (final layout in ['widget_small', 'widget_wide']) {
+      expect(
+        read('android/app/src/main/res/layout/$layout.xml'),
+        contains('android:contentDescription="@string/shortcut_add_long"'),
+        reason: layout,
+      );
+    }
+  });
+
+  // Wiring item 15 (#72 with #58): the widget's taps go through #58's launch
+  // actions, and from the widget the lock screen always comes first.
+  test("the widget's taps: #58's action for +, its own for the widget, both "
+      'marked as from the widget', () {
+    final widget = read('android/app/src/main/kotlin/com/burrowsoft/piggybow/widget/PiggybowWidget.kt');
+    expect(widget, contains('.setAction(MainActivity.ACTION_ADD_SPEND)'));
+    expect(widget, contains('.putExtra(MainActivity.EXTRA_FROM_WIDGET, true)'));
+    expect(widget, contains('.setAction(MainActivity.ACTION_OPEN_FROM_WIDGET)'));
+    expect(widget, isNot(contains('const val ACTION_ADD_SPEND')), reason: "MainActivity's, once");
+    final main = read('lib/main.dart').replaceAll(RegExp(r'\s+'), ' ');
+    expect(main, contains('PlatformLaunchActions(onFromWidget: () => appLock?.lockNow())'));
   });
 
   test("the widget's file is never backed up: every rule names only the "

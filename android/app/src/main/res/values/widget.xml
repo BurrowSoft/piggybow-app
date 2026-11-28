@@ -52,5 +52,4 @@
 
     <string name="widget_description">Today\'s spending and your goal</string>
     <string name="widget_tap_to_open">Tap to open</string>
-    <string name="widget_add">Add a spend</string>
 </resources>

@@ -151,7 +151,8 @@ Future<void> main() async {
     journal: journal,
     reminders: PlatformReminderScheduler(),
     notifications: const PlatformNotificationPermission(),
-    launchActions: PlatformLaunchActions(),
+    // From the home-screen widget, the lock screen always comes first.
+    launchActions: PlatformLaunchActions(onFromWidget: () => appLock?.lockNow()),
     appLock: appLock,
     plus: plus,
     onboarded: await onboardedAtStart(journal),
