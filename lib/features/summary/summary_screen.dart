@@ -14,6 +14,7 @@ import '../../session/session_scope.dart';
 import '../../summary/summary.dart';
 import '../shell/segmented.dart';
 import '../shell/tab_top.dart';
+import 'patterns_view.dart';
 
 /// The Summary tab (plan §3.7, decisions 29 and 52): a week or a month at a
 /// time, back as far as the oldest entry's period. Spent and saved, the plan
@@ -210,6 +211,9 @@ class _SummaryScreenState extends State<SummaryScreen>
             ),
           ],
         ],
+        // Plus's Patterns (feature 20): the last 8 weeks, whatever period
+        // is shown; the teaser without Plus; nothing in a build without it.
+        PatternsCard(entries: data.entries),
       ],
     );
   }

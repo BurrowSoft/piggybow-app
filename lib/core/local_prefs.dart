@@ -37,6 +37,11 @@ abstract interface class LocalPrefs {
   /// before the first start, and after Delete.
   String? get deviceAccount;
   Future<void> setDeviceAccount(String? json);
+
+  /// Summary's Plus teaser for Patterns (feature 20) was hidden with "Hide":
+  /// for good, on this device only.
+  bool get patternsTeaserHidden;
+  Future<void> hidePatternsTeaser();
 }
 
 class SharedLocalPrefs implements LocalPrefs {
@@ -56,6 +61,13 @@ class SharedLocalPrefs implements LocalPrefs {
   static const _accountKey = 'device.account_on_device';
   static const _sessionEndedNoEmailKey = 'device.session_ended_no_email';
   static const _deviceAccountKey = 'device.account';
+  static const _patternsTeaserKey = 'device.patterns_teaser_hidden';
+
+  @override
+  bool get patternsTeaserHidden => _prefs.getBool(_patternsTeaserKey) ?? false;
+
+  @override
+  Future<void> hidePatternsTeaser() => _prefs.setBool(_patternsTeaserKey, true);
 
   @override
   bool get accountOnDevice => _prefs.getBool(_accountKey) ?? false;
@@ -118,6 +130,7 @@ class MemoryLocalPrefs implements LocalPrefs {
     appearance = null;
     palette = null;
     deviceAccount = null;
+    patternsTeaserHidden = false;
   }
   MemoryLocalPrefs({
     this.localeCode,
@@ -168,4 +181,10 @@ class MemoryLocalPrefs implements LocalPrefs {
 
   @override
   Future<void> setWelcomeSeen() async => welcomeSeen = true;
+
+  @override
+  bool patternsTeaserHidden = false;
+
+  @override
+  Future<void> hidePatternsTeaser() async => patternsTeaserHidden = true;
 }
