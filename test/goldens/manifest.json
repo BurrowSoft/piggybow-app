@@ -1,16 +1,70 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "f8ecca943c99cea4e6404290c98cf689a905d229",
+  "ref": "f8ecca943c99cea4e6404290c98cf689a905d229",
+  "run_id": "46133396720",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
     {
+      "file": "add-sheet_repeat-choices_dark_320x2.png",
+      "state": "RP2",
+      "test": "RP2 the Repeat choices on a month end (320 dp, text ×2, dark)",
+      "sha256": "8c316c9eefaceebbcbe7d6eaa64a38004203c100fb8370fbb319916b488d17e4",
+      "bytes": 148222,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat-choices_light_320x2.png",
+      "state": "RP2",
+      "test": "RP2 the Repeat choices on a month end (320 dp, text ×2, light)",
+      "sha256": "da37c14790c8988d7a07dd2b8c46f15c66fae08835f0f3b810abff38be2a602f",
+      "bytes": 151163,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat-end_dark_320x2.png",
+      "state": "RP1",
+      "test": "RP1 the Add sheet: rent every month on day 30, and the hint (320 dp, text ×2, dark)",
+      "sha256": "4d11effb491e1df2fa4a1914cc38cc6040d098641d8a988827fdcfef72896d01",
+      "bytes": 148483,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat-end_light_320x2.png",
+      "state": "RP1",
+      "test": "RP1 the Add sheet: rent every month on day 30, and the hint (320 dp, text ×2, light)",
+      "sha256": "b72f3ecc9ba3f2cabed01e1feb5bead72662c87561e676e0dfef894beac25f6f",
+      "bytes": 149304,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat_dark_320x2.png",
+      "state": "RP1",
+      "test": "RP1 the Add sheet: rent every month on day 30, and the hint (320 dp, text ×2, dark)",
+      "sha256": "4cbff34f91ff4ed37686e9e952e765f153ba0049e62520bfeee42bc6ab65da46",
+      "bytes": 174033,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat_light_320x2.png",
+      "state": "RP1",
+      "test": "RP1 the Add sheet: rent every month on day 30, and the hint (320 dp, text ×2, light)",
+      "sha256": "ed801525f686b532bb289a089126496fdd656706f8e6ce4becda2dda9440c420",
+      "bytes": 174126,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "add-sheet_saved-goal-end_dark_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, dark)",
-      "sha256": "9ca386c41d64bd4cf31c011d4d41d85d9750378910e5cdae2f961ab24228b3c3",
-      "bytes": 159954,
+      "sha256": "0b0ad9d2bfc40725b5d7c52e14e8556bf72c023af6bcda72aa4f08328d47d2a2",
+      "bytes": 156217,
       "width": 960,
       "height": 2340
     },
@@ -18,8 +72,8 @@
       "file": "add-sheet_saved-goal-end_light_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, light)",
-      "sha256": "da8bb0db269e5f77556414ec9065803112c741777c60df57fd5c687e77a9239d",
-      "bytes": 161288,
+      "sha256": "316a5e893b0c63a866962dd79748d70d0aec93fc4d01882295e536381f095d36",
+      "bytes": 157365,
       "width": 960,
       "height": 2340
     },
@@ -45,8 +99,8 @@
       "file": "add-sheet_spent-full-end_dark_320x2.png",
       "state": "A2",
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, dark)",
-      "sha256": "ef37aadd98b114ce4a741ac672ea9c8823873f004e036e180390636ce5b158eb",
-      "bytes": 145896,
+      "sha256": "0f397faa370fc9fda4e45d67c406c21ab406bfa4fbb1be9739c7c04e50aa2d41",
+      "bytes": 141719,
       "width": 960,
       "height": 2340
     },
@@ -54,8 +108,8 @@
       "file": "add-sheet_spent-full-end_light_320x2.png",
       "state": "A2",
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, light)",
-      "sha256": "c381cbad3238d347a5e1e3a33e43fa0dec299cb2af778afa098d1b0a7a763dbb",
-      "bytes": 146151,
+      "sha256": "a39c200e4e96c1f740403f29f1908ac2270ef222456e3c85b2c883a82c29a712",
+      "bytes": 142024,
       "width": 960,
       "height": 2340
     },
@@ -92,6 +146,42 @@
       "test": "A7 edit, on an older day; B1 the delete dialog (320 dp, text ×2, light)",
       "sha256": "9944854128a2423be721741077eb3d900fb8171064882490f084edd5c9ab0a63",
       "bytes": 148972,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_repeat-end_dark_320x2.png",
+      "state": "RP9",
+      "test": "RP9 the edit sheet of an entry a repeat added (320 dp, text ×2, dark)",
+      "sha256": "ed0d1ee947369cfee61f3c10cd284bbc1a7118a1e6db2744dbd00765288c90ee",
+      "bytes": 144393,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_repeat-end_light_320x2.png",
+      "state": "RP9",
+      "test": "RP9 the edit sheet of an entry a repeat added (320 dp, text ×2, light)",
+      "sha256": "f02a236e4e64e07168596b1593f93e33138a981b725d33b1d8f13e3dc5312082",
+      "bytes": 145038,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_repeat_dark_320x2.png",
+      "state": "RP9",
+      "test": "RP9 the edit sheet of an entry a repeat added (320 dp, text ×2, dark)",
+      "sha256": "d52def0e1d49b84b182978cb1467c52964d949fb282c4de79809bac44ffddc6a",
+      "bytes": 169610,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_repeat_light_320x2.png",
+      "state": "RP9",
+      "test": "RP9 the edit sheet of an entry a repeat added (320 dp, text ×2, light)",
+      "sha256": "15314727a4ccd15f4759cebe943aae8ad6d882abd032525676a34163f015b460",
+      "bytes": 169804,
       "width": 960,
       "height": 2340
     },
@@ -492,6 +582,60 @@
       "height": 2340
     },
     {
+      "file": "home_repeats-card_dark_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, dark)",
+      "sha256": "d31fe8210c0d631725a007709f8cd9d2f034146dd2b89b84a5c14006a59562a9",
+      "bytes": 37485,
+      "width": 288,
+      "height": 569
+    },
+    {
+      "file": "home_repeats-card_light_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, light)",
+      "sha256": "5fddaf81eee5bad594d82e2c7264a62a3716fe45e2adab55e2c50b511885c27e",
+      "bytes": 38030,
+      "width": 288,
+      "height": 569
+    },
+    {
+      "file": "home_repeats-end_dark_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, dark)",
+      "sha256": "9c156223a304676f5a6e973222e6990c92f400e846a4d668b55167e9e7ea3e96",
+      "bytes": 173968,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_repeats-end_light_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, light)",
+      "sha256": "396198d081f8601d79614fb2b6e84389cb4d2d47c7b152cccde4bb7a40810b76",
+      "bytes": 175118,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_repeats_dark_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, dark)",
+      "sha256": "0b179193243a234009ada3fab5d15af2d343f41f94f54bec7b927e8c3c272e13",
+      "bytes": 160647,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_repeats_light_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, light)",
+      "sha256": "608181050fc2a47b561f63f1f62729dc00dd02068df48d8abfdd3073a2ae236a",
+      "bytes": 160570,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "home_sleepy-end_dark_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, dark)",
@@ -690,6 +834,42 @@
       "height": 2340
     },
     {
+      "file": "me-repeats_empty_dark_320x2.png",
+      "state": "RP4",
+      "test": "RP4 Me → Repeating entries: none yet (320 dp, text ×2, dark)",
+      "sha256": "985d4e608c9d6e3aeb234dd7267c8585121f43347dcb6669689a38e5efa4563d",
+      "bytes": 107210,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-repeats_empty_light_320x2.png",
+      "state": "RP4",
+      "test": "RP4 Me → Repeating entries: none yet (320 dp, text ×2, light)",
+      "sha256": "cc2313369a816035e1996d4da10ec46fdd111305b3de4917ae32ddd54f4fe9cf",
+      "bytes": 107415,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-repeats_list_dark_320x2.png",
+      "state": "RP3",
+      "test": "RP3 Me → Repeating entries: a monthly one and a weekly one (320 dp, text ×2, dark)",
+      "sha256": "7fde72895505f724c21ec32379768a33407f67d86884d30ca7088fd4c669f83e",
+      "bytes": 134276,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-repeats_list_light_320x2.png",
+      "state": "RP3",
+      "test": "RP3 Me → Repeating entries: a monthly one and a weekly one (320 dp, text ×2, light)",
+      "sha256": "e66a96f5dc250119e3b22af14d4840d856f5f40fbd5ad3aa356d4c3a8f56f226",
+      "bytes": 134539,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "me_delete-all_dark_320x2.png",
       "state": "M7",
       "test": "M7 \"Delete everything?\" (320 dp, text ×2, dark)",
@@ -819,8 +999,8 @@
       "file": "me_plan-dialog-empty_dark_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
-      "sha256": "5e7b6e0da00bcc1a0612de3d0fb91f6415c7f9b80d400c40f7dbbe15210ff289",
-      "bytes": 166515,
+      "sha256": "c7aed8ecf7fdbe1ef8d5a34333447ac4d447ad2648187394a0e1905cbf2873c4",
+      "bytes": 155572,
       "width": 960,
       "height": 2340
     },
@@ -828,8 +1008,8 @@
       "file": "me_plan-dialog-empty_light_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
-      "sha256": "6d7d7b075553ee0a96105a9f38395605b3055e16ea67b28621589cdbd3b6c625",
-      "bytes": 168538,
+      "sha256": "d2b81fc489a11a73d17ea0d6ab10970d9fab2b5a364624fc502b8e5659fdfca9",
+      "bytes": 157380,
       "width": 960,
       "height": 2340
     },
@@ -837,8 +1017,8 @@
       "file": "me_plan-dialog-set_dark_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
-      "sha256": "852b0bbe9409d27f6b3c402b263db90cf1e489cec2b6220683f644e524245072",
-      "bytes": 174272,
+      "sha256": "c449e4531cf3ad26fc77adb4d0d5a8724177f4abf2fe8dc8c2c475fca82cb049",
+      "bytes": 166042,
       "width": 960,
       "height": 2340
     },
@@ -846,8 +1026,8 @@
       "file": "me_plan-dialog-set_light_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
-      "sha256": "f630a770cb7d5fdbe5202aa7a29c15ffbe0a51593605920c63e0c00ca670e662",
-      "bytes": 175687,
+      "sha256": "db6aa12c60313e7ef7461322b9f42750f66cd97081780766074d92e38f72e52e",
+      "bytes": 167742,
       "width": 960,
       "height": 2340
     },
@@ -1012,6 +1192,60 @@
       "bytes": 52392,
       "width": 960,
       "height": 960
+    },
+    {
+      "file": "repeat_page-end_dark_320x2.png",
+      "state": "RP5",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, dark)",
+      "sha256": "b939792a1bf84d0e24f22772eac8a53aacfaff0bb43b6ac907e48b6162972c28",
+      "bytes": 167705,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_page-end_light_320x2.png",
+      "state": "RP5",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, light)",
+      "sha256": "3cbc40c872ad4ac1bce0edf63a3eb4d77147d8eb1992a982b31c0df047dc468d",
+      "bytes": 168615,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_page_dark_320x2.png",
+      "state": "RP5",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, dark)",
+      "sha256": "b516ab8f5fd1822734024635ee25d4d763f003649bb4b7c607d18ef6090710ac",
+      "bytes": 170024,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_page_light_320x2.png",
+      "state": "RP5",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, light)",
+      "sha256": "7647e2564971b609d311fe8881eb72422eebdef13644ff24cfd7a879dbb8069f",
+      "bytes": 169718,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_stop_dark_320x2.png",
+      "state": "RP6",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, dark)",
+      "sha256": "b25db0bc57b2a07f41e0f61d13bd82845261b45c5be31460c3056167e91290ed",
+      "bytes": 154938,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_stop_light_320x2.png",
+      "state": "RP6",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, light)",
+      "sha256": "eca7c456c764a552b4118ca5d1c2b9e6834d129abf15ee073fb8f0335040e094",
+      "bytes": 157358,
+      "width": 960,
+      "height": 2340
     },
     {
       "file": "summary_empty-week_dark_360x1.png",
@@ -1217,6 +1451,24 @@
       "test": "C2 three days with the stress data (320 dp, text ×2, light)",
       "sha256": "456e6ce7f3eaf601734902c879efea1727321ea42a25ca8472b1a0e734b5710e",
       "bytes": 213378,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_repeat-mark_dark_320x2.png",
+      "state": "RP8",
+      "test": "RP8 Timeline: a repeat's entries marked (320 dp, text ×2, dark)",
+      "sha256": "2f38d0a75edd8674e3049939f994eb7afdd3cb6dcbc4acd87c3200a459e9db2a",
+      "bytes": 166758,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_repeat-mark_light_320x2.png",
+      "state": "RP8",
+      "test": "RP8 Timeline: a repeat's entries marked (320 dp, text ×2, light)",
+      "sha256": "f8be0f689561905c27332912ad0d797458014ff7085571c73c34dd1e8a8a9f44",
+      "bytes": 168180,
       "width": 960,
       "height": 2340
     }
