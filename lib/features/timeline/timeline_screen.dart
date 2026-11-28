@@ -98,11 +98,12 @@ class _TimelineScreenState extends State<TimelineScreen>
   }
 
   /// What a search looks in: the note, and the name the row shows (a
-  /// spend's category; a save's goal).
+  /// spend's category, built-in or your own, as you typed it; a save's goal,
+  /// or the goal a take-out came out of).
   List<String> _searchTexts(Entry e, AppLocalizations l10n) => [
     e.note,
     if (e.type == EntryType.spent)
-      e.category!.label(l10n)
+      categoryName(l10n, e.categoryId ?? '', _customs)
     else if (_goals[e.goalId] case final goal?)
       goal.name,
   ];
@@ -249,6 +250,8 @@ class _SearchField extends StatelessWidget {
         'tl-search-field',
         child: TextField(
           controller: controller,
+          // Keyboard learning off, as on every field (#75).
+          enableIMEPersonalizedLearning: false,
           autofocus: true,
           textInputAction: TextInputAction.search,
           style: context.inputText,

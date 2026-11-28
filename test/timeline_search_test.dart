@@ -54,7 +54,11 @@ void main() {
   /// Today: Coffee 3.50 and Lunch 12.00 (Food & drinks). Yesterday: Crème
   /// brûlée 50.00 (Groceries) and 100.00 saved for Bike. 30 September: bike
   /// repair 3.00 (Transport).
-  Future<TestApp> open(WidgetTester tester) async {
+  /// Timeline with the five entries below, then [more]'s.
+  Future<TestApp> open(
+    WidgetTester tester, {
+    Future<void> Function(TestApp app)? more,
+  }) async {
     tester.view.devicePixelRatio = 3;
     tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
     addTearDown(tester.view.reset);
@@ -84,6 +88,7 @@ void main() {
         localDate: '2026-10-01',
       );
       await spend(300, SpendCategory.transport, 'bike repair', '2026-09-30');
+      if (more != null) await more(app);
     });
     await app.pump(tester);
     await tester.tapId('tab-timeline');
@@ -94,7 +99,7 @@ void main() {
 
   /// Which of the five rows are on Timeline now, by id.
   List<String> rows() => [
-    for (var i = 1; i <= 5; i++)
+    for (var i = 1; i <= 7; i++)
       if (byId('tl-row-entry-$i').evaluate().isNotEmpty) 'entry-$i',
   ];
 
@@ -226,5 +231,56 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Nothing here yet'), findsOneWidget);
     expect(byId('tl-search'), findsNothing);
+  });
+
+  // Wiring item 3 (#66 with #49 and #61).
+  testWidgets('a category of your own is found by its name, as you typed it', (tester) async {
+    final bubbleTea = CustomCategory(
+      id: '${CustomCategory.idPrefix}bubble',
+      name: 'Bubble tea',
+      icon: CategoryIcon.coffee,
+      createdAt: t,
+    );
+    await open(
+      tester,
+      more: (app) async {
+        await app.journal.putCustomCategory(bubbleTea);
+        await app.journal.addEntry(
+          type: EntryType.spent,
+          amountMinor: 6500,
+          currency: 'THB',
+          localDate: '2026-10-02',
+          customCategory: bubbleTea.id,
+        );
+      },
+    );
+    await tester.tapId('tl-search');
+    await search(tester, 'bubble');
+    expect(rows(), ['entry-6']);
+    await search(tester, 'Bubble Tea');
+    expect(rows(), ['entry-6']);
+  });
+
+  testWidgets("a take-out is found by its note and its goal's name, under Saved and All", (tester) async {
+    await open(
+      tester,
+      more: (app) => app.journal.takeOut(
+        goalId: 'goal-1',
+        amountMinor: 2000,
+        currency: 'THB',
+        localDate: '2026-10-02',
+        note: 'New tyre',
+      ),
+    );
+    await tester.tapId('tl-search');
+    await search(tester, 'tyre');
+    expect(rows(), ['entry-6']);
+    // The save for Bike, the spend noted "bike repair", and the take-out.
+    await search(tester, 'bike');
+    expect(rows(), ['entry-4', 'entry-5', 'entry-6']);
+    await tester.tapId('tl-filter-saved');
+    expect(rows(), ['entry-4', 'entry-6']);
+    await tester.tapId('tl-filter-spent');
+    expect(rows(), ['entry-5']);
   });
 }
