@@ -3,6 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/features/add/entry_sheet.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 
@@ -53,8 +54,20 @@ void main() {
         // scrolled it): Spent/Saved, the amount, then the chips.
         FocusManager.instance.primaryFocus?.unfocus();
         await tester.pumpAndSettle();
-        await Scrollable.ensureVisible(tester.element(byId('add-seg-spent')));
+        // The sheet's own list (built lazily, so the top may be gone).
+        tester
+            .state<ScrollableState>(
+              find
+                  .descendant(
+                    of: find.byType(EntrySheet),
+                    matching: find.byType(Scrollable),
+                  )
+                  .first,
+            )
+            .position
+            .jumpTo(0);
         await tester.pumpAndSettle();
+        expect(byId('add-seg-spent'), findsOneWidget);
         expect(byId('add-quick-2'), findsOneWidget);
         await expectGolden(
           tester,

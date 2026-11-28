@@ -101,6 +101,7 @@ void main() {
       WidgetTester tester, {
       List<(int, SpendCategory)> spends = const [],
       String currency = 'USD',
+      bool add = true,
     }) async {
       tester.view.devicePixelRatio = 3;
       tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
@@ -121,7 +122,7 @@ void main() {
         }
       });
       await app.pump(tester);
-      await tester.tapId('home-add');
+      if (add) await tester.tapId('home-add');
       return app;
     }
 
@@ -191,6 +192,18 @@ void main() {
     testWidgets('Saved: no chips', (tester) async {
       await open(tester, spends: [(1250, SpendCategory.food)]);
       await tester.tapId('add-seg-saved');
+      expect(byId('add-quick-0'), findsNothing);
+    });
+
+    testWidgets('editing a spend: no chips', (tester) async {
+      await open(
+        tester,
+        add: false,
+        spends: [(450, SpendCategory.food), (1250, SpendCategory.food)],
+      );
+      await tester.tapId('tab-timeline');
+      await tester.tapId('tl-row-entry-2');
+      expect(byId('edit-save'), findsOneWidget, reason: 'the edit sheet');
       expect(byId('add-quick-0'), findsNothing);
     });
   });
