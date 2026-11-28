@@ -7,10 +7,11 @@ tags: [play]
     env: { CASE: "STORE1" }
 - tapOn:
     id: tab-timeline
-- assertVisible: "Today"
-- assertVisible: "Yesterday"
-- assertVisible: ".*Mon, Nov 16.*"
-- assertVisible: ".*\\+\\$60\\.00.*"
+# Each day's header carries its total in the same node ("Today\nSpent $17.25")
+- assertVisible: "(?s)Today.*Spent \\$17\\.25.*"
+- assertVisible: "(?s)Yesterday.*Saved \\$60\\.00.*"
+- assertVisible: "(?s)Mon, Nov 16.*"
+- assertVisible: "(?s).*\\+\\$60\\.00.*"
 - waitForAnimationToEnd
 - runFlow: ../../subflows/dismiss_system_anr.yaml   # never a launcher dialog in a store shot
 - takeScreenshot: play-05-timeline

@@ -1,5 +1,5 @@
 appId: ${APP_ID}
-name: Play shot 2 - the Add sheet filled (STORE1) - Spent 18.50, Food and drinks, Worth it, a note, Today
+name: Play shot 2 - the Add sheet filled (STORE1) - Spent 18.50, Food and drinks, Worth it, a note, Today; at 9:16 the sheet scrolls, so two candidates (the top and the lower part)
 tags: [play]
 ---
 - runFlow:
@@ -41,12 +41,24 @@ tags: [play]
           text: "Back"
           below:
             id: add-note
+# The lower part: the note, the feeling chips (Worth it selected) and Today
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-date }
+- assertVisible:
+    id: add-feel-worth
+    selected: true
+- assertVisible:
+    id: add-cat-food
+    selected: true
+- runFlow: ../../subflows/dismiss_system_anr.yaml   # never a launcher dialog in a store shot
+- takeScreenshot: play-02b-add-lower
+# The top: the amount and its "= $18.50", Spent, the category
 - runFlow:
     file: ../../subflows/reveal.yaml
     env: { ID: add-amount }
-- assertVisible: ".*= \\$18\\.50.*"
 - assertVisible:
-    id: add-feel-worth
-    checked: true
+    id: add-amount-preview
+    text: ".*= \\$18\\.50.*"
 - runFlow: ../../subflows/dismiss_system_anr.yaml   # never a launcher dialog in a store shot
 - takeScreenshot: play-02-add

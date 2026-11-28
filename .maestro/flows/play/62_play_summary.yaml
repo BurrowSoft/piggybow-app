@@ -12,12 +12,10 @@ tags: [play]
 - assertVisible:
     id: sum-period-label
     text: ".*Nov 16.*Nov 22.*"
-- assertVisible:
-    id: sum-spent
-    text: ".*\\$162\\.90.*"
-- assertVisible:
-    id: sum-saved
-    text: ".*\\$60\\.00.*"
+# The totals' values sit on a child of sum-spent / sum-saved ("Spent\n$162.90")
+- assertVisible: "(?s).*Spent.*\\$162\\.90.*"
+- assertVisible: "(?s).*Saved.*\\$60\\.00.*"
+- assertVisible: "(?s).*Groceries.*\\$62\\.40 · 38%.*"
 - waitForAnimationToEnd
 - runFlow: ../../subflows/dismiss_system_anr.yaml   # never a launcher dialog in a store shot
 - takeScreenshot: play-03-summary

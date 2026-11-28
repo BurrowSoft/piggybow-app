@@ -42,7 +42,7 @@ done
 # The six PNGs, by name, into one folder; then RGB + the checks at 1080 x 1920.
 find "$OUT/maestro" -type f -name 'play-0*.png' -exec cp {} "$SHOTS/" \;
 n=$(find "$SHOTS" -maxdepth 1 -name 'play-0*.png' | wc -l)
-if [ "$n" = 6 ]; then row P-files PASS "6 PNGs: $(cd "$SHOTS" && ls play-0*.png | tr '\n' ' ')"; else row P-files FAIL "$n PNGs (expected 6)"; fi
+if [ "$n" = 7 ]; then row P-files PASS "7 PNGs (shot 2 in two candidates): $(cd "$SHOTS" && ls play-0*.png | tr '\n' ' ')"; else row P-files FAIL "$n PNGs (expected 7: six shots, shot 2 in two candidates)"; fi
 if (cd "$APPDIR" && dart run tool/play_png.dart "$SHOTS" "$W" "$H"); then
   row P-rgb PASS "every PNG 8-bit RGB, no alpha, no text chunks, ${W} x ${H}, < 8 MB"
 else
