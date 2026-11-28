@@ -1,7 +1,7 @@
 {
-  "source_sha": "e705779de77d9f5903b917b2815e9cf8daac8437",
+  "source_sha": "7dd4962305effd36cbbb1ad544037587aac3895e",
   "ref": "feat/patterns-ui",
-  "run_id": "46128171402",
+  "run_id": "46128602353",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -1314,8 +1314,8 @@
       "file": "summary_patterns-teaser_dark_320x2.png",
       "state": "PC2",
       "test": "PC2 Summary: the Patterns teaser without Plus (320 dp, text ×2, dark)",
-      "sha256": "d3f8a3cd76bb48f9dee4d4acb4482d09f149d90b1de8fd4628739dd82baf800a",
-      "bytes": 202215,
+      "sha256": "095d34bf5495ba4fed7d313622947d0bc50e67c1bb03e6ee104db362de256d8c",
+      "bytes": 201300,
       "width": 960,
       "height": 2340
     },
@@ -1323,8 +1323,8 @@
       "file": "summary_patterns-teaser_dark_360x1.png",
       "state": "PC2",
       "test": "PC2 Summary: the Patterns teaser without Plus (360 dp, text ×1, dark)",
-      "sha256": "8ede9a237d5100d2d19f408211bbe5bc8f6ed125445a1a43374ddc41fa74c4e9",
-      "bytes": 205891,
+      "sha256": "a46dfe0cea11f04d72d1ace2daafee98797247c4c5c76aca2143354b03a875e7",
+      "bytes": 205092,
       "width": 1080,
       "height": 2340
     },
@@ -1332,8 +1332,8 @@
       "file": "summary_patterns-teaser_light_320x2.png",
       "state": "PC2",
       "test": "PC2 Summary: the Patterns teaser without Plus (320 dp, text ×2, light)",
-      "sha256": "c11fda02ab2cd2909bfc2835c939d2de483b0de332f62ee361d380723225ebf8",
-      "bytes": 204002,
+      "sha256": "df5f5fe981c4f926b5c279be6751a5a240e9087ca7b034191afebe7cfcabbe21",
+      "bytes": 203064,
       "width": 960,
       "height": 2340
     },
@@ -1341,8 +1341,8 @@
       "file": "summary_patterns-teaser_light_360x1.png",
       "state": "PC2",
       "test": "PC2 Summary: the Patterns teaser without Plus (360 dp, text ×1, light)",
-      "sha256": "699ba9c07f86afee709b26e05cc7b91c2fcf87e527f67cc8eaadcf56983ac879",
-      "bytes": 208673,
+      "sha256": "8f48a1215b8b5a3df51ab15d205f53ec343c25a9531de1e2db656c57ed429671",
+      "bytes": 207618,
       "width": 1080,
       "height": 2340
     },
