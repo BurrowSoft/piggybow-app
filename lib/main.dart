@@ -78,7 +78,7 @@ Future<void> main() async {
     timeZone: await timeZoneLoad,
     country: device.countryCode,
   );
-  final lockLoad = appLock?.load(userId: backend.currentUser?.id);
+  final lockLoad = appLock?.load();
 
   final session = AppSession(
     auth: backend,

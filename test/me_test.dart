@@ -289,11 +289,8 @@ void main() {
     await app.pump(tester, location: '/me');
     await settle(tester, byId('me-happy'));
     final id = app.session.user!.id;
-    // The lock on, with a PIN, for this account.
-    await tester.runAsync(() async {
-      await lock.switchUser(id);
-      await lock.setPin('2468');
-    });
+    // The lock on, with a PIN (the phone's, not the account's).
+    await tester.runAsync(() => lock.setPin('2468'));
     await tester.pumpAndSettle();
     expect(lock.enabled, isTrue);
     await tester.tapId('me-theme-dark');
@@ -305,7 +302,7 @@ void main() {
     expect(find.text('Not everything was erased'), findsOneWidget);
     expect(lock.enabled, isTrue, reason: 'the lock still on');
     expect(
-      secrets.values['app_lock.$id.pin_hash'],
+      secrets.values['app_lock.pin_hash'],
       isNotNull,
       reason: 'its PIN',
     );

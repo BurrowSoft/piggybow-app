@@ -16,12 +16,12 @@ import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show HappyPick;
 import '../../reminder_rules/reminder_rules.dart';
 import '../../router.dart';
-import '../../session/app_session.dart';
 import '../../session/session_scope.dart';
 import '../../settings_rules/settings_rules.dart';
 import '../../theme/theme.dart';
 import '../currency/currency_picker.dart';
 import '../shell/tab_top.dart';
+import 'delete_dialogs.dart';
 import 'me_actions.dart';
 import 'me_app_lock_section.dart';
 
@@ -151,81 +151,22 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     }
   }
 
+  /// Delete everything: confirmed, then the wipe; onboarding takes over,
+  /// from O1. If a step failed, Me says so and can try them all again
+  /// (decision 67). Forgot PIN's erase shares these dialogs.
   Future<void> _deleteAll() async {
     final l10n = AppLocalizations.of(context);
     final services = context.services;
     final session = context.readSession;
-    final sure = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        // At the largest text sizes its words outgrow a small screen.
-        scrollable: true,
-        // Whole words at large text: a dialog is narrow.
-        title: WholeWordsText(
-          l10n.deleteAllTitle,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        content: Text(l10n.deleteAllBody),
-        actions: [
-          TestId(
-            'me-delete-cancel',
-            button: true,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(l10n.cancel),
-            ),
-          ),
-          TestId(
-            'me-delete-confirm',
-            button: true,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(l10n.deleteAllConfirm),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (sure != true) return;
-    await _wipe(services, session);
-  }
-
-  /// The wipe; then onboarding takes over, from O1. If a step failed, Me
-  /// says so and can try them all again (decision 67).
-  Future<void> _wipe(AppServices services, AppSession session) async {
-    if (await deleteEverything(services, session) || !mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final again = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        // At the largest text sizes its words outgrow a small screen.
-        scrollable: true,
-        title: WholeWordsText(
-          l10n.deleteAllFailedTitle,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        content: Text(l10n.deleteAllFailedBody),
-        actions: [
-          TestId(
-            'me-delete-failed-ok',
-            button: true,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(l10n.ok),
-            ),
-          ),
-          TestId(
-            'me-delete-retry',
-            button: true,
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(l10n.deleteAllRetry),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (again == true && mounted) await _wipe(services, session);
+    if (!await confirmDeleteEverything(
+      context,
+      body: l10n.deleteAllBody,
+      idPrefix: 'me-delete',
+    )) {
+      return;
+    }
+    if (!mounted) return;
+    await wipeEverything(context, services, session, idPrefix: 'me-delete');
   }
 
   @override
