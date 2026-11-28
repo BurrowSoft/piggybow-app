@@ -6,6 +6,7 @@ import 'features/goal/goal_screens.dart';
 import 'features/home/home_screen.dart';
 import 'features/me/me_screen.dart';
 import 'features/onboarding/onboarding_screens.dart';
+import 'features/repeat/repeats_screen.dart';
 import 'features/shell/home_shell.dart';
 import 'features/start/start_screen.dart';
 import 'features/summary/summary_screen.dart';
@@ -63,6 +64,10 @@ abstract final class MeRoutes {
   static const removePlan = '/me/remove-plan';
   static const lock = '/me/lock';
   static const privacy = '/me/privacy';
+
+  /// Money → Repeating entries, and one repeat's page.
+  static const repeats = '/me/repeats';
+  static String repeat(String id) => '/me/repeats/$id';
 }
 
 /// The goal screens, over the tabs (they belong to Home).
@@ -182,6 +187,17 @@ GoRouter buildRouter({
                       GoRoute(
                         path: 'privacy',
                         builder: (context, state) => const PrivacyScreen(),
+                      ),
+                      GoRoute(
+                        path: 'repeats',
+                        builder: (context, state) => const RepeatsScreen(),
+                        routes: [
+                          GoRoute(
+                            path: ':id',
+                            builder: (context, state) =>
+                                RepeatScreen(repeatId: state.pathParameters['id']!),
+                          ),
+                        ],
                       ),
                     ],
                     if (tab == AppTab.home) ...[

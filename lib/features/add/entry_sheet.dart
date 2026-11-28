@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/button_label.dart';
 import '../../core/clock.dart';
-import '../../core/fit_text.dart';
 import '../../core/line_breaks.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
@@ -15,8 +15,12 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../money/currency.dart';
 import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show PigReaction;
+import '../../repeat/repeat.dart';
+import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../../theme/theme.dart';
+import '../repeat/repeat_choice.dart';
+import 'category_grid.dart';
 
 /// Opens the Add sheet on [start] (Spent unless said), or the Edit sheet for
 /// [editing], on the root navigator: full height over the tab bar, so no
@@ -75,6 +79,12 @@ class _EntrySheetState extends State<EntrySheet> {
   DateTime? _today;
   String? _goalName;
 
+  /// Adding: how the new entry repeats (its day follows the picked day).
+  RepeatChoice _repeat = RepeatChoice.none;
+
+  /// Editing an entry of a repeat: that repeat (kept when stopped).
+  Repeat? _repeatOf;
+
   /// Add was pressed: missing fields now say so.
   bool _tried = false;
   bool _busy = false;
@@ -110,11 +120,14 @@ class _EntrySheetState extends State<EntrySheet> {
     final goal = goalId != null
         ? await store.goal(goalId)
         : await store.activeGoal();
+    final repeatId = e?.repeatId;
+    final repeat = repeatId == null ? null : await store.repeat(repeatId);
     if (!mounted) return;
     final today = services.localDay.today;
     setState(() {
       _currency = currency;
       _goalName = goal?.name;
+      _repeatOf = repeat;
       _today = today;
       _date = e?.date ?? today;
       if (e != null) {
@@ -168,6 +181,7 @@ class _EntrySheetState extends State<EntrySheet> {
     final editing = widget.editing;
     try {
       if (editing == null) {
+        final repeat = scheduleFor(_repeat, date);
         await store.addEntry(
           type: _type,
           amountMinor: parsed.minor!,
@@ -176,6 +190,9 @@ class _EntrySheetState extends State<EntrySheet> {
           category: _category,
           feeling: _feeling,
           note: _note.text,
+          // The first of a repeat: it adds the next ones on their days.
+          repeat: repeat,
+          today: repeat == null ? null : services.localDay.todayWire,
         );
         // The pig answers what was just added (plan §4.4).
         services.lastAdd.value = !spend
@@ -226,11 +243,26 @@ class _EntrySheetState extends State<EntrySheet> {
 
   Future<void> _delete() async {
     final l10n = AppLocalizations.of(context);
+    // An entry of a running repeat: deleting it doesn't stop the repeat.
+    final stillRepeats = _repeatOf?.running ?? false;
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
         title: Text(l10n.deleteEntryTitle),
-        content: Text(l10n.deleteEntryBody),
+        content: stillRepeats
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.deleteEntryBody),
+                  const SizedBox(height: 8),
+                  TestId(
+                    'delete-repeat-note',
+                    child: Text(l10n.repeatDeleteNote),
+                  ),
+                ],
+              )
+            : Text(l10n.deleteEntryBody),
         actions: [
           TestId(
             'delete-cancel',
@@ -279,7 +311,37 @@ class _EntrySheetState extends State<EntrySheet> {
       // No future days.
       lastDate: today,
     );
-    if (picked != null && mounted) setState(() => _date = dateOnly(picked));
+    if (picked == null || !mounted) return;
+    final day = dateOnly(picked);
+    setState(() {
+      _date = day;
+      // The repeat's day follows the picked day; "the last day" only while
+      // the picked day is its month's last.
+      if (!repeatChoicesFor(day).contains(_repeat)) {
+        _repeat = RepeatChoice.monthly;
+      }
+    });
+  }
+
+  /// Adding: how the entry repeats, from the choices for its day.
+  Future<void> _pickRepeat() async {
+    final date = _date;
+    if (date == null) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final picked = await showRepeatChoices(
+      context,
+      date: date,
+      dateLocale: context.readSession.dateLocale,
+      current: _repeat,
+    );
+    if (picked != null && mounted) setState(() => _repeat = picked);
+  }
+
+  /// "Manage": the sheet closes, and the repeat's page opens in Me.
+  void _manageRepeat(Repeat repeat) {
+    final router = GoRouter.of(context);
+    Navigator.of(context).pop(false);
+    router.go(MeRoutes.repeat(repeat.id));
   }
 
   String _dateLabel(AppLocalizations l10n, DateTime date, DateTime today) {
@@ -446,7 +508,7 @@ class _EntrySheetState extends State<EntrySheet> {
                             style: theme.textTheme.titleSmall,
                           ),
                           const SizedBox(height: 8),
-                          _CategoryGrid(
+                          CategoryGrid(
                             selected: _category,
                             onPick: (c) => setState(() => _category = c),
                           ),
@@ -559,6 +621,24 @@ class _EntrySheetState extends State<EntrySheet> {
                             ),
                           ),
                         ),
+                        // Adding only: whether it repeats, worded from the
+                        // picked day.
+                        if (!_editing) ...[
+                          const SizedBox(height: 8),
+                          _RepeatRow(
+                            choice: _repeat,
+                            date: date,
+                            onTap: _pickRepeat,
+                          ),
+                        ],
+                        // Editing an entry of a repeat: which one, and
+                        // where to change it.
+                        if (_editing && _repeatOf != null)
+                          _RepeatInfo(
+                            entry: widget.editing!,
+                            repeat: _repeatOf!,
+                            onManage: () => _manageRepeat(_repeatOf!),
+                          ),
                       ],
                     ),
             ),
@@ -627,99 +707,110 @@ class _EntrySheetState extends State<EntrySheet> {
   }
 }
 
-/// The nine categories, three to a row; each row as tall as its tallest
-/// label (large text wraps, never cuts).
-class _CategoryGrid extends StatelessWidget {
-  const _CategoryGrid({required this.selected, required this.onPick});
+/// The Add sheet's Repeat row: "Doesn't repeat", or the schedule the picked
+/// day makes, with the shorter-months hint for days 29 and 30.
+class _RepeatRow extends StatelessWidget {
+  const _RepeatRow({
+    required this.choice,
+    required this.date,
+    required this.onTap,
+  });
 
-  final SpendCategory? selected;
-  final ValueChanged<SpendCategory> onPick;
+  final RepeatChoice choice;
+  final DateTime date;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final accent = theme.colorScheme.primary;
-    const all = SpendCategory.values;
-    // One size for the nine labels: each word whole in its cell (a third of
-    // the row, less the gaps and padding), smaller only when it must.
-    return LayoutBuilder(
-      builder: (context, box) {
-        final scaler = wholeWordsScaler(
-          context,
-          texts: [for (final c in all) c.label(l10n)],
-          style: theme.textTheme.bodySmall,
-          available: (box.maxWidth - 16) / 3 - 16,
-        );
-        return Column(
+    final schedule = scheduleFor(choice, date);
+    final value = schedule == null
+        ? l10n.repeatNone
+        : scheduleText(l10n, context.session.dateLocale, schedule);
+    final hint = scheduleHint(l10n, schedule);
+    return TestId(
+      'add-repeat',
+      button: true,
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.repeat),
+        title: Text(l10n.addRepeat),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (var row = 0; row < all.length; row += 3)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (final (i, c) in all.skip(row).take(3).indexed) ...[
-                        if (i > 0) const SizedBox(width: 8),
-                        Expanded(
-                          child: TestId(
-                            'add-cat-${c.id}',
-                            button: true,
-                            selected: selected == c,
-                            child: Material(
-                              color: selected == c
-                                  ? context.palette.pillBackground
-                                  : theme.colorScheme.surface,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(
-                                  color: selected == c
-                                      ? accent
-                                      : theme.colorScheme.outlineVariant,
-                                  width: selected == c ? 2 : 1,
-                                ),
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () => onPick(c),
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    minHeight: 72,
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          c.icon,
-                                          color: selected == c ? accent : null,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          c.label(l10n),
-                                          textAlign: TextAlign.center,
-                                          style: theme.textTheme.bodySmall,
-                                          textScaler: scaler,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+            Text(value),
+            if (hint != null)
+              Text(
+                hint,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
           ],
-        );
-      },
+        ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
+}
+
+/// Editing an entry of a repeat: "Added by your repeat: Every month on day
+/// 1" (or that the repeat is stopped), with Manage while it runs. The
+/// repeat's first entry, the person's own, shows just its schedule.
+class _RepeatInfo extends StatelessWidget {
+  const _RepeatInfo({
+    required this.entry,
+    required this.repeat,
+    required this.onManage,
+  });
+
+  final Entry entry;
+  final Repeat repeat;
+  final VoidCallback onManage;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final schedule = scheduleText(
+      l10n,
+      context.session.dateLocale,
+      repeat.schedule,
+    );
+    final text = entry.auto
+        ? (repeat.running ? l10n.repeatFrom(schedule) : l10n.repeatFromStopped)
+        : (repeat.running ? schedule : null);
+    if (text == null) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: TestId.container(
+        'edit-repeat',
+        child: Row(
+          children: [
+            Icon(Icons.repeat, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                text,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+            if (repeat.running)
+              TestId(
+                'edit-repeat-manage',
+                button: true,
+                child: TextButton(
+                  onPressed: onManage,
+                  child: ButtonLabel(l10n.repeatManage),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/button_label.dart';
 import '../../core/button_pair.dart';
+import '../../core/day_label.dart';
 import '../../core/fit_text.dart';
 import '../../core/plan_bar.dart';
 import '../../core/semantics_id.dart';
@@ -24,6 +25,7 @@ import '../../tips/tips.dart';
 import '../add/entry_sheet.dart';
 import '../goal/rainbow.dart';
 import '../pig/pig_view.dart';
+import '../repeat/repeat_choice.dart';
 import '../shell/tab_top.dart';
 
 /// Home (plan §3.2): the pig and its line, the reminder offer after the first
@@ -46,7 +48,12 @@ class _HomeData {
     required this.plan,
     required this.offerAnswered,
     required this.currency,
+    required this.addedByRepeats,
   });
+
+  /// What repeats added since "Added from your repeats" was last put away,
+  /// newest first.
+  final List<Entry> addedByRepeats;
 
   final List<Entry> entries;
   final List<Goal> goals;
@@ -96,7 +103,12 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     final entries = await store.entries();
     final goals = await store.goals();
     final active = await store.activeGoal();
+    final seen = await store.repeatsSeenAt();
     final data = _HomeData(
+      addedByRepeats: [
+        for (final e in entries)
+          if (e.auto && (seen == null || e.createdAt.isAfter(seen))) e,
+      ],
       entries: entries,
       goals: goals,
       active: active,
@@ -148,6 +160,11 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                 children: [
                   _Pig(data: data),
+                  // Right under the pig: what repeats wrote in the journal.
+                  if (data.addedByRepeats.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _RepeatsCard(added: data.addedByRepeats),
+                  ],
                   if (data.entries.isNotEmpty &&
                       !data.offerAnswered &&
                       context.session.accountState?.reminderOn != true) ...[
@@ -230,6 +247,100 @@ class _Pig extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// What repeats added while the app was away, until OK: up to 3 (name,
+/// amount, day), and "and N more", which opens Timeline. The journal says
+/// so once, since it wrote there without the person.
+class _RepeatsCard extends StatelessWidget {
+  const _RepeatsCard({required this.added});
+
+  /// Newest first.
+  final List<Entry> added;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final session = context.session;
+    final locale = session.device.localeName;
+    final today = context.services.localDay.today;
+    final shown = added.take(3).toList();
+    final more = added.length - shown.length;
+    return TestId.container(
+      'home-repeats',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.repeatAddedTitle, style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              for (final e in shown)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TestId.container(
+                    'home-repeats-${e.id}',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          repeatEntryName(l10n, e),
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        // The cards' body style (decision 57).
+                        Text(
+                          [
+                            formatMoney(e.amountMinor, e.currency, locale),
+                            dayLabel(
+                              l10n,
+                              session.dateLocale,
+                              e.date,
+                              today: today,
+                            ),
+                          ].join(' · '),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              OverflowBar(
+                alignment: MainAxisAlignment.end,
+                overflowAlignment: OverflowBarAlignment.end,
+                spacing: 8,
+                children: [
+                  if (more > 0)
+                    TestId(
+                      'home-repeats-more',
+                      button: true,
+                      child: TextButton(
+                        onPressed: () => context.go(AppTab.timeline.path),
+                        child: ButtonLabel(l10n.repeatAddedMore(more)),
+                      ),
+                    ),
+                  TestId(
+                    'home-repeats-ok',
+                    button: true,
+                    child: TextButton(
+                      onPressed: () =>
+                          context.services.journal.markRepeatsSeen(),
+                      child: ButtonLabel(l10n.repeatAddedOk),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

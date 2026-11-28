@@ -10,9 +10,11 @@ import '../../journal/entry.dart';
 import '../../journal/goal.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
+import '../../repeat/repeat.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../add/entry_sheet.dart';
+import '../repeat/repeat_choice.dart';
 import '../../core/fit_text.dart';
 import '../shell/tab_top.dart';
 
@@ -32,6 +34,9 @@ class _TimelineScreenState extends State<TimelineScreen>
   _Filter _filter = _Filter.all;
   List<Entry>? _entries;
   Map<String, Goal> _goals = const {};
+
+  /// The repeats that entries belong to (stopped ones too): their mark.
+  Map<String, Repeat> _repeats = const {};
   AppServices? _services;
 
   @override
@@ -64,10 +69,16 @@ class _TimelineScreenState extends State<TimelineScreen>
       final g = await store.goal(id);
       if (g != null) goals[id] = g;
     }
+    final repeats = <String, Repeat>{};
+    for (final id in {for (final e in entries) ?e.repeatId}) {
+      final r = await store.repeat(id);
+      if (r != null) repeats[id] = r;
+    }
     if (!mounted) return;
     setState(() {
       _entries = entries;
       _goals = goals;
+      _repeats = repeats;
     });
   }
 
@@ -139,7 +150,11 @@ class _TimelineScreenState extends State<TimelineScreen>
                     ),
                   ),
                   Expanded(
-                    child: _Days(entries: shown!, goals: _goals),
+                    child: _Days(
+                      entries: shown!,
+                      goals: _goals,
+                      repeats: _repeats,
+                    ),
                   ),
                 ],
               ),
@@ -152,10 +167,15 @@ class _TimelineScreenState extends State<TimelineScreen>
 /// header, then its rows. Only what is on screen is built, even for a
 /// thousand entries on one day.
 class _Days extends StatelessWidget {
-  const _Days({required this.entries, required this.goals});
+  const _Days({
+    required this.entries,
+    required this.goals,
+    required this.repeats,
+  });
 
   final List<Entry> entries;
   final Map<String, Goal> goals;
+  final Map<String, Repeat> repeats;
 
   @override
   Widget build(BuildContext context) {
@@ -182,6 +202,7 @@ class _Days extends StatelessWidget {
         _RowItem(:final entry) => _Row(
           entry: entry,
           goal: goals[entry.goalId],
+          repeat: repeats[entry.repeatId],
           locale: locale,
         ),
       },
@@ -264,10 +285,19 @@ class _DayHeader extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({required this.entry, required this.goal, required this.locale});
+  const _Row({
+    required this.entry,
+    required this.goal,
+    required this.repeat,
+    required this.locale,
+  });
 
   final Entry entry;
   final Goal? goal;
+
+  /// The repeat the entry belongs to, if any: a small repeat mark after its
+  /// name, read out as "Repeats every month" (or week).
+  final Repeat? repeat;
   final String locale;
 
   @override
@@ -346,9 +376,34 @@ class _Row extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // In ink: the theme's bodyLarge is muted.
-                          Text(
-                            title,
+                          // In ink: the theme's bodyLarge is muted. A
+                          // repeat's mark follows the name (a WidgetSpan
+                          // scales with the text).
+                          Text.rich(
+                            TextSpan(
+                              text: title,
+                              children: [
+                                if (repeat case final r?)
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Padding(
+                                      padding: const EdgeInsetsDirectional.only(
+                                        start: 6,
+                                      ),
+                                      child: Icon(
+                                        Icons.repeat,
+                                        size: 16,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                        semanticLabel: repeatA11y(
+                                          l10n,
+                                          r.schedule.kind,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: theme.colorScheme.onSurface,
                             ),

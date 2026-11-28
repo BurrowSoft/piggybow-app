@@ -125,6 +125,21 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// When Home's "Added from your repeats" was last put away with OK (UTC),
+  /// or null: the card shows what repeats added after it.
+  Future<DateTime?> repeatsSeenAt() async {
+    final v = await _settings.record('repeats_seen_at').get(_db);
+    return v is String ? DateTime.tryParse(v)?.toUtc() : null;
+  }
+
+  /// OK on Home's "Added from your repeats": everything added so far is seen.
+  Future<void> markRepeatsSeen() async {
+    await _settings
+        .record('repeats_seen_at')
+        .put(_db, _clock.nowUtc().toIso8601String());
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------- entries
 
   /// Every entry, newest day first; within a day, the newest added first.

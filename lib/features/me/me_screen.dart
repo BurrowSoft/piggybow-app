@@ -233,6 +233,11 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                       await _load();
                     },
                   ),
+                  _Row(
+                    id: 'me-repeats',
+                    title: l10n.meRepeats,
+                    onTap: () => context.push(MeRoutes.repeats),
+                  ),
                   _Section(l10n.meSecReminders),
                   TestId(
                     'me-reminder',

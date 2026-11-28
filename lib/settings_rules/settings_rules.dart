@@ -3,11 +3,14 @@
 
 import '../pig/pig_mood.dart' show HappyPick;
 
-/// The currency can change only while nothing is stored in it: no entry and no goal (decision 21).
-/// Deleting everything therefore unlocks it again.
-bool currencyChangeable({required int entryCount, required int goalCount}) {
-  if (entryCount < 0 || goalCount < 0) throw ArgumentError('counts must not be negative');
-  return entryCount == 0 && goalCount == 0;
+/// The currency can change only while nothing is stored in it: no entry, no goal and no running
+/// repeat, which would keep adding entries in it (decision 21). Deleting everything therefore
+/// unlocks it again.
+bool currencyChangeable({required int entryCount, required int goalCount, int repeatCount = 0}) {
+  if (entryCount < 0 || goalCount < 0 || repeatCount < 0) {
+    throw ArgumentError('counts must not be negative');
+  }
+  return entryCount == 0 && goalCount == 0 && repeatCount == 0;
 }
 
 /// Why a set of picks can't be saved: none picked (happyPickOne), or "weekly plan" picked without
