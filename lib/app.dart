@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -6,6 +7,7 @@ import 'core/services.dart';
 import 'core/system_bars.dart';
 import 'features/lock/lock_screen.dart';
 import 'features/reminder/reminder_sync.dart';
+import 'features/widget/widget_sync.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'session/app_session.dart';
 import 'session/session_scope.dart';
@@ -68,11 +70,18 @@ class PiggybowApp extends StatelessWidget {
                 routerConfig: router,
                 // See-through status and navigation bars over every page (the
                 // lock screen too); the lock screen and the app-switcher cover.
-                builder: (context, child) => PageSystemBars(
-                  child: LockGate(
-                    lock: services.appLock,
-                    session: session,
-                    child: child!,
+                // The home-screen widget kept in step, in builds with Plus.
+                builder: (context, child) => WidgetSync(
+                  enabled: config.plusEnabled,
+                  session: session,
+                  services: services,
+                  plusActive: const _NoPlus(),
+                  child: PageSystemBars(
+                    child: LockGate(
+                      lock: services.appLock,
+                      session: session,
+                      child: child!,
+                    ),
                   ),
                 ),
               ),
@@ -90,4 +99,20 @@ class PiggybowApp extends StatelessWidget {
     session.chosenPalette,
     plusActive: services.plus?.active ?? false,
   );
+}
+
+/// Plus can't be active in this version: no entitlement exists yet. The
+/// Plus entitlement PR (#45) brings one, and is wired in here when the two
+/// meet.
+class _NoPlus implements ValueListenable<bool> {
+  const _NoPlus();
+
+  @override
+  bool get value => false;
+
+  @override
+  void addListener(VoidCallback listener) {}
+
+  @override
+  void removeListener(VoidCallback listener) {}
 }

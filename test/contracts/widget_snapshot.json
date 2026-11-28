@@ -1,0 +1,95 @@
+{
+  "about": "The home-screen widget's snapshot (feature 16): what the app hands the widget, as JSON. The app builds it (lib/features/widget/widget_snapshot.dart) and the widget only draws it, so this file pins the shape for both sides: test/widget_snapshot_test.dart builds each example from the inputs its 'why' gives, and the widget's Android tests read the same examples. Every text is ready-made by the app, and amounts are formatted in the journal's currency (USD here, locale en_US). Without Plus, or with the app lock on, nothing from the journal is in it.",
+  "rules": [
+    "version is 1. A widget ignores a snapshot whose version it doesn't know.",
+    "state is \"plus\" (no Plus: the widget shows text.plus), \"locked\" (the app lock is on: it shows text.locked) or \"ready\". \"plus\" comes before \"locked\".",
+    "theme is the theme's id, and \"default\" without Plus.",
+    "Only a ready snapshot has day, spentToday and goal.",
+    "day is the phone's local date the snapshot was made for (YYYY-MM-DD). When the phone's date is past it, today shows text.nothingToday and the goal stays.",
+    "spentToday is the sum of that day's spends, formatted: \"$0.00\" when the day has entries but no spend, null when it has none (the widget then shows text.nothingToday).",
+    "goal is null (the widget shows text.noGoal) or has name, progress, bands (5 booleans, band i lit once it's reached) and label (for screen readers)."
+  ],
+  "examples": [
+    {
+      "id": "W1",
+      "why": "Plus, lock off, today 2026-10-02: spends of 3.50 and 12.00 and a save of 100.00 today, a spend of 9.00 the day before; the goal Bike, 320.00 of 1,000.00 (32 %: band 1)",
+      "snapshot": {
+        "version": 1,
+        "state": "ready",
+        "theme": "default",
+        "day": "2026-10-02",
+        "text": {
+          "spentToday": "Spent today",
+          "nothingToday": "Nothing noted today",
+          "noGoal": "No goal yet"
+        },
+        "spentToday": "$15.50",
+        "goal": {
+          "name": "Bike",
+          "progress": "$320.00 of $1,000.00",
+          "bands": [true, false, false, false, false],
+          "label": "Rainbow 32% filled: $320.00 of $1,000.00"
+        }
+      }
+    },
+    {
+      "id": "W2",
+      "why": "Plus, lock off, theme sea, today 2026-10-02: only the day before's spend; no goal",
+      "snapshot": {
+        "version": 1,
+        "state": "ready",
+        "theme": "sea",
+        "day": "2026-10-02",
+        "text": {
+          "spentToday": "Spent today",
+          "nothingToday": "Nothing noted today",
+          "noGoal": "No goal yet"
+        },
+        "spentToday": null,
+        "goal": null
+      }
+    },
+    {
+      "id": "W3",
+      "why": "Plus, lock off, today 2026-10-02: a save of 100.00 today and no spend; the goal Trip, 600.00 of 500.00 (past it: every band, 100 %)",
+      "snapshot": {
+        "version": 1,
+        "state": "ready",
+        "theme": "default",
+        "day": "2026-10-02",
+        "text": {
+          "spentToday": "Spent today",
+          "nothingToday": "Nothing noted today",
+          "noGoal": "No goal yet"
+        },
+        "spentToday": "$0.00",
+        "goal": {
+          "name": "Trip",
+          "progress": "$600.00 of $500.00",
+          "bands": [true, true, true, true, true],
+          "label": "Rainbow 100% filled: $600.00 of $500.00"
+        }
+      }
+    },
+    {
+      "id": "W4",
+      "why": "Plus, the app lock on, theme sea: W1's journal, none of it in the snapshot",
+      "snapshot": {
+        "version": 1,
+        "state": "locked",
+        "theme": "sea",
+        "text": {"locked": "Tap to open"}
+      }
+    },
+    {
+      "id": "W5",
+      "why": "No Plus (with the lock on too), theme sea: W1's journal, none of it in the snapshot, and the default theme",
+      "snapshot": {
+        "version": 1,
+        "state": "plus",
+        "theme": "default",
+        "text": {"plus": "Part of Plus"}
+      }
+    }
+  ]
+}
