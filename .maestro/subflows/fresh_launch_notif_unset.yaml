@@ -8,13 +8,18 @@
 # can remove the old task just after the relaunch and kill the new process
 # (logcat: "remove task", then "failed to attach"), leaving a blank window.
 # A real start hang fails both tries; a retry shows in commands.json.
+# The clear runs as its own step before the launch (not launchApp's clearState),
+# so the task removal it triggers can't kill the new process.
 appId: ${APP_ID}
 ---
 - retry:
     maxRetries: 1
     commands:
+      - stopApp
+      - clearState                     # its own step: the clear has finished before the start
+      - waitForAnimationToEnd:
+          timeout: 2000
       - launchApp:
-          clearState: true
           clearKeychain: true
           permissions:
             notifications: unset  # the system prompt must appear (reminder flows)
