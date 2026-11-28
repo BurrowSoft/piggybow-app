@@ -4,7 +4,7 @@ tags: [plus]
 # Run with kind=plus-rows (PLUS_ENABLED + PLUS_FAKE_STORE, staging debug) and
 # zone UTC. The fake store shows a price and never buys or owns anything, so
 # Plus stays off throughout. Only the yearly plan is asserted (decision 85);
-# anything else on the screen is for the shots.
+# anything else on the screen is for the shots; monthly must be gone.
 ---
 - runFlow: ../../subflows/fresh_launch.yaml
 - runFlow: ../../subflows/to_home.yaml
@@ -41,6 +41,8 @@ tags: [plus]
 - assertVisible:
     id: plus-plan-yearly
 - assertVisible: ".*Free for 7 days, then US\\$[0-9.,]+ a year.*"
+- assertNotVisible:
+    id: plus-plan-monthly                          # yearly only (decision 85)
 - takeScreenshot: 87-paywall-plan
 # Start buys nothing
 - runFlow:
