@@ -1,21 +1,29 @@
 #!/usr/bin/env bash
 # The Plus probe (decision 79), on the CI emulator only: run.sh calls it for
-# kind plus-probe. Does the app stay up once Play Billing starts, without
-# ACCESS_NETWORK_STATE, as the store build will be? Play Billing's logging
-# library schedules its uploads with JobScheduler and a network constraint,
-# which Android 14 may refuse without that permission (a SecurityException).
-# The probe installs the app, starts it (Plus starts Play Billing at launch),
-# waits, then says whether the app is still up and what was logged.
+# kind plus-probe. Does the app stay up once Play Billing starts, with the
+# store build's permissions (no INTERNET, no ACCESS_NETWORK_STATE)? Play
+# Billing's logging library schedules its uploads with JobScheduler and a
+# network constraint, which Android 14 may refuse without
+# ACCESS_NETWORK_STATE (a SecurityException), and it uploads from the app's
+# own process. The probe installs the app, starts it (Plus starts Play
+# Billing at launch), waits, then says whether the app is still up and what
+# was logged.
 #
-# env: APK (a staging profile build with PLUS_ENABLED, its manifest without
-#      ACCESS_NETWORK_STATE), OUT (the evidence folder), SERIAL, APP_ID;
-#      PROBE_WAIT (seconds, default 120).
+# env: APK (a staging profile build with PLUS_ENABLED and the release
+#      manifest overlay), APP_DIR (the app's checkout), OUT (the evidence
+#      folder), SERIAL, APP_ID; PROBE_WAIT (seconds, default 120).
 # Exit: 0 the app stayed up; 1 it crashed or died; 3 inconclusive (Play
-# Billing never showed up in the log); 7 or 8 the setup is wrong.
-set -euo pipefail
-: "${APK:?}" "${OUT:?}" "${SERIAL:?}" "${APP_ID:?}"
+# Billing never showed up in the log); 7 the build or the image isn't the
+# one to probe; 8 a set-up step failed; 9 reading the result failed.
+set -Eeuo pipefail
+for v in APK APP_DIR OUT SERIAL APP_ID; do
+  [ -n "${!v:-}" ] || { echo "STOP: $v is not set"; exit 8; }
+done
 WAIT=${PROBE_WAIT:-120}
 A() { adb -s "$SERIAL" "$@"; }
+# A failed set-up command (an install, a pull, adb itself) is never read as
+# "the app died".
+trap 'echo "STOP: a set-up step failed (line $LINENO)"; exit 8' ERR
 
 # The APK built in this job, installed, and the installed copy checked byte
 # for byte against it.
@@ -31,20 +39,21 @@ if [ "$installed" != "$built" ]; then
 fi
 echo "installed = built ($installed)"
 
-# What's under test: BILLING asked for, ACCESS_NETWORK_STATE not. Read whole,
-# then searched (grep -q in a pipe can end adb early).
+# What's under test: exactly the store build's permissions
+# (android/expected-permissions.txt, the release list), the app's own
+# permission named for this package. Read whole, then searched.
 pkg=$(A shell dumpsys package "$APP_ID" | tr -d '\r')
-grep -A30 "requested permissions" <<< "$pkg" > "$OUT/permissions.txt" \
-  || echo "no requested permissions" > "$OUT/permissions.txt"
+awk '/requested permissions:/ { on = 1; next }
+     on && /:/ { exit }
+     on && NF { sub(/,$/, "", $1); print $1 }' <<< "$pkg" | sort -u > "$OUT/permissions.txt"
+sed "s/^com\.burrowsoft\.piggybow\./$APP_ID./" "$APP_DIR/android/expected-permissions.txt" \
+  | sort -u > "$RUNNER_TEMP/expected.txt"
 echo "== $APP_ID: requested permissions"; cat "$OUT/permissions.txt"
-if grep -qF 'android.permission.ACCESS_NETWORK_STATE' "$OUT/permissions.txt"; then
-  echo "STOP: the build asks for ACCESS_NETWORK_STATE; the probe needs it removed"; exit 7
-fi
-if ! grep -qF 'com.android.vending.BILLING' "$OUT/permissions.txt"; then
-  echo "STOP: the build doesn't ask for BILLING"; exit 7
+if ! diff -u "$RUNNER_TEMP/expected.txt" "$OUT/permissions.txt"; then
+  echo "STOP: the permissions aren't the store build's"; exit 7
 fi
 # Play Billing talks to the Play Store app: this image must have it.
-store=$(A shell pm path com.android.vending | tr -d '\r')
+store=$(A shell pm path com.android.vending | tr -d '\r' || true)
 if [ -z "$store" ]; then echo "STOP: no Play Store app on this image"; exit 7; fi
 
 A logcat -c
@@ -52,6 +61,7 @@ A shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 > /dev/null
 echo "started $APP_ID; watching for $WAIT s"
 sleep "$WAIT"
 
+trap 'echo "STOP: reading the result failed (line $LINENO)"; exit 9' ERR
 pid=$(A shell pidof "$APP_ID" | tr -d '\r' || true)
 A logcat -d -v threadtime > "$RUNNER_TEMP/logcat.txt"
 # The evidence is only the lines about the app, Play Billing and its logging

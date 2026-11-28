@@ -218,20 +218,24 @@ steps:
     expect('PLUS_FAKE_STORE = '.allMatches(wf), hasLength(1));
     // plus-rows is a debug build (the fake store also needs kDebugMode).
     expect(build, contains('*) mode=--debug; built=app-staging-debug.apk ;;'));
+    // The store build's permissions: the release overlay becomes this
+    // runner's profile overlay, checked byte for byte.
     final probe = build.substring(build.indexOf('plus-probe)\n'));
-    expect(probe, contains('m=android/app/src/profile/AndroidManifest.xml'));
     expect(
       probe,
       contains(
-        r'''grep -qF 'android.permission.ACCESS_NETWORK_STATE" tools:node="remove"' "$m"''',
+        'cp android/app/src/release/AndroidManifest.xml android/app/src/profile/AndroidManifest.xml\n'
+        '                cmp -s android/app/src/release/AndroidManifest.xml android/app/src/profile/AndroidManifest.xml\n'
+        '                mode=--profile; built=app-staging-profile.apk ;;',
       ),
     );
-    expect(probe, contains('mode=--profile; built=app-staging-profile.apk ;;'));
-    // Never committed: the profile manifest in the repo keeps the permission.
-    expect(
-      File('android/app/src/profile/AndroidManifest.xml').readAsStringSync(),
-      isNot(contains('ACCESS_NETWORK_STATE')),
-    );
+    // Never committed: the repo's profile overlay keeps INTERNET for the
+    // Flutter tool, and removes nothing.
+    final profile = File('android/app/src/profile/AndroidManifest.xml').readAsStringSync();
+    expect(profile, contains('android.permission.INTERNET'));
+    expect(profile, isNot(contains('tools:node="remove"')));
+    // The probe reads the app's own expected permissions.
+    expect(wf, contains(r'APP_DIR: ${{ github.workspace }}/app' '\n'));
     // The probe runs before run.sh's device set-up (adb root, which a Play
     // Store image lacks), after the emulator check.
     final branch = run.indexOf('if [ "\$KIND" = plus-probe ]; then');
@@ -243,7 +247,26 @@ steps:
   test("plus_probe.sh: every adb call names the emulator; the app checked, "
       'and only the lines that matter kept', () {
     final probe = File('tool/emulator/plus_probe.sh').readAsStringSync();
-    expect(probe, contains('set -euo pipefail\n'));
+    expect(probe, contains('set -Eeuo pipefail\n'));
+    // A failed command never reads as "the app died": 8 while setting up,
+    // 9 while reading the result.
+    final setup = probe.indexOf(
+      '''trap 'echo "STOP: a set-up step failed (line \$LINENO)"; exit 8' ERR''',
+    );
+    final install = probe.indexOf(r'A install "$APK"');
+    final launch = probe.indexOf('A shell monkey');
+    final reading = probe.indexOf(
+      '''trap 'echo "STOP: reading the result failed (line \$LINENO)"; exit 9' ERR''',
+    );
+    expect(setup, greaterThan(0));
+    expect(install, greaterThan(setup));
+    expect(launch, greaterThan(install));
+    expect(reading, greaterThan(launch));
+    expect(probe.indexOf('A logcat -d'), greaterThan(reading));
+    // Exactly the store build's permissions, or no probe.
+    expect(probe, contains(r'"$APP_DIR/android/expected-permissions.txt"'));
+    expect(probe, contains(r'if ! diff -u "$RUNNER_TEMP/expected.txt" "$OUT/permissions.txt"; then'));
+    expect(probe, contains("STOP: the permissions aren't the store build's\"; exit 7"));
     final code = probe
         .split('\n')
         .where((l) => !l.trimLeft().startsWith('#'))
@@ -254,7 +277,6 @@ steps:
     ];
     expect(adb, [r'A() { adb -s "$SERIAL" "$@"; }']);
     expect(probe, contains(r'[ "$installed" != "$built" ]'));
-    expect(probe, contains('STOP: the build asks for ACCESS_NETWORK_STATE'));
     expect(probe, contains('STOP: no Play Store app on this image'));
     // The whole log stays on the runner; the evidence is its filtered lines.
     expect(probe, contains(r'rm -f "$RUNNER_TEMP/logcat.txt"'));

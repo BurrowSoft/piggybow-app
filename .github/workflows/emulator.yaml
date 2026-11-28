@@ -213,14 +213,12 @@ jobs:
             case "$KIND" in
               release) mode=--release; built=app-staging-release.apk ;;
               plus-probe)
-                # What the probe tests: the release build's missing network-state
-                # permission, put in this runner's profile build only (never
-                # committed). Profile, not release: Plus is refused in release.
-                m=android/app/src/profile/AndroidManifest.xml
-                sed -i 's|<manifest xmlns:android="http://schemas.android.com/apk/res/android">|<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">|' "$m"
-                sed -i 's|</manifest>|    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />\n</manifest>|' "$m"
-                grep -qF 'android.permission.ACCESS_NETWORK_STATE" tools:node="remove"' "$m"
-                grep -qF 'xmlns:tools=' "$m"
+                # What the probe tests: the store build's permissions (no
+                # INTERNET, no ACCESS_NETWORK_STATE). The release overlay
+                # becomes this runner's profile overlay, never committed.
+                # Profile, not release: Plus is refused in release.
+                cp android/app/src/release/AndroidManifest.xml android/app/src/profile/AndroidManifest.xml
+                cmp -s android/app/src/release/AndroidManifest.xml android/app/src/profile/AndroidManifest.xml
                 mode=--profile; built=app-staging-profile.apk ;;
               *) mode=--debug; built=app-staging-debug.apk ;;
             esac
@@ -255,6 +253,9 @@ jobs:
           ROWS: ${{ steps.in.outputs.rows }}
           ZONE: ${{ steps.in.outputs.zone }}
           OUT: ${{ runner.temp }}/evidence
+          # The app under test's checkout (the probe reads its expected
+          # permissions there).
+          APP_DIR: ${{ github.workspace }}/app
         with:
           api-level: 34
           target: ${{ steps.in.outputs.target }}
