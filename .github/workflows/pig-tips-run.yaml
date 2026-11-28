@@ -5,8 +5,8 @@ name: Pig tips staging run
 # the chosen model. The table (tips, tokens, estimated cost) goes to this
 # job's log. Fixtures only, never anyone's data. The script puts the
 # server's settings back as they were and deletes its anonymous user.
-# Manual, from master only, after the supabase-staging environment's
-# reviewer approves.
+# Manual, from master only: the supabase-staging environment gives its
+# secret to master runs only.
 on:
   workflow_dispatch:
     inputs:

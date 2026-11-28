@@ -6,8 +6,8 @@ name: Supabase staging
 #      password, which would bypass the token's scope);
 #   2. the pig-tip function;
 #   3. a smoke check: a call with no user must get 401.
-# Manual, from master only. The supabase-staging environment holds the
-# token and starts the job only after its reviewer approves.
+# Manual, from master only: the supabase-staging environment holds the
+# token and gives it to master runs only.
 on:
   workflow_dispatch:
     inputs:
