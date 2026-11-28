@@ -68,7 +68,7 @@ Rows: `tool/device-rows/pr35.sh` (emulator run 46102672427) and R6 with `pr35b.s
 | R4 recents | 🟢 | no FLAG_SECURE; the recents card blank while the lock is on |
 | R5 Forgot PIN, no phone screen lock | 🟢 | erase only; the second confirm with the lock's own body and no "Export first"; Cancel keeps all; erase → O1 with the lock off |
 | R6 Forgot PIN with the phone's own PIN | 🟢 | the phone's PIN in the system prompt, then a new Piggybow PIN; the old one refused, the new one opens |
-History: 2e9c071 alone ❌ (Me's App lock row stayed "Off" after the lock was turned on; #39's Me listens, so the two landed together) → 1575d09 🟢
+History: 2e9c071 alone ❌ (Me's App lock row stayed "Off" after the lock was turned on; #39's Me listens, so the two landed together) → 1575d09: R6 ❌ in run 46102672427 (the flow waited for text in the system's PIN prompt, a secure window; fixed to wait for its number pad) → R6 🟢 in run 46105004389 → 1575d09 🟢
 
 ### #34 Polish: the offer's buttons stack full width, Reached under the button, a 3-line goal name — e3e86b9 — 🟢 (on-device ⏳) — 2026-11-28 00:23 UTC
 Build: no device for this row (CI logs + my own download of the golden render)
