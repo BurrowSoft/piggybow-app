@@ -1,0 +1,29 @@
+appId: ${APP_ID}
+name: Me → Help & contact (#86) - the row opens the support page outside the app (the phone's browser); Piggybow is still there when you come back
+tags: [pb1, me]
+# Staging and prod builds have SUPPORT_URL set. On the CI emulator the page
+# opens in whichever browser answers; only leaving the app is asserted (the
+# page itself is the website's).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-help
+- tapOn:
+    id: me-help
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertNotVisible:
+    id: tab-me                                  # out of Piggybow
+- takeScreenshot: 35b-help-outside
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: me-help
+    timeout: 15000

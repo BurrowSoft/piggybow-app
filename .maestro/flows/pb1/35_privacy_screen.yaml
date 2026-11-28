@@ -1,5 +1,5 @@
 appId: ${APP_ID}
-name: PR 4 Your privacy in a build without a Sentry DSN - lines 1, 2, 4, 5 and no crash-report line; no policy link and no Help row while their URLs are empty
+name: PR 4 Your privacy in a build without a Sentry DSN - lines 1, 2, 4, 5 and no crash-report line; Me's Help & contact row (SUPPORT_URL set, #86)
 tags: [pb1, me]
 ---
 - runFlow: ../../subflows/fresh_launch.yaml
@@ -21,8 +21,15 @@ tags: [pb1, me]
 # then (an absence check on an id that doesn't exist yet would prove nothing).
 - takeScreenshot: 35-your-privacy
 - tapOn: "Back"                    # the app bar arrow
-- assertNotVisible:
-    id: me-help                                 # SUPPORT_URL empty
+# Help & contact: shown since SUPPORT_URL is set for staging and prod (#86);
+# flow 35b opens it
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-help
+- assertVisible:
+    id: me-help
+- assertVisible: ".*Help & contact.*"
 - runFlow:
     file: ../../subflows/reveal.yaml
     env:
