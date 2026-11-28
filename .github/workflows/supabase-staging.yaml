@@ -62,7 +62,9 @@ jobs:
           "$RUNNER_TEMP/supabase-cli/supabase" --version
       # Each migration can run again without changing anything: they run
       # twice to prove it, then supabase/checks/after-migrations.sql checks
-      # the result (one settings row, the clean-up scheduled once).
+      # the result (one settings row; the clean-up and the idle users'
+      # deletion scheduled once each; that deletion allowed to delete Auth
+      # users).
       - name: The migrations, through the Management API
         if: inputs.what != 'function'
         env:
