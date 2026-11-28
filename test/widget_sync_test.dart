@@ -152,12 +152,16 @@ void main() {
     await settle(tester, second);
     expect(bridge.writes.last['spentToday'], r'$3.50');
 
-    // Plus ends: written on the spot, the test's clock standing still.
+    // Plus ends: written on the spot, the test's clock standing still (no
+    // journal read is needed for "Part of Plus").
     plus.value = false;
     await tester.pump();
     expect(bridge.writes.last['state'], 'plus');
+    // Back: the journal is read again, a few frames, still far within a second.
     plus.value = true;
-    await tester.pump();
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 10));
+    }
     expect(bridge.writes.last['state'], 'ready');
 
     // The lock turned on: written within a brief moment, long before a second.
@@ -174,6 +178,26 @@ void main() {
     await brief(tester);
     expect(bridge.writes.last['goal'], isNull);
     expect(bridge.writes.last['spentToday'], isNull);
+  });
+
+  testWidgets("a journal that can't be read never holds back the lock: "
+      '"Tap to open" still reaches the widget', (tester) async {
+    final lock = AppLock(
+      store: MemorySecretStore(),
+      biometrics: FakeBiometrics(),
+      firstRun: MemoryFirstRunMarker(),
+      iterations: 50,
+    );
+    final (app, bridge) = await mount(tester, lock: lock);
+    await tester.runAsync(() => spend(app, 350));
+    await settle(tester);
+    expect(bridge.writes.last['spentToday'], r'$3.50');
+
+    // Closed, every read of the journal throws.
+    await tester.runAsync(app.journal.close);
+    await tester.runAsync(() => lock.setPin('2468'));
+    await brief(tester);
+    expect(bridge.writes.last['state'], 'locked');
   });
 
   testWidgets("a new day: the next snapshot is the new day's, with nothing "

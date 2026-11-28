@@ -176,15 +176,28 @@ class _WidgetSyncState extends State<WidgetSync> {
 
   Future<Map<String, Object?>> _snapshot() async {
     final session = widget.session;
+    final l10n = lookupAppLocalizations(session.locale);
+    final theme = session.palette?.name ?? widgetDefaultTheme;
+    final plusActive = widget.plusActive.value;
+    // On, or being turned on: the widget never lags behind the lock.
+    final lockOn = _services.appLock?.on ?? false;
+    // Without Plus or with the lock on, there's nothing to read: decided at
+    // once, so no journal read can hold it back (or fail it).
+    final private = privateWidgetSnapshot(
+      l10n: l10n,
+      theme: theme,
+      plusActive: plusActive,
+      lockOn: lockOn,
+    );
+    if (private != null) return private;
     final store = _services.journal;
     final goal = await store.activeGoal();
     return widgetSnapshot(
-      l10n: lookupAppLocalizations(session.locale),
+      l10n: l10n,
       locale: session.device.localeName,
-      theme: session.palette?.name ?? widgetDefaultTheme,
-      plusActive: widget.plusActive.value,
-      // On, or being turned on: the widget never lags behind the lock.
-      lockOn: _services.appLock?.on ?? false,
+      theme: theme,
+      plusActive: plusActive,
+      lockOn: lockOn,
       today: _services.localDay.todayWire,
       currency: await store.currency(),
       entries: await store.entries(),

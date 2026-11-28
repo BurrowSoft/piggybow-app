@@ -47,22 +47,13 @@ Map<String, Object?> widgetSnapshot({
   required Goal? goal,
   required int goalProgressMinor,
 }) {
-  if (!plusActive) {
-    return {
-      'version': widgetSnapshotVersion,
-      'state': WidgetState.plus.name,
-      'theme': widgetDefaultTheme,
-      'text': {'plus': l10n.widgetPlus},
-    };
-  }
-  if (lockOn) {
-    return {
-      'version': widgetSnapshotVersion,
-      'state': WidgetState.locked.name,
-      'theme': theme,
-      'text': {'locked': l10n.widgetLocked},
-    };
-  }
+  final private = privateWidgetSnapshot(
+    l10n: l10n,
+    theme: theme,
+    plusActive: plusActive,
+    lockOn: lockOn,
+  );
+  if (private != null) return private;
   String money(int minor) => formatMoney(minor, currency!, locale);
   var noted = false;
   var spent = 0;
@@ -86,6 +77,35 @@ Map<String, Object?> widgetSnapshot({
         ? null
         : _goal(l10n, goal, goalProgressMinor, money),
   };
+}
+
+/// The snapshot without Plus, or with the app lock on: one line and the
+/// theme, nothing from the journal. Null when neither applies (the journal's
+/// snapshot then). It needs no journal, so it's decided first: a journal
+/// that can't be read never holds it back.
+Map<String, Object?>? privateWidgetSnapshot({
+  required AppLocalizations l10n,
+  required String theme,
+  required bool plusActive,
+  required bool lockOn,
+}) {
+  if (!plusActive) {
+    return {
+      'version': widgetSnapshotVersion,
+      'state': WidgetState.plus.name,
+      'theme': widgetDefaultTheme,
+      'text': {'plus': l10n.widgetPlus},
+    };
+  }
+  if (lockOn) {
+    return {
+      'version': widgetSnapshotVersion,
+      'state': WidgetState.locked.name,
+      'theme': theme,
+      'text': {'locked': l10n.widgetLocked},
+    };
+  }
+  return null;
 }
 
 Map<String, Object?> _goal(
