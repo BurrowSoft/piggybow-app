@@ -75,7 +75,9 @@ Future<void> _shareSheet(XFile file) =>
 /// the journal; the scheduled reminders; the app lock's secure storage,
 /// every id (only after the journal is gone); every pref (the device
 /// account, its reminder, language, appearance and the rest); every export
-/// file. Then a fresh device account, and onboarding from O1. The lock, the
+/// file; Plus's launch hint (the store's own record of a subscription stays:
+/// erasing the app never cancels it). Then a fresh device account, and
+/// onboarding from O1. The lock, the
 /// prefs and the account go only after the journal did; the other steps run
 /// even if one fails; false when any did (Me says so and offers Try again).
 /// Crash reports keep no cache while the build has no Sentry DSN (v0.1).
@@ -108,6 +110,7 @@ Future<bool> deleteEverything(
   final journalGone = await step(services.journal.wipe);
   await step(services.reminders.cancelAll);
   await step(() => sweepExports(cache: cache));
+  await step(() async => services.plus?.forget());
   if (!journalGone) return false;
   await step(() async => services.appLock?.eraseAll());
   await step(session.prefs.clear);

@@ -6,6 +6,7 @@ import 'features/goal/goal_screens.dart';
 import 'features/home/home_screen.dart';
 import 'features/me/me_screen.dart';
 import 'features/onboarding/onboarding_screens.dart';
+import 'features/plus/plus_screen.dart';
 import 'features/shell/home_shell.dart';
 import 'features/start/start_screen.dart';
 import 'features/summary/summary_screen.dart';
@@ -73,6 +74,12 @@ abstract final class GoalRoutes {
   static String done(String id) => '/home/goal/$id/done';
 }
 
+/// Piggybow Plus's paywall, over whichever tab opened it (only in builds
+/// with Plus: services.plus).
+abstract final class PlusRoutes {
+  static const paywall = '/plus';
+}
+
 GoRouter buildRouter({
   required AppSession session,
   String initialLocation = Routes.home,
@@ -113,6 +120,7 @@ GoRouter buildRouter({
       final known =
           AppTab.values.any((t) => t.matches(location)) ||
           location == Routes.start ||
+          location == PlusRoutes.paywall ||
           OnboardingRoutes.contains(location);
       // Anything unknown is treated as Home; never a raw "not found" page.
       final target = known ? location : Routes.home;
@@ -143,6 +151,11 @@ GoRouter buildRouter({
             ),
           ),
         ],
+      ),
+      GoRoute(
+        path: PlusRoutes.paywall,
+        builder: (context, state) =>
+            const ScaffoldMessenger(child: PlusScreen()),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(shell: shell),

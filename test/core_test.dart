@@ -81,6 +81,7 @@ void main() {
       // Links appear only once each page is live (a link never 404s).
       expect(e['PRIVACY_URL'], isEmpty, reason: flavor);
       expect(e['SUPPORT_URL'], isEmpty, reason: flavor);
+      expect(e['TERMS_URL'], isEmpty, reason: flavor);
     }
   });
 

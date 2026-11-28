@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 
-import '../features/plus/plus_store.dart';
+import '../features/plus/plus_entitlement.dart';
 import '../features/reminder/reminder_scheduler.dart';
 import '../journal/journal_store.dart';
 import '../pig/pig_mood.dart' show PigReaction;
@@ -20,7 +20,7 @@ class AppServices {
     required this.reminders,
     required this.notifications,
     this.appLock,
-    this.plusStore,
+    this.plus,
     this.stagingTestError = stagingToolsEnabled ? throwStagingTestError : null,
     bool onboarded = true,
   }) : onboarded = ValueNotifier(onboarded);
@@ -50,9 +50,10 @@ class AppServices {
   /// App lock; null when APP_LOCK_ENABLED is off.
   final AppLock? appLock;
 
-  /// Plus's store, Play Billing or StoreKit (no Plus UI in v0.1): null
-  /// until Plus is wired, and always while PLUS_ENABLED is off.
-  final PlusStore? plusStore;
+  /// Piggybow Plus: whether it's on, and its purchases (decision 79). null
+  /// while PLUS_ENABLED is off, and so in every release build (AppConfig):
+  /// then no Plus row, paywall or Plus feature shows anywhere.
+  final PlusEntitlement? plus;
 
   /// Staging and dev builds only: sends a test error to Sentry (if a DSN is set).
   final void Function()? stagingTestError;
