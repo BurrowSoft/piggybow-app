@@ -31,16 +31,39 @@ fi
 before=$(bound)
 # The preview's centre on this 1080 × 2400 image (from the picker's hierarchy:
 # widget_preview_container [183,887][897,1473]); a long press starts the drag
-# and the launcher shows the home screen to drop on
+# and the launcher shows the home screen to drop on. Two ways, a shot after
+# each: input draganddrop (one call), then, if nothing bound, the picker again
+# and a long press held 1.5 s by motionevents, a slow move up, and the drop.
+shot(){ A exec-out screencap -p > "$OUT/$1.png" 2>/dev/null || true; }
+drag_motion(){
+  A shell input motionevent DOWN 540 1180
+  sleep 1.5
+  for y in 1150 1100 1050 1000 950 900; do A shell input motionevent MOVE 540 "$y"; sleep 0.15; done
+  sleep 1
+  A shell input motionevent UP 540 900
+}
+how="input draganddrop"
 A shell input draganddrop 540 1180 540 1000 2500
 sleep 3
+shot wd-after-drag-1
 after=$(bound)
-echo "$(stamp) widgets bound for $APP_ID: before ${before:-0}, after ${after:-0}"
+echo "$(stamp) widgets bound for $APP_ID after the drag: before ${before:-0}, after ${after:-0}"
 if [ "${after:-0}" -le "${before:-0}" ]; then
-  row WD-1 FAIL "the drag didn't bind a Piggybow widget (dumpsys appwidget: ${before:-0} → ${after:-0})"; exit 1
+  A shell input keyevent KEYCODE_HOME; sleep 2
+  if MF_NAME=92a-again mf flows/pb1/92a_widget_place.yaml; then
+    how="a held long press (motionevents)"
+    drag_motion
+    sleep 3
+    shot wd-after-drag-2
+    after=$(bound)
+    echo "$(stamp) widgets bound for $APP_ID after the held long press: before ${before:-0}, after ${after:-0}"
+  fi
+fi
+if [ "${after:-0}" -le "${before:-0}" ]; then
+  row WD-1 FAIL "neither drag bound a Piggybow widget (dumpsys appwidget: ${before:-0} → ${after:-0}; shots wd-after-drag-1, -2)"; exit 1
 fi
 if mf flows/pb1/92b_widget_read.yaml -e "EXPECT=$EXPECT" -e SHOT=92-opened; then
-  row WD-1 PASS "flows 92a + 92b ($KIND): in the picker (3×2, 'Today's spending and your goal'); dragged to the home screen and bound; it shows '$face'; a tap opens Piggybow"
+  row WD-1 PASS "flows 92a + 92b ($KIND): in the picker (3×2, 'Today's spending and your goal'); placed by $how and bound; it shows '$face'; a tap opens Piggybow"
 else
   row WD-1 FAIL "flow 92b ($KIND): bound, but not read or opened"; exit 1
 fi
