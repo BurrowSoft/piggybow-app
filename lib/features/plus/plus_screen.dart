@@ -169,7 +169,14 @@ class _PlusScreenState extends State<PlusScreen> {
         )
       else
         for (final plan in plans)
-          _PlanCard(plan: plan, busy: plus.busy, onBuy: () => plus.buy(plan)),
+          _PlanCard(
+            plan: plan,
+            // While a payment waits for the store, no second one can start
+            // (UX). Restore and the links stay; the store's next word (the
+            // purchase approved, or Restore's answer) ends the wait.
+            busy: plus.busy || plus.note == PlusNote.pending,
+            onBuy: () => plus.buy(plan),
+          ),
       ?_note(context, plus.note),
       const SizedBox(height: 8),
       TestId(

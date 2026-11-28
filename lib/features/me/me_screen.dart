@@ -53,6 +53,9 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
   int? _plan;
   String? _currency;
   bool _granted = true;
+
+  /// How many goals were reached (Reached goals shows from the first).
+  int _reached = 0;
   (String, String)? _version;
   AppServices? _services;
   AppLifecycleListener? _lifecycle;
@@ -99,12 +102,14 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final plan = await store.planMinor();
     final currency = await store.currency() ?? 'USD';
     final granted = await services.notifications.granted();
+    final reached = (await store.reachedGoals()).length;
     if (!mounted) return;
     setState(() {
       _picks = picks;
       _plan = plan;
       _currency = currency;
       _granted = granted;
+      _reached = reached;
     });
   }
 
@@ -246,6 +251,14 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                         : formatMoney(plan, currency, locale),
                     onTap: () => _editPlan(currency, locale),
                   ),
+                  // From the first goal reached (for everyone; decision 79).
+                  if (_reached > 0)
+                    _Row(
+                      id: 'me-reached',
+                      title: l10n.meReachedGoals,
+                      subtitle: l10n.meReachedGoalsCount(_reached),
+                      onTap: () => context.push(MeRoutes.reached),
+                    ),
                   _Section(l10n.meSecMoney),
                   _Row(
                     id: 'me-currency',

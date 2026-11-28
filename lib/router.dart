@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'features/goal/goal_screens.dart';
 import 'features/home/home_screen.dart';
 import 'features/me/me_screen.dart';
+import 'features/me/reached_goals_screen.dart';
 import 'features/onboarding/onboarding_screens.dart';
 import 'features/plus/plus_screen.dart';
 import 'features/shell/home_shell.dart';
@@ -64,6 +65,10 @@ abstract final class MeRoutes {
   static const removePlan = '/me/remove-plan';
   static const lock = '/me/lock';
   static const privacy = '/me/privacy';
+
+  /// Reached goals, and one of them (read-only).
+  static const reached = '/me/reached';
+  static String reachedGoal(String id) => '/me/reached/$id';
 }
 
 /// The goal screens, over the tabs (they belong to Home).
@@ -195,6 +200,19 @@ GoRouter buildRouter({
                       GoRoute(
                         path: 'privacy',
                         builder: (context, state) => const PrivacyScreen(),
+                      ),
+                      GoRoute(
+                        path: 'reached',
+                        builder: (context, state) => const ReachedGoalsScreen(),
+                        routes: [
+                          // A reached goal is read-only (R1), in the Me tab.
+                          GoRoute(
+                            path: ':id',
+                            builder: (context, state) => GoalDetailScreen(
+                              goalId: state.pathParameters['id']!,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                     if (tab == AppTab.home) ...[

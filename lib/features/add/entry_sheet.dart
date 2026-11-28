@@ -10,6 +10,7 @@ import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../journal/category.dart';
 import '../../journal/entry.dart';
+import '../../journal/goal.dart';
 import '../../journal/journal_store.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/currency.dart';
@@ -28,6 +29,7 @@ Future<bool> showEntrySheet(
   BuildContext context, {
   EntryType start = EntryType.spent,
   Entry? editing,
+  String? goalId,
 }) async {
   final l10n = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.maybeOf(context);
@@ -36,7 +38,7 @@ Future<bool> showEntrySheet(
     useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => EntrySheet(start: start, editing: editing),
+    builder: (_) => EntrySheet(start: start, editing: editing, goalId: goalId),
   );
   if (saved == true && editing == null) {
     messenger?.showSnackBar(SnackBar(content: Text(l10n.addedSnack)));
@@ -53,10 +55,18 @@ bool get entrySheetOpen => _sheetsOpen > 0;
 /// A full-height sheet: Spent or Saved, the amount, a spend's category and
 /// feeling (or a save's goal), a note and the day.
 class EntrySheet extends StatefulWidget {
-  const EntrySheet({super.key, this.start = EntryType.spent, this.editing});
+  const EntrySheet({
+    super.key,
+    this.start = EntryType.spent,
+    this.editing,
+    this.goalId,
+  });
 
   final EntryType start;
   final Entry? editing;
+
+  /// A new save's goal to start with (a goal's own Add savings).
+  final String? goalId;
 
   @override
   State<EntrySheet> createState() => _EntrySheetState();
@@ -74,6 +84,18 @@ class _EntrySheetState extends State<EntrySheet> {
   DateTime? _date;
   DateTime? _today;
   String? _goalName;
+
+  /// The active goals, oldest first, and the goal a save goes to. With two
+  /// or more (Plus, decision 79) the sheet lets the person choose.
+  List<Goal> _goals = const [];
+  String? _goalId;
+
+  /// A save's goal can be chosen: two or more active goals, and the entry
+  /// isn't a save already kept by a goal that's no longer active (reached
+  /// or ended: it stays there).
+  bool get _goalChoice =>
+      _goals.length >= 2 &&
+      (_goalId == null || _goals.any((g) => g.id == _goalId));
 
   /// Add was pressed: missing fields now say so.
   bool _tried = false;
@@ -105,15 +127,22 @@ class _EntrySheetState extends State<EntrySheet> {
     final e = widget.editing;
     final currency = e?.currency ?? await store.currency() ?? 'USD';
     // A save shows where it goes: its own goal when it has one, else the
-    // active goal (where a new save goes).
-    final goalId = e?.goalId;
-    final goal = goalId != null
-        ? await store.goal(goalId)
-        : await store.activeGoal();
+    // goal it was opened for (if active), else the default goal (where a
+    // new save goes).
+    final active = await store.activeGoals();
+    final preset = widget.goalId;
+    final goalId =
+        e?.goalId ??
+        (active.any((g) => g.id == preset)
+            ? preset
+            : (await store.activeGoal())?.id);
+    final goal = goalId == null ? null : await store.goal(goalId);
     if (!mounted) return;
     final today = services.localDay.today;
     setState(() {
       _currency = currency;
+      _goals = active;
+      _goalId = goalId;
       _goalName = goal?.name;
       _today = today;
       _date = e?.date ?? today;
@@ -176,6 +205,7 @@ class _EntrySheetState extends State<EntrySheet> {
           category: _category,
           feeling: _feeling,
           note: _note.text,
+          goalId: spend ? null : _goalId,
         );
         // The pig answers what was just added (plan §4.4).
         services.lastAdd.value = !spend
@@ -197,6 +227,8 @@ class _EntrySheetState extends State<EntrySheet> {
             clearFeeling: _feeling == null,
             note: _note.text,
             localDate: wireDate(date),
+            // The goal chosen (several goals), else the one it has.
+            goalId: spend ? null : _goalId,
           ),
         );
       }
@@ -463,6 +495,35 @@ class _EntrySheetState extends State<EntrySheet> {
                                 ),
                               ),
                             ),
+                        ] else if (_goalChoice) ...[
+                          // Several goals (Plus): which one this save is for,
+                          // one always picked, oldest goal first.
+                          Text(
+                            l10n.addSaveToward,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final (i, g) in _goals.indexed)
+                                TestId(
+                                  'add-goal-${i + 1}',
+                                  button: true,
+                                  selected: _goalId == g.id,
+                                  child: ChoiceChip(
+                                    label: Text(g.name),
+                                    selected: _goalId == g.id,
+                                    showCheckmark: false,
+                                    onSelected: (_) => setState(() {
+                                      _goalId = g.id;
+                                      _goalName = g.name;
+                                    }),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ] else
                           Text(
                             _goalName == null
