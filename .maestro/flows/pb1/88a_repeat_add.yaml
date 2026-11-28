@@ -42,8 +42,11 @@ tags: [repeat]
     file: ../../subflows/reveal.yaml
     env:
       ID: add-submit
+- waitForAnimationToEnd:              # the reveal's scroll can still be settling: a tap then lands where the button was
+    timeout: 3000
 - tapOn:
     id: add-submit
+    retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:
       id: home-add
