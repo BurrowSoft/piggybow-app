@@ -175,9 +175,11 @@ extension LayoutGolden on LayoutCase {
   bool get takesGolden => width == 320 && textScale == 2;
 }
 
-/// The whole screen as a golden, named for [c] (call it only when
-/// [LayoutGolden.takesGolden]); [stateId] is the state's id in PB Mobile
-/// Tester's list. The file that calls it is tagged golden.
+/// The whole screen as a golden, named for [c] (its width, text scale and
+/// brightness are in the name). Most screens take them in the
+/// [LayoutGolden.takesGolden] cases; a screen may name others. [stateId] is
+/// the state's id in PB Mobile Tester's list. The file that calls it is
+/// tagged golden.
 Future<void> expectLayoutGolden(
   WidgetTester tester,
   LayoutCase c, {
@@ -185,9 +187,6 @@ Future<void> expectLayoutGolden(
   required String state,
   required String stateId,
 }) {
-  if (!c.takesGolden) {
-    throw ArgumentError.value(c, 'c', 'goldens are taken at 320 dp ×2 only');
-  }
   return expectGolden(
     tester,
     find.byType(MaterialApp),
@@ -210,8 +209,19 @@ Future<double> settleForGolden(
   FocusManager.instance.primaryFocus?.unfocus();
   await tester.pumpAndSettle();
   final position = tester.state<ScrollableState>(scrollable).position;
-  position.jumpTo(end ? position.maxScrollExtent : 0);
-  await tester.pumpAndSettle();
+  if (!end) {
+    position.jumpTo(0);
+    await tester.pumpAndSettle();
+    return position.maxScrollExtent;
+  }
+  // A lazy list measures its far rows only once they're built, so its end
+  // can move after a jump: jump again until it stays put.
+  for (var i = 0; i < 10; i++) {
+    final extent = position.maxScrollExtent;
+    position.jumpTo(extent);
+    await tester.pumpAndSettle();
+    if (position.maxScrollExtent == extent) break;
+  }
   return position.maxScrollExtent;
 }
 

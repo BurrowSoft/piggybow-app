@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/fit_text.dart';
+import '../../core/plan_bar.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../data/models.dart' show ReminderTime;
@@ -501,16 +502,7 @@ class _WeekCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                // Spent ÷ plan, full at or over the plan, always the accent.
-                ExcludeSemantics(
-                  child: LinearProgressIndicator(
-                    value: percent.clamp(0, 100) / 100,
-                    color: theme.colorScheme.primary,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+                PlanBar(percent: percent),
               ],
               if (week.worth > 0) ...[
                 const SizedBox(height: 12),

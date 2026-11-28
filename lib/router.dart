@@ -9,6 +9,7 @@ import 'features/me/me_screen.dart';
 import 'features/onboarding/onboarding_screens.dart';
 import 'features/shell/home_shell.dart';
 import 'features/start/start_screen.dart';
+import 'features/summary/summary_screen.dart';
 import 'features/timeline/timeline_screen.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'session/app_session.dart';
@@ -160,8 +161,8 @@ GoRouter buildRouter({
                     child: switch (tab) {
                       AppTab.home => const HomeScreen(),
                       AppTab.timeline => const TimelineScreen(),
+                      AppTab.summary => const SummaryScreen(),
                       AppTab.me => const MeScreen(),
-                      _ => PlaceholderTab(tab: tab),
                     },
                   ),
                   routes: [

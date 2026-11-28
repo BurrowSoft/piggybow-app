@@ -1,3 +1,11 @@
+// Goldens at 320 dp ×2 (decision 44), named by the ids of PB Mobile
+// Tester's PR 3 list: Home on the first day (H1, the contract's C1) and
+// full (H2) and after reaching (H4); the goal form empty (G1), with its
+// errors (G2) and filled (G3); the goal detail at 0 % (D1), 32 % (D2) and
+// reached (D3); the End goal dialog (E1) and the celebration (X1).
+@Tags(['golden'])
+library;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -127,6 +135,31 @@ void main() {
     );
   }
 
+  /// A goal with a 40-character name and nothing saved yet (D1).
+  Future<void> emptyGoal(TestApp app) =>
+      app.journal.putGoal(longGoal(target: 100000));
+
+  /// The goal at 32 %: five saves, one with the 80-character note (D2 of
+  /// PB Mobile Tester's PR 3 list, PB UX & PM's 32 %): $320.00 of $1,000.00.
+  Future<void> fiveSaves(TestApp app) async {
+    await emptyGoal(app);
+    for (final (day, amount, note) in [
+      ('2026-09-27', 15000, note80),
+      ('2026-09-28', 8000, ''),
+      ('2026-09-29', 5000, ''),
+      ('2026-09-30', 2500, ''),
+      ('2026-10-01', 1500, ''),
+    ]) {
+      await app.journal.addEntry(
+        type: EntryType.saved,
+        amountMinor: amount,
+        currency: 'USD',
+        localDate: day,
+        note: note,
+      );
+    }
+  }
+
   /// A goal reached today and already celebrated: Home shows "Reached: …"
   /// and the pig's longest line, "You reached …!".
   Future<void> reachedToday(TestApp app) async {
@@ -147,6 +180,16 @@ void main() {
       await open(tester, c);
       expect(find.text('Start a savings goal'), findsOneWidget);
       await checkScrolled(tester, listIn('home-screen'), 'H1');
+      if (c.takesGolden) {
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('home-screen'),
+          screen: 'home',
+          state: 'first-day',
+          stateId: 'H1',
+        );
+      }
     });
 
     testWidgets(
@@ -160,6 +203,16 @@ void main() {
           'H2',
           amounts: fullAmounts,
         );
+        if (c.takesGolden) {
+          await expectLayoutGoldens(
+            tester,
+            c,
+            listIn('home-screen'),
+            screen: 'home',
+            state: 'full',
+            stateId: 'H2',
+          );
+        }
       },
     );
 
@@ -176,6 +229,17 @@ void main() {
           scrollable: listIn('home-screen'),
         );
         expect(find.text('Reached: $goal40'), findsOneWidget);
+        if (c.takesGolden) {
+          // After reaching (R100): "Reached:" and "You reached …!" (H4).
+          await expectLayoutGoldens(
+            tester,
+            c,
+            listIn('home-screen'),
+            screen: 'home',
+            state: 'reached',
+            stateId: 'H4',
+          );
+        }
       },
     );
 
@@ -222,9 +286,31 @@ void main() {
       await open(tester, c);
       await tester.tapId('goal-create');
       await settle(tester, byId('goal-submit'));
+      if (c.takesGolden) {
+        // The empty form (G1), before Create is tapped.
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('goal-edit-screen'),
+          screen: 'goal-create',
+          state: 'empty',
+          stateId: 'G1',
+        );
+      }
       await tester.tapId('goal-submit');
       expect(find.text('Give your goal a name.'), findsOneWidget);
       await checkScrolled(tester, listIn('goal-edit-screen'), 'G1');
+      if (c.takesGolden) {
+        // Create tapped with nothing filled: the name error (G2).
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('goal-edit-screen'),
+          screen: 'goal-create',
+          state: 'errors',
+          stateId: 'G2',
+        );
+      }
     });
 
     testWidgets(
@@ -247,16 +333,77 @@ void main() {
     );
 
     testWidgets('G2 the goal detail with its saves ($c)', (tester) async {
-      await open(tester, c, seed: fullWeek);
+      await open(tester, c, seed: fiveSaves);
       await tester.tapId('goal-card');
       await settle(tester, byId('goal-add-savings'));
       await checkScrolled(
         tester,
         listIn('goal-screen'),
         'G2',
-        amounts: [usd(amountMax)],
+        amounts: [usd(100000), usd(32000)],
       );
+      if (c.takesGolden) {
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('goal-screen'),
+          screen: 'goal-detail',
+          state: '32',
+          stateId: 'D2',
+        );
+      }
     });
+
+    testWidgets('D1 the goal detail at 0 %: no saves yet ($c)', (tester) async {
+      await open(tester, c, seed: emptyGoal);
+      await tester.tapId('goal-card');
+      await settle(tester, byId('goal-add-savings'));
+      await checkScrolled(
+        tester,
+        listIn('goal-screen'),
+        'D1',
+        amounts: [usd(100000)],
+      );
+      if (c.takesGolden) {
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('goal-screen'),
+          screen: 'goal-detail',
+          state: '0',
+          stateId: 'D1',
+        );
+      }
+    });
+
+    testWidgets(
+      'G-filled the goal form filled: a 40-character name, the largest target and already saved ($c)',
+      (tester) async {
+        await open(tester, c);
+        await tester.tapId('goal-create');
+        await settle(tester, byId('goal-submit'));
+        await tester.enterId('goal-name', goal40);
+        await tester.enterId('goal-amount', '9999999999.99');
+        await tester.enterId('goal-start', '9999999999.99');
+        await tester.pumpAndSettle();
+        await checkScrolled(
+          tester,
+          listIn('goal-edit-screen'),
+          'G-filled',
+          amounts: [usd(amountMax)],
+        );
+        if (c.takesGolden) {
+          await expectLayoutGoldens(
+            tester,
+            c,
+            listIn('goal-edit-screen'),
+            screen: 'goal-create',
+            state: 'filled',
+            stateId: 'G3',
+          );
+        }
+      },
+    );
 
     testWidgets("G4 a reached goal's detail is read-only ($c)", (tester) async {
       await open(tester, c, seed: reachedToday);
@@ -270,6 +417,17 @@ void main() {
       expect(byId('goal-menu'), findsNothing, reason: 'no Edit or End');
       expect(byId('goal-add-savings'), findsNothing);
       await checkScrolled(tester, listIn('goal-screen'), 'G4');
+      if (c.takesGolden) {
+        // 100 %: the reached goal's read-only detail (D3).
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('goal-screen'),
+          screen: 'goal-detail',
+          state: 'reached',
+          stateId: 'D3',
+        );
+      }
     });
 
     testWidgets('G5 the End goal dialog ($c)', (tester) async {
@@ -280,6 +438,15 @@ void main() {
       await tester.tapId('goal-end');
       expect(find.text('End this goal?'), findsOneWidget);
       await expectSoundLayout(tester, reason: 'G5');
+      if (c.takesGolden) {
+        await expectLayoutGolden(
+          tester,
+          c,
+          screen: 'goal-end',
+          state: 'dialog',
+          stateId: 'E1',
+        );
+      }
     });
 
     testWidgets('G3 the celebration ($c)', (tester) async {
@@ -303,6 +470,16 @@ void main() {
         'G3',
         amounts: [usd(amountMax)],
       );
+      if (c.takesGolden) {
+        await expectLayoutGoldens(
+          tester,
+          c,
+          listIn('goal-done-screen'),
+          screen: 'goal-done',
+          state: 'celebration',
+          stateId: 'X1',
+        );
+      }
     });
   }
 }
