@@ -196,6 +196,12 @@ class _Teaser extends StatelessWidget {
       'sum-patterns-see-plus',
       button: true,
       child: FilledButton.tonal(
+        // Tonal, quieter than the content: the theme's filled-button style
+        // would otherwise give it the accent fill.
+        style: FilledButton.styleFrom(
+          backgroundColor: theme.colorScheme.secondaryContainer,
+          foregroundColor: theme.colorScheme.onSecondaryContainer,
+        ),
         onPressed: () => requirePlus(context),
         child: ButtonLabel(l10n.patternsPlusSee),
       ),

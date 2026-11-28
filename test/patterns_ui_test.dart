@@ -182,6 +182,21 @@ void main() {
         expect(find.text(line), findsNothing, reason: 'never shown, blurred');
       }
       expect(find.byIcon(Icons.lock), findsNothing);
+      // Tonal, quieter than the content: not the accent fill of the theme's
+      // filled buttons.
+      final see = tester.widget<FilledButton>(
+        find.descendant(
+          of: byId('sum-patterns-see-plus'),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      final scheme = Theme.of(
+        tester.element(byId('sum-patterns-teaser')),
+      ).colorScheme;
+      expect(
+        see.style!.backgroundColor!.resolve(const {}),
+        scheme.secondaryContainer,
+      );
       await tester.tapId('sum-patterns-see-plus');
       await tester.pumpAndSettle();
       tester.expectScreen('plus-screen');
