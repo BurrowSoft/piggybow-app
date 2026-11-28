@@ -142,19 +142,30 @@ class JournalStore extends ChangeNotifier {
   }
 
   /// OK on Home's "Added from your repeats": everything it showed is seen.
-  /// The mark is now; entries in [shown] "added" after now (under a clock
-  /// that was set ahead) are kept by id, so they go too while the ones added
-  /// later, in real time, still show.
+  /// The mark is now; entries "added" after now (under a clock that was set
+  /// ahead) are kept by id, those from earlier OKs too, so they stay put
+  /// away while the ones added later, in real time, still show. An id goes
+  /// once its entry is gone or the mark has passed it.
   Future<void> markRepeatsSeen(Iterable<Entry> shown) async {
     final now = _clock.nowUtc();
     await _db.transaction((txn) async {
+      final kept = await _settings.record('repeats_seen_ids').get(txn);
+      final ids = <String>{
+        if (kept is List)
+          for (final id in kept) ?(id is String ? id : null),
+        for (final e in shown)
+          if (e.createdAt.isAfter(now)) e.id,
+      };
+      final still = <String>[];
+      for (final id in ids) {
+        final m = await _entries.record(id).get(txn);
+        final e = m == null ? null : Entry.fromMap(id, m);
+        if (e != null && e.createdAt.isAfter(now)) still.add(id);
+      }
       await _settings
           .record('repeats_seen_at')
           .put(txn, now.toIso8601String());
-      await _settings.record('repeats_seen_ids').put(txn, [
-        for (final e in shown)
-          if (e.createdAt.isAfter(now)) e.id,
-      ]);
+      await _settings.record('repeats_seen_ids').put(txn, still);
     });
     notifyListeners();
   }

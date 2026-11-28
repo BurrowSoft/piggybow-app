@@ -215,6 +215,26 @@ void main() {
       expect(byId('home-repeats-repeat-entry-3-2026-10-09'), findsOneWidget);
       expect(byId('home-repeats-repeat-entry-1-2026-11-01'), findsNothing);
       expect(byId('home-repeats-more'), findsNothing);
+
+      // OK on that one: the false-clock ones stay put away too.
+      await tester.tapId('home-repeats-ok');
+      expect(byId('home-repeats'), findsNothing);
+      expect(await tester.runAsync(app.journal.repeatsSeenIds), {
+        'repeat-entry-1-2026-11-01',
+        'repeat-entry-1-2026-12-01',
+        'repeat-entry-1-2027-01-01',
+      });
+      // Deleted, an id isn't kept any more.
+      await tester.runAsync(
+        () => app.journal.deleteEntry('repeat-entry-1-2027-01-01'),
+      );
+      await tester.runAsync(
+        () => app.journal.markRepeatsSeen(const <Entry>[]),
+      );
+      expect(await tester.runAsync(app.journal.repeatsSeenIds), {
+        'repeat-entry-1-2026-11-01',
+        'repeat-entry-1-2026-12-01',
+      });
     });
 
     testWidgets('more than 3: "and N more" opens Timeline', (tester) async {
