@@ -540,23 +540,35 @@ class ForgotPinDialog extends StatelessWidget {
       // so on a narrow phone at large text its labels wrap little and both
       // ways back stay readable (decision 71).
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      // One side padding, 16 dp, for the title, the body and the buttons, at
+      // every text size: the dialog's own shrinks to a third at large text,
+      // so the sides are ours and only the top and bottom are its own.
+      titlePadding: const EdgeInsets.only(top: 24),
+      contentPadding: const EdgeInsets.only(top: 16, bottom: 24),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
       // At the largest text sizes its words outgrow a small screen.
       scrollable: true,
       // Whole words at large text: a dialog is narrow.
-      title: WholeWordsText(
-        l10n.lockForgotTitle,
-        style: Theme.of(context).textTheme.headlineSmall,
+      title: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: WholeWordsText(
+          l10n.lockForgotTitle,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
       ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: device
-            ? [
-                Text(l10n.lockForgotBodyDevice),
-                const SizedBox(height: 12),
-                Text(l10n.lockForgotBodyErase),
-              ]
-            : [Text(l10n.lockForgotBodyEraseOnly)],
+      content: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: device
+              ? [
+                  Text(l10n.lockForgotBodyDevice),
+                  const SizedBox(height: 12),
+                  Text(l10n.lockForgotBodyErase),
+                ]
+              : [Text(l10n.lockForgotBodyEraseOnly)],
+        ),
       ),
       actions: [
         // On one line when they fit; else full width, the main way back on
