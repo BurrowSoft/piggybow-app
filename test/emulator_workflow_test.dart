@@ -224,6 +224,17 @@ steps:
     expect('PLUS_ENABLED = '.allMatches(wf), hasLength(1));
     expect('PLUS_FAKE_STORE = '.allMatches(wf), hasLength(1));
     expect('PLUS_ROWS_OWNED = '.allMatches(wf), hasLength(1));
+    // plus-owned is only ever picked by hand: it isn't the input's default,
+    // and a pull request's run is always debug (above). It has no build case
+    // of its own, so it stays a staging debug build.
+    expect(
+      wf,
+      contains(
+        '        options: [debug, reminder-now, release, prod-release, plus-rows, plus-owned, plus-probe]\n'
+        '        default: debug\n',
+      ),
+    );
+    expect(build, isNot(contains('plus-owned)')));
     // plus-rows and plus-owned are debug builds (the fake store also needs
     // kDebugMode).
     expect(build, contains('*) mode=--debug; built=app-staging-debug.apk ;;'));
