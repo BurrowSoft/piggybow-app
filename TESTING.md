@@ -32,6 +32,148 @@ Rules for a row:
 
 <!-- rows start here -->
 
+### #37 Summary: Spent and Saved stack rather than shrink below 1x — 76ae303 — 🟢 (on-device ⏳) — 2026-11-28 01:36 UTC
+Build: no device for this row (CI logs + my own download of the golden render)
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46093212933) | 🟢 | `+1486: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| The new check, read in the source | 🟢 | `expectTotalsWhole`: Spent and Saved are never shown below min(text scale, 1×) in any layout case; at 320 dp ×2 the largest week is stacked, Saved under Spent |
+| Baselines = render | 🟢 | Goldens run 46092944946 (attempt 1, source 428a2df): 97 entries, each in the artifact and `test/goldens/` with the manifest's sha256, 8-bit RGBA; 0 extra either way; committed `manifest.json` = the run's |
+| Against master dc062d9 | 🟢 | 92 identical, 5 changed (`summary_nine-at-max` and its `-end`), none new or removed |
+| The 5, each looked at beside master's | 🟢 | "$89,999,999,999.91" whole at full size, Spent and Saved stacked full width; the rest unchanged; the `-end` pair differs only where the stacked card's edge shows |
+| ⏳ on a device | | flow `31_summary_week_month` on the CI emulator |
+
+### #34 Polish: the offer's buttons stack full width, Reached under the button, a 3-line goal name — e3e86b9 — 🟢 (on-device ⏳) — 2026-11-28 00:23 UTC
+Build: no device for this row (CI logs + my own download of the golden render)
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46087158975, merge base 22b85c2 = master) | 🟢 | `+1425: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| Baselines = render | 🟢 | Goldens run 46086880847 (attempt 1, source 17e4c2e): 97 entries, each in the artifact and `test/goldens/` with the manifest's sha256, 8-bit RGBA; 0 extra either way; committed `manifest.json` = the run's |
+| Against master 22b85c2 | 🟢 | 69 identical, 24 changed, 4 new, 0 removed |
+| The 4 new PNGs, looked at | 🟢 | the reminder offer stacked at 320 dp ×2 (the yes full width on top, No thanks under it); "Reached: …" under "Start a goal" |
+| The 24 changed PNGs, each looked at beside master's | 🟢 | the 40-character goal name on 3 lines; "Start my rainbow" and "Start a new goal" centred; the offer's stacked button on sleepy Home; Today's idea in the cards' body style, so Home's `-end` PNGs scroll differently, and the last row stays above the + |
+| Covered by tests in the source | 🟢 | one line with No thanks first when there's room, else stacked full width, the yes on top, an 8 dp gap; the goal name 1–3 lines with Done, a typed line break kept as a space |
+| ⏳ on a device | | the stacked offer and the 3-line goal name in the next CI-emulator runs with the reminder and goal flows |
+
+### #33 Goldens: Home, the goal screens, the pig and the rainbow — 22b85c2 — 🟢 (carried from dfeec6e) — 2026-11-28 00:18 UTC
+Build: no device for this row (CI logs + my own downloads of the golden renders)
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46085946100 on dfeec6e) | 🟢 | `+1354: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| Render on dc8d494 (Goldens run 46085639996), downloaded and checked | 🟢 | 76 entries, each in the artifact and `test/goldens/` with the manifest's sha256, 8-bit RGBA; 0 extra either way; `manifest.json` byte-identical |
+| Against what was already checked | 🟢 | 16 = master's PNGs; 46 = the PR 3 render I had checked on e0267cc; 14 dark PNGs differ (Home in six moods with each `-end`, the goal detail's end, the End goal dialog) |
+| The 14, each looked at beside the older render | 🟢 | only the dark surface colour changed (cards, the dialog, the scrolled-under app bar), to the lighter surfaces from #31; text, wrapping, the pig and the layout identical |
+| After #23: master merge f17d8e7 + baselines 22b85c2 | 🟢 | the only conflict was `test/goldens/manifest.json`; Goldens run 46086591464 (source f17d8e7): 93 entries, every PNG byte-identical to dfeec6e's set or to master's, 0 new or changed; committed = run |
+| CI, read per test (run 46086844984 on 22b85c2) | 🟢 | `+1408: All tests passed!` (master's 1352 + 56), 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+History: dfeec6e 🟢 → 22b85c2 🟢 (carried: render byte-identical, CI green)
+
+### #31 Polish: lighter dark surfaces, centred button labels, a 3-line note — 1298dfd — 🟢 (carried: same tree as 5352dc9) — 2026-11-27 23:49 UTC
+Build: no device for this row (CI logs + my own download of the golden render)
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46084314744, this head) | 🟢 | `+1112: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean. 1112 = master's 1100 + 12, incl. the note field and the dark surfaces (every raised surface lighter than the page, every text still 4.5:1 on it) |
+| Same tree as the checked head | 🟢 | 1298dfd's tree `98c279b5…` equals 5352dc9's (three commits squashed into one); 0 raw U+2028 / U+2029 bytes in the diff |
+| The note field | 🟢 | 1–3 lines, Done as the keyboard action, pasted line breaks become spaces |
+| Wrapped button labels | 🟢 | every line centred |
+| Golden render, downloaded and checked | 🟢 | Goldens run 46083284542, attempt 1, source 09993c1: 16 sha256 match the artifact and `test/goldens/`, 0 extra either way; `manifest.json` byte-identical |
+| Changed baselines, each looked at | 🟢 | 13 of 16: the note on 3 lines, centred labels, dark sheets and dialogs a step lighter than the page, the last Timeline row clear of the + |
+| ⏳ on a device | | the note's 3 lines and Done in the next journal run on the CI emulator |
+History: 5352dc9 🟢 → 1298dfd 🟢 (same tree)
+
+### #30 Emulator: run the flows on the store's build (prod, release, R8) — 862e160 — 🟢 (carried from 443cb5a) — 2026-11-28 00:28 UTC
+Build: prod release, built in the job from 443cb5a; installed = built · Package: `com.burrowsoft.piggybow` · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Flows: `--include-tags smoke`, from 443cb5a · Emulator run 46086267678
+| Flow / check | Result | Notes |
+|---|---|---|
+| `kind=prod-release` end to end | 🟢 | the store's flavour, release, R8, a throwaway key; the installed APK equals the built one (59.6 MB) |
+| No network permission in the installed package | 🟢 | `dumpsys package`: no INTERNET, no ACCESS_NETWORK_STATE |
+| `00_smoke_launch`, `10_journal_loop` | 🟢 | both pass in release mode |
+| Carry to c203687, then 862e160 | 🟢 | each a conflict-free plain merge with master; the PR's own diff stays 3 files (the workflow, its test, `tool/emulator/run.sh`), no app code. CI per test: c203687 `+1353` (run 46086816532), 862e160 `+1426` (run 46087649406), 0 failed, 0 skipped, 0 `[E]` |
+| ⏳ the integrated app as a store build | | the first prod-release run on master (run 46088333530) |
+History: 443cb5a 🟢 → c203687 🟢 → 862e160 🟢 (carried, plain merges)
+
+### #28 Release builds ask for no network; the store workflow takes pasted secrets — 658ce78 — 🟢 (on-device ⏳) — 2026-11-27 23:28 UTC
+Build: no device for this row (CI logs + the merged release manifest printed in CI)
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46082222335, this head) | 🟢 | `+1100: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; all 7 tests in `test/release_no_network_test.dart` named in the log |
+| The merged release manifest | 🟢 | stagingRelease asks for exactly POST_NOTIFICATIONS, RECEIVE_BOOT_COMPLETED, USE_BIOMETRIC, USE_FINGERPRINT, VIBRATE, com.android.vending.BILLING and the app's dynamic-receiver permission. No INTERNET, no ACCESS_NETWORK_STATE; identical to `android/expected-permissions.txt` |
+| How it's removed | 🟢 | `src/release/AndroidManifest.xml`, `tools:node="remove"` for both |
+| A release that would need the network stops | 🟢 | any Release task with `SENTRY_DSN` or `PLUS_ENABLED=true` fails, naming both files to change; tested |
+| Debug and profile builds | 🟢 | keep both for the Flutter tool, listed in `android/debug-only-permissions.txt` |
+| The secret masks | 🟢 | `release-aab.yaml` escapes `%` as `%25` in `::add-mask::`, pinned by a test |
+| PR APK run 46082223883 | 🟢 | 0 artifacts uploaded |
+| ⏳ on a device | | a release-build CI-emulator run: no network permission in the installed package, the app starts and the journal works offline; and the first store-build install |
+History: fbed6eb 🟢 → 658ce78 🟢 (fresh row: one commit on fbed6eb)
+
+### #27 Onboarding: Welcome, what makes the pig happy, the first goal; the currency picker — dc062d9 — 🟢 (carried from 3813bec; integrated on-device ⏳) — 2026-11-28 00:38 UTC
+Build: staging debug, built in the job from 3813bec · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Flows: `--include-tags onboarding,smoke,journal`, from `tests/pr-27` at aa4475f · Emulator run 46084640911
+| Flow / check | Result | Notes |
+|---|---|---|
+| All 6 flows | 🟢 | smoke, the 4 journal flows through onboarding, and `30_onboarding_paths` |
+| O1 → the currency picker → Thai baht | 🟢 | the phone's currency first and checked, the rest by name with symbols |
+| O2 with the plan pick, O3 empty and with both errors | 🟢 | "My weekly spending plan" with 2000; "Give your goal a name." / "Enter a goal amount." |
+| Home after "Maybe later" | 🟢 | Spent ฿0.00 / Saved ฿0.00, Weekly plan ฿2,000.00; no permission prompt, no second onboarding |
+| Carry to dc062d9 | 🟢 | the 5 commits' `git patch-id --stable` unchanged (whole range `1370e56b0fff`); the master merge's one conflict (the goal button's label) resolved as master's `ButtonLabel` with the onboarding label; one new commit (O3's "Maybe later" as a `ButtonLabel`), read. CI run 46088413577: `+1486`, 0 failed, 0 skipped, 0 `[E]`; goldens identical to master's |
+| ⏳ on a device, integrated | | onboarding into the goal screens and Home from master: the staging run on the next head that contains it |
+History: 3813bec ❌ (my flow's 4 s scroll to Thai baht) → 3813bec 🟢 (re-run) → dc062d9 🟢 (carried)
+
+### #26 Maestro: the journal flows, and the onboarding branch's new ids — ae433ac — ⚪ (tests only; the flows ran on #9's head) — 2026-11-27 22:38 UTC
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46077155506, this head) | 🟢 | `+1093: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| The flows on a device | 🟢 | the four journal flows passed 4 of 4 on #9 @ 68e8f14 (emulator run 46073935616). The merged `.maestro/` differs from that run's flows only by 2 lines: the onboarding branch's new ids in `00_smoke_launch` and `to_timeline` |
+| Master after the merge (f9c33e8), CI run 46077837737 | 🟢 | `+1093: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines |
+
+### #25 Goldens: the add sheet, the delete dialog and Timeline — 5ee781c — 🟢 — 2026-11-27 22:36 UTC
+Build: no device for this row (CI logs + my own download of the golden render)
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46077278624) | 🟢 | `+1093: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean. The `golden` tag is not skipped, so the layout cases compared against these baselines |
+| The render, downloaded and checked | 🟢 | Goldens run 46076896331, attempt 1, source 1d9fa3a, Flutter 3.47.5: 16 sha256 match the artifact and `test/goldens/`, 0 extra files either way; `manifest.json` byte-identical |
+| PNG checks | 🟢 | all 16 valid, 960 × 2340, 8-bit RGBA |
+| Stable renders | 🟢 | all 16 byte-identical to the earlier run 46076042739 |
+| Looked at | 🟢 | all 16: whole words everywhere, the 40-character goal name wrapped, the Thai note rendered, the amount on its own line at ×2 |
+| Test-only rendering | ⚪ | the + shows a solid ring: the tests' stand-in for an elevation shadow |
+
+### #24 Launch fixtures for the on-device flows (staging builds only) — 353cbea — 🟢 — 2026-11-28 00:32 UTC
+Build: staging debug, built in the job from 353cbea · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Flows: `--include-tags pig,rainbow`, from `tests/pr-18` at d49d602 · Emulator run 46087437379
+| Flow / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46086253345) | 🟢 | `+1313: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| `25_home_moods` | 🟢 | C6 sleepy, C1/C2 calm, C3 happy, C4 delighted, C9 band 2 (its card agrees: $200.00 of $500.00, 40 %), C31 a goal reached then ended; no `fixture-error` |
+| `26_rainbow_states` | 🟢 | R0 empty with no "Saves" header; R32 at $320.00 of $1,000.00; R100 on Home with the pig drawn |
+| Screenshots looked at | 🟢 | all 10 |
+| Landed | 🟢 | unchanged inside #27's dc062d9 (an ancestor); that tree's CI `+1486` |
+History: d07b2e0 ❌ (R100 had no pig; C9's stamps disagreed with its card; R0 showed an empty "Saves" header; the rest were flow assumptions and one launch race) → 353cbea 🟢
+
+### #23 Summary: the week or month at a glance — e133cb9 — 🟢 — 2026-11-28 00:10 UTC
+Build: no device for this row (CI logs + my own download of the golden render)
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46085814136, this head merged with master 19f3818) | 🟢 | `+1352: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| The code | 🟢 carried | `git diff 19f3818 2a8bac6 \| git patch-id --stable` = `4a8722ac45c3`, the same as at 44b272f over its first base; the later commits touch only `test/` |
+| Fixture S1, my own arithmetic (at 44b272f) | 🟢 | this week $115.70 spent / $50.00 saved, home 86 · food 10 · transport 2 (floored), plan bar 11570 / 15000 = 77 %; December $15.70 / $50.00, food 79 · transport 20 |
+| Baselines = render | 🟢 | `test/goldens/` (33 PNGs + `manifest.json`) byte-identical, 34 of 34, to Goldens run 46085547381 (attempt 1, source d447e0e) |
+| The 17 Summary PNGs, each looked at | 🟢 | the numbers above; nine categories at the largest amount, 11 % each, no overflow; the empty week; dark cards a step lighter than the page. At 320 dp ×2 the largest Spent total shrinks below its 1× size (backlog) |
+| ⏳ on a device | | flow `31_summary_week_month` on the CI emulator |
+History: 44b272f 🟢 (device-free, on the goal branch) → e133cb9 🟢 (patch-id carried, plus its baselines)
+
+### #21 Maestro: close another app's hung process instead of waiting on it — 9716e65 — 🟢 — 2026-11-27 22:01 UTC
+Build: staging debug, built in the job from 9716e65 · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Flows: `--include-tags smoke`, from this head · Emulator run 46072653778
+| Flow / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46071835717) | 🟢 | `+975: All tests passed!`, 0 failed, 0 skipped; analyze clean |
+| Same patch as the reviewed head | 🟢 | `git patch-id --stable` `2787bd5a…` at 9c1401f and at 9716e65 |
+| `00_smoke_launch` | 🟢 | 1 test, 0 failures; both dismiss rounds ran and found nothing; `start-error` not shown; the four tabs with whole labels; still on Home after 60 s |
+| Logs only on a failure (#14) | 🟢 | first live proof: no `logs/` folder, since the flow passed |
+| Evidence | 🟢 | 12 files; 0 installables |
+| "Close app" on another app's ANR, live | 🟢 | first seen later, in emulator run 46084640911 (#27 @ 3813bec): "Pixel Launcher isn't responding" was up, the subflow left its `system-anr-closed` screenshot and closed it, and the flow passed |
+History: the smoke on master 668df2b ❌ (the launcher's dialog came back after "Wait") → 9716e65 🟢
+
 ### #20 iOS privacy manifest: declare nothing collected while no build has a crash-report DSN — 3edf475 — 🟢 (merged privacy report ⏳) — 2026-11-27 21:25 UTC
 Build: no device for this row (CI logs + a read of the tree at the head; no iOS build exists yet)
 | Check | Result | Notes |
@@ -53,6 +195,26 @@ Build: no device for this row (CI logs + a read of the workflow step)
 | ⏳ live proof | | the next run whose flow names need it (current names are already upload-safe) |
 
 Merged as a merge commit onto 3edf475: the merged tree differs from master only by this PR's 2 files.
+
+### #18 The goal and its rainbow, the pig, and Home — 9629c9d — ❌ flows only, UX waiver; merged as 19f3818; on master 4 of 5 goal flows 🟢 (flow 20 ⏳) — 2026-11-28 00:56 UTC
+Build: staging debug, built in the job from 9629c9d · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Flows: `--include-tags journal,goal`, from `tests/pr-18` at dccb6b5 · Emulator run 46080853711
+| Flow / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46080515412) | 🟢 | `+1279: All tests passed!`, 0 failed, 0 skipped; analyze clean |
+| The 4 journal flows | 🟢 | as on #9 |
+| `22_goal_start_at_target` | 🟢 | one celebration at creation, Home after "Done", none after a relaunch |
+| `24_goal_end` | 🟢 | "End this goal?" / "Your saves stay in your journal."; Cancel keeps it; End leaves the saves as "Saved for Bike" |
+| The goal form | 🟢 | both errors on an empty Start |
+| The celebration | 🟢 | "You did it!", the delighted pig, the full rainbow |
+| The reached goal's detail | 🟢 | read-only: "$100.00 of $100.00", no "to go", no Add savings, no menu |
+| `20_goal_first_band` | ❌ (flow) | step 35: the form stayed open after "back" (the real cause, found later: the keyboard's own Back in the navigation bar takes a back while the keyboard is up) |
+| `21_goal_reached_once`, `23_goal_lower_target` | ❌ (flow) | "Done" returns to the goal's detail when the save was made there; the flows expected Home and now go back first |
+| The merge commit 19f3818, CI read per test (run 46085227467) | 🟢 | `+1298: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean (the waiver's condition) |
+| On master 862e160 as the store's build (prod, release, R8; emulator run 46088333530, flows `tests/pr-18` @ d49d602) | 🟢 | installed = built; no INTERNET or ACCESS_NETWORK_STATE in the installed package; smoke, the 4 journal flows and 4 goal flows pass (start at target, reached once with the celebration and the read-only goal, lower target, End goal); 23 screenshots looked at |
+| On #29's head 9f9812f (master + Me; emulator run 46093235777) | 🟢 | the same goal flows pass again, with the pig's moods and the rainbow fixtures |
+| `20_goal_first_band` on master | ⏳ | twice my flow's fault, not the app: a bare `tapOn "Back"` hit the keyboard's own Back (fixed: anchored above the form), then `tab-home` was tapped on the goal's detail, which covers the tab bar (fixed: its Back arrow). The fixed flow (`tests/pr-29` @ a97d168) runs next |
+History: 9629c9d ❌ flows only (waived) → merged as 19f3818 (CI 🟢) → master 862e160 store build: 4 of 5 goal flows 🟢, flow 20 ⏳. The PR's earlier code was first exercised on a device in #24's run on d07b2e0 (see #24's row)
 
 ### #17 Maestro: dismiss another app's ANR dialog on the CI emulator — fe0ab6e — ⚪ (tests only, merged without a device row) — 2026-11-27 21:31 UTC
 | Check | Result | Notes |
@@ -136,6 +298,21 @@ Build: no device for this row (pure Dart)
 | Edges | 🟢 | target 3 (33 %, 66 %); target 999999999999 never overflows |
 | Sticky stamps | 🟢 | a deleted save redraws the band but keeps its stamp; raising the target never unsets a stamp; "already saved" ≥ target reaches it at creation |
 | No floating point | 🟢 | 0 hits in `lib/goal/`; the no-float scan now covers it |
+
+### #9 Journal core: the store, the add/edit sheet and Timeline — 68e8f14 — 🟢 — 2026-11-27 22:14 UTC
+Build: staging debug, built in the job from 68e8f14 · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Flows: `--include-tags journal`, from `tests/pr-9` at dd48b2b · Emulator run 46073935616
+| Flow / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46073240502) | 🟢 | `+1093: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| `14_timeline_filters` | 🟢 | after the first add, + opened the sheet 2.8 s later while "Added" still showed; All / Spent / Saved show the right rows, and the day total follows the filter |
+| `10_journal_loop` | 🟢 | the tab bar hidden under both sheets; add, edit, delete with Cancel; still empty after a relaunch |
+| `11_add_save_no_goal` | 🟢 | "No goal yet. It still counts as saved.", "= $20.00", the row "+$20.00" |
+| `13_double_tap_add` | 🟢 | one entry from a double tap, still one after a relaunch |
+| Screenshots looked at | 🟢 | 11, incl. the + fully above "Added" and the edit sheet at full height |
+| Evidence | 🟢 | 21 files; 0 installables; no `logs/` folder |
+Merged as a merge commit of this head (8e559cf).
+History: 0325176 ❌ (14 layout failures at text ×2) → 32e7e70 ❌ (another app's ANR covered the app; no evidence) → 32e7e70 ❌ ("Added" covered the +) → 68e8f14 🟢
 
 ### #8 Add the launcher icons and the splash — e5dec36 — 🟢 (on-device ⏳) — 2026-11-27 20:07 UTC
 Build: no device for this row (generated assets read at the head)
