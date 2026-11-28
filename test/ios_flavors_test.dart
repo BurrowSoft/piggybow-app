@@ -327,7 +327,7 @@ void main() {
   test('codemagic.yaml: manual only, no review submission, right ids', () {
     expect(codemagic, isNot(contains('triggering:')));
     // Pinned, never 'latest'.
-    expect('xcode: "26.6"'.allMatches(codemagic).length, 2);
+    expect('xcode: "26.6"'.allMatches(codemagic).length, 3);
     expect(codemagic, isNot(contains('xcode: latest')));
     expect(codemagic, isNot(contains(RegExp(r'submit_to_\w+: true'))));
     expect(
@@ -370,6 +370,30 @@ void main() {
         .map((m) => m.group(1))
         .toSet();
     expect(cmFlutter, ciFlutter, reason: 'one Flutter version everywhere');
+  });
+
+  // A compile check for any branch: an unsigned release build of the prod
+  // flavor that signs, uploads and publishes nothing.
+  test('codemagic.yaml: ios-compile signs and uploads nothing', () {
+    final w = RegExp(r'\n  ios-compile:\n([\s\S]*?)(?=\n  [\w-]+:\n|$)')
+        .firstMatch(codemagic)!
+        .group(1)!;
+    expect(
+      w,
+      contains('flutter build ios --release --no-codesign --flavor prod '),
+    );
+    expect(w, contains('--dart-define-from-file=env/prod.json'));
+    expect(w, contains('max_build_duration: 60'));
+    for (final signsOrUploads in [
+      'ios_signing:',
+      'integrations:',
+      'publishing:',
+      'use-profiles',
+      'build ipa',
+      'app_store_connect',
+    ]) {
+      expect(w, isNot(contains(signsOrUploads)), reason: signsOrUploads);
+    }
   });
 }
 

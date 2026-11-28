@@ -1,10 +1,12 @@
 # Codemagic: iOS builds only (Android builds run on GitHub Actions).
 #
-# Both workflows start by hand from the Codemagic UI: there is no `triggering`
+# Every workflow starts by hand from the Codemagic UI: there is no `triggering`
 # block, so a push or a PR never builds, signs or uploads anything
-# (test/ios_flavors_test.dart keeps it that way). Neither workflow submits for
-# review: ios-staging lands in TestFlight for the internal group, ios-release
-# only uploads to App Store Connect, and the owner submits it.
+# (test/ios_flavors_test.dart keeps it that way). None submits for review:
+# ios-staging lands in TestFlight for the internal group, ios-release only
+# uploads to App Store Connect, and the owner submits it. ios-compile signs
+# and uploads nothing: an unsigned release build of the prod flavor, to check
+# that a branch compiles before anything is uploaded from master.
 #
 # Signing: the App Store Connect API key is the team integration `piggybow_asc`
 # (set up by the owner in Codemagic); certificates and profiles live in
@@ -94,3 +96,21 @@ workflows:
         auth: integration
         submit_to_testflight: false
         submit_to_app_store: false
+
+  ios-compile:
+    name: iOS compile only (no signing, no upload)
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: 3.47.5 # keep in step with .github/workflows/ci.yaml
+      xcode: "26.6" # quoted: YAML would read 26.10 as 26.1
+      cocoapods: default
+    scripts:
+      - name: Packages
+        script: flutter pub get
+      - name: Compile (release, unsigned)
+        script: |
+          flutter build ios --release --no-codesign --flavor prod \
+            --dart-define-from-file=env/prod.json
+    artifacts:
+      - /tmp/xcodebuild_logs/*.log
