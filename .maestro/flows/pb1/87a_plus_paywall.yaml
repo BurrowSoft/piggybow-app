@@ -78,6 +78,14 @@ tags: [plus]
 - assertVisible:
     id: plus-cancel
 - assertVisible: ".*Cancel anytime in Google Play\\..*"
+# Privacy Policy, since PRIVACY_URL is set in every flavor (#86, before
+# group A); Terms of Use waits for TERMS_URL (a Plus release gate)
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: plus-privacy
+- assertVisible:
+    id: plus-privacy
 - takeScreenshot: 87-paywall-end
 # Back closes it onto Me
 - back

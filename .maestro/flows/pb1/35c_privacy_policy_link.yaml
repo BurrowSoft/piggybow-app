@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+name: Your privacy → Read the full privacy policy (#86) - the link opens the policy outside the app (the phone's browser); Piggybow is still on Your privacy when you come back
+tags: [pb1, me]
+# Every flavor has PRIVACY_URL set. On the CI emulator the page opens in
+# whichever browser answers; only leaving the app is asserted (the page itself
+# is the website's).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-privacy
+- tapOn:
+    id: me-privacy
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: privacy-policy
+- tapOn:
+    id: privacy-policy
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertNotVisible:
+    id: privacy-policy                           # out of Piggybow
+- takeScreenshot: 35c-policy-outside
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: privacy-policy
+    timeout: 15000
