@@ -10,7 +10,7 @@
 . "$(dirname "$0")/lib.sh"
 guard_emulator
 
-WANT=0xffa8456a
+COLOUR=0xffa8456a   # never WANT: lib.sh reads WANT as the APK sha256
 
 cleanup(){
   A shell cmd uimode night no >/dev/null 2>&1
@@ -50,10 +50,10 @@ row N1 PASS "posted by $(date -u +%H:%M:%S) UTC"
 # The colour the notification carries: the lines of its record after pkg=
 colours=$(awk -v p="pkg=$P" 'index($0,p){on=1;n=0} on{n++; if ($0 ~ /color=/) print; if (n>60) on=0}' "$T/notif.txt" | grep -oE 'color=0x[0-9a-fA-F]+' | sort -u | tr '\n' ' ')
 echo "$(stamp) notification colour(s): ${colours:-none found}"
-if echo "$colours" | grep -qi "color=$WANT"; then
-  row N2 PASS "the notification's colour is $WANT (berry #A8456A)"
+if echo "$colours" | grep -qi "color=$COLOUR"; then
+  row N2 PASS "the notification's colour is $COLOUR (berry #A8456A)"
 else
-  row N2 FAIL "the notification's colour is '${colours:-none}', not $WANT"
+  row N2 FAIL "the notification's colour is '${colours:-none}', not $COLOUR"
 fi
 
 snap n-status-bar-light
