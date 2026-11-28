@@ -10,6 +10,7 @@ import '../../core/services.dart';
 import '../../goal/goal_progress.dart';
 import '../../journal/entry.dart';
 import '../../journal/goal.dart';
+import '../../journal/journal_store.dart' show LockedByTakeOut;
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show PigMood;
@@ -19,6 +20,7 @@ import '../../theme/theme.dart';
 import '../add/entry_sheet.dart';
 import '../pig/pig_view.dart';
 import 'rainbow.dart';
+import 'take_out_sheet.dart';
 
 /// Up to 40 characters, as people count them.
 const goalNameMax = 40;
@@ -49,6 +51,10 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
   bool _tried = false;
   bool _busy = false;
 
+  /// The least "Already saved" can be: what was taken out of the goal beyond
+  /// its saves (0 when nothing was).
+  int _startFloor = 0;
+
   String get _locale => context.readSession.device.localeName;
 
   @override
@@ -62,10 +68,12 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
     final currency = await store.currency() ?? 'USD';
     final id = widget.goalId;
     final goal = id == null ? null : await store.goal(id);
+    final floor = goal == null ? 0 : await store.startFloor(goal);
     if (!mounted) return;
     setState(() {
       _currency = currency;
       _goal = goal;
+      _startFloor = floor;
       if (goal != null) {
         _name.text = goal.name;
         _target.text = inputAmount(goal.targetMinor, currency, _locale);
@@ -104,12 +112,17 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
   }
 
   String? _startError(AppLocalizations l10n) {
-    if (_start.text.trim().isEmpty) return null;
-    return switch (parseAmount(
-      _start.text,
-      _currency!,
-      allowZero: true,
-    ).problem) {
+    final empty = _start.text.trim().isEmpty;
+    final parsed = empty
+        ? null
+        : parseAmount(_start.text, _currency!, allowZero: true);
+    // Not below what was taken out of the goal beyond its saves.
+    final start = empty ? 0 : parsed!.minor;
+    if (start != null && start < _startFloor) {
+      return l10n.goalStartLockedByTakeOut;
+    }
+    if (parsed == null) return null;
+    return switch (parsed.problem) {
       null => null,
       AmountProblem.tooBig => l10n.addAmountTooBig,
       _ => l10n.addAmountError,
@@ -151,10 +164,22 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
           );
     // A goal beside another active one only with Plus (decision 79); the
     // way here asked for it first (Home's New goal, requirePlus).
-    await services.journal.putGoal(
-      goal,
-      allowAnother: services.plus?.active ?? false,
-    );
+    try {
+      await services.journal.putGoal(
+        goal,
+        allowAnother: services.plus?.active ?? false,
+      );
+    } on LockedByTakeOut {
+      // Taken out meanwhile: read the floor again; the field says so.
+      final floor = await services.journal.startFloor(old!);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _startFloor = floor;
+        });
+      }
+      return;
+    }
     if (widget.onboarding) {
       await _finishOnboarding(services);
     } else if (mounted) {
@@ -268,7 +293,7 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                             child: Text(l10n.goalStartLabel),
                           ),
                           errorText: _startError(l10n),
-                          errorMaxLines: 3,
+                          errorMaxLines: 6,
                         ),
                       ),
                     ),
@@ -491,6 +516,20 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         ),
                       ),
                     ],
+                    // Money can be taken out while there's some, whatever
+                    // the goal's state: a reached goal stays reached.
+                    if (_progress > 0) ...[
+                      const SizedBox(height: 8),
+                      TestId(
+                        'goal-take-out',
+                        button: true,
+                        child: OutlinedButton(
+                          onPressed: () =>
+                              showTakeOutSheet(context, goal: goal),
+                          child: ButtonLabel(l10n.goalTakeOut),
+                        ),
+                      ),
+                    ],
                     // No saves yet: no header over nothing (decision 57).
                     if (_saves.isNotEmpty) ...[
                       const SizedBox(height: 24),
@@ -502,28 +541,58 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         ),
                       ),
                     ],
+                    // Its saves and what was taken out of it, newest first.
                     for (final e in _saves)
                       TestId(
                         'goal-save-${e.id}',
                         button: true,
                         child: InkWell(
-                          onTap: () => showEntrySheet(context, editing: e),
+                          onTap: () => e.type == EntryType.withdraw
+                              ? showTakeOutSheet(
+                                  context,
+                                  goal: goal,
+                                  editing: e,
+                                )
+                              : showEntrySheet(context, editing: e),
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(minHeight: 56),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: _SaveRow(
-                                title: e.note.isNotEmpty
-                                    ? e.note
-                                    : l10n.tlSavedRow,
-                                day: dayLabel(
-                                  l10n,
-                                  context.session.dateLocale,
-                                  e.date,
-                                  today: context.services.localDay.today,
-                                ),
-                                amount: '+${money(e.amountMinor)}',
-                              ),
+                              child: e.type == EntryType.withdraw
+                                  ? _SaveRow(
+                                      title: e.note.isNotEmpty
+                                          ? e.note
+                                          : l10n.goalTakenOutRow,
+                                      // Under a note, the line says what it
+                                      // is: "Taken out · Today".
+                                      day: [
+                                        if (e.note.isNotEmpty)
+                                          l10n.goalTakenOutRow,
+                                        dayLabel(
+                                          l10n,
+                                          context.session.dateLocale,
+                                          e.date,
+                                          today:
+                                              context.services.localDay.today,
+                                        ),
+                                      ].join(' · '),
+                                      // In ink, never red; a minus.
+                                      amount:
+                                          '$minusSign${money(e.amountMinor)}',
+                                      accent: false,
+                                    )
+                                  : _SaveRow(
+                                      title: e.note.isNotEmpty
+                                          ? e.note
+                                          : l10n.tlSavedRow,
+                                      day: dayLabel(
+                                        l10n,
+                                        context.session.dateLocale,
+                                        e.date,
+                                        today: context.services.localDay.today,
+                                      ),
+                                      amount: '+${money(e.amountMinor)}',
+                                    ),
                             ),
                           ),
                         ),
@@ -537,17 +606,21 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 }
 
 /// One of a goal's saves: its note (or "Saved"), its day, and "+amount" in
-/// the accent. At large text the amount goes on its own line under the day.
+/// the accent; or money taken out of it: its note over "Taken out · day" (or
+/// "Taken out" over its day), "−amount" in ink ([accent] false).
+/// At large text the amount goes on its own line under the day.
 class _SaveRow extends StatelessWidget {
   const _SaveRow({
     required this.title,
     required this.day,
     required this.amount,
+    this.accent = true,
   });
 
   final String title;
   final String day;
   final String amount;
+  final bool accent;
 
   @override
   Widget build(BuildContext context) {
@@ -561,7 +634,9 @@ class _SaveRow extends StatelessWidget {
         maxLines: 1,
         softWrap: false,
         style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
+          color: accent
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurface,
         ),
       ),
     );

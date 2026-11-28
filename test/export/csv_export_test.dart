@@ -228,4 +228,34 @@ void main() {
     expect(neutralizeCell(id), id);
     expect(CustomCategory.idPrefix, isNot(matches(RegExp(r'^[=+\-@\t\r]'))));
   });
+
+  // Money taken out of savings (feature 5; agreed with PB Web Dev): the type's id, untranslated
+  // like spent and saved; the amount positive, as for a spend; the goal named; no category or
+  // feeling.
+  test('a withdrawal, exactly', () {
+    final csv = buildCsv(const [
+      CsvRow(
+        localDate: '2026-12-05',
+        type: 'withdraw',
+        amountMinor: 2000,
+        currency: 'THB',
+        note: 'New tyre',
+        goalName: 'Bike',
+      ),
+    ]);
+    expect(csv, '$csvBom$header\r\n2026-12-05,withdraw,20.00,THB,,,,New tyre,Bike\r\n');
+  });
+
+  test('a type other than spent, saved or withdraw throws, and says which are', () {
+    expect(
+      () => buildCsv([const CsvRow(localDate: '2026-12-02', type: 'withdrawal', amountMinor: 1, currency: 'USD', note: '')]),
+      throwsA(
+        isA<ArgumentError>().having(
+          (e) => e.message,
+          'message',
+          'must be "spent", "saved" or "withdraw"',
+        ),
+      ),
+    );
+  });
 }

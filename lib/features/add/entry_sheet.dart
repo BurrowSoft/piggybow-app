@@ -137,6 +137,11 @@ class _EntrySheetState extends State<EntrySheet> {
   /// The last Add, Save or Delete failed in the store.
   bool _failed = false;
 
+  /// An edited save whose goal had money taken out: the least it can be
+  /// (0: it can go entirely), and whether a change was refused for that.
+  int _saveFloor = 0;
+  bool _lockedOut = false;
+
   bool get _editing => widget.editing != null;
 
   String get _locale => context.readSession.device.localeName;
@@ -189,6 +194,7 @@ class _EntrySheetState extends State<EntrySheet> {
     final goal = goalId == null ? null : await store.goal(goalId);
     // Adding: the quick amounts come from what was spent before.
     final entries = e == null ? await store.entries() : const <Entry>[];
+    final floor = e == null ? 0 : await store.saveFloor(e);
     if (!mounted) return;
     final (hidden, customs) = await _readCategories();
     if (!mounted) return;
@@ -208,6 +214,7 @@ class _EntrySheetState extends State<EntrySheet> {
             goalId == null ? null : goal,
             plus: services.plus?.active ?? false,
           );
+      _saveFloor = floor;
       _today = today;
       _date = e?.date ?? today;
       if (e != null) {
@@ -243,9 +250,18 @@ class _EntrySheetState extends State<EntrySheet> {
   }
 
   /// The amount's error line: after Add for an empty or zero amount; at once
-  /// for a pasted amount that can't be read, or one that's too large.
+  /// for a pasted amount that can't be read, or one that's too large, or for
+  /// a save lowered below what was taken out of its goal.
   String? _amountError(AppLocalizations l10n) {
-    final problem = _parsed?.problem;
+    final parsed = _parsed;
+    final minor = parsed?.minor;
+    if (_saveFloor > 0 &&
+        _type == EntryType.saved &&
+        minor != null &&
+        minor < _saveFloor) {
+      return l10n.saveLockedByTakeOut(_goalName ?? '');
+    }
+    final problem = parsed?.problem;
     return switch (problem) {
       null => null,
       AmountProblem.tooBig => l10n.addAmountTooBig,
@@ -261,13 +277,25 @@ class _EntrySheetState extends State<EntrySheet> {
     final parsed = _parsed;
     if (_busy || currency == null || date == null || parsed == null) return;
     final spend = _type == EntryType.spent;
-    if (parsed.problem != null || (spend && !_hasCategory)) {
+    final l10n = AppLocalizations.of(context);
+    if (parsed.problem != null ||
+        (spend && !_hasCategory) ||
+        _amountError(l10n) != null) {
       setState(() => _tried = true);
+      return;
+    }
+    // A save its goal needs can't become a spend (money was taken out).
+    if (_saveFloor > 0 && spend) {
+      setState(() {
+        _failed = true;
+        _lockedOut = true;
+      });
       return;
     }
     setState(() {
       _busy = true;
       _failed = false;
+      _lockedOut = false;
     });
     final services = context.services;
     final store = services.journal;
@@ -321,22 +349,35 @@ class _EntrySheetState extends State<EntrySheet> {
   /// The store refused or failed: the sheet stays usable and says so once,
   /// and the error is reported (crash reports scrub it).
   void _storeFailed(Object error, StackTrace stack) {
-    FlutterError.reportError(
-      FlutterErrorDetails(
-        exception: error,
-        stack: stack,
-        library: 'entry sheet',
-      ),
-    );
+    // Refused because money was taken out of the goal: said, not reported.
+    final locked = error is LockedByTakeOut;
+    if (!locked) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stack,
+          library: 'entry sheet',
+        ),
+      );
+    }
     if (!mounted) return;
     setState(() {
       _busy = false;
       _failed = true;
+      _lockedOut = locked;
     });
   }
 
   Future<void> _delete() async {
     final l10n = AppLocalizations.of(context);
+    // A save its goal needs can't go (money was taken out): said at once.
+    if (_saveFloor > 0) {
+      setState(() {
+        _failed = true;
+        _lockedOut = true;
+      });
+      return;
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialog) => AlertDialog(
@@ -589,7 +630,7 @@ class _EntrySheetState extends State<EntrySheet> {
                               decimal: minorDigitsOf(currency) > 0,
                             ),
                             inputFormatters: [
-                              _AmountFormatter(minorDigitsOf(currency)),
+                              AmountInputFormatter(minorDigitsOf(currency)),
                             ],
                             onChanged: (_) => setState(() {}),
                             // Typed text in ink, larger for the amount.
@@ -598,7 +639,9 @@ class _EntrySheetState extends State<EntrySheet> {
                               labelText: l10n.addAmountLabel,
                               prefixText: '${_symbol(currency)} ',
                               errorText: amountError,
-                              errorMaxLines: 3,
+                              // The take-out lock names the goal: up to 40
+                              // characters, at text ×2.
+                              errorMaxLines: 8,
                             ),
                           ),
                         ),
@@ -798,7 +841,9 @@ class _EntrySheetState extends State<EntrySheet> {
                 child: Semantics(
                   liveRegion: true,
                   child: Text(
-                    l10n.errGeneric,
+                    _lockedOut
+                        ? l10n.saveLockedByTakeOut(_goalName ?? '')
+                        : l10n.errGeneric,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.error,
                     ),
@@ -1020,8 +1065,8 @@ class _CategoryGrid extends StatelessWidget {
 /// Typing: digits and at most one decimal mark ("." or ","), with no more
 /// decimals than the currency has. A paste (several characters at once) goes
 /// in as it is, and the field says when it can't be read.
-class _AmountFormatter extends TextInputFormatter {
-  _AmountFormatter(int decimals)
+class AmountInputFormatter extends TextInputFormatter {
+  AmountInputFormatter(int decimals)
     : _allowed = decimals == 0
           ? RegExp(r'^[0-9]*$')
           : RegExp('^[0-9]*([.,][0-9]{0,$decimals})?\$');

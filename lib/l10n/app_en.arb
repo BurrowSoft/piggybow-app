@@ -510,5 +510,24 @@
   "entryRepeated": "Added again for today",
   "@entryRepeated": {"description": "The snackbar after Add again today, with Undo."},
   "undo": "Undo",
-  "@undo": {"description": "A snackbar action: takes back what was just added."}
+  "@undo": {"description": "A snackbar action: takes back what was just added."},
+
+  "goalTakeOut": "Take out",
+  "@goalTakeOut": {"description": "A goal's button: take money out of its savings (shown while it has some)."},
+  "takeOutTitle": "Take out of {goalName}",
+  "@takeOutTitle": {"description": "The take-out sheet's title.", "placeholders": {"goalName": {"type": "String"}}},
+  "takeOutTooMuch": "That's more than you've saved for this goal",
+  "@takeOutTooMuch": {"description": "The amount is over what the goal has."},
+  "takeOutDone": "Taken out. It's still your money.",
+  "@takeOutDone": {"description": "The snackbar after a take-out."},
+  "takeOutSummary": "Taken out {amount}",
+  "@takeOutSummary": {"description": "Summary's line when money was taken out of savings in the period; never netted against Saved.", "placeholders": {"amount": {"type": "String"}}},
+  "tlTakenOutOf": "Taken out of {goalName}",
+  "@tlTakenOutOf": {"description": "A Timeline row: money taken out of a goal's savings.", "placeholders": {"goalName": {"type": "String"}}},
+  "goalTakenOutRow": "Taken out",
+  "@goalTakenOutRow": {"description": "A row in a goal's own list (under Saves): money taken out of it."},
+  "saveLockedByTakeOut": "Some of this money was taken out of {goalName}. Change or remove that first.",
+  "@saveLockedByTakeOut": {"description": "A save can't be deleted, lowered, moved or made a spend below what was taken out of its goal.", "placeholders": {"goalName": {"type": "String"}}},
+  "goalStartLockedByTakeOut": "Some of this money was taken out of this goal. Change or remove that first.",
+  "@goalStartLockedByTakeOut": {"description": "The goal editor's Already saved can't go below what was taken out of the goal."}
 }

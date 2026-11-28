@@ -43,7 +43,7 @@ void main() {
   final cases = (contract['cases'] as List).cast<Map<String, dynamic>>();
 
   test('the contract is loaded whole', () {
-    expect(cases.length, 35);
+    expect(cases.length, 38);
     expect(cases.map((c) => c['id']).toSet().length, cases.length, reason: 'ids are unique');
   });
 

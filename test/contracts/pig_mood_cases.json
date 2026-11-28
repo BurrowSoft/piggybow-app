@@ -1,6 +1,7 @@
 {
-  "about": "Piggybow's pig mood contract. Every case is one test of the pure mood function. Inputs: picks, plan_minor, entries, the goals' sticky timestamps, now (a UTC instant) and today (the device's local date). Amounts are integer minor units in a 2-digit currency. created_at and the goal timestamps are UTC; local_date and today are the device's local dates. Expected lines are ARB keys; args fill their placeholders. A goal's target_minor, start_minor and status appear only in the cases that are about them (C24, C29, C31); the mood function reads only the sticky timestamps.",
+  "about": "Piggybow's pig mood contract. Every case is one test of the pure mood function. Inputs: picks, plan_minor, entries, the goals' sticky timestamps, now (a UTC instant) and today (the device's local date). Amounts are integer minor units in a 2-digit currency. created_at and the goal timestamps are UTC; local_date and today are the device's local dates. Expected lines are ARB keys; args fill their placeholders. A goal's target_minor, start_minor and status appear only in the cases that are about them (C24, C29, C31) or that take money out of a goal (C34-C36); the mood function reads only the sticky timestamps. A withdraw entry names the goal its money came out of (goal), which the mood function never reads.",
   "rules": [
+    "Withdrawals (type withdraw: money taken out of a goal) are left out before anything else: never this week's, never recent, never an entry for rule 4. They never change the mood or the line.",
     "This week = entries whose local_date is from this week's Monday to today.",
     "save is met when at least 1 saved entry is this week.",
     "plan is met when plan_minor is set, at least 1 entry is this week, and this week's spends are <= plan_minor.",
@@ -494,6 +495,53 @@
       ],
       "goals": [],
       "expect": { "mood": "happy", "line": "pigHappyWorth" }
+    },
+    {
+      "id": "C34",
+      "why": "a withdrawal alone, 2 h ago: withdrawals are left out, so there are no entries at all, the first-day line (counted, it would be recent: calm, pigCalm3)",
+      "now": "2026-12-02T05:00:00Z",
+      "today": "2026-12-02",
+      "picks": ["save"],
+      "plan_minor": null,
+      "entries": [
+        { "type": "withdraw", "goal": "Bike", "amount_minor": 2500, "category": null, "feeling": null, "local_date": "2026-12-02", "created_at": "2026-12-02T03:00:00Z" }
+      ],
+      "goals": [
+        { "name": "Bike", "target_minor": 100000, "start_minor": 10000, "band_reached_at": [null, null, null, null, null], "reached_at": null }
+      ],
+      "expect": { "mood": "calm", "line": "pigFirstDay" }
+    },
+    {
+      "id": "C35",
+      "why": "a spend last week, 113 h ago, and a withdrawal 2 h ago: the withdrawal is left out, so nothing is recent: sleepy; Wed = day 336 -> lines[2] (counted, it would be recent: calm, pigCalm3)",
+      "now": "2026-12-02T05:00:00Z",
+      "today": "2026-12-02",
+      "picks": ["save"],
+      "plan_minor": null,
+      "entries": [
+        { "type": "spent", "amount_minor": 900, "category": "food", "feeling": null, "local_date": "2026-11-27", "created_at": "2026-11-27T12:00:00Z" },
+        { "type": "withdraw", "goal": "Bike", "amount_minor": 2500, "category": null, "feeling": null, "local_date": "2026-12-02", "created_at": "2026-12-02T03:00:00Z" }
+      ],
+      "goals": [
+        { "name": "Bike", "target_minor": 100000, "start_minor": 10000, "band_reached_at": [null, null, null, null, null], "reached_at": null }
+      ],
+      "expect": { "mood": "sleepy", "line": "pigSleepy3" }
+    },
+    {
+      "id": "C36",
+      "why": "plan picked and set, a spend last week and a withdrawal today: the withdrawal is left out, so no entry is this week's and plan isn't met: sleepy, lines[2] (counted, plan would be met: happy, pigHappyPlan)",
+      "now": "2026-12-02T05:00:00Z",
+      "today": "2026-12-02",
+      "picks": ["plan"],
+      "plan_minor": 50000,
+      "entries": [
+        { "type": "spent", "amount_minor": 900, "category": "food", "feeling": null, "local_date": "2026-11-27", "created_at": "2026-11-27T12:00:00Z" },
+        { "type": "withdraw", "goal": "Bike", "amount_minor": 2500, "category": null, "feeling": null, "local_date": "2026-12-02", "created_at": "2026-12-02T03:00:00Z" }
+      ],
+      "goals": [
+        { "name": "Bike", "target_minor": 100000, "start_minor": 10000, "band_reached_at": [null, null, null, null, null], "reached_at": null }
+      ],
+      "expect": { "mood": "sleepy", "line": "pigSleepy3" }
     }
   ]
 }

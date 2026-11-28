@@ -23,7 +23,7 @@ class MoodEntry {
     required this.createdAt,
   });
 
-  /// "spent" or "saved".
+  /// "spent", "saved" or "withdraw" (a withdrawal never moves the pig).
   final String type;
   final int amountMinor;
 
@@ -148,9 +148,15 @@ PigState pigMood({
   final milestone = _milestone(goals, now);
   if (milestone != null) return milestone;
 
+  // Money taken out of savings never moves the pig: it's still your money.
+  final noted = [
+    for (final e in entries)
+      if (e.type != 'withdraw') e,
+  ];
+
   // This week: Monday to today, by the day the person picked.
   final week = [
-    for (final e in entries)
+    for (final e in noted)
       if (e.localDate.compareTo(monday) >= 0 && e.localDate.compareTo(today) <= 0) e,
   ];
   final weekSpends = week.where((e) => e.type == 'spent');
@@ -186,10 +192,10 @@ PigState pigMood({
   }
 
   // 4. Nothing noted yet.
-  if (entries.isEmpty) return const PigState(PigMood.calm, 'pigFirstDay');
+  if (noted.isEmpty) return const PigState(PigMood.calm, 'pigFirstDay');
 
   // 5. Something added in the last 72 hours (by when it was added, not the day it's dated).
-  if (entries.any((e) => _age(now, e.createdAt) < _recentWindow)) {
+  if (noted.any((e) => _age(now, e.createdAt) < _recentWindow)) {
     final line = todayDate.weekday == DateTime.monday ? 'pigCalmMonday' : rotatingLine(_calmLines, today);
     return PigState(PigMood.calm, line);
   }

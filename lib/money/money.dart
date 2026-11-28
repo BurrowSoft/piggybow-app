@@ -125,3 +125,7 @@ String plainAmount(int minor, String currency) {
   final unit = _pow10(digits);
   return '${minor ~/ unit}.${(minor % unit).toString().padLeft(digits, '0')}';
 }
+
+/// The minus sign (U+2212, not a hyphen) in front of money taken out of
+/// savings, the one amount shown going down. Spends never have one.
+final String minusSign = String.fromCharCode(0x2212);
