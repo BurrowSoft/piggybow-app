@@ -125,19 +125,37 @@ void main() {
       }
     });
 
-    testWidgets("Me: the weekly plan's amount, and the plan pick's amount", (
-      tester,
-    ) async {
-      await TestApp().pump(tester);
-      await tester.tapId('tab-me');
-      await tester.tapId('me-plan');
-      expectOff(tester, 'me-plan-amount');
-      await tester.tapId('me-plan-cancel');
-      await tester.tapId('me-happy');
-      // Its picks come from the journal, a few frames later.
-      for (var i = 0; i < 40 && byId('onb-pick-plan').evaluate().isEmpty; i++) {
+    /// Frames until [f] shows: Me and its pages read the journal first.
+    Future<void> settle(WidgetTester tester, Finder f) async {
+      for (var i = 0; i < 40 && f.evaluate().isEmpty; i++) {
         await tester.pump(const Duration(milliseconds: 50));
       }
+      await tester.pumpAndSettle();
+    }
+
+    /// Me on a phone-sized screen, as me_test opens it.
+    Future<void> openMe(WidgetTester tester) async {
+      tester.view.devicePixelRatio = 3;
+      tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+      addTearDown(tester.view.reset);
+      final app = TestApp();
+      await tester.runAsync(app.openJournal);
+      await app.pump(tester, location: '/me');
+      await settle(tester, byId('me-happy'));
+    }
+
+    testWidgets("Me: the weekly plan's amount", (tester) async {
+      await openMe(tester);
+      await tester.tapId('me-plan');
+      expectOff(tester, 'me-plan-amount');
+    });
+
+    testWidgets("Me → What makes your pig happy: the plan pick's amount", (
+      tester,
+    ) async {
+      await openMe(tester);
+      await tester.tapId('me-happy');
+      await settle(tester, byId('onb-pick-plan'));
       await tester.tapId('onb-pick-plan');
       await tester.revealId('onb-plan');
       expectOff(tester, 'onb-plan');
