@@ -1,5 +1,5 @@
 {
-  "about": "A written pig tip's request: the only data that leaves the phone when pig tips are on. Shares and counts of this week so far; never a note, a goal's or a category's name, an amount, a date or the currency. The app's builder is lib/tips/tip_request.dart; its test and the server's read this file.",
+  "about": "A written pig tip's request: the only journal data that leaves the phone when pig tips are on (each request also carries the anonymous id and, as every connection does, the IP address). Shares and counts of this week so far; never a note, a goal's or a category's name, an amount, a date or the currency. The app's builder is lib/tips/tip_request.dart; its test and the server's read this file.",
   "required": ["language", "weekday", "category_shares", "feelings", "saves", "active_goals", "picks"],
   "optional": ["plan_percent", "goal_percent"],
   "languages": ["en"],

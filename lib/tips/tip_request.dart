@@ -1,8 +1,9 @@
-// What a written pig tip is asked from (decision 79): the only data that
-// leaves the phone when pig tips are on. Shares and counts of this week so
-// far: never a note, a goal's or a category's name, an amount, a date or the
-// currency. supabase/contracts/pig-tip-request.json is its shape, read by the
-// app's tests and the server's.
+// What a written pig tip is asked from (decision 79): the only journal data
+// that leaves the phone when pig tips are on (each request also carries the
+// anonymous id and, as every connection does, the IP address). Shares and
+// counts of this week so far: never a note, a goal's or a category's name,
+// an amount, a date or the currency. supabase/contracts/pig-tip-request.json
+// is its shape, read by the app's tests and the server's.
 
 import '../journal/entry.dart';
 import '../pig/pig_mood.dart' show HappyPick;
