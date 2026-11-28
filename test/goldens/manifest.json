@@ -1,7 +1,7 @@
 {
-  "source_sha": "f17d8e76598357fc01c925ac23357595b909ec27",
-  "ref": "f17d8e76598357fc01c925ac23357595b909ec27",
-  "run_id": "46086591464",
+  "source_sha": "d3d76dec6e799544a3f3c1cb2e491137a0344060",
+  "ref": "d3d76dec6e799544a3f3c1cb2e491137a0344060",
+  "run_id": "46087603183",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -99,8 +99,8 @@
       "file": "goal-create_empty_dark_320x2.png",
       "state": "G1",
       "test": "G1 the goal form with its errors (320 dp, text ×2, dark)",
-      "sha256": "209d460eee9dc754f273b9b83666bf176843df10602d42040b098db7f0617d12",
-      "bytes": 103101,
+      "sha256": "a3e8947e08db7535ae7eb40370ef310301ae2bbe1afcda8f88eb7c302bce301e",
+      "bytes": 103153,
       "width": 960,
       "height": 2340
     },
@@ -108,8 +108,8 @@
       "file": "goal-create_empty_light_320x2.png",
       "state": "G1",
       "test": "G1 the goal form with its errors (320 dp, text ×2, light)",
-      "sha256": "12e06b7ff5cfaf1a192778d78982afa50dd42432010f267a10b069cb36291d59",
-      "bytes": 103933,
+      "sha256": "8936018c6c1f1f3378795727552d8b387e891645890aa36e7b240d02c064b088",
+      "bytes": 103841,
       "width": 960,
       "height": 2340
     },
@@ -117,8 +117,8 @@
       "file": "goal-create_errors_dark_320x2.png",
       "state": "G2",
       "test": "G1 the goal form with its errors (320 dp, text ×2, dark)",
-      "sha256": "a0cc2267f186512ed33c88d74b1223cebfc885914f714ade6e4e15436441d0fb",
-      "bytes": 136368,
+      "sha256": "0ae53ad51c643409781eeed345db5b65e333373973485888e7f6ac11939f2882",
+      "bytes": 136414,
       "width": 960,
       "height": 2340
     },
@@ -126,8 +126,8 @@
       "file": "goal-create_errors_light_320x2.png",
       "state": "G2",
       "test": "G1 the goal form with its errors (320 dp, text ×2, light)",
-      "sha256": "a6130a99eb97cc7344fe98616e7c143624c1968d3d476860f6f6b0795f2433e6",
-      "bytes": 136778,
+      "sha256": "6e5138f0fe071b0316794ebccfc18ae8784b07f59aa1d2957c82b3cecd85e852",
+      "bytes": 136703,
       "width": 960,
       "height": 2340
     },
@@ -135,8 +135,8 @@
       "file": "goal-create_filled_dark_320x2.png",
       "state": "G3",
       "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, dark)",
-      "sha256": "931d5ba4abc5b15f43fedd1811a177805221f7a675f79445b5aeac12f1fd1a41",
-      "bytes": 133349,
+      "sha256": "179f5b6b5840b294358c82a4c2705b5717778dd55f4f33c7c6185024df55e50d",
+      "bytes": 133387,
       "width": 960,
       "height": 2340
     },
@@ -144,8 +144,8 @@
       "file": "goal-create_filled_light_320x2.png",
       "state": "G3",
       "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, light)",
-      "sha256": "3443aed83158c28d337e5db31a9d8fa0e88637eeb745e555369b55f0f3f6a22b",
-      "bytes": 134391,
+      "sha256": "e7c60d4c7a04e1164fc1216ee30d502b508c0c2e0fda32a18fe551c2c216b459",
+      "bytes": 134334,
       "width": 960,
       "height": 2340
     },
@@ -488,6 +488,240 @@
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, light)",
       "sha256": "e59ac6e3395725301dc8e2584b3b261425c4369dfd7f73f603fb05d990468cda",
       "bytes": 160966,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-picker_picks-end_dark_320x2.png",
+      "state": "M6",
+      "test": "M6 the picker in Me (320 dp, text ×2, dark)",
+      "sha256": "cbf8e7e167f5b829f80cb429988c979c2965f72428581dd35057430ed20544ce",
+      "bytes": 130580,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-picker_picks-end_light_320x2.png",
+      "state": "M6",
+      "test": "M6 the picker in Me (320 dp, text ×2, light)",
+      "sha256": "8078af08a174cc61f5d10cf6e585ec95fbf161dce3935c41c02acfb649cac273",
+      "bytes": 130989,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-picker_picks_dark_320x2.png",
+      "state": "M6",
+      "test": "M6 the picker in Me (320 dp, text ×2, dark)",
+      "sha256": "aa8021341d30b8e5ae9f22ed718600071715906a98fe7ebf162feea5f8130149",
+      "bytes": 153900,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-picker_picks_light_320x2.png",
+      "state": "M6",
+      "test": "M6 the picker in Me (320 dp, text ×2, light)",
+      "sha256": "13a2cff8d45c039e331aef8b56a0a49be16c09a23840ad6e2d6a43e62919fef0",
+      "bytes": 154074,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_lines-end_dark_320x2.png",
+      "state": "M8",
+      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, dark)",
+      "sha256": "c6b3ea9b007abd3d48cbc5b79cd883412c2db1c46e55c23b642e04c25d4ac67b",
+      "bytes": 205219,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_lines-end_light_320x2.png",
+      "state": "M8",
+      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
+      "sha256": "6d4a43f2894d7a5999c8fe61527b55246e994d8ecc81c81de888d63ee84fbb92",
+      "bytes": 206503,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_lines_dark_320x2.png",
+      "state": "M8",
+      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, dark)",
+      "sha256": "1420cc1afdd0002b5243d098e934fe75967f4943b2eeee738323bf52ff9401f9",
+      "bytes": 219144,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_lines_light_320x2.png",
+      "state": "M8",
+      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
+      "sha256": "30f94d7c74549d940c1016ce1690abcacc1b4dca621692719659ec9a39a3ebbc",
+      "bytes": 219885,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-all_dark_320x2.png",
+      "state": "M7",
+      "test": "M7 \"Delete everything?\" (320 dp, text ×2, dark)",
+      "sha256": "e650123ed2df45638c9c681a6e89912e760ec44d8f2b36ce44dac0dfbd1fa154",
+      "bytes": 193892,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-all_light_320x2.png",
+      "state": "M7",
+      "test": "M7 \"Delete everything?\" (320 dp, text ×2, light)",
+      "sha256": "76f85430067fa97c9a38fe4e37075f66fae3ccc2453d159d7fa57755b16d744c",
+      "bytes": 195963,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-failed-end_dark_320x2.png",
+      "state": "M9",
+      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, dark)",
+      "sha256": "cd0ff2844ca9834af679b1c8b5813300f2e24d06be3a05c1aa59eb4415abac87",
+      "bytes": 201150,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-failed-end_light_320x2.png",
+      "state": "M9",
+      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, light)",
+      "sha256": "a1647334016c1318a8afdda2a7b03082719e5ef2ce4cf4fcb2befb2be4ae8d25",
+      "bytes": 203201,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-failed_dark_320x2.png",
+      "state": "M9",
+      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, dark)",
+      "sha256": "2d7f9c2a20611f8f997daf982e09152df83099e4d968bbb2261da7f35a380119",
+      "bytes": 195165,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-failed_light_320x2.png",
+      "state": "M9",
+      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, light)",
+      "sha256": "81633e5392b8dd6bfb5b046e7c97b5d4a9952185d4598b58aa394c020b7cf01a",
+      "bytes": 197160,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_no-plan-end_dark_320x2.png",
+      "state": "M1",
+      "test": "M1 Me, no plan (320 dp, text ×2, dark)",
+      "sha256": "51baa627f04434b11703d6892b9e675f0f803a7a90a5624e715c6ecc08236f72",
+      "bytes": 141688,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_no-plan-end_light_320x2.png",
+      "state": "M1",
+      "test": "M1 Me, no plan (320 dp, text ×2, light)",
+      "sha256": "66ab583e2631ef63c6969c7c1d3674c53836658f0c697aae93bae2a1835e04e7",
+      "bytes": 141455,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_no-plan_dark_320x2.png",
+      "state": "M1",
+      "test": "M1 Me, no plan (320 dp, text ×2, dark)",
+      "sha256": "abbec9e958b8ca17922372a49a070842ff50a859dc15a9cd4eadb18006f81af3",
+      "bytes": 177066,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_no-plan_light_320x2.png",
+      "state": "M1",
+      "test": "M1 Me, no plan (320 dp, text ×2, light)",
+      "sha256": "a588d7849b219de0e6cb7ad250d8a258543d7b9cba6787a183ce00a9629dc50f",
+      "bytes": 176948,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_notifications-off_dark_320x2.png",
+      "state": "M3",
+      "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, dark)",
+      "sha256": "f4f6becb97e13c283146e8157c33b2a6a5588b48885e6f8cdaf089032d481973",
+      "bytes": 184176,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_notifications-off_light_320x2.png",
+      "state": "M3",
+      "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, light)",
+      "sha256": "f8b224787e2bbcbbc3ba0e20671af2377afb0152db8e2da4080ccffdf9d618b6",
+      "bytes": 184167,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-dialog-empty_dark_320x2.png",
+      "state": "M4",
+      "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
+      "sha256": "5e7b6e0da00bcc1a0612de3d0fb91f6415c7f9b80d400c40f7dbbe15210ff289",
+      "bytes": 166515,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-dialog-empty_light_320x2.png",
+      "state": "M4",
+      "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
+      "sha256": "6d7d7b075553ee0a96105a9f38395605b3055e16ea67b28621589cdbd3b6c625",
+      "bytes": 168538,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-dialog-set_dark_320x2.png",
+      "state": "M5",
+      "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
+      "sha256": "852b0bbe9409d27f6b3c402b263db90cf1e489cec2b6220683f644e524245072",
+      "bytes": 174272,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-dialog-set_light_320x2.png",
+      "state": "M5",
+      "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
+      "sha256": "f630a770cb7d5fdbe5202aa7a29c15ffbe0a51593605920c63e0c00ca670e662",
+      "bytes": 175687,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-set_dark_320x2.png",
+      "state": "M2",
+      "test": "M2 Me, a plan set (320 dp, text ×2, dark)",
+      "sha256": "9cfbd819e51a9d7613ec29d76f3d19e9655ff2423e63c932061e1471e6615d28",
+      "bytes": 181688,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-set_light_320x2.png",
+      "state": "M2",
+      "test": "M2 Me, a plan set (320 dp, text ×2, light)",
+      "sha256": "77d4c42ccf4cc1dc3514886576521308e9a3c38758dafc7b6104d056372b5586",
+      "bytes": 181540,
       "width": 960,
       "height": 2340
     },
