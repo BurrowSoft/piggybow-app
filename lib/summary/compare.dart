@@ -65,7 +65,6 @@ Map<String, Comparison> compareCategories({
   final before = spendsByCategory(entries, comparedWith(week, today));
   return {
     for (final row in rows)
-      if (compareSpends(row.amountMinor, before[row.id] ?? 0) case final c?)
-        row.id: c,
+      row.id: ?compareSpends(row.amountMinor, before[row.id] ?? 0),
   };
 }
