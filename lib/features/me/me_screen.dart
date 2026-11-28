@@ -18,12 +18,15 @@ import '../../reminder_rules/reminder_rules.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../../settings_rules/settings_rules.dart';
+import '../../theme/palettes.dart';
 import '../../theme/theme.dart';
 import '../currency/currency_picker.dart';
+import '../plus/plus_screen.dart';
 import '../shell/tab_top.dart';
 import 'delete_dialogs.dart';
 import 'me_actions.dart';
 import 'me_app_lock_section.dart';
+import 'theme_picker.dart';
 
 /// A pick's title, as O2 and Me's subtitle name it.
 String happyPickTitle(AppLocalizations l10n, HappyPick pick) => switch (pick) {
@@ -122,6 +125,23 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     await context.readSession.updateReminder(on: on, time: time);
     if (on) await services.notifications.request();
     await _load();
+  }
+
+  /// Me → Theme: Strawberry at once; a Plus theme through Plus (the
+  /// paywall when it isn't active), kept only if Plus is active after it.
+  Future<void> _pickTheme() async {
+    final session = context.readSession;
+    final plus = context.services.plus;
+    if (plus == null) return;
+    final picked = await pickTheme(
+      context,
+      shown: appliedPalette(session.chosenPalette, plusActive: plus.active),
+    );
+    if (picked == null || !mounted) return;
+    final theme = picked.theme;
+    if (theme != null && !await requirePlus(context)) return;
+    await session.setPalette(theme);
+    if (mounted) setState(() {});
   }
 
   Future<void> _pickTime(ReminderTime current) async {
@@ -357,6 +377,17 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                       ],
                     ),
                   ),
+                  if (plus != null)
+                    _Row(
+                      id: 'me-theme',
+                      title: l10n.meTheme,
+                      subtitle: themeRowSubtitle(
+                        l10n,
+                        chosen: session.chosenPalette,
+                        plusActive: plus.active,
+                      ),
+                      onTap: _pickTheme,
+                    ),
                   _Section(l10n.meSecAbout),
                   _Row(
                     id: 'me-privacy',

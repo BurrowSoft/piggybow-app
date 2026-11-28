@@ -3,6 +3,12 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:piggybow/core/app_config.dart';
+import 'package:piggybow/core/clock.dart';
+import 'package:piggybow/features/plus/fake_plus_store.dart';
+import 'package:piggybow/features/plus/plus_entitlement.dart';
+import 'package:piggybow/features/plus/plus_store.dart';
 import 'package:piggybow/fixtures/launch_fixture.dart';
 import 'package:piggybow/theme/palettes.dart';
 import 'package:piggybow/theme/theme.dart';
@@ -11,15 +17,45 @@ import '../helpers.dart';
 import '../helpers/fonts.dart';
 import '../helpers/goldens.dart';
 
-/// Piggybow Plus's themes (plus-spec §1): the default and each Plus theme,
-/// light and dark. Home on the store screenshots' journal (STORE1: the plan's
-/// week, "Trip to Japan" at 32 %), and each theme's swatch card: its colours
-/// and the contrast of the pairs the app draws text and buttons with.
+/// Piggybow's themes (plus-spec §1): Strawberry, the default, and the Plus
+/// themes Plum, Apricot and Blueberry, light and dark, with Plus on. Home on
+/// the store screenshots' journal (STORE1: the plan's week, "Trip to Japan"
+/// at 32 %); each theme's swatch card (its colours, and the contrast of the
+/// pairs the app draws text and buttons with); and Me → Theme's picker.
 void main() {
   setUpAll(loadAppFonts);
+  setUp(() {
+    PackageInfo.setMockInitialValues(
+      appName: 'Piggybow',
+      packageName: 'com.burrowsoft.piggybow',
+      version: '0.1.0',
+      buildNumber: '1',
+      buildSignature: '',
+    );
+  });
 
   final themes = <PlusPalette?>[null, ...PlusPalette.values];
-  String nameOf(PlusPalette? theme) => theme?.name ?? 'default';
+  String nameOf(PlusPalette? theme) => theme?.name ?? 'strawberry';
+
+  /// The app with Plus on and [theme] chosen.
+  TestApp withPlus(PlusPalette? theme, String appearance, Clock clock) {
+    final plus = PlusEntitlement(
+      store: FakePlusStore()
+        ..owns = const [
+          PlusProof(token: 't1', productId: plusPlayProductId),
+        ],
+      hint: MemoryPlusHint(),
+      clock: clock,
+    );
+    return TestApp(
+      currency: 'USD',
+      clock: clock,
+      config: const AppConfig(flavor: Flavor.staging, plusEnabled: true),
+      plus: plus,
+    )
+      ..prefs.appearance = appearance
+      ..prefs.palette = theme?.name;
+  }
 
   void phone(WidgetTester tester) {
     tester.view.devicePixelRatio = 3;
@@ -34,11 +70,7 @@ void main() {
       testWidgets('Home in ${nameOf(theme)}, $appearance', (tester) async {
         phone(tester);
         final fixture = LaunchFixture.byId('STORE1', '{"cases": []}');
-        final app = TestApp(currency: 'USD', clock: fixture.clock)
-          ..prefs.appearance = appearance;
-        if (theme != null) {
-          app.prefs.palette = encodePalette(theme, DateTime.utc(2099));
-        }
+        final app = withPlus(theme, appearance, fixture.clock);
         await tester.runAsync(app.openJournal);
         expect(await tester.runAsync(() => fixture.write(app.journal)), isNull);
         await app.pump(tester);
@@ -87,6 +119,33 @@ void main() {
         );
       });
     }
+  }
+
+  for (final brightness in Brightness.values) {
+    final appearance = brightness == Brightness.dark ? 'dark' : 'light';
+    testWidgets('Me → Theme, the picker, $appearance', (tester) async {
+      phone(tester);
+      final app = withPlus(PlusPalette.plum, appearance, testClock);
+      await tester.runAsync(app.openJournal);
+      await app.pump(tester, location: '/me');
+      final me = byId('me-screen');
+      for (var k = 0; k < 40 && me.evaluate().isEmpty; k++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.pumpAndSettle();
+      await tester.tapId('me-theme');
+      tester.expectScreen('theme-sheet');
+      await expectGolden(
+        tester,
+        find.byType(MaterialApp),
+        screen: 'theme-picker',
+        state: 'plum',
+        stateId: 'TP1',
+        brightness: brightness,
+        width: 360,
+        textScale: 1,
+      );
+    });
   }
 }
 

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/features/goal/rainbow.dart';
+import 'package:piggybow/theme/theme.dart';
 
 /// The rainbow (plan §3.5): which arcs are filled at each percent, the
 /// colours and the tracks, the motion (none under reduce-motion), and that
@@ -33,11 +34,11 @@ List<(int, double)> filled(double fill) {
   final canvas = _Arcs();
   RainbowPainter(
     fill: fill,
-    track: Rainbow.trackLight,
+    track: PiggybowPalette.light.rainbowTrack,
   ).paint(canvas, const Size(240, 132));
   return [
     for (final a in canvas.arcs)
-      if (a.colour != Rainbow.trackLight.toARGB32())
+      if (a.colour != PiggybowPalette.light.rainbowTrack.toARGB32())
         (
           Rainbow.arcColours
               .map((c) => c.toARGB32())
@@ -75,7 +76,10 @@ void main() {
   });
 
   test('five tracks always, in the light or the dark colour', () {
-    for (final track in [Rainbow.trackLight, Rainbow.trackDark]) {
+    for (final track in [
+      PiggybowPalette.light.rainbowTrack,
+      PiggybowPalette.dark.rainbowTrack,
+    ]) {
       final canvas = _Arcs();
       RainbowPainter(
         fill: 0.5,
@@ -99,8 +103,8 @@ void main() {
       Color(0xFF8CCFB0),
       Color(0xFF9B84D6),
     ]);
-    expect(Rainbow.trackLight, const Color(0xFFECE6F0));
-    expect(Rainbow.trackDark, const Color(0xFF3A3350));
+    expect(PiggybowPalette.light.rainbowTrack, const Color(0xFFECE6F0));
+    expect(PiggybowPalette.dark.rainbowTrack, const Color(0xFF3A3350));
   });
 
   Finder painter() => find.byWidgetPredicate(
@@ -152,7 +156,7 @@ void main() {
     await show(tester, 40, brightness: Brightness.dark);
     expect(
       (tester.widget<CustomPaint>(painter()).painter! as RainbowPainter).track,
-      Rainbow.trackDark,
+      PiggybowPalette.dark.rainbowTrack,
     );
   });
 

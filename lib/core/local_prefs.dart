@@ -28,8 +28,8 @@ abstract interface class LocalPrefs {
   /// account included.
   Future<void> clear();
 
-  /// Plus's extra theme, `dusk@until` (palettes.dart), on this device only;
-  /// null: the default.
+  /// The Plus theme chosen in Me → Theme, by name (palettes.dart), on this
+  /// device only; null: Strawberry, the default.
   String? get palette;
   Future<void> setPalette(String? value);
 

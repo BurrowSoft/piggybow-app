@@ -1126,25 +1126,15 @@ class AppSession extends ChangeNotifier {
 
   /// Piggybow Plus's extra theme (decision 246), this device only: applied
   /// while the date Plus runs to hasn't passed; past it, the default.
-  PlusPalette? get palette => parsePalette(prefs.palette, clock.nowUtc());
+  /// The theme chosen in Me → Theme (null: Strawberry), kept on this device
+  /// whether or not Plus is active, so it comes back with Plus. What's shown
+  /// is appliedPalette's: this only while Plus is active.
+  PlusPalette? get chosenPalette => paletteByName(prefs.palette);
 
-  /// The stored choice's name, whatever its date (Me shows it as chosen).
-  PlusPalette? get chosenPalette => storedPaletteName(prefs.palette);
-
-  /// [palette] null: back to the default. [until]: when Plus runs out.
-  Future<void> setPalette(PlusPalette? palette, DateTime? until) async {
-    await prefs.setPalette(
-      palette == null || until == null ? null : encodePalette(palette, until),
-    );
+  /// Me → Theme: [palette] null is Strawberry (the choice is cleared).
+  Future<void> setPalette(PlusPalette? palette) async {
+    await prefs.setPalette(palette?.name);
     notifyListeners();
-  }
-
-  /// With Plus on, the stored choice runs to the entitlement's end, so a
-  /// renewal never resets the theme (UX, #277).
-  Future<void> refreshPaletteUntil(DateTime until) async {
-    final name = chosenPalette;
-    if (name == null || prefs.palette == encodePalette(name, until)) return;
-    await setPalette(name, until);
   }
 
   /// Me → Language & region. The language is this device's UI language and
