@@ -21,7 +21,7 @@ for mode in light dark; do
   sleep 3
   echo "$(stamp) uimode: $(A shell cmd uimode night | tr -d '\r')"
   if MF_NAME="50-$mode" mf flows/pb1/50_status_bar_shots.yaml -e MODE="$mode"; then
-    row "SB-$mode" PASS "shots 50-o1-$mode and 50-celebration-$mode taken (LOOK: see-through bar, icon colour)"
+    row "SB-$mode" PASS "shots 50-o1-$mode, 50-home-$mode and 50-celebration-$mode taken (LOOK: the status bar see-through with the right icon colour; no black strip under the gesture handle)"
   else
     row "SB-$mode" FAIL "flow 50 in $mode mode"
   fi

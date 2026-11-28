@@ -1,5 +1,5 @@
 appId: ${APP_ID}
-name: Status bar shots - the top of O1 (Welcome) and of the goal celebration, for a look by eye; MODE names the shots (light or dark, set by the device-rows script)
+name: Status and navigation bar shots - O1 (Welcome), Home and the goal celebration, for a look by eye at the top and the bottom; MODE names the shots (light or dark, set by the device-rows script)
 tags: [statusbar]
 # Run by tool/device-rows/statusbar.sh: once with the emulator in light mode,
 # once in night mode (cmd uimode), MODE=light|dark. The app follows the phone's
@@ -13,8 +13,11 @@ tags: [statusbar]
     timeout: 20000
 - waitForAnimationToEnd
 - takeScreenshot: 50-o1-${MODE}
-# The celebration: a goal whose "Already saved" reaches its target at creation
+# Home (an app bar on top; the navigation bar at the bottom must show no black strip)
 - runFlow: ../../subflows/to_home.yaml
+- waitForAnimationToEnd
+- takeScreenshot: 50-home-${MODE}
+# The celebration: a goal whose "Already saved" reaches its target at creation
 - runFlow:
     file: ../../subflows/create_goal.yaml
     env: { NAME: "Bike", AMOUNT: "100", START: "100" }
