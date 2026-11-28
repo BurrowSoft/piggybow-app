@@ -75,11 +75,14 @@ jobs:
           --allow-env=SUPABASE_DEPLOY_TOKEN,PROJECT_REF
           supabase/scripts/sql.ts supabase/migrations/*.sql supabase/migrations/*.sql
           supabase/checks/after-migrations.sql
+      # --yes: CLI 3.4.0 asks to confirm a deploy, and with no terminal it
+      # changes nothing and fails. --project-ref still works in 3.4.0 (v4
+      # renames it --remote).
       - name: The pig-tip function
         if: inputs.what != 'migrations'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_STAGING_DEPLOY_TOKEN }}
-        run: supabase functions deploy pig-tip --project-ref "$PROJECT_REF" --use-api
+        run: supabase functions deploy pig-tip --project-ref "$PROJECT_REF" --use-api --yes
       - name: Smoke check, no user so 401
         if: inputs.what != 'migrations'
         run: >-
