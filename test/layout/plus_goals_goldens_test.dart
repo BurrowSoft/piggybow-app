@@ -105,6 +105,8 @@ void main() {
           goalId: id,
         );
       }
+      // The reminder offer answered: the goals come right after the pig.
+      await app.journal.answerReminderOffer();
     });
     await app.pump(tester, location: location);
     await settle(tester, byId(location == '/home' ? 'goal-card-2' : 'me-happy'));
@@ -113,12 +115,24 @@ void main() {
   for (final c in layoutCases.where((c) => c.takesGolden)) {
     testWidgets('PG1 Home: two goals and New goal ($c)', (tester) async {
       await open(tester, c);
-      await expectLayoutGoldens(
+      // The cards from the first one's top, then down to New goal.
+      await tester.revealId('goal-card');
+      await tester.ensureVisible(byId('goal-card'));
+      await tester.pumpAndSettle();
+      await expectLayoutGolden(
         tester,
         c,
-        listIn('home-screen'),
         screen: 'home',
         state: 'two-goals',
+        stateId: 'PG1',
+      );
+      await tester.revealId('home-new-goal');
+      await tester.pumpAndSettle();
+      await expectLayoutGolden(
+        tester,
+        c,
+        screen: 'home',
+        state: 'new-goal',
         stateId: 'PG1',
       );
     });
