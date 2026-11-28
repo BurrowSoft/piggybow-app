@@ -422,6 +422,9 @@ class _LockBodyState extends State<_LockBody> {
     }
   }
 
+  /// The PIN pad. While Forgot PIN's erase runs it stays, still, with
+  /// nothing to tap: the erase takes a moment, and its "Not everything was
+  /// erased" shows over it.
   Widget _enterPin(AppLocalizations l10n) {
     final lock = widget.lock;
     final wait = lock.waitRemaining;
@@ -430,7 +433,7 @@ class _LockBodyState extends State<_LockBody> {
       children: [
         PinPad(
           title: l10n.lockEnterPin,
-          enabled: wait == null,
+          enabled: wait == null && !lock.erasing,
           error: wait != null ? l10n.lockWait(wait.inSeconds + 1) : _error,
           onDone: _pin,
           extra: lock.biometricsOn
@@ -460,7 +463,7 @@ class _LockBodyState extends State<_LockBody> {
           'lock-forgot',
           button: true,
           child: TextButton(
-            onPressed: _forgot,
+            onPressed: lock.erasing ? null : _forgot,
             child: ButtonLabel(l10n.lockForgot),
           ),
         ),
@@ -505,15 +508,7 @@ class _LockBodyState extends State<_LockBody> {
                       child: SvgPicture.asset(palette.logoAsset, height: 56),
                     ),
                     const SizedBox(height: 24),
-                    if (lock.erasing)
-                      const Padding(
-                        padding: EdgeInsets.all(32),
-                        child: CircularProgressIndicator(),
-                      )
-                    else if (lock.mayResetPin)
-                      _newPin(l10n)
-                    else
-                      _enterPin(l10n),
+                    if (lock.mayResetPin) _newPin(l10n) else _enterPin(l10n),
                   ],
                 ),
               ),
