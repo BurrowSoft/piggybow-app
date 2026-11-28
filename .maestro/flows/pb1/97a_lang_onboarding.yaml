@@ -1,0 +1,34 @@
+appId: ${APP_ID}
+name: Languages (decision 97), part 1 - onboarding in the app's language at text x1, a shot per step, to Home
+tags: [lang]
+# Run by lang-smoke.sh after `cmd locale set-app-locales`; P names the shots
+# (for example de-DE-x1).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- extendedWaitUntil:
+    visible:
+      id: onb-start
+    timeout: 15000
+- takeScreenshot: ${P}-onb-1-welcome
+- tapOn:
+    id: onb-start
+- extendedWaitUntil:
+    visible:
+      id: onb-pick-save
+    timeout: 10000
+- takeScreenshot: ${P}-onb-2-picks
+- tapOn:
+    id: onb-pick-save
+- tapOn:
+    id: onb-continue
+- extendedWaitUntil:
+    visible:
+      id: onb-goal-later
+    timeout: 10000
+- takeScreenshot: ${P}-onb-3-goal
+- tapOn:
+    id: onb-goal-later
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000

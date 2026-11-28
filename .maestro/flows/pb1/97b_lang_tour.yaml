@@ -1,0 +1,160 @@
+appId: ${APP_ID}
+name: Languages (decision 97), part 2 - Home, Add, Summary, Me and the paywall in the app's language at the font scale set, each with its anchor string, a shot per screen
+tags: [lang]
+# Run by lang-smoke.sh from Home, after 97a. The anchors (A_*) come from the
+# language's ARB file, escaped for a regex; P names the shots (de-DE-x2 …).
+# It runs once per font scale, so a goal is made only when none is there yet
+# (a second goal is Plus's).
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 15000
+- assertVisible:
+    id: tab-home
+    text: "(?s).*${A_HOME}.*"
+- assertVisible: "(?s).*${A_WEEK}.*"
+- takeScreenshot: ${P}-home-1
+# Add: a spend with its anchors, the sheet's start and end
+- tapOn:
+    id: home-add
+- extendedWaitUntil:
+    visible:
+      id: add-amount
+    timeout: 10000
+- assertVisible: "(?s).*${A_ADD}.*"
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "12.34", EXPECT: ".*12.34.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-cat-food }
+- assertVisible: "(?s).*${A_CAT}.*"
+- tapOn:
+    id: add-cat-food
+- takeScreenshot: ${P}-add-1
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-feel-worth }
+- assertVisible: "(?s).*${A_FEEL}.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- takeScreenshot: ${P}-add-2
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    id: add-submit
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# A save
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-saved
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "20", EXPECT: ".*20.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn:
+    id: add-submit
+    retryTapIfNoChange: true
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# A goal, once
+- runFlow:
+    when:
+      notVisible:
+        id: goal-card
+    commands:
+      - runFlow:
+          file: ../../subflows/create_goal.yaml
+          env: { NAME: "Bike", AMOUNT: "100", START: "0" }
+      - back
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- takeScreenshot: ${P}-home-2
+- scrollUntilVisible:
+    element:
+      id: home-idea
+    direction: DOWN
+    timeout: 15000
+- assertVisible: "(?s).*${A_IDEA}.*"
+- takeScreenshot: ${P}-home-3
+# Summary: week and month
+- tapOn:
+    id: tab-summary
+- extendedWaitUntil:
+    visible:
+      id: sum-week
+    timeout: 10000
+- assertVisible: "(?s).*${A_SUMWEEK}.*"
+- takeScreenshot: ${P}-summary-week
+- tapOn:
+    id: sum-month
+- assertVisible: "(?s).*${A_SUMMONTH}.*"
+- takeScreenshot: ${P}-summary-month
+# Me, top to bottom
+- tapOn:
+    id: tab-me
+- assertVisible:
+    id: tab-me
+    text: "(?s).*${A_ME}.*"
+- takeScreenshot: ${P}-me-1
+- scrollUntilVisible:
+    element: "(?s).*${A_MONEY}.*"
+    direction: DOWN
+    timeout: 15000
+- takeScreenshot: ${P}-me-2
+- scrollUntilVisible:
+    element: "(?s).*${A_DATA}.*"
+    direction: DOWN
+    timeout: 15000
+- takeScreenshot: ${P}-me-3
+- scrollUntilVisible:
+    element:
+      id: me-help
+    direction: DOWN
+    timeout: 20000
+- takeScreenshot: ${P}-me-4
+# The paywall, start and end
+- scrollUntilVisible:
+    element:
+      id: me-plus
+    direction: UP
+    timeout: 20000
+- tapOn:
+    id: me-plus
+- extendedWaitUntil:
+    visible:
+      id: plus-screen
+    timeout: 10000
+- assertVisible: "(?s).*${A_PLUS}.*"
+- takeScreenshot: ${P}-paywall-1
+- scrollUntilVisible:
+    element:
+      id: plus-privacy
+    direction: DOWN
+    timeout: 15000
+- takeScreenshot: ${P}-paywall-2
+- back
+- extendedWaitUntil:
+    visible:
+      id: tab-me
+    timeout: 10000
