@@ -42,10 +42,14 @@ tags: [reminder-soon]
 - tapOn:
     id: me-reminder-time
 - tapOn: "Switch to text input mode"          # Material's time picker: the keyboard icon
-- tapOn: "Hour"
+# A tap lands mid-field, so the cursor can sit between the two digits, where
+# Backspace clears only what is before it and the 2-character limit then drops
+# the last digit typed (5:24 came out as 5:20). A long press selects the whole
+# value first, so the erase clears it wherever the tap landed.
+- longPressOn: "Hour"
 - eraseText: 2
 - inputText: ${HH}
-- tapOn: "Minute"
+- longPressOn: "Minute"
 - eraseText: 2
 - inputText: ${MM}
 - tapOn: ${AMPM}
@@ -58,5 +62,13 @@ tags: [reminder-soon]
 - assertVisible:
     id: me-reminder
     checked: true
+# The time the reminder was really set to (a wrong one fails here, not 5 minutes later)
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-reminder-time
+- assertVisible:
+    id: me-reminder-time
+    text: "(?s).*\\b${HH}:${MM}\\b.*${AMPM}.*"
 - takeScreenshot: 48-me-reminder-soon
 - pressKey: Home                              # the app in the background, as at 8 PM

@@ -1,0 +1,29 @@
+appId: ${APP_ID}
+name: Themed icons on, in Wallpaper and style (a long press on an empty part of the home screen), for the ears row's themed launcher shot
+tags: [ears]
+# The launcher's own settings provider is guarded by a permission the shell
+# doesn't hold, so the switch is flipped the way a person would. This flow
+# drives only the system's launcher and picker, never Piggybow's screens.
+---
+- pressKey: Home
+- runFlow: ../../subflows/dismiss_system_anr.yaml
+- longPressOn:
+    point: "50%,45%"
+- tapOn: "(Wallpaper & style|Styles & wallpapers|Wallpapers)"
+- waitForAnimationToEnd:
+    timeout: 5000
+- runFlow: ../../subflows/dismiss_system_anr.yaml
+# Android 14's picker has Lock screen / Home screen tabs; the switch is under Home screen
+- runFlow:
+    when:
+      visible: "Home screen"
+    commands:
+      - tapOn: "Home screen"
+- scrollUntilVisible:
+    element: "Themed icons"
+    direction: DOWN
+    timeout: 20000
+- tapOn: "Themed icons"
+- waitForAnimationToEnd
+- takeScreenshot: 71-themed-icons-on
+- pressKey: Home
