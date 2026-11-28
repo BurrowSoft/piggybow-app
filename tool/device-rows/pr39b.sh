@@ -66,6 +66,9 @@ if diag_round r9t; then
     if grep -q 'FlutterSharedPreferences\.xml' "$OUT/r9t-files-after.txt"; then row R9t-prefs PASS "FlutterSharedPreferences.xml came back"; else row R9t-prefs FAIL "no FlutterSharedPreferences.xml after the transfer"; fi
     if grep -qi 'FlutterSecureStorage' "$OUT/r9t-files-after.txt"; then row R9t-pin FAIL "secure storage (the PIN) came back"; else row R9t-pin PASS "no secure-storage file after the transfer"; fi
     if grep -qE 'piggybow-[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv|/cache/' "$OUT/r9t-files-after.txt"; then row R9t-cache FAIL "an export or cache file came back"; else row R9t-cache PASS "no export or cache file after the transfer"; fi
+    # The app after the restore: the data back, no lock prompt, the App lock row
+    # says it's off after a restore until opened, then plain Off
+    if mf flows/pb1/46b_after_restore.yaml; then row R9t-app PASS "flow 46b (data back, no lock prompt, 'Off after a restore' until opened)"; else row R9t-app FAIL "flow 46b"; fi
   else
     row R9t FAIL "device transfer: the app's result ${PK:-none}; journal.db back: $(grep -c 'journal\.db' "$OUT/r9t-files-after.txt")"
   fi
