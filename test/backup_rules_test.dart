@@ -91,6 +91,20 @@ void main() {
     expect(rules(xml), [for (final d in domains) 'exclude $d .']);
   });
 
+  test('the settings stay in the file the rules name', () {
+    // SharedPreferencesAsync and SharedPreferencesWithCache keep settings in
+    // a DataStore file instead, which no rule includes: the backup would
+    // silently lose them.
+    final datastore = RegExp(r'SharedPreferences(Async|WithCache)\b');
+    final offenders = <String>[];
+    for (final f in Directory('lib').listSync(recursive: true)) {
+      if (f is File && f.path.endsWith('.dart')) {
+        if (datastore.hasMatch(f.readAsStringSync())) offenders.add(f.path);
+      }
+    }
+    expect(offenders, isEmpty);
+  });
+
   test("iOS: the PIN stays in this iPhone's keychain", () {
     expect(
       KeystoreSecretStore.storage.iOptions.accessibility,
