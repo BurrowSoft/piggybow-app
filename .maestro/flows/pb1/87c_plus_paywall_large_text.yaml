@@ -5,17 +5,20 @@ tags: [plus]
 - launchApp:
     appId: ${APP_ID}
     stopApp: false
-# 87b ends on Me (Home's Add button isn't there): wait for the tabs
+# The flow before ends on Me, scrolled down (Home's Add button isn't there):
+# wait for the tabs, then scroll straight up to Plus, the first row (at ×2
+# Me is long: reveal's 4 s down-then-up can end short of the top)
 - extendedWaitUntil:
     visible:
       id: tab-me
     timeout: 30000
 - tapOn:
     id: tab-me
-- runFlow:
-    file: ../../subflows/reveal.yaml
-    env:
-      ID: me-plus
+- scrollUntilVisible:
+    element:
+      id: me-plus
+    direction: UP
+    timeout: 20000
 - tapOn:
     id: me-plus
 - extendedWaitUntil:
