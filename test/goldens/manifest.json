@@ -1,7 +1,7 @@
 {
-  "source_sha": "db230755c8c3c48f75f2ce51d1d6416700b81e38",
-  "ref": "db230755c8c3c48f75f2ce51d1d6416700b81e38",
-  "run_id": "46163692664",
+  "source_sha": "28ed141fd8713d32c87701349d267d4bddd40593",
+  "ref": "28ed141fd8713d32c87701349d267d4bddd40593",
+  "run_id": "46164465290",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -1449,8 +1449,8 @@
       "file": "home_written-tip_dark_320x2.png",
       "state": "TP2",
       "test": "TP2 Home with a written tip (320 dp, text ×2, dark)",
-      "sha256": "4beb5d6f1ba0f13c4ea45095806d0abf98869996071d3ad6a7d80acb7643623a",
-      "bytes": 171621,
+      "sha256": "3d02ffd80028cdb1a55f9573359f9bad47fa9e91959f309f9b8e71df52342408",
+      "bytes": 169818,
       "width": 960,
       "height": 2340
     },
@@ -1458,8 +1458,8 @@
       "file": "home_written-tip_light_320x2.png",
       "state": "TP2",
       "test": "TP2 Home with a written tip (320 dp, text ×2, light)",
-      "sha256": "1e154e78a809f39beac16a77df528eb9e7d4f190de827458c14c6bb35ea1a046",
-      "bytes": 173303,
+      "sha256": "b3e9bc5fa311b7a2188bacac1e617d7708bb7cc2b266ec89c89cc3f2b9b59c47",
+      "bytes": 171350,
       "width": 960,
       "height": 2340
     },
@@ -2043,8 +2043,8 @@
       "file": "me_tips-sheet_dark_320x2.png",
       "state": "TP1",
       "test": "TP1 the consent sheet (320 dp, text ×2, dark)",
-      "sha256": "de3c472164c61ff4a7a7b25754e6426f83412c570002741121652f6c40c93940",
-      "bytes": 200010,
+      "sha256": "5bfb241d54b25f2032330c7ffdcaa1752cfc183883b6cf8c9884054a773b894a",
+      "bytes": 200006,
       "width": 960,
       "height": 2340
     },
@@ -2052,8 +2052,8 @@
       "file": "me_tips-sheet_light_320x2.png",
       "state": "TP1",
       "test": "TP1 the consent sheet (320 dp, text ×2, light)",
-      "sha256": "f040361427d546c7772fa09939d7c31d5966a7dc41e73bb0fa16cf901260801e",
-      "bytes": 200909,
+      "sha256": "395695ea7e181bfd9f3d385692415cd0d307c98940bdeae6dcde108d3f9cbf08",
+      "bytes": 200939,
       "width": 960,
       "height": 2340
     },
