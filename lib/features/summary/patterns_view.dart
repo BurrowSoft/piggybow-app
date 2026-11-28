@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/button_label.dart';
 import '../../core/button_pair.dart';
 import '../../core/fit_text.dart';
+import '../../core/quiet_tonal.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../journal/category.dart';
@@ -214,12 +215,8 @@ class _Teaser extends StatelessWidget {
       'sum-patterns-see-plus',
       button: true,
       child: FilledButton.tonal(
-        // Tonal, quieter than the content: the theme's filled-button style
-        // would otherwise give it the accent fill.
-        style: FilledButton.styleFrom(
-          backgroundColor: theme.colorScheme.secondaryContainer,
-          foregroundColor: theme.colorScheme.onSecondaryContainer,
-        ),
+        // Tonal, quieter than the content.
+        style: quietTonalStyle(theme),
         onPressed: () => requirePlus(context),
         child: ButtonLabel(l10n.patternsPlusSee),
       ),

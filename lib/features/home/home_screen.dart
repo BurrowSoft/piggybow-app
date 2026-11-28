@@ -638,7 +638,9 @@ class _NoGoalCard extends StatelessWidget {
             TestId(
               'goal-create',
               button: true,
-              child: FilledButton.tonal(
+              // Filled, in the accent: the look approved for it (the
+              // theme already gave its .tonal the accent fill).
+              child: FilledButton(
                 onPressed: () => context.push(GoalRoutes.create),
                 child: ButtonLabel(l10n.goalCardEmptyButton),
               ),
