@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "3fae12132b9c22bd182f469f130c9e8b77891db3",
+  "ref": "feat/goal-target-date",
+  "run_id": "46123063581",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -99,8 +99,8 @@
       "file": "goal-create_empty_dark_320x2.png",
       "state": "G1",
       "test": "G1 the goal form with its errors (320 dp, text ×2, dark)",
-      "sha256": "a3e8947e08db7535ae7eb40370ef310301ae2bbe1afcda8f88eb7c302bce301e",
-      "bytes": 103153,
+      "sha256": "0b858d7d5b2c06e745557e88835d3e27c8bab7d09ecfc6c5af72302dc7edfdb1",
+      "bytes": 119588,
       "width": 960,
       "height": 2340
     },
@@ -108,8 +108,26 @@
       "file": "goal-create_empty_light_320x2.png",
       "state": "G1",
       "test": "G1 the goal form with its errors (320 dp, text ×2, light)",
-      "sha256": "8936018c6c1f1f3378795727552d8b387e891645890aa36e7b240d02c064b088",
-      "bytes": 103841,
+      "sha256": "3337c3dc57a940ee02203e138d688878c47d7b16f826616bbdd2b76e34b2292b",
+      "bytes": 120442,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-create_errors-end_dark_320x2.png",
+      "state": "G2",
+      "test": "G1 the goal form with its errors (320 dp, text ×2, dark)",
+      "sha256": "b4cef15b3bdf8ce6d16a85127224712a96ba69876a93f57da72becd39ca77cd0",
+      "bytes": 152634,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-create_errors-end_light_320x2.png",
+      "state": "G2",
+      "test": "G1 the goal form with its errors (320 dp, text ×2, light)",
+      "sha256": "5db65fb5451e0d311c6d61cf61fc3ab13dd9cc5a9a558499a7f8a4804c50f013",
+      "bytes": 153222,
       "width": 960,
       "height": 2340
     },
@@ -117,8 +135,8 @@
       "file": "goal-create_errors_dark_320x2.png",
       "state": "G2",
       "test": "G1 the goal form with its errors (320 dp, text ×2, dark)",
-      "sha256": "0ae53ad51c643409781eeed345db5b65e333373973485888e7f6ac11939f2882",
-      "bytes": 136414,
+      "sha256": "ff2842fd5b907357c433963ee040702acdaba6c3bd07e1fd318d29d3f5927d99",
+      "bytes": 142175,
       "width": 960,
       "height": 2340
     },
@@ -126,8 +144,26 @@
       "file": "goal-create_errors_light_320x2.png",
       "state": "G2",
       "test": "G1 the goal form with its errors (320 dp, text ×2, light)",
-      "sha256": "6e5138f0fe071b0316794ebccfc18ae8784b07f59aa1d2957c82b3cecd85e852",
-      "bytes": 136703,
+      "sha256": "36c378ba8275e482a18f87fcbe0d49a5c91af892c9c53526bef77ffc0245565f",
+      "bytes": 142518,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-create_filled-end_dark_320x2.png",
+      "state": "G3",
+      "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, dark)",
+      "sha256": "2487ab6d59d2c7393da63183033b7913808b283c8cea253e5fe53e62dd4f219f",
+      "bytes": 173292,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-create_filled-end_light_320x2.png",
+      "state": "G3",
+      "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, light)",
+      "sha256": "605280385b77ca52385e841bed15cc7796e770115cbde6f53d091cf9a393ba1e",
+      "bytes": 174583,
       "width": 960,
       "height": 2340
     },
@@ -135,8 +171,8 @@
       "file": "goal-create_filled_dark_320x2.png",
       "state": "G3",
       "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, dark)",
-      "sha256": "cea89cbb34d26f514020d4e71289a6c44cd20c466487f0bdaaa2ee7d35b412e1",
-      "bytes": 159459,
+      "sha256": "e825e75caaa45c0c1d9ec04a131c344c1daacbf10c16c256c72574a004da1d7d",
+      "bytes": 174326,
       "width": 960,
       "height": 2340
     },
@@ -144,8 +180,8 @@
       "file": "goal-create_filled_light_320x2.png",
       "state": "G3",
       "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, light)",
-      "sha256": "b8f1e4385f23c380e07976c94b13243e8e37a545a731ce5507fae1b41666b7c4",
-      "bytes": 160406,
+      "sha256": "ebf93e33c2c8be28ef9be6135a092d5f9c2621c1d123ee4d2d382b88cee89450",
+      "bytes": 175259,
       "width": 960,
       "height": 2340
     },
@@ -189,8 +225,8 @@
       "file": "goal-detail_32_dark_320x2.png",
       "state": "D2",
       "test": "G2 the goal detail with its saves (320 dp, text ×2, dark)",
-      "sha256": "5cabdc84c77ab067cb5205966fbb7d48cf8d0b4ceae58b8a85d2faf041bf5e85",
-      "bytes": 192869,
+      "sha256": "e76eb1b2464b3f1adf76a9669df2c97d3bd8c2a06942a5ea676fd6bcb0d69c3e",
+      "bytes": 201249,
       "width": 960,
       "height": 2340
     },
@@ -198,9 +234,45 @@
       "file": "goal-detail_32_light_320x2.png",
       "state": "D2",
       "test": "G2 the goal detail with its saves (320 dp, text ×2, light)",
-      "sha256": "0a2366c200d63bdc14fa1a005dba2019940076dfefdbc13ea3c6df9d2325eacf",
-      "bytes": 186598,
+      "sha256": "3677eccc4ae784e3c7f3369491cff000c121a51d3fc61c17e8a9eb87d341ebb4",
+      "bytes": 195291,
       "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_pace_dark_320x2.png",
+      "state": "TD2",
+      "test": "TD2 the goal with its pace (320 dp, text ×2, dark)",
+      "sha256": "11ed4541ffbe3e047d40ef898e01349b29e5d2096674e24a3e978f242b4f7ccd",
+      "bytes": 199547,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_pace_dark_360x1.png",
+      "state": "TD2",
+      "test": "TD2 the goal with its pace (360 dp, text ×1, dark)",
+      "sha256": "3975bb952bde159c6a0e15276131cb2999813a58c6d32dcaefe29d0bf8d926c8",
+      "bytes": 144432,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_pace_light_320x2.png",
+      "state": "TD2",
+      "test": "TD2 the goal with its pace (320 dp, text ×2, light)",
+      "sha256": "5f010f1f6ad396eb9f885b6c0d2ec837feb4332500b62e094ee4ac17315ce12c",
+      "bytes": 194177,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_pace_light_360x1.png",
+      "state": "TD2",
+      "test": "TD2 the goal with its pace (360 dp, text ×1, light)",
+      "sha256": "98ed100e7cc074ae47aa78c6371b4cfa568437f879a4b93d7f1c0bb5688f3031",
+      "bytes": 136755,
+      "width": 1080,
       "height": 2340
     },
     {
@@ -219,6 +291,42 @@
       "sha256": "86a3a93b025eeade888c367c3833aa0903376f4b19211478ded4cd3f3b759c62",
       "bytes": 133757,
       "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_target_dark_320x2.png",
+      "state": "TD3",
+      "test": "TD3 the goal with its target date (320 dp, text ×2, dark)",
+      "sha256": "8e45517d7581a97e3a4493a5d7468aca8c49f06d0e6f03e9cf5416ce622b2656",
+      "bytes": 181963,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_target_dark_360x1.png",
+      "state": "TD3",
+      "test": "TD3 the goal with its target date (360 dp, text ×1, dark)",
+      "sha256": "4ef33192edab00a6c401cc71c1f1ccd0a97fd80e4f6598d6cf95b724da692837",
+      "bytes": 135468,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_target_light_320x2.png",
+      "state": "TD3",
+      "test": "TD3 the goal with its target date (320 dp, text ×2, light)",
+      "sha256": "9f7f034fb793bb2f0e54a2bf01b25656a249052295e168a40313713d9f4c3e3e",
+      "bytes": 176348,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_target_light_360x1.png",
+      "state": "TD3",
+      "test": "TD3 the goal with its target date (360 dp, text ×1, light)",
+      "sha256": "7594fabc4fe24b126caf2448883f189ab48f7c6ae3236ad2a29deb53b40cb7f1",
+      "bytes": 129009,
+      "width": 1080,
       "height": 2340
     },
     {
@@ -255,6 +363,42 @@
       "sha256": "3db04654337d0c1a7cc312c03fb4c52f7b4fda15c09a6079b1cd18db4e8d9773",
       "bytes": 190703,
       "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_target-date_dark_320x2.png",
+      "state": "TD1",
+      "test": "TD1 the goal form with a target date (320 dp, text ×2, dark)",
+      "sha256": "e3bfde8dce8754be5219a7db4e8bb6a5132556a62dc079bc09bbcd3b2cf913e3",
+      "bytes": 143694,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_target-date_dark_360x1.png",
+      "state": "TD1",
+      "test": "TD1 the goal form with a target date (360 dp, text ×1, dark)",
+      "sha256": "403bafb696653fa861a35d377765f847da22c4b9060793fa98c21897ebe404e7",
+      "bytes": 91786,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_target-date_light_320x2.png",
+      "state": "TD1",
+      "test": "TD1 the goal form with a target date (320 dp, text ×2, light)",
+      "sha256": "81281cdb93977d1fcda60260274542f5a7bd2f54da916eb528631acdf55229f9",
+      "bytes": 144523,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_target-date_light_360x1.png",
+      "state": "TD1",
+      "test": "TD1 the goal form with a target date (360 dp, text ×1, light)",
+      "sha256": "e432b763a873ceb6ee4878bc599a569387241c594e5efd1b26a8bc1eff3ea972",
+      "bytes": 91907,
+      "width": 1080,
       "height": 2340
     },
     {
