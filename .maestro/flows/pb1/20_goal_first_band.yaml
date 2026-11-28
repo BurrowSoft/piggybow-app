@@ -25,7 +25,13 @@ tags: [pb1, goal]
 - assertVisible: ".*Give your goal a name\\..*"
 - assertVisible: ".*Enter a goal amount\\..*"
 - takeScreenshot: 20-goal-create-errors
-- tapOn: "Back"                   # the app bar arrow; system back first closes the keyboard
+# The app bar's arrow. With the keyboard open (the form focuses the first error),
+# the navigation bar shows the keyboard's own "Back" too, and a bare tapOn "Back"
+# can pick that one, which only closes the keyboard. Anchor it above the form.
+- tapOn:
+    text: "Back"
+    above:
+      id: goal-name
 - extendedWaitUntil:
     visible:
       id: goal-create
