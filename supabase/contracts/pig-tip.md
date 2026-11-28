@@ -21,6 +21,7 @@ When the model was asked but no tip went out, the 204 also carries `x-tip-model`
 
 A **204 from `/pig-tip`** happens when:
 - tips are switched off;
+- the settings name a region and the function ran anywhere else. The app pins the region with the `x-region` header to avoid it; this 204 carries `x-tip-why: region` and `x-tip-region` (where it ran, or `unknown`);
 - the day's cap for everyone is reached;
 - this person's tip for the day is used;
 - the model declines or fails;

@@ -20,6 +20,10 @@ const anthropic = new Anthropic({ maxRetries: 1, timeout: 15_000 });
 
 const efforts: readonly Effort[] = ["low", "medium", "high"];
 
+// Where this function runs: the platform's own variable on hosted Edge
+// Functions. Unset, a region the settings name is never matched.
+const region = Deno.env.get("SB_REGION") ?? null;
+
 Deno.serve((req) =>
   handle(req, {
     async userId(authorization) {
@@ -32,17 +36,22 @@ Deno.serve((req) =>
     async settings() {
       const { data, error } = await admin
         .from("tip_settings")
-        .select("enabled, model, effort")
+        .select("enabled, model, effort, region")
         .eq("id", 1)
         .single();
       if (error) throw error;
-      // Checked here, whatever the client's types say: an unknown model or
-      // effort asks nothing.
-      const row = data as unknown as { enabled?: unknown; model?: unknown; effort?: unknown } | null;
+      // Checked here, whatever the client's types say: an unknown model,
+      // effort or region asks nothing.
+      const row = data as unknown as
+        | { enabled?: unknown; model?: unknown; effort?: unknown; region?: unknown }
+        | null;
       const effort = efforts.find((e) => e === row?.effort);
       if (!row || row.enabled !== true || !isTipModel(row.model) || !effort) return null;
-      return { model: row.model, effort };
+      const only = row.region ?? null;
+      if (only !== null && typeof only !== "string") return null;
+      return { model: row.model, effort, region: only };
     },
+    region,
     async takeTip(uid, today) {
       const { data, error } = await admin.rpc("take_tip", { uid, today });
       if (error) throw error;

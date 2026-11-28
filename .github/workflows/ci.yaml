@@ -125,6 +125,11 @@ jobs:
       - name: The function as deployed type-checks
         working-directory: supabase/functions/pig-tip
         run: deno check --no-lock index.ts
+      # The deploy's and the staging run's scripts run only against staging,
+      # so they're type-checked here first.
+      - name: The staging scripts type-check
+        working-directory: supabase/functions/pig-tip
+        run: deno check --no-lock ../../scripts/sql.ts ../../scripts/smoke.ts ../../scripts/tips-run.ts
 
   trackers:
     name: no tracking dependencies

@@ -20,6 +20,10 @@ create table if not exists public.tip_settings (
   -- Tips a UTC day for one person (one anonymous id).
   per_person_daily integer not null default 1
     check (per_person_daily between 0 and 100),
+  -- The one region tips are made in, as the function's runtime reports it
+  -- (SB_REGION); a call run anywhere else gets no tip. Null: anywhere.
+  -- Prod names its own with one update.
+  region text check (region is null or region ~ '^[a-z0-9-]{1,40}$'),
   updated_at timestamptz not null default now()
 );
 insert into public.tip_settings (id) values (1) on conflict (id) do nothing;

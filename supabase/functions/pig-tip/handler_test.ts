@@ -1,6 +1,6 @@
 import fixtures from "../../fixtures/tips-run.json" with { type: "json" };
-import { type Deps, handle, type Report, type Take } from "./handler.ts";
-import type { ModelAnswer, ModelSettings } from "./model.ts";
+import { type Deps, handle, type Report, type Take, type TipSettings } from "./handler.ts";
+import type { ModelAnswer } from "./model.ts";
 import { assert, assertEquals } from "./test_util.ts";
 
 const week = fixtures.weeks[1].request;
@@ -14,7 +14,8 @@ function fake(over: Partial<Deps> = {}) {
   const reports: Report[] = [];
   const deps: Deps = {
     userId: async (auth) => (auth === "Bearer good" ? UID : null),
-    settings: async (): Promise<ModelSettings | null> => ({ model: "claude-haiku-5-5", effort: "low" }),
+    settings: async (): Promise<TipSettings | null> => ({ model: "claude-haiku-5-5", effort: "low", region: null }),
+    region: "us-east-1",
     takeTip: async (uid, today): Promise<Take> => {
       calls.push(`take ${uid} ${today}`);
       return "ok";
@@ -89,6 +90,26 @@ Deno.test("204 when tips are off: nothing counted, no model asked", async () => 
   assertEquals((await handle(post("/pig-tip", week), deps)).status, 204);
   assertEquals(calls, []);
   assertEquals(logs, [{ route: "tip", status: 204, why: "off" }]);
+});
+
+Deno.test("204 outside the settings' region, or where the runtime says none", async () => {
+  const inUS = { model: "claude-sonnet-5-5", effort: "low", region: "us-east-1" } as const;
+  for (const where of ["ap-southeast-1", null]) {
+    const { deps, calls, logs } = fake({ settings: async () => inUS, region: where });
+    const res = await handle(post("/pig-tip", week), deps);
+    assertEquals(res.status, 204, String(where));
+    assertEquals(res.headers.get("x-tip-why"), "region");
+    assertEquals(res.headers.get("x-tip-region"), where ?? "unknown");
+    assertEquals(res.headers.get("x-tip-model"), null);
+    assertEquals(calls, [], `nothing counted, no model asked: ${where}`);
+    assertEquals(logs, [{ route: "tip", status: 204, why: "region", region: where ?? "unknown" }]);
+    assertQuietLogs(logs);
+  }
+  // In its own region, or with no region named, the tip goes on as usual.
+  for (const [named, where] of [["us-east-1", "us-east-1"], [null, "ap-southeast-1"]] as const) {
+    const { deps } = fake({ settings: async () => ({ ...inUS, region: named }), region: where });
+    assertEquals((await handle(post("/pig-tip", week), deps)).status, 200, `${named} ${where}`);
+  }
 });
 
 Deno.test("204 at the daily cap, or with today's tip used: no model asked", async () => {

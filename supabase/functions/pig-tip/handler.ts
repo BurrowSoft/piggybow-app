@@ -6,9 +6,10 @@
 //   POST /pig-tip/report  "Report this tip": 204, or 400
 //   POST /pig-tip/forget  turning tips off: the anonymous user goes; 204
 //
-// Anonymous users only (401 otherwise). Each request logs one line: the
-// route, the status and why, the model and its token counts. Never the
-// request, the tip or the user's id.
+// Anonymous users only (401 otherwise). When the settings name a region,
+// tips are made only there (where the runtime says the function runs).
+// Each request logs one line: the route, the status and why, the model and
+// its token counts. Never the request, the tip or the user's id.
 
 import { validRequest, type TipRequest } from "./contract.ts";
 import { checkTip } from "./filter.ts";
@@ -19,11 +20,16 @@ export type Take = "ok" | "off" | "cap" | "used";
 export const REPORT_REASONS = ["unhelpful", "wrong", "upsetting", "advice", "other"] as const;
 export type Report = { tip: string; reason: string; model: string };
 
+/** The model settings, and the one region tips may be made in (null: any). */
+export type TipSettings = ModelSettings & { region: string | null };
+
 export type Deps = {
   /** The caller's id when it's a signed-in anonymous user, else null. */
   userId(authorization: string | null): Promise<string | null>;
   /** The settings when tips are on, else null (the kill switch). */
-  settings(): Promise<ModelSettings | null>;
+  settings(): Promise<TipSettings | null>;
+  /** The region this function runs in, as the runtime says (null: unsaid). */
+  region: string | null;
   /** One tip for [uid] today (UTC): counted when 'ok'. */
   takeTip(uid: string, today: string): Promise<Take>;
   ask(request: TipRequest, settings: ModelSettings): Promise<ModelAnswer>;
@@ -107,6 +113,13 @@ async function tip(
   if (settings === null) {
     log({ status: 204, why: "off" });
     return noTip();
+  }
+  // Outside the settings' region (or nowhere said): no tip, nothing
+  // counted, no model asked. The app pins the region, so this is a guard.
+  if (settings.region !== null && deps.region !== settings.region) {
+    const where = deps.region ?? "unknown";
+    log({ status: 204, why: "region", region: where });
+    return noTip({ "x-tip-why": "region", "x-tip-region": where });
   }
   const take = await deps.takeTip(uid, deps.today());
   if (take !== "ok") {
