@@ -11,7 +11,7 @@
   "IT_OFFERED": "false",
   "APP_LOCK_ENABLED": "true",
   "PLUS_ENABLED": "false",
-  "PRIVACY_URL": "",
-  "SUPPORT_URL": "",
+  "PRIVACY_URL": "https://www.piggybow.com/privacy",
+  "SUPPORT_URL": "https://www.piggybow.com/support",
   "TERMS_URL": ""
 }
