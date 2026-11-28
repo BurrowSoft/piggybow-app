@@ -5,7 +5,11 @@
 // 1. Notes tip_settings, then sets the run's model, switches tips on, lifts
 //    the per-person limit and names no region (Management API, the scoped
 //    token).
-// 2. Signs in one anonymous user (the anon key).
+// 2. Signs in one anonymous user (the anon key). Around it, counts only,
+//    never a value: Auth's sessions, those that keep an IP address (what
+//    the idle users' deletion takes away), and Auth's audit log rows in the
+//    database, which a sign-up must not add to ("Write audit logs to the
+//    database" off).
 // 3. Asks for a tip per week: the status, the tip or why there's none, the
 //    model that answered and its tokens.
 // 4. Reports one tip as given (kept), and with one character changed
@@ -15,7 +19,8 @@
 // 6. Whatever happened: tip_settings back as they were, and the run's user
 //    forgotten.
 // 7. Prints a table for the job's log, with an estimated cost, the reports'
-//    two answers and the guard's.
+//    two answers, the guard's and the retention counts; then fails when the
+//    sign-up added to Auth's audit log.
 //
 //   SUPABASE_DEPLOY_TOKEN=… PROJECT_REF=… ANON_KEY=… MODEL=… deno run \
 //     --allow-net --allow-read=supabase/fixtures \
@@ -70,7 +75,21 @@ await runSql(
 const rows: Row[] = [];
 const guard: string[] = [];
 const reports: string[] = [];
+const retention: string[] = [];
+let auditGrew = false;
 let access = "";
+/** Counts only, never a value: Auth's sessions, those that keep an IP
+ * address, and Auth's audit log rows in the database. */
+const authCounts = async () => {
+  const [c] = (await runSql(
+    ref,
+    token,
+    "select (select count(*) from auth.sessions) as sessions, " +
+      "(select count(ip) from auth.sessions) as with_ip, " +
+      "(select count(*) from auth.audit_log_entries) as audit",
+  )) as Array<Record<string, unknown>>;
+  return { sessions: Number(c?.sessions), withIp: Number(c?.with_ip), audit: Number(c?.audit) };
+};
 const askTip = (request: unknown, extra: Record<string, string> = {}) =>
   fetch(`${base}/functions/v1/pig-tip`, {
     method: "POST",
@@ -83,6 +102,7 @@ const askTip = (request: unknown, extra: Record<string, string> = {}) =>
     body: JSON.stringify(request),
   });
 try {
+  const auth0 = await authCounts();
   const signup = await fetch(`${base}/auth/v1/signup`, {
     method: "POST",
     headers: { apikey: anon, "Content-Type": "application/json" },
@@ -91,6 +111,19 @@ try {
   if (!signup.ok) throw new Error(`anonymous sign-in: HTTP ${signup.status}`);
   access = String((await signup.json()).access_token ?? "");
   if (!access) throw new Error("anonymous sign-in: no access token");
+  const auth1 = await authCounts();
+  // Unreadable counts fail too: never "none added" unless counted.
+  auditGrew = !(auth1.audit <= auth0.audit);
+  const auditSaid = !auditGrew
+    ? "none added, as it should be"
+    : Number.isNaN(auth0.audit) || Number.isNaN(auth1.audit)
+    ? "couldn't be counted"
+    : 'grew: "Write audit logs to the database" is on';
+  retention.push(
+    `- Auth sessions: ${auth0.sessions} → ${auth1.sessions}; keeping an IP address: ` +
+      `${auth0.withIp} → ${auth1.withIp} (what the idle users' deletion takes away).`,
+    `- Auth audit log rows in the database: ${auth0.audit} → ${auth1.audit} (${auditSaid}).`,
+  );
 
   for (const week of fixtures.weeks) {
     const res = await askTip(week.request);
@@ -202,3 +235,11 @@ console.log(
   `\ntip_settings put back: model ${wasModel}, enabled ${wasEnabled}, per person ${wasPerPerson}, ` +
     `region ${wasRegion}.`,
 );
+console.log(`\nRetention (counts only):\n${retention.join("\n") || "- not reached"}`);
+if (auditGrew) {
+  console.log(
+    "\nSTOP: Auth's audit log in the database grew with the anonymous sign-up, or couldn't be " +
+      'counted. Turn off "Write audit logs to the database" in the project\'s Auth settings.',
+  );
+  Deno.exit(1);
+}
