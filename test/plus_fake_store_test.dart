@@ -53,11 +53,11 @@ void main() {
     expect('RowsPlusStore('.allMatches(main), hasLength(1));
   });
 
-  // Changed on purpose (decision 79, UX): the emulator's plus-rows kind, a
-  // staging debug build, is the one place that turns it on, for the tester's
-  // rows. Every other workflow, Codemagic and every env file still never do,
-  // and nothing turns PLUS_ROWS_OWNED on.
-  test("no env file turns it on, and no workflow but the emulator's plus-rows build", () {
+  // Changed on purpose (decision 79, UX): the emulator's plus-rows and
+  // plus-owned kinds, staging debug builds, are the one place that turns it
+  // on, for the tester's rows; plus-owned alone adds PLUS_ROWS_OWNED. Every
+  // other workflow, Codemagic and every env file still never do.
+  test("no env file turns them on, and no workflow but the emulator's rows builds", () {
     const defines = ['PLUS_FAKE_STORE', 'PLUS_ROWS_OWNED'];
     for (final f in Directory(
       'env',
@@ -74,21 +74,28 @@ void main() {
     ]) {
       expect(f.existsSync(), isTrue, reason: f.path);
       final text = f.readAsStringSync();
-      expect(text, isNot(contains('PLUS_ROWS_OWNED')), reason: f.path);
       if (!f.path.replaceAll(String.fromCharCode(92), '/').endsWith('/emulator.yaml')) {
-        expect(text, isNot(contains('PLUS_FAKE_STORE')), reason: f.path);
+        for (final define in defines) {
+          expect(text, isNot(contains(define)), reason: '${f.path}: $define');
+        }
         continue;
       }
-      final lines = [
-        for (final l in text.split('\n'))
-          if (l.contains('PLUS_FAKE_STORE')) l.trim(),
-      ];
-      expect(lines, hasLength(2), reason: 'the kind\'s description and its one define');
-      expect(lines.first, startsWith('description: "The APK:'));
-      expect(
-        lines.last,
-        startsWith(r'| if $kind == "plus-rows" then .PLUS_FAKE_STORE = "true" else . end'),
-      );
+      // The emulator: each define in the kinds' description and its one line.
+      for (final (define, line) in [
+        (
+          'PLUS_FAKE_STORE',
+          r'| if $kind == "plus-rows" or $kind == "plus-owned" then .PLUS_FAKE_STORE = "true" else . end',
+        ),
+        ('PLUS_ROWS_OWNED', r'| if $kind == "plus-owned" then .PLUS_ROWS_OWNED = "true" else . end'),
+      ]) {
+        final lines = [
+          for (final l in text.split('\n'))
+            if (l.contains(define)) l.trim(),
+        ];
+        expect(lines, hasLength(2), reason: "$define: the kinds' description and its one line");
+        expect(lines.first, startsWith('description: "The APK:'), reason: define);
+        expect(lines.last, startsWith(line), reason: define);
+      }
     }
     // The release build is never a debug one.
     final release = File('.github/workflows/release-aab.yaml')

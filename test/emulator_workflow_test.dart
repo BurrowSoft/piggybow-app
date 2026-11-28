@@ -53,7 +53,7 @@ void main() {
       r'[[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]',
       r'[[ "$FLOWS_REF" =~ ^[A-Za-z0-9._/-]{1,100}$ && "$FLOWS_REF" != *..* ]]',
       r'[[ "$TAGS" =~ ^[a-z0-9_-]+(,[a-z0-9_-]+)*$ ]]',
-      r'[[ "$KIND" =~ ^(debug|reminder-now|release|prod-release|plus-rows|plus-probe)$ ]]',
+      r'[[ "$KIND" =~ ^(debug|reminder-now|release|prod-release|plus-rows|plus-owned|plus-probe)$ ]]',
       r'[[ -z "$ROWS" || "$ROWS" =~ ^[a-z0-9_-]{1,40}$ ]]',
       r'[[ "$ZONE" =~ ^[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}$ ]]',
     ]) {
@@ -141,7 +141,7 @@ steps:
     expect(
       wf,
       contains(
-        'options: [debug, reminder-now, release, prod-release, plus-rows, plus-probe]',
+        'options: [debug, reminder-now, release, prod-release, plus-rows, plus-owned, plus-probe]',
       ),
     );
     expect(wf, contains(r'[[ "$KIND" != prod-release || -z "$FAKE_NOW" ]]'));
@@ -189,11 +189,12 @@ steps:
     expect(run.indexOf('maestro --device'), greaterThan(perms));
   });
 
-  // Decision 79: Plus on the emulator, in its two staging kinds only. The
-  // tester's rows get the rows' fake store (a debug build); the probe gets
+  // Decision 79: Plus on the emulator, in its three staging kinds only. The
+  // tester's rows get the rows' fake store (debug builds), owning Plus in
+  // plus-owned; the probe gets
   // the real Play Billing layer in a profile build without the network-state
   // permission, as the store build will be, on a Play Store image.
-  test('plus-rows and plus-probe: Plus only in their staging builds; the '
+  test('plus-rows, plus-owned and plus-probe: Plus only in their staging builds; the '
       "probe's manifest change in the runner only", () {
     final build = wf.substring(
       wf.indexOf('- name: Build the APK under test'),
@@ -207,16 +208,24 @@ steps:
     expect(
       build,
       contains(
-        r'| if $kind == "plus-rows" or $kind == "plus-probe" then .PLUS_ENABLED = "true" else . end',
+        r'| if $kind == "plus-rows" or $kind == "plus-owned" or $kind == "plus-probe" then .PLUS_ENABLED = "true" else . end',
       ),
     );
     expect(
       build,
-      contains(r'| if $kind == "plus-rows" then .PLUS_FAKE_STORE = "true" else . end'),
+      contains(
+        r'| if $kind == "plus-rows" or $kind == "plus-owned" then .PLUS_FAKE_STORE = "true" else . end',
+      ),
+    );
+    expect(
+      build,
+      contains(r'| if $kind == "plus-owned" then .PLUS_ROWS_OWNED = "true" else . end'),
     );
     expect('PLUS_ENABLED = '.allMatches(wf), hasLength(1));
     expect('PLUS_FAKE_STORE = '.allMatches(wf), hasLength(1));
-    // plus-rows is a debug build (the fake store also needs kDebugMode).
+    expect('PLUS_ROWS_OWNED = '.allMatches(wf), hasLength(1));
+    // plus-rows and plus-owned are debug builds (the fake store also needs
+    // kDebugMode).
     expect(build, contains('*) mode=--debug; built=app-staging-debug.apk ;;'));
     // The store build's permissions: the release overlay becomes this
     // runner's profile overlay, checked byte for byte.
