@@ -13,6 +13,8 @@
 #   BK-3 (P2)  a wrong password: the wrong-password line, the password kept
 #   BK-4 (P3, P3b, P3c) 1 GB of zeros, 52 MB of zeros, 49 MB of random bytes:
 #        "This isn't a Piggybow backup file.", no crash; meminfo around each
+#   BK-4c the 49 MB random file not read in: Java heap PSS at the refusal
+#        minus before, under 16 MB (the Reviewer's counted P3c)
 #   BK-6 (P6)  one byte changed in a copy: the wrong-password line
 #   BK-7 (P4)  the app's cache after all of it: nothing from the picks
 #   BK-8 (#104, the header check) a PNG, a CSV and an empty file renamed
@@ -106,6 +108,7 @@ for item in "big-video:P3 1 GB of zeros" "over-cap:P3b 52 MB of zeros" "under-ca
   if MF_NAME=91e-$f mf flows/pb1/91e_restore_not_backup.yaml -e FILE="$f" -e SHOT="91-not-backup-$f"; then
     heap "at the 'isn't a backup' line, $f"; ja=$(jheap)
     echo "$(stamp) INFO $f: Java heap PSS ${jb:-?} → ${ja:-?} KB at the refusal (with #104's header check: flat)"
+    [ "$f" = under-cap ] && { uc_b=$jb; uc_a=$ja; }
     sleep 10
     heap "10 s later, $f"
     if alive; then
@@ -123,6 +126,19 @@ if [ "$ok" = 3 ]; then
   row BK-4 PASS "flow 91e ×3: 1 GB, 52 MB and 49 MB (random) each 'This isn't a Piggybow backup file.', no crash or ANR; meminfo before and after each in the log"
 else
   row BK-4 FAIL "flow 91e: $ok of 3 refused cleanly"
+fi
+# BK-4c (the Reviewer's counted P3c): the 49 MB random file must not be read
+# in. Java heap PSS at the refusal minus before, under 16 MB (16384 KB). The
+# control: +100 MB on 4ed3184, before #104's header check.
+if [[ "${uc_b:-}" =~ ^[0-9]+$ && "${uc_a:-}" =~ ^[0-9]+$ ]]; then
+  d=$((uc_a - uc_b))
+  if [ "$d" -lt 16384 ]; then
+    row BK-4c PASS "49 MB random file: Java heap PSS ${uc_b} → ${uc_a} KB at the refusal (+${d} KB, under 16 MB): not read in"
+  else
+    row BK-4c FAIL "49 MB random file: Java heap PSS ${uc_b} → ${uc_a} KB at the refusal (+${d} KB, 16 MB or more): read in"
+  fi
+else
+  row BK-4c FAIL "49 MB random file: the Java heap couldn't be read before and at the refusal (${uc_b:-none} → ${uc_a:-none})"
 fi
 
 # BK-8 (#104, the header check): files that aren't backups by their content
