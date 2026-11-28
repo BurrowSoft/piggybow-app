@@ -1,0 +1,82 @@
+appId: ${APP_ID}
+name: System-bar shots 2 - the bottom of the screen at the end of O1's currency list, the Add sheet (as it opens and at its end), a Me sub-page and the end of a goal's page; MODE names the theme (light or dark), NAV the navigation (gesture or buttons)
+tags: [statusbar]
+# Run by tool/device-rows/statusbar.sh with MODE and NAV. The verdict is the
+# look: no black or grey strip behind the navigation bar, nothing to read or
+# tap under it, its icons readable, the status bar see-through as before.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- extendedWaitUntil:
+    visible:
+      id: onb-welcome
+    timeout: 20000
+# O1's currency list, scrolled to its end
+- tapOn:
+    id: onb-currency-change
+- extendedWaitUntil:
+    visible:
+      id: currency-USD
+    timeout: 10000
+- repeat:
+    times: 10
+    commands:
+      - scroll
+- waitForAnimationToEnd
+- takeScreenshot: 51-currency-end-${NAV}-${MODE}
+- back
+- extendedWaitUntil:
+    visible:
+      id: onb-welcome
+    timeout: 10000
+- runFlow: ../../subflows/to_home.yaml
+# The Add sheet as it opens, then at its end with the keyboard down
+- tapOn:
+    id: home-add
+- extendedWaitUntil:
+    visible:
+      id: add-amount
+    timeout: 10000
+- waitForAnimationToEnd
+- takeScreenshot: 51-add-${NAV}-${MODE}
+- runFlow:
+    when:
+      visible:
+        text: "Back"
+        below:
+          id: add-amount
+    commands:
+      - tapOn:
+          text: "Back"
+          below:
+            id: add-amount
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-date
+- waitForAnimationToEnd
+- takeScreenshot: 51-add-end-${NAV}-${MODE}
+- back
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 10000
+# A Me sub-page: What makes your pig happy
+- tapOn:
+    id: tab-me
+- tapOn:
+    id: me-happy
+- waitForAnimationToEnd
+- takeScreenshot: 51-me-happy-${NAV}-${MODE}
+- back
+# A goal's page, scrolled to its end
+- tapOn:
+    id: tab-home
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env: { NAME: "Trip", AMOUNT: "500", START: "20" }
+- repeat:
+    times: 4
+    commands:
+      - scroll
+- waitForAnimationToEnd
+- takeScreenshot: 51-goal-end-${NAV}-${MODE}

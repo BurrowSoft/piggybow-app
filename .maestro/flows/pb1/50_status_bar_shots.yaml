@@ -1,5 +1,5 @@
 appId: ${APP_ID}
-name: Status and navigation bar shots - O1 (Welcome), Home and the goal celebration, for a look by eye at the top and the bottom; MODE names the shots (light or dark, set by the device-rows script)
+name: Status and navigation bar shots - O1 (Welcome), Home and the goal celebration, for a look by eye at the top and the bottom; MODE names the theme (light or dark), NAV the navigation (gesture or buttons), both set by the device-rows script
 tags: [statusbar]
 # Run by tool/device-rows/statusbar.sh: once with the emulator in light mode,
 # once in night mode (cmd uimode), MODE=light|dark. The app follows the phone's
@@ -12,11 +12,11 @@ tags: [statusbar]
       id: onb-welcome
     timeout: 20000
 - waitForAnimationToEnd
-- takeScreenshot: 50-o1-${MODE}
+- takeScreenshot: 50-o1-${NAV}-${MODE}
 # Home (an app bar on top; the navigation bar at the bottom must show no black strip)
 - runFlow: ../../subflows/to_home.yaml
 - waitForAnimationToEnd
-- takeScreenshot: 50-home-${MODE}
+- takeScreenshot: 50-home-${NAV}-${MODE}
 # The celebration: a goal whose "Already saved" reaches its target at creation
 - runFlow:
     file: ../../subflows/create_goal.yaml
@@ -26,4 +26,4 @@ tags: [statusbar]
       id: goal-done-screen
     timeout: 15000
 - waitForAnimationToEnd
-- takeScreenshot: 50-celebration-${MODE}
+- takeScreenshot: 50-celebration-${NAV}-${MODE}
