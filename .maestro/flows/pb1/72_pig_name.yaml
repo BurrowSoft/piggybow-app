@@ -1,0 +1,96 @@
+appId: ${APP_ID}
+name: Name your pig - Me, Your pig, Name - Home shows the name above the speech box; Cancel keeps it, an empty name removes it, at most 20 characters, kept after a relaunch; MODE names the shots (light or dark)
+tags: [pigname]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- assertNotVisible:
+    id: home-pig-name                               # no name yet
+# Name it: Mochi
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-pig-name
+- assertVisible:
+    id: me-pig-name
+    text: "(?s).*Give your pig a name.*"
+- tapOn:
+    id: me-pig-name
+- assertVisible: "Your pig's name"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: me-pig-name-field, TEXT: "Mochi", EXPECT: "(?s).*Mochi.*" }
+- takeScreenshot: 72-dialog-${MODE}
+- tapOn:
+    id: me-pig-name-save
+- assertVisible:
+    id: me-pig-name
+    text: "(?s).*Mochi.*"
+- takeScreenshot: 72-me-${MODE}
+- tapOn:
+    id: tab-home
+- assertVisible:
+    id: home-pig-name
+    text: "Mochi"
+- waitForAnimationToEnd
+- takeScreenshot: 72-home-${MODE}
+# Cancel keeps the name
+- tapOn:
+    id: tab-me
+- tapOn:
+    id: me-pig-name
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env: { ID: me-pig-name-field, TEXT: "Pumpkin", EXPECT: "(?s).*Pumpkin.*" }
+- tapOn:
+    id: me-pig-name-cancel
+- assertVisible:
+    id: me-pig-name
+    text: "(?s).*Mochi.*"
+# An empty name removes it (Home shows none)
+- tapOn:
+    id: me-pig-name
+- tapOn:
+    id: me-pig-name-field
+- eraseText: 10
+- tapOn:
+    id: me-pig-name-save
+- assertVisible:
+    id: me-pig-name
+    text: "(?s).*Give your pig a name.*"
+- tapOn:
+    id: tab-home
+- assertNotVisible:
+    id: home-pig-name
+# At most 20 characters: a 24-character paste keeps its first 20
+- tapOn:
+    id: tab-me
+- tapOn:
+    id: me-pig-name
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: me-pig-name-field, TEXT: "Sir Oinksalot of Bangkok", EXPECT: "(?s).*Sir Oinksalot of Ban(?!gkok).*" }
+- tapOn:
+    id: me-pig-name-save
+- assertVisible:
+    id: me-pig-name
+    text: "(?s).*Sir Oinksalot of Ban(?!gkok).*"
+- tapOn:
+    id: tab-home
+- assertVisible:
+    id: home-pig-name
+    text: "Sir Oinksalot of Ban"
+- waitForAnimationToEnd
+- takeScreenshot: 72-home-long-${MODE}
+# Kept after a relaunch (this phone only)
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: home-pig-name
+    timeout: 30000
+- assertVisible:
+    id: home-pig-name
+    text: "Sir Oinksalot of Ban"
