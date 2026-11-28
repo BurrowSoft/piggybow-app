@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "eb734429f8c0186e4aed895a87a4a61815943895",
+  "ref": "eb734429f8c0186e4aed895a87a4a61815943895",
+  "run_id": "46126396868",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -438,6 +438,42 @@
       "height": 2340
     },
     {
+      "file": "home_letter-end_dark_320x2.png",
+      "state": "L1",
+      "test": "L1 Home with the pig's letter about September (320 dp, text ×2, dark)",
+      "sha256": "ae91d454077cdf568a7545e4d6cc58a9c0361a40531cf229d4ccc8b32a400943",
+      "bytes": 173821,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_letter-end_light_320x2.png",
+      "state": "L1",
+      "test": "L1 Home with the pig's letter about September (320 dp, text ×2, light)",
+      "sha256": "0484dc38c4fb9fa21e8ab735ed4a2cc3b4c1be90ab27d14c1317e2102ebaa706",
+      "bytes": 175093,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_letter_dark_320x2.png",
+      "state": "L1",
+      "test": "L1 Home with the pig's letter about September (320 dp, text ×2, dark)",
+      "sha256": "d4a7aaa4423baf257887664e130bb1b015f8beb6b5a0f260478aa492483ad029",
+      "bytes": 161980,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_letter_light_320x2.png",
+      "state": "L1",
+      "test": "L1 Home with the pig's letter about September (320 dp, text ×2, light)",
+      "sha256": "8c3363fff68347a0b8eb41b339e05f55ca09dbfff906220f3d828e8a95fa7d44",
+      "bytes": 161205,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "home_reached-card_dark_320x2.png",
       "state": "H4",
       "test": "H4/H5 Home after a goal was reached: \"Reached:\" and the longest line (320 dp, text ×2, dark)",
@@ -783,8 +819,8 @@
       "file": "me_no-plan_dark_320x2.png",
       "state": "M1",
       "test": "M1 Me, no plan (320 dp, text ×2, dark)",
-      "sha256": "abbec9e958b8ca17922372a49a070842ff50a859dc15a9cd4eadb18006f81af3",
-      "bytes": 177066,
+      "sha256": "aead26b5410e87b7e3a44380f6265e199d040ce65c01d71737460f1b4048c20a",
+      "bytes": 184116,
       "width": 960,
       "height": 2340
     },
@@ -792,8 +828,8 @@
       "file": "me_no-plan_light_320x2.png",
       "state": "M1",
       "test": "M1 Me, no plan (320 dp, text ×2, light)",
-      "sha256": "a588d7849b219de0e6cb7ad250d8a258543d7b9cba6787a183ce00a9629dc50f",
-      "bytes": 176948,
+      "sha256": "339bc161fc1ef429ec0e0134f6f5aed710e108738cc43710041e6d7b5a47acec",
+      "bytes": 183907,
       "width": 960,
       "height": 2340
     },
@@ -819,8 +855,8 @@
       "file": "me_plan-dialog-empty_dark_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
-      "sha256": "5e7b6e0da00bcc1a0612de3d0fb91f6415c7f9b80d400c40f7dbbe15210ff289",
-      "bytes": 166515,
+      "sha256": "57c1ea1de539097e5e3e9c6502808a6393a94edb84b886fadf3eaa87b038ec12",
+      "bytes": 155052,
       "width": 960,
       "height": 2340
     },
@@ -828,8 +864,8 @@
       "file": "me_plan-dialog-empty_light_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
-      "sha256": "6d7d7b075553ee0a96105a9f38395605b3055e16ea67b28621589cdbd3b6c625",
-      "bytes": 168538,
+      "sha256": "8342b014eb9bdacc2aba0131d4fd1232c5333c1f4f7e3028c3b0731cf8dacb1c",
+      "bytes": 157139,
       "width": 960,
       "height": 2340
     },
@@ -837,8 +873,8 @@
       "file": "me_plan-dialog-set_dark_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
-      "sha256": "852b0bbe9409d27f6b3c402b263db90cf1e489cec2b6220683f644e524245072",
-      "bytes": 174272,
+      "sha256": "4bb2f0e8e9d1341cfc3be341f830bd3847f1d993dac9491b07871d09f2823f67",
+      "bytes": 171197,
       "width": 960,
       "height": 2340
     },
@@ -846,8 +882,8 @@
       "file": "me_plan-dialog-set_light_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
-      "sha256": "f630a770cb7d5fdbe5202aa7a29c15ffbe0a51593605920c63e0c00ca670e662",
-      "bytes": 175687,
+      "sha256": "871e8a5c0b217e23177d6427dbe1c55a698d8a7f37118c63b64c4cbb19a3a0e7",
+      "bytes": 173573,
       "width": 960,
       "height": 2340
     },
@@ -855,8 +891,8 @@
       "file": "me_plan-set_dark_320x2.png",
       "state": "M2",
       "test": "M2 Me, a plan set (320 dp, text ×2, dark)",
-      "sha256": "9cfbd819e51a9d7613ec29d76f3d19e9655ff2423e63c932061e1471e6615d28",
-      "bytes": 181688,
+      "sha256": "498d5e6ca9890be1c01ec73619f246f3cfa98d8bc7104f4f2831b5b654e17126",
+      "bytes": 188865,
       "width": 960,
       "height": 2340
     },
@@ -864,8 +900,8 @@
       "file": "me_plan-set_light_320x2.png",
       "state": "M2",
       "test": "M2 Me, a plan set (320 dp, text ×2, light)",
-      "sha256": "77d4c42ccf4cc1dc3514886576521308e9a3c38758dafc7b6104d056372b5586",
-      "bytes": 181540,
+      "sha256": "29c14a672d777d69c7e362405cbd6fa4b5eebd02af5e631d9570a14817e46178",
+      "bytes": 188692,
       "width": 960,
       "height": 2340
     },
