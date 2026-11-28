@@ -2,6 +2,9 @@
 # day picker; back on Home after it. SEG: add-seg-spent or add-seg-saved;
 # CAT: a category id for a spend, or "none" for a save; DAY: the calendar
 # day's full date as the picker reads it out, e.g. "Monday, November 23, 2026".
+# The day is picked FIRST, before any field has focus: closing the picker gives
+# the focus back to a focused field and the keyboard comes and goes, which
+# moved Add while Maestro was tapping it.
 # env: SEG, AMOUNT, CAT, DAY
 appId: ${APP_ID}
 ---
@@ -9,6 +12,15 @@ appId: ${APP_ID}
     id: home-add
 - tapOn:
     id: ${SEG}
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-date
+- tapOn:
+    id: add-date
+- tapOn: ".*${DAY}.*"
+- tapOn: "OK"
+- waitForAnimationToEnd
 - runFlow:
     file: paste_into.yaml
     env:
@@ -28,17 +40,7 @@ appId: ${APP_ID}
 - runFlow:
     file: reveal.yaml
     env:
-      ID: add-date
-- tapOn:
-    id: add-date
-- tapOn: ".*${DAY}.*"
-- tapOn: "OK"
-- waitForAnimationToEnd                   # the picker closes and the sheet scrolls back
-- runFlow:
-    file: reveal.yaml
-    env:
       ID: add-submit
-# One retry: a tap during that scroll can land on the note field instead
 - retry:
     maxRetries: 1
     commands:
