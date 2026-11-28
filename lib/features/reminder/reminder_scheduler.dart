@@ -1,23 +1,34 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import '../../reminder_rules/reminder_rules.dart';
 import 'reminder_plan.dart';
 
 /// The words on the notification: copy keys only, never anything the person
 /// wrote (lock screens are public).
 class ReminderCopy {
-  const ReminderCopy({
+  ReminderCopy({
     required this.title,
-    required this.body,
+    required this.bodies,
     required this.channelName,
-  });
+    required this.channelDescription,
+  }) : assert(bodies.length == reminderBodyCount);
 
   final String title;
-  final String body;
 
-  /// The Android notification channel's name (Settings → Notifications).
+  /// notifBody1 to notifBody3: a day's reminder uses
+  /// bodies[reminderBody(day) - 1], so the words change from day to day.
+  final List<String> bodies;
+
+  /// The Android notification channel's name and description (Settings →
+  /// Notifications).
   final String channelName;
+  final String channelDescription;
+
+  /// The body of the reminder that fires on [day] (its local date).
+  String bodyFor(DateTime day) => bodies[reminderBody(day) - 1];
 }
 
 /// Local notifications for the daily reminder (a fake in widget tests).
@@ -27,6 +38,17 @@ abstract interface class ReminderScheduler {
 
   /// Cancels every daily reminder, scheduled or already shown.
   Future<void> cancelAll();
+
+  /// A reminder tapped (a start from one included) and not yet answered:
+  /// the Add sheet opens once for it (plan §3.10).
+  ValueListenable<bool> get tapPending;
+
+  /// Answers the pending tap: true once, then false until another one, so
+  /// a shell built later never replays a tap already answered.
+  bool takeTap();
+
+  /// Starts listening for taps, and takes a start from a reminder as one.
+  Future<void> listen();
 }
 
 /// flutter_local_notifications: inexact alarms that may fire while the
@@ -38,6 +60,24 @@ class PlatformReminderScheduler implements ReminderScheduler {
 
   final FlutterLocalNotificationsPlugin _plugin;
   Future<void>? _ready;
+  final _tapPending = ValueNotifier<bool>(false);
+
+  @override
+  ValueListenable<bool> get tapPending => _tapPending;
+
+  @override
+  bool takeTap() {
+    if (!_tapPending.value) return false;
+    _tapPending.value = false;
+    return true;
+  }
+
+  @override
+  Future<void> listen() async {
+    await _init();
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    if (launch?.didNotificationLaunchApp ?? false) _tapPending.value = true;
+  }
 
   static const channelId = 'daily_reminder';
 
@@ -65,6 +105,7 @@ class PlatformReminderScheduler implements ReminderScheduler {
             requestSoundPermission: false,
           ),
         ),
+        onDidReceiveNotificationResponse: (_) => _tapPending.value = true,
       )
       .then((_) {});
 
@@ -74,18 +115,25 @@ class PlatformReminderScheduler implements ReminderScheduler {
   /// notifications use, so it can be muted or changed beforehand. Making an
   /// existing channel again only renames it (the app language), never resets
   /// what the person chose.
-  Future<void> _ensureChannel(String id, String name) async {
+  Future<void> _ensureChannel(String id, ReminderCopy copy) async {
     await _plugin
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
         >()
-        ?.createNotificationChannel(AndroidNotificationChannel(id, name));
+        ?.createNotificationChannel(
+          AndroidNotificationChannel(
+            id,
+            copy.channelName,
+            description: copy.channelDescription,
+          ),
+        );
   }
 
   NotificationDetails _dailyDetails(ReminderCopy copy) => NotificationDetails(
     android: AndroidNotificationDetails(
       channelId,
       copy.channelName,
+      channelDescription: copy.channelDescription,
       icon: 'ic_notification',
       category: AndroidNotificationCategory.reminder,
       visibility: NotificationVisibility.public,
@@ -97,13 +145,13 @@ class PlatformReminderScheduler implements ReminderScheduler {
   Future<void> replaceAll(List<PlannedReminder> plan, ReminderCopy copy) async {
     await _init();
     await _cancelDaily();
-    if (plan.isNotEmpty) await _ensureChannel(channelId, copy.channelName);
+    if (plan.isNotEmpty) await _ensureChannel(channelId, copy);
     final details = _dailyDetails(copy);
     for (final r in plan) {
       await _plugin.zonedSchedule(
         id: r.id,
         title: copy.title,
-        body: copy.body,
+        body: copy.bodyFor(r.at),
         scheduledDate: r.at,
         notificationDetails: details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,

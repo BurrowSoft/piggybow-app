@@ -14,7 +14,12 @@
 
   "cancel": "Cancel",
   "meReminder": "Daily reminder",
-  "reminderBody": "How was your day? Check in when you have a moment.",
+  "notifTitle": "Piggybow",
+  "notifBody1": "Anything to note today?",
+  "notifBody2": "A minute for your money journal?",
+  "notifBody3": "Spent or saved something today? Jot it down.",
+  "reminderChannelName": "Daily reminder",
+  "reminderChannelDesc": "A gentle evening nudge to note your day.",
   "navBackTo": "Back to {screen}",
   "@navBackTo": {
     "description": "Spoken name of the Back chevron (decision 152): the screen it returns to, e.g. Back to Timeline.",
