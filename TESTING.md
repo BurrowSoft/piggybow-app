@@ -70,9 +70,9 @@ Rows: `tool/device-rows/group-b.sh` (emulator run 46155006260, flows `tests/retr
 | The C3 fixture's letter | ⚪ by design | the fixture freezes its own clock at 2 Dec, so its Home shows November's letter |
 History: each PR's own rows ran earlier on its head with fake_now (in its PR's comments); this is the first run of all six on master, in one build
 
-### master: groups A and A′ — the Plus line (yearly only), the Help and privacy links, themes, Patterns — 10a2bc9 — 🟢 (retroactive, on master after the landing; Plus is off in release builds) — 2026-11-28 14:30 UTC
+### master: groups A and A′ — the Plus line (yearly only), the Help and privacy links, themes, Patterns — 10a2bc9 — 🟢 (retroactive, on master after the landing; Plus is off in release builds; PO-1's run ❌ at the flow's own last check, its re-run ⏳; PA-3 ⏳) — 2026-11-28 14:30 UTC
 Build: staging debug, built in each job from 10a2bc9: `kind=plus-rows` (Plus enabled, the rows' fake store: Plus stays off) and `kind=plus-owned` (the same, reporting one active yearly purchase with nothing bought); installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
-Rows: `tool/device-rows/group-a.sh` (emulator run 46152479393, flows `tests/retro` @ ecda764), `group-a-owned.sh` (run 46153951980, flows @ 2f0e48a)
+Rows: `tool/device-rows/group-a.sh` (emulator run 46152479393, flows `tests/retro` @ ecda764): 4 pass, 1 fail (PA-3); `group-a-owned.sh` (run 46153951980, flows @ 2f0e48a): 0 pass, 1 fail (PO-1)
 | Row / check | Result | Notes |
 |---|---|---|
 | Master's push CI, read per test (run 46152426300, this sha) | 🟢 | `+2023: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; all four jobs green |
@@ -83,7 +83,8 @@ Rows: `tool/device-rows/group-a.sh` (emulator run 46152479393, flows `tests/retr
 | PA-5 the themes' gate (Plus off) | 🟢 | Me → Theme: Strawberry, Plum, Apricot, Blueberry; Plum opens the paywall; the theme stays |
 | ⏳ PA-3 the paywall at font scale 2.0 | | on the device with the next Plus run (two tries here stopped in the flow before the paywall); the yearly-only paywall at ×2 is in the goldens (320 × 2: offer, offer-end, pending), looked at |
 | PA-4 the smoke and the journal, Plus enabled | 🟢 | flows 00 and 10 |
-| PO-1 Plus on (with nothing bought) | 🟢 | Me "On. Thanks for your support!" with Manage subscription; the paywall "You have Piggybow Plus", Manage, no plans; a second goal opens the goal form with no paywall (two goals on Home); "Coffee runs" made in Categories and offered in Add; **Delete everything says "Your Plus subscription keeps running until you cancel it in Google Play." with Manage subscription**, and Cancel erases nothing. Every assertion about the app passed; the flow's own last wait (Me's top row after Cancel, with Me still scrolled to Delete) failed: fixed in the flow, proven next time |
+| PO-1 Plus on (with nothing bought) | ❌ | flow 90a's last step: `Assertion 'id: me-plus is visible' failed` after Cancel, with Me still scrolled down to Delete everything: a fault in the flow (it now waits for `me-delete`). Every assertion about the app before that step passed: Me "On. Thanks for your support!" with Manage subscription; the paywall "You have Piggybow Plus", Manage, no plans; a second goal opens the goal form with no paywall (two goals on Home); "Coffee runs" made in Categories and offered in Add; **Delete everything says "Your Plus subscription keeps running until you cancel it in Google Play." with Manage subscription**, and Cancel erases nothing |
+| ⏳ PO-1 re-run | | `group-a-owned.sh` with the fixed flow, on the next `plus-owned` run on master |
 | Patterns (#68, #69) | ⚪ device-free | the goldens above and the widget tests; Summary's teaser shows only once enough spends have a feeling |
 | ⏳ Plus bought for real | | Play Billing on a device with the store's product (the Plus probe), before Plus can ship |
 History: dry runs on #49 (Plus off, flows only) and an `adb root` flake (retried since, in #89)
