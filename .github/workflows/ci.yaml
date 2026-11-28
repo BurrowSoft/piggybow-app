@@ -98,7 +98,8 @@ jobs:
   # --config-only writes the Gradle wrapper and settings.
   # The pig tips server (supabase/): the pig-tip function's Deno tests, with
   # the model stubbed (no key, no call to a model), and a type check of the
-  # function as deployed. Deno is downloaded and checked by its sha256.
+  # function as deployed. Deno is downloaded and checked by its sha256; the
+  # npm packages come only as deno.lock has them (--frozen).
   server:
     name: server tests (deno)
     needs: changes
@@ -121,15 +122,57 @@ jobs:
           "$RUNNER_TEMP/deno/deno" --version
       - name: The pig-tip function's tests
         working-directory: supabase/functions/pig-tip
-        run: deno test --no-lock --allow-env
+        run: deno test --frozen --allow-env
       - name: The function as deployed type-checks
         working-directory: supabase/functions/pig-tip
-        run: deno check --no-lock index.ts
+        run: deno check --frozen index.ts
       # The deploy's and the staging run's scripts run only against staging,
       # so they're type-checked here first.
       - name: The staging scripts type-check
         working-directory: supabase/functions/pig-tip
-        run: deno check --no-lock ../../scripts/sql.ts ../../scripts/smoke.ts ../../scripts/tips-run.ts
+        run: deno check --frozen ../../scripts/sql.ts ../../scripts/smoke.ts ../../scripts/tips-run.ts
+
+  # Migration 001 on a bare Postgres (pinned by digest), run twice, then its
+  # SQL asserts: the seed, what the API's roles can't touch, the tips' and
+  # the reports' caps, and the clean-up's edges, in a time zone far from UTC.
+  # supabase/tests/stubs.sql stands in for what Supabase provides (auth.users,
+  # the three roles and their default grants). The pg_cron migration needs
+  # Supabase itself: the deploy runs it twice and checks it.
+  sql:
+    name: server SQL (postgres)
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.app == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.12@sha256:97fb53376be3e4fb1a8a61421daa69dcc3bf2fa39bda3259f5245f9a455af1a9
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 30
+    env:
+      PGHOST: localhost
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGDATABASE: postgres
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Migration 001, twice, then its asserts
+        run: |
+          set -euo pipefail
+          psql --version
+          psql -X -v ON_ERROR_STOP=1 -q -f supabase/tests/stubs.sql
+          psql -X -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261128140000_pig_tips.sql
+          psql -X -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261128140000_pig_tips.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/pig_tips_test.sql
 
   trackers:
     name: no tracking dependencies

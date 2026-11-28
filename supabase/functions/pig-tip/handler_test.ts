@@ -1,11 +1,14 @@
 import fixtures from "../../fixtures/tips-run.json" with { type: "json" };
-import { type Deps, handle, type Report, type Take, type TipSettings } from "./handler.ts";
+import { type Deps, type Filed, handle, type Report, type Take, type TipSettings } from "./handler.ts";
 import type { ModelAnswer } from "./model.ts";
+import { MIN_KEY_LENGTH, signerFor } from "./sign.ts";
 import { assert, assertEquals } from "./test_util.ts";
 
 const week = fixtures.weeks[1].request;
 const UID = "anon-user-1";
 const TIP = "Food led your week so far. A home-cooked dinner could be a nice change.";
+const SIGNER = (await signerFor("k".repeat(MIN_KEY_LENGTH)))!;
+const SIG = await SIGNER.sign("claude-haiku-5-5", TIP);
 
 /** Fake deps that record their calls and the log lines. */
 function fake(over: Partial<Deps> = {}) {
@@ -16,6 +19,7 @@ function fake(over: Partial<Deps> = {}) {
     userId: async (auth) => (auth === "Bearer good" ? UID : null),
     settings: async (): Promise<TipSettings | null> => ({ model: "claude-haiku-5-5", effort: "low", region: null }),
     region: "us-east-1",
+    signer: SIGNER,
     takeTip: async (uid, today): Promise<Take> => {
       calls.push(`take ${uid} ${today}`);
       return "ok";
@@ -24,8 +28,10 @@ function fake(over: Partial<Deps> = {}) {
       calls.push("ask");
       return { ok: true, text: TIP, model: "claude-haiku-5-5", inputTokens: 612, outputTokens: 88 };
     },
-    report: async (r) => {
+    fileReport: async (uid, today, r): Promise<Filed> => {
+      calls.push(`file ${uid} ${today}`);
       reports.push(r);
+      return "ok";
     },
     forget: async (uid) => {
       calls.push(`forget ${uid}`);
@@ -45,19 +51,24 @@ function post(path: string, body?: unknown, auth = "Bearer good"): Request {
   });
 }
 
-/** Nothing the person sent, nor the tip, nor their id, ever reaches a log. */
+/** Nothing the person sent, nor the tip, its signature or their id, ever
+ * reaches a log. */
 function assertQuietLogs(logs: Array<Record<string, unknown>>) {
   const text = JSON.stringify(logs);
-  for (const secret of [UID, TIP, "category_shares", "feelings", "picks"]) {
+  for (const secret of [UID, TIP, SIG, "category_shares", "feelings", "picks"]) {
     assert(!text.includes(secret), `the logs hold ${secret}`);
   }
 }
 
-Deno.test("a tip: 200 with the tip, its model and its tokens", async () => {
+Deno.test("a tip: 200 with the tip, its signature, its model and its tokens", async () => {
   const { deps, calls, logs } = fake();
   const res = await handle(post("/pig-tip", week), deps);
   assertEquals(res.status, 200);
-  assertEquals(await res.json(), { tip: TIP });
+  const body = await res.json();
+  assertEquals(Object.keys(body).sort(), ["sig", "tip"]);
+  assertEquals(body.tip, TIP);
+  assertEquals(body.sig, SIG);
+  assert(await SIGNER.verify("claude-haiku-5-5", body.tip, body.sig));
   assertEquals(res.headers.get("x-tip-model"), "claude-haiku-5-5");
   assertEquals(res.headers.get("x-tip-usage"), "in=612;out=88");
   assertEquals(calls, [`take ${UID} 2026-12-02`, "ask"]);
@@ -112,6 +123,17 @@ Deno.test("204 outside the settings' region, or where the runtime says none", as
   }
 });
 
+Deno.test("503 without a signing key: no tip, nothing counted, no model asked, no report kept", async () => {
+  const { deps, calls, logs, reports } = fake({ signer: null });
+  assertEquals((await handle(post("/pig-tip", week), deps)).status, 503);
+  assertEquals(calls, []);
+  assertEquals(logs, [{ route: "tip", status: 503, why: "no_signing_key" }]);
+  const good = { tip: TIP, reason: "other", model: "claude-haiku-5-5", sig: SIG };
+  assertEquals((await handle(post("/pig-tip/report", good), deps)).status, 503);
+  assertEquals(reports, []);
+  assertEquals(calls, []);
+});
+
 Deno.test("204 at the daily cap, or with today's tip used: no model asked", async () => {
   for (const take of ["cap", "used", "off"] as const) {
     const { deps, calls, logs } = fake({ takeTip: async () => take });
@@ -160,26 +182,62 @@ Deno.test("503 when the database fails, and the error's text isn't logged", asyn
   assertEquals(logs, [{ route: "tip", status: 503, why: "Error" }]);
 });
 
-Deno.test("report: the tip, a reason and the model are kept; anything else is refused", async () => {
-  const { deps, reports, logs } = fake();
-  const good = { tip: TIP, reason: "unhelpful", model: "claude-haiku-5-5" };
+Deno.test("report: a tip this server gave, a reason and its model are kept; any other body is refused", async () => {
+  const { deps, reports, calls, logs } = fake();
+  const good = { tip: TIP, reason: "unhelpful", model: "claude-haiku-5-5", sig: SIG };
   assertEquals((await handle(post("/pig-tip/report", good), deps)).status, 204);
-  assertEquals(reports, [good]);
+  assertEquals(reports, [{ tip: TIP, reason: "unhelpful", model: "claude-haiku-5-5" }]);
+  assertEquals(calls, [`file ${UID} 2026-12-02`]);
   for (
     const bad of [
       { ...good, reason: "boring" },
       { ...good, model: "claude-opus-5-5" },
       { ...good, tip: "" },
-      { ...good, tip: "a".repeat(401) },
+      { ...good, tip: "a".repeat(161) },
       { ...good, week },
-      { tip: TIP, reason: "wrong" },
+      { tip: TIP, reason: "wrong", model: "claude-haiku-5-5" },
+      { ...good, sig: 42 },
     ]
   ) {
-    assertEquals((await handle(post("/pig-tip/report", bad), deps)).status, 400, JSON.stringify(bad).slice(0, 60));
+    const res = await handle(post("/pig-tip/report", bad), deps);
+    assertEquals(res.status, 400, JSON.stringify(bad).slice(0, 60));
+    assertEquals(await res.json(), { code: "invalid_value" });
   }
   assertEquals(reports.length, 1);
   assertEquals(logs[0], { route: "report", status: 204, reason: "unhelpful", model: "claude-haiku-5-5" });
   assertQuietLogs(logs);
+});
+
+Deno.test("report: a tip changed by one character, another model's, or a forged signature: refused, nothing kept", async () => {
+  const { deps, reports, calls, logs } = fake();
+  const good = { tip: TIP, reason: "wrong", model: "claude-haiku-5-5", sig: SIG };
+  for (
+    const bad of [
+      { ...good, tip: TIP.replace("Food", "Fool") },
+      { ...good, model: "claude-sonnet-5-5" },
+      { ...good, sig: (SIG[0] === "A" ? "B" : "A") + SIG.slice(1) },
+      { ...good, sig: "not-a-signature" },
+    ]
+  ) {
+    const res = await handle(post("/pig-tip/report", bad), deps);
+    assertEquals(res.status, 400);
+    assertEquals(await res.json(), { code: "invalid_value" });
+  }
+  assertEquals(reports, []);
+  assertEquals(calls, [], "never counted");
+  assertEquals(logs.map((l) => l.why), ["bad_signature", "bad_signature", "bad_signature", "bad_signature"]);
+  assertQuietLogs(logs);
+});
+
+Deno.test("report: over the day's caps, for everyone or for this person: 429, not kept", async () => {
+  for (const filed of ["cap", "used"] as const) {
+    const { deps, logs } = fake({ fileReport: async () => filed });
+    const good = { tip: TIP, reason: "advice", model: "claude-haiku-5-5", sig: SIG };
+    const res = await handle(post("/pig-tip/report", good), deps);
+    assertEquals(res.status, 429, filed);
+    assertEquals(await res.json(), { code: "rate_limited" });
+    assertEquals(logs, [{ route: "report", status: 429, why: filed }]);
+  }
 });
 
 Deno.test("forget: the caller's anonymous user is deleted", async () => {

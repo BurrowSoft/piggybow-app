@@ -1,12 +1,13 @@
 // The pig-tip Edge Function: handler.ts with the real things
 // it talks to. Supabase sets SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for
-// every function; ANTHROPIC_API_KEY is the project's own secret. None of
-// them is ever logged.
+// every function; ANTHROPIC_API_KEY and TIP_REPORT_KEY are the project's own
+// secrets. None of them is ever logged.
 
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@supabase/supabase-js";
-import { handle, type Take } from "./handler.ts";
+import { type Filed, handle, type Take } from "./handler.ts";
 import { askModel, type Effort, isTipModel, type Reply } from "./model.ts";
+import { signerFor } from "./sign.ts";
 
 const admin = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
@@ -23,6 +24,13 @@ const efforts: readonly Effort[] = ["low", "medium", "high"];
 // Where this function runs: the platform's own variable on hosted Edge
 // Functions. Unset, a region the settings name is never matched.
 const region = Deno.env.get("SB_REGION") ?? null;
+
+// Signs every tip given; a report must bring its tip's signature back.
+// Missing or shorter than 32 characters, and no tips are given (503): never
+// one whose report couldn't be proved.
+const signer = await signerFor(Deno.env.get("TIP_REPORT_KEY"));
+
+const filed: readonly Filed[] = ["ok", "cap", "used"];
 
 Deno.serve((req) =>
   handle(req, {
@@ -52,6 +60,7 @@ Deno.serve((req) =>
       return { model: row.model, effort, region: only };
     },
     region,
+    signer,
     async takeTip(uid, today) {
       const { data, error } = await admin.rpc("take_tip", { uid, today });
       if (error) throw error;
@@ -63,9 +72,14 @@ Deno.serve((req) =>
         request,
         settings,
       ),
-    async report(report) {
-      const { error } = await admin.from("tip_reports").insert(report);
+    // The caps and the report in one transaction (file_report); the report
+    // row holds no one's id.
+    async fileReport(uid, today, report) {
+      const { data, error } = await admin.rpc("file_report", { uid, today, ...report });
       if (error) throw error;
+      const answer = filed.find((f) => f === data);
+      if (!answer) throw new Error("file_report: an unexpected answer");
+      return answer;
     },
     async forget(uid) {
       const { error } = await admin.auth.admin.deleteUser(uid);

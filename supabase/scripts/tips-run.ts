@@ -8,12 +8,14 @@
 // 2. Signs in one anonymous user (the anon key).
 // 3. Asks for a tip per week: the status, the tip or why there's none, the
 //    model that answered and its tokens.
-// 4. Checks the region guard: a region the function can't be in, then the
+// 4. Reports one tip as given (kept), and with one character changed
+//    (refused: its signature doesn't match).
+// 5. Checks the region guard: a region the function can't be in, then the
 //    one it ran in, pinned with x-region.
-// 5. Whatever happened: tip_settings back as they were, and the run's user
+// 6. Whatever happened: tip_settings back as they were, and the run's user
 //    forgotten.
-// 6. Prints a table for the job's log, with an estimated cost and the
-//    guard's two answers.
+// 7. Prints a table for the job's log, with an estimated cost, the reports'
+//    two answers and the guard's.
 //
 //   SUPABASE_DEPLOY_TOKEN=… PROJECT_REF=… ANON_KEY=… MODEL=… deno run \
 //     --allow-net --allow-read=supabase/fixtures \
@@ -41,7 +43,7 @@ if (!token || !ref || !anon || !MODELS.includes(model)) {
 }
 const base = `https://${ref}.supabase.co`;
 
-type Row = { week: string; status: number; text: string; model: string; inp: number; out: number };
+type Row = { week: string; status: number; text: string; sig: string; model: string; inp: number; out: number };
 
 const before = (await runSql(
   ref,
@@ -67,6 +69,7 @@ await runSql(
 
 const rows: Row[] = [];
 const guard: string[] = [];
+const reports: string[] = [];
 let access = "";
 const askTip = (request: unknown, extra: Record<string, string> = {}) =>
   fetch(`${base}/functions/v1/pig-tip`, {
@@ -99,8 +102,11 @@ try {
         .map(([k, v]) => [k, Number(v)]),
     );
     let text: string;
+    let sig = "";
     if (res.status === 200) {
-      text = String((await res.json()).tip ?? "");
+      const body = await res.json();
+      text = String(body.tip ?? "");
+      sig = String(body.sig ?? "");
     } else {
       await res.body?.cancel();
       text = `(no tip: ${res.headers.get("x-tip-why") ?? res.status})`;
@@ -109,10 +115,30 @@ try {
       week: week.name,
       status: res.status,
       text,
+      sig,
       model: res.headers.get("x-tip-model") ?? "",
       inp: usage.in ?? 0,
       out: usage.out ?? 0,
     });
+  }
+
+  // Reports, end to end: a tip as given, with its signature, is kept (204);
+  // the same tip with one character changed is refused (400). The kept one
+  // is the model's words for a made-up week, gone after 90 days.
+  const shown = rows.find((r) => r.status === 200 && r.sig);
+  if (shown) {
+    const send = async (tip: string) => {
+      const res = await fetch(`${base}/functions/v1/pig-tip/report`, {
+        method: "POST",
+        headers: { apikey: anon, Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ tip, reason: "other", model: shown.model, sig: shown.sig }),
+      });
+      await res.body?.cancel();
+      return res.status;
+    };
+    const changed = shown.text.endsWith(".") ? `${shown.text.slice(0, -1)}!` : `${shown.text}.`;
+    reports.push(`- Its own tip, as given: ${await send(shown.text)} (204 expected).`);
+    reports.push(`- One character changed: ${await send(changed)} (400 expected).`);
   }
 
   // The region guard, end to end. A region the function can't be in gets no
@@ -170,6 +196,7 @@ console.log(
   `\n${tips} tips out of ${rows.length}. Tokens: ${rows.reduce((s, r) => s + r.inp, 0)} in, ` +
     `${rows.reduce((s, r) => s + r.out, 0)} out. Estimated cost at list prices: $${cost.toFixed(4)}.`,
 );
+console.log(`\nReports:\n${reports.join("\n") || "- no tip to report"}`);
 console.log(`\nThe region guard:\n${guard.join("\n") || "- not reached"}`);
 console.log(
   `\ntip_settings put back: model ${wasModel}, enabled ${wasEnabled}, per person ${wasPerPerson}, ` +
