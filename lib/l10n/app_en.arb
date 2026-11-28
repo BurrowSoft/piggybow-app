@@ -297,5 +297,10 @@
   "sumWorthLine": "{worth} worth it · {notSure} not sure · {notReally} not really",
   "@sumWorthLine": {"placeholders": {"worth": {"type": "int"}, "notSure": {"type": "int"}, "notReally": {"type": "int"}}},
   "sumEmptyWeek": "Nothing noted for this week.",
-  "sumEmptyMonth": "Nothing noted for this month."
+  "sumEmptyMonth": "Nothing noted for this month.",
+  "widgetSpentToday": "Spent today",
+  "widgetNothingToday": "Nothing noted today",
+  "widgetNoGoal": "No goal yet",
+  "widgetLocked": "Tap to open",
+  "widgetPlus": "Part of Plus"
 }
