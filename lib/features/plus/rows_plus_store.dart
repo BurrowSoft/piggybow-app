@@ -13,16 +13,15 @@ class RowsPlusStore implements PlusStore {
 
   final void Function(String line) _log;
 
-  /// Placeholder prices, until Plus's price is set.
-  static const monthly = r'US$2.99';
-  static const yearly = r'US$19.99';
+  /// Plus's price (decision 85: yearly only, with the free week), as
+  /// long as the real one.
+  static const yearly = r'US$59.99';
 
   @override
   PlusSource get source => PlusSource.play;
 
   @override
   Future<List<PlusPlan>> plans() async => const [
-    PlusPlan(period: PlusPeriod.month, price: monthly, trialOffered: false),
     PlusPlan(period: PlusPeriod.year, price: yearly, trialOffered: true),
   ];
 

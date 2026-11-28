@@ -56,7 +56,7 @@ void main() {
     PlusBuyOutcome? next,
   }) async {
     setLayout(tester, c);
-    final store = FakePlusStore(monthly: r'$2.99', yearly: r'$19.99')
+    final store = FakePlusStore(yearly: r'$59.99')
       ..nextOutcome = next
       ..owns = on ? const [owned] : const [];
     final app = TestApp(

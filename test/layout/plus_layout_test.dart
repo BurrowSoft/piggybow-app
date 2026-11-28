@@ -74,7 +74,7 @@ void main() {
   }) async {
     setLayout(tester, c);
     final store =
-        FakePlusStore(monthly: 'IDR 49.000,00', yearly: 'IDR 499.000,00')
+        FakePlusStore(yearly: 'IDR 899.000,00')
           ..nextOutcome = const PlusPending()
           ..owns = on ? const [owned] : const [];
     final app = TestApp(

@@ -255,7 +255,6 @@ void main() {
     );
     await tester.tapId('plus-plan-yearly-start');
     expect(byId('plus-note'), findsOneWidget);
-    expect(start('plus-plan-monthly-start').onPressed, isNull);
     expect(start('plus-plan-yearly-start').onPressed, isNull);
     final restore = tester.widget<TextButton>(
       find.descendant(of: byId('plus-restore'), matching: find.byType(TextButton)),
@@ -263,7 +262,6 @@ void main() {
     expect(restore.onPressed, isNotNull);
     await tester.tapId('plus-restore');
     expect(find.text('No Plus subscription was found for this store account.'), findsOneWidget);
-    expect(start('plus-plan-monthly-start').onPressed, isNotNull);
     expect(start('plus-plan-yearly-start').onPressed, isNotNull);
   });
 }

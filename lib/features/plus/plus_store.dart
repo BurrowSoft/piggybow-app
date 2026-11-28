@@ -9,25 +9,23 @@ import 'package:flutter/foundation.dart' show Listenable;
 /// Which store this phone buys Plus from.
 enum PlusSource { play, apple }
 
-/// Play: one subscription with two base plans; the free week is an offer
-/// on a plan.
+// Plus is yearly only (decision 85): no monthly plan in either store.
+
+/// Play: one subscription with one base plan, yearly; the free week is an
+/// offer on it.
 const plusPlayProductId = 'piggybow_plus';
-const plusPlayMonthlyPlan = 'monthly';
 const plusPlayYearlyPlan = 'yearly';
 
-/// Apple: two products in one subscription group; the free week is a
-/// product's introductory offer.
-const plusAppleMonthlyId = 'piggybow_plus_monthly';
+/// Apple: one product in Plus's subscription group, yearly; the free week
+/// is its introductory offer.
 const plusAppleYearlyId = 'piggybow_plus_yearly';
 
 /// Whether a store's product id is Plus's.
 bool isPlusProduct(String productId) =>
-    productId == plusPlayProductId ||
-    productId == plusAppleMonthlyId ||
-    productId == plusAppleYearlyId;
+    productId == plusPlayProductId || productId == plusAppleYearlyId;
 
-/// How often a plan renews.
-enum PlusPeriod { month, year }
+/// How often a plan renews: yearly, the only plan (decision 85).
+enum PlusPeriod { year }
 
 /// One plan as the store offers it to this account.
 class PlusPlan {
@@ -106,8 +104,9 @@ abstract interface class PlusStore {
   /// play or apple: which store this phone buys from.
   PlusSource get source;
 
-  /// The plans as this account sees them, monthly first; empty when
-  /// purchases aren't available here (no store, no products yet).
+  /// The plans as this account sees them (the yearly plan alone, decision
+  /// 85); empty when purchases aren't available here (no store, no
+  /// products yet).
   Future<List<PlusPlan>> plans();
 
   /// The store's purchase sheet for [plan].

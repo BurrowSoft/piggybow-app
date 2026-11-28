@@ -263,11 +263,11 @@ void main() {
   });
 
   test("the plans are the store's; the store's own page", () async {
-    final store = FakePlusStore(monthly: r'US$2.99', yearly: r'US$19.99');
+    final store = FakePlusStore(yearly: r'US$59.99');
     final plus = make(store, MemoryPlusHint());
     expect(plus.plans, isNull);
     await plus.loadPlans();
-    expect(plus.plans!.map((p) => p.price), [r'US$2.99', r'US$19.99']);
+    expect(plus.plans!.map((p) => p.price), [r'US$59.99']);
     store.available = false;
     await plus.loadPlans();
     expect(plus.plans, isEmpty);

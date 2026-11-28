@@ -99,8 +99,8 @@ void main() {
     expect(byId('me-delete-plus-line'), findsNothing);
   });
 
-  testWidgets("Me → Piggybow Plus: the paywall at the store's prices, the free week "
-      'only on its plan, and Google Play\'s cancel line', (tester) async {
+  testWidgets("Me → Piggybow Plus: the paywall at the store's price, the yearly plan alone "
+      'with its free week, and Google Play\'s cancel line', (tester) async {
     await open(tester);
     expect(find.text('More goals, your own categories and themes'), findsOneWidget);
     await tester.tapId('me-plus');
@@ -109,13 +109,14 @@ void main() {
     for (final id in ['plus-benefit-goals', 'plus-benefit-categories', 'plus-benefit-themes']) {
       expect(byId(id), findsOneWidget, reason: id);
     }
-    expect(find.text('£2.99 a month'), findsOneWidget);
-    expect(byId('plus-plan-monthly-trial'), findsNothing);
+    // Yearly only (decision 85): one plan.
+    expect(byId('plus-plan-yearly'), findsOneWidget);
+    expect(byId('plus-plan-monthly'), findsNothing);
     // With the free week, its line alone: the price never shows twice.
     expect(find.text('Free for 7 days, then £19.99 a year'), findsOneWidget);
     expect(find.text('£19.99 a year'), findsNothing);
     expect(byId('plus-plan-yearly-price'), findsNothing);
-    expect(find.text('Start monthly'), findsOneWidget);
+    expect(find.text('Start yearly'), findsNothing);
     expect(find.text('Start your free week'), findsOneWidget);
     expect(find.text('Cancel anytime in Google Play.'), findsOneWidget);
     expect(find.text('Cancel anytime in the App Store.'), findsNothing);
@@ -158,9 +159,13 @@ void main() {
   });
 
   testWidgets('a price with a space stays whole', (tester) async {
-    await open(tester, store: FakePlusStore(monthly: r'R$ 14,90'), location: '/plus');
+    await open(
+      tester,
+      store: FakePlusStore(yearly: r'R$ 149,90', trialOffered: false),
+      location: '/plus',
+    );
     final nbsp = String.fromCharCode(0x00A0);
-    expect(find.text('R\$${nbsp}14,90 a month'), findsOneWidget);
+    expect(find.text('R\$${nbsp}149,90 a year'), findsOneWidget);
     expect(wholePrice('1 234,00 €'), '1${nbsp}234,00$nbsp€');
   });
 
@@ -189,7 +194,7 @@ void main() {
       store: FakePlusStore()..nextOutcome = const PlusPending(),
       location: '/plus',
     );
-    await tester.tapId('plus-plan-monthly-start');
+    await tester.tapId('plus-plan-yearly-start');
     expect(
       find.text('Your purchase is waiting for the store to confirm. Plus turns on as soon as it does.'),
       findsOneWidget,
@@ -210,7 +215,7 @@ void main() {
   testWidgets('no plans on this phone: its line, and Restore still there', (tester) async {
     await open(tester, store: FakePlusStore()..available = false, location: '/plus');
     expect(byId('plus-unavailable'), findsOneWidget);
-    expect(byId('plus-plan-monthly'), findsNothing);
+    expect(byId('plus-plan-yearly'), findsNothing);
     expect(byId('plus-restore'), findsOneWidget);
   });
 

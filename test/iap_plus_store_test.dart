@@ -12,7 +12,6 @@ class _Gateway implements IapGateway {
   final stream = StreamController<List<PurchaseDetails>>.broadcast();
   bool available = true;
   List<PlusPlan> offered = const [
-    PlusPlan(period: PlusPeriod.month, price: '£2.99', trialOffered: false, handle: 'm'),
     PlusPlan(period: PlusPeriod.year, price: '£19.99', trialOffered: true, handle: 'y'),
   ];
   List<PlusProof>? owns = const [];
@@ -85,7 +84,6 @@ void main() {
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
     final plans = await store.plans();
     expect([for (final p in plans) (p.period, p.price, p.trialOffered)], [
-      (PlusPeriod.month, '£2.99', false),
       (PlusPeriod.year, '£19.99', true),
     ]);
     g.available = false;
@@ -128,7 +126,7 @@ void main() {
   test('a plan the store gave no handle: a buy fails without a sheet', () async {
     final g = _Gateway();
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
-    const none = PlusPlan(period: PlusPeriod.month, price: '£2.99', trialOffered: false);
+    const none = PlusPlan(period: PlusPeriod.year, price: '£19.99', trialOffered: false);
     expect(await store.buy(none), isA<PlusBuyFailed>());
     expect(g.bought, isEmpty);
   });
@@ -140,7 +138,9 @@ void main() {
         PlusProof(token: 'a', productId: plusPlayProductId),
         PlusProof(token: 'x', productId: 'another_product'),
         PlusProof(token: '', productId: plusPlayProductId),
-        PlusProof(token: 'b', productId: plusAppleMonthlyId),
+        PlusProof(token: 'b', productId: plusAppleYearlyId),
+        // No monthly plan (decision 85): its id is not Plus's.
+        PlusProof(token: 'm', productId: 'piggybow_plus_monthly'),
       ];
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
     expect((await store.owned())!.map((p) => p.token), ['a', 'b']);
@@ -217,17 +217,17 @@ void main() {
   });
 
   group("playPlans: Play's base plans and offers, as the paywall shows them", () {
-    final monthly = _offer(plusPlayMonthlyPlan, null, [_phase(2990000, '£2.99', 'P1M')]);
+    // No monthly plan (decision 85): a base plan by that name is ignored.
+    final monthly = _offer('monthly', null, [_phase(2990000, '£2.99', 'P1M')]);
     final yearlyBase = _offer(plusPlayYearlyPlan, null, [_phase(19990000, '£19.99', 'P1Y')]);
     final freeWeek = _offer(plusPlayYearlyPlan, 'free-week', [
       _phase(0, 'Free', 'P1W', cycles: 1),
       _phase(19990000, '£19.99', 'P1Y'),
     ]);
 
-    test('monthly first; the free week on the plan Play offers it on, bought with it', () {
+    test('the yearly plan alone; the free week on it when Play offers it, bought with it', () {
       final plans = playPlans([yearlyBase, freeWeek, monthly]);
       expect([for (final p in plans) (p.period, p.price, p.trialOffered, p.handle)], [
-        (PlusPeriod.month, '£2.99', false, 'monthly/base'),
         (PlusPeriod.year, '£19.99', true, 'yearly/free-week'),
       ]);
     });
@@ -249,8 +249,8 @@ void main() {
     });
 
     test('a plan with no base plan, or no paid phase, is not on sale; other plans are ignored', () {
-      expect(playPlans([freeWeek, monthly]).map((p) => p.period), [PlusPeriod.month]);
-      expect(playPlans([_offer(plusPlayMonthlyPlan, null, [_phase(0, 'Free', 'P1M')])]), isEmpty);
+      expect(playPlans([freeWeek, monthly]), isEmpty);
+      expect(playPlans([_offer(plusPlayYearlyPlan, null, [_phase(0, 'Free', 'P1Y')])]), isEmpty);
       expect(playPlans([_offer('weekly', null, [_phase(990000, '£0.99', 'P1W')])]), isEmpty);
       expect(playPlans(const []), isEmpty);
     });
@@ -271,11 +271,17 @@ void main() {
     );
   });
 
-  test("Plus's product ids, and nothing else", () {
-    for (final id in [plusPlayProductId, plusAppleMonthlyId, plusAppleYearlyId]) {
+  test("Plus's product ids, as the stores' consoles name them, and nothing else", () {
+    // Yearly only (decision 85): Play's one base plan, Apple's one product.
+    expect(
+      [plusPlayProductId, plusPlayYearlyPlan, plusAppleYearlyId],
+      ['piggybow_plus', 'yearly', 'piggybow_plus_yearly'],
+    );
+    for (final id in [plusPlayProductId, plusAppleYearlyId]) {
       expect(isPlusProduct(id), isTrue, reason: id);
     }
-    expect(isPlusProduct('piggybow_plus_weekly'), isFalse);
-    expect(isPlusProduct(''), isFalse);
+    for (final id in ['piggybow_plus_monthly', 'piggybow_plus_weekly', '']) {
+      expect(isPlusProduct(id), isFalse, reason: id);
+    }
   });
 }

@@ -269,9 +269,18 @@ class _PlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final monthly = plan.period == PlusPeriod.month;
-    final id = monthly ? 'plus-plan-monthly' : 'plus-plan-yearly';
     final price = wholePrice(plan.price);
+    // Yearly only (decision 85): a plan of another period needs its own
+    // strings first.
+    final (id, name, trialLine, priceLine, startLabel) = switch (plan.period) {
+      PlusPeriod.year => (
+        'plus-plan-yearly',
+        l10n.plusPlanYearly,
+        l10n.plusTrialYearly(price),
+        l10n.plusPriceYearly(price),
+        l10n.plusStartYearly,
+      ),
+    };
     return TestId.container(
       id,
       child: Card(
@@ -282,7 +291,7 @@ class _PlanCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               WholeWordsText(
-                monthly ? l10n.plusPlanMonthly : l10n.plusPlanYearly,
+                name,
                 style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface),
               ),
               const SizedBox(height: 4),
@@ -292,7 +301,7 @@ class _PlanCard extends StatelessWidget {
                 TestId.container(
                   '$id-trial',
                   child: WholeWordsText(
-                    monthly ? l10n.plusTrialMonthly(price) : l10n.plusTrialYearly(price),
+                    trialLine,
                     style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
                   ),
                 )
@@ -300,7 +309,7 @@ class _PlanCard extends StatelessWidget {
                 TestId.container(
                   '$id-price',
                   child: WholeWordsText(
-                    monthly ? l10n.plusPriceMonthly(price) : l10n.plusPriceYearly(price),
+                    priceLine,
                     style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
                   ),
                 ),
@@ -310,13 +319,7 @@ class _PlanCard extends StatelessWidget {
                 button: true,
                 child: FilledButton(
                   onPressed: busy ? null : onBuy,
-                  child: ButtonLabel(
-                    plan.trialOffered
-                        ? l10n.plusStartTrial
-                        : monthly
-                        ? l10n.plusStartMonthly
-                        : l10n.plusStartYearly,
-                  ),
+                  child: ButtonLabel(plan.trialOffered ? l10n.plusStartTrial : startLabel),
                 ),
               ),
             ],

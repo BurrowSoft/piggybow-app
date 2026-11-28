@@ -6,7 +6,6 @@ import 'plus_store.dart';
 class FakePlusStore implements PlusStore {
   FakePlusStore({
     this.source = PlusSource.play,
-    this.monthly = '£2.99',
     this.yearly = '£19.99',
     this.trialOffered = true,
     this.available = true,
@@ -15,8 +14,8 @@ class FakePlusStore implements PlusStore {
   @override
   final PlusSource source;
 
-  /// The plans' prices, as the store formats them.
-  String monthly;
+  /// The yearly plan's price (Plus is yearly only, decision 85), as the
+  /// store formats it.
   String yearly;
 
   /// The free week on the yearly plan.
@@ -39,10 +38,7 @@ class FakePlusStore implements PlusStore {
 
   @override
   Future<List<PlusPlan>> plans() async => available
-      ? [
-          PlusPlan(period: PlusPeriod.month, price: monthly, trialOffered: false, handle: 'month'),
-          PlusPlan(period: PlusPeriod.year, price: yearly, trialOffered: trialOffered, handle: 'year'),
-        ]
+      ? [PlusPlan(period: PlusPeriod.year, price: yearly, trialOffered: trialOffered, handle: 'year')]
       : const [];
 
   @override

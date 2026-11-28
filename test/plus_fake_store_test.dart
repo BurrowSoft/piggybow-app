@@ -9,16 +9,16 @@ import 'package:piggybow/features/plus/rows_plus_store.dart';
 /// that ships can switch it on.
 void main() {
   test(
-    "the rows' store shows placeholder prices and never buys or owns anything",
+    "the rows' store shows Plus's yearly plan alone and never buys or owns anything",
     () async {
       final lines = <String>[];
       final store = RowsPlusStore(log: lines.add);
       final plans = await store.plans();
+      // Yearly only, with the free week (decision 85).
       expect([for (final p in plans) (p.period, p.price, p.trialOffered)], [
-        (PlusPeriod.month, r'US$2.99', false),
-        (PlusPeriod.year, r'US$19.99', true),
+        (PlusPeriod.year, r'US$59.99', true),
       ]);
-      expect(await store.buy(plans.last), isA<PlusCancelled>());
+      expect(await store.buy(plans.single), isA<PlusCancelled>());
       expect(await store.owned(), isEmpty);
       expect(store.takeUnclaimed(), isEmpty);
       expect(lines, hasLength(1));

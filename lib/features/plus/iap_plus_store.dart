@@ -43,35 +43,28 @@ typedef PlayOffer = ({String basePlanId, String? offerId, List<PlayPhase> phases
 bool playFreeWeek(PlayPhase phase) =>
     phase.micros == 0 && phase.cycles == 1 && (phase.period == 'P1W' || phase.period == 'P7D');
 
-/// Plus's plans from Play's offers, monthly first. A plan is on sale when
-/// its base plan is, at the base plan's paid price. It has the free week
-/// when Play returns an offer on it that starts with a free week (Play
-/// returns an offer only to an eligible account): buying the plan then buys
-/// that offer. Any other offer is ignored, so the app never calls something
-/// else a free week.
+/// Plus's plan from Play's offers: the yearly base plan alone (decision 85;
+/// any other base plan is ignored). It is on sale when its base plan is, at
+/// the base plan's paid price. It has the free week when Play returns an
+/// offer on it that starts with a free week (Play returns an offer only to
+/// an eligible account): buying the plan then buys that offer. Any other
+/// offer is ignored, so the app never calls something else a free week.
 List<PlusPlan> playPlans(List<PlayOffer> offers) {
-  final plans = <PlusPlan>[];
-  for (final (id, period) in const [
-    (plusPlayMonthlyPlan, PlusPeriod.month),
-    (plusPlayYearlyPlan, PlusPeriod.year),
-  ]) {
-    final mine = offers.where((o) => o.basePlanId == id);
-    final base = mine.where((o) => o.offerId == null).firstOrNull;
-    final paid = base?.phases.where((p) => p.micros > 0).lastOrNull;
-    if (base == null || paid == null) continue;
-    final trial = mine
-        .where((o) => o.offerId != null && o.phases.isNotEmpty && playFreeWeek(o.phases.first))
-        .firstOrNull;
-    plans.add(
-      PlusPlan(
-        period: period,
-        price: paid.price,
-        trialOffered: trial != null,
-        handle: (trial ?? base).handle,
-      ),
-    );
-  }
-  return plans;
+  final mine = offers.where((o) => o.basePlanId == plusPlayYearlyPlan);
+  final base = mine.where((o) => o.offerId == null).firstOrNull;
+  final paid = base?.phases.where((p) => p.micros > 0).lastOrNull;
+  if (base == null || paid == null) return const [];
+  final trial = mine
+      .where((o) => o.offerId != null && o.phases.isNotEmpty && playFreeWeek(o.phases.first))
+      .firstOrNull;
+  return [
+    PlusPlan(
+      period: PlusPeriod.year,
+      price: paid.price,
+      trialOffered: trial != null,
+      handle: (trial ?? base).handle,
+    ),
+  ];
 }
 
 /// Play's own page for Plus's subscription; it opens in the Play Store app.
@@ -87,7 +80,7 @@ abstract interface class IapGateway {
   Stream<List<PurchaseDetails>> get purchases;
   Future<bool> isAvailable();
 
-  /// The plans the store offers this account, monthly first.
+  /// The plans the store offers this account (the yearly plan alone).
   Future<List<PlusPlan>> plans();
   Future<bool> buy(Object handle);
 
@@ -247,7 +240,7 @@ class _Changes extends ChangeNotifier {
   void ping() => notifyListeners();
 }
 
-/// The real store. Play: the subscription's base plans and their offers;
+/// The real store. Play: the subscription's yearly base plan and its offers;
 /// the free week is bought when Play returns it (only to an eligible
 /// account). Apple: StoreKit 2, which says whether this Apple ID may have a
 /// product's introductory offer.
@@ -274,19 +267,17 @@ class PluginIapGateway implements IapGateway {
           ?_playOffer(o),
       ]);
     }
-    final res = await _iap.queryProductDetails({plusAppleMonthlyId, plusAppleYearlyId});
-    final plans = <PlusPlan>[];
-    for (final (id, period) in const [
-      (plusAppleMonthlyId, PlusPeriod.month),
-      (plusAppleYearlyId, PlusPeriod.year),
-    ]) {
-      final p = res.productDetails.where((d) => d.id == id).firstOrNull;
-      if (p == null) continue;
-      plans.add(
-        PlusPlan(period: period, price: p.price, trialOffered: await _appleFreeWeek(id), handle: p),
-      );
-    }
-    return plans;
+    final res = await _iap.queryProductDetails({plusAppleYearlyId});
+    final p = res.productDetails.where((d) => d.id == plusAppleYearlyId).firstOrNull;
+    if (p == null) return const [];
+    return [
+      PlusPlan(
+        period: PlusPeriod.year,
+        price: p.price,
+        trialOffered: await _appleFreeWeek(plusAppleYearlyId),
+        handle: p,
+      ),
+    ];
   }
 
   PlayOffer? _playOffer(GooglePlayProductDetails o) {
