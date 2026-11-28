@@ -213,8 +213,16 @@ String pigBubbleKey(PigState state, PigReaction? lastAdd) {
   };
 }
 
+/// Night's edges on the phone's clock: from [nightStartHour] to just before
+/// [nightEndHour]. Home reads again at both (they are among Clock.turnHours;
+/// a test holds the two together), so the pig turns on time even while Home
+/// stays open.
+const nightStartHour = 22;
+const nightEndHour = 6;
+
 /// Night on the phone: 22:00 to 05:59 by the clock in the phone's zone.
-bool isNight(int localHour) => localHour >= 22 || localHour < 6;
+bool isNight(int localHour) =>
+    localHour >= nightStartHour || localHour < nightEndHour;
 
 /// The pig at night: sleepy, saying it's late (never a word about spending).
 const nightPig = PigState(PigMood.sleepy, 'homeNightLine');

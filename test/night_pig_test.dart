@@ -19,6 +19,10 @@ void main() {
   });
 
   group('the rule', () {
+    test('Home reads again at night\'s two edges (Clock.turnHours, #62)', () {
+      expect(Clock.turnHours, containsAll([nightStartHour, nightEndHour]));
+    });
+
     test('night is 22:00 to 05:59', () {
       for (final h in [22, 23, 0, 1, 5]) {
         expect(isNight(h), isTrue, reason: '$h:00');
@@ -99,6 +103,29 @@ void main() {
         }
       });
     }
+
+    testWidgets('Home left open at 21:59: at 22:00 its own turn re-read '
+        'brings the night pig, with nothing tapped', (tester) async {
+      tester.view.devicePixelRatio = 3;
+      tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+      addTearDown(tester.view.reset);
+      final clock = MovableClock(
+        DateTime.parse('2026-10-02T21:59:00+07:00').toUtc(),
+      );
+      final app = TestApp(clock: clock);
+      await tester.runAsync(app.openJournal);
+      await pumpHome(tester, app);
+      expect(line(nightLine), findsNothing);
+
+      clock.now = DateTime.parse('2026-10-02T22:00:00+07:00').toUtc();
+      // Home's turn timer (Clock.untilNextTurn) was set for 22:00.
+      await tester.pump(const Duration(minutes: 1));
+      for (var i = 0; i < 40 && line(nightLine).evaluate().isEmpty; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.pumpAndSettle();
+      expect(line(nightLine), findsOneWidget);
+    });
 
     testWidgets('23:00, just after an Add: the reaction', (tester) async {
       final app = await openAt(tester, '23:00');
