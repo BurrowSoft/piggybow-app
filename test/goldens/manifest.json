@@ -1,7 +1,7 @@
 {
-  "source_sha": "65ba7d3f5d897a2cd4ee5cb60d549b5ea52dd04f",
-  "ref": "65ba7d3f5d897a2cd4ee5cb60d549b5ea52dd04f",
-  "run_id": "46134683514",
+  "source_sha": "27013d49e617d1b6a44b5d18aa0cc5569aef4d8a",
+  "ref": "27013d49e617d1b6a44b5d18aa0cc5569aef4d8a",
+  "run_id": "46137410436",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -9,8 +9,8 @@
       "file": "add-sheet_saved-goal-end_dark_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, dark)",
-      "sha256": "9ca386c41d64bd4cf31c011d4d41d85d9750378910e5cdae2f961ab24228b3c3",
-      "bytes": 159954,
+      "sha256": "4cc943541c2046936d5e0e660a7263a891a3fa27ebfff90992f1a9550183128b",
+      "bytes": 162738,
       "width": 960,
       "height": 2340
     },
@@ -18,8 +18,8 @@
       "file": "add-sheet_saved-goal-end_light_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, light)",
-      "sha256": "da8bb0db269e5f77556414ec9065803112c741777c60df57fd5c687e77a9239d",
-      "bytes": 161288,
+      "sha256": "5ccf14bb9f13fcf8edbf1a83cbc4fbd4e3a3b71bf20793afa7655e1bc14d1ad2",
+      "bytes": 164138,
       "width": 960,
       "height": 2340
     },
@@ -27,8 +27,8 @@
       "file": "add-sheet_saved-goal_dark_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, dark)",
-      "sha256": "e466c67f3195384af1d132372ebb148ac2ae99fa9c99be9c07db3fbe62584d65",
-      "bytes": 172109,
+      "sha256": "c73c2960191101917d4136dcdf0027416f8ca3d7805c010b50840550e177d01f",
+      "bytes": 175403,
       "width": 960,
       "height": 2340
     },
@@ -36,8 +36,8 @@
       "file": "add-sheet_saved-goal_light_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, light)",
-      "sha256": "1578b189542966f2a17dcb8e033bdaa6b3d2da2ce7184fe61142cee922d4ac5f",
-      "bytes": 173164,
+      "sha256": "c8b3e017052bb0127f650aba047eb629b3d51bf169eebeb8cf98e145819f97e5",
+      "bytes": 176610,
       "width": 960,
       "height": 2340
     },
@@ -63,8 +63,8 @@
       "file": "add-sheet_spent-full_dark_320x2.png",
       "state": "A2",
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, dark)",
-      "sha256": "8df43f64d4e7482085e0f40f5b83dbd71cca6777e046d3f2063c63af50e727e5",
-      "bytes": 191318,
+      "sha256": "64c8ceee27c4af345671f52165ee8e946128231f69b16fbafef785de4e732971",
+      "bytes": 189120,
       "width": 960,
       "height": 2340
     },
@@ -72,8 +72,62 @@
       "file": "add-sheet_spent-full_light_320x2.png",
       "state": "A2",
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, light)",
-      "sha256": "11c1fcbf356cfb25c65740cb4db1ca75b55819ac36a9da79293f5cee8cad24a7",
-      "bytes": 191588,
+      "sha256": "734cc942a3cead39041f05dc0b6e4e5989134aa4ce2823f937e81cb79b2341e7",
+      "bytes": 189617,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel-end_dark_320x2.png",
+      "state": "MC1",
+      "test": "MC1 a spend in euros: its rate and the amount at home (320 dp, text ×2, dark)",
+      "sha256": "8a4abd7925c51972aa21fbb1cbe8373b5ff6edbd5de6d24d66c488e2647969a1",
+      "bytes": 137376,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel-end_light_320x2.png",
+      "state": "MC1",
+      "test": "MC1 a spend in euros: its rate and the amount at home (320 dp, text ×2, light)",
+      "sha256": "fe87ef908820f92cb653e84587e8f10be5bc7c2777e7825528b884e3a8c43adb",
+      "bytes": 138262,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel-rate-error_dark_320x2.png",
+      "state": "MC2",
+      "test": "MC2 a rate with a grouping mark: its line at once (320 dp, text ×2, dark)",
+      "sha256": "7f735968098f6c8e6ccb9314d55e43625325f33e6225f26fc25e12bf3ed00f04",
+      "bytes": 172964,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel-rate-error_light_320x2.png",
+      "state": "MC2",
+      "test": "MC2 a rate with a grouping mark: its line at once (320 dp, text ×2, light)",
+      "sha256": "36ef893df993c5fee96841f62c4b3a1c04c252e7664533159027fdcd86984933",
+      "bytes": 173071,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel_dark_320x2.png",
+      "state": "MC1",
+      "test": "MC1 a spend in euros: its rate and the amount at home (320 dp, text ×2, dark)",
+      "sha256": "428425daac3e222895a0ae96c34aef69d034582944bfa58ef338611f78148c60",
+      "bytes": 143721,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel_light_320x2.png",
+      "state": "MC1",
+      "test": "MC1 a spend in euros: its rate and the amount at home (320 dp, text ×2, light)",
+      "sha256": "936d6ff4352bd4af6ce4f649fa133bc4a9a13e8349593510ac6702bf33549646",
+      "bytes": 144345,
       "width": 960,
       "height": 2340
     },
@@ -801,8 +855,8 @@
       "file": "me_no-plan_dark_320x2.png",
       "state": "M1",
       "test": "M1 Me, no plan (320 dp, text ×2, dark)",
-      "sha256": "abbec9e958b8ca17922372a49a070842ff50a859dc15a9cd4eadb18006f81af3",
-      "bytes": 177066,
+      "sha256": "4979378b3191e94f3241d4e52246bcdf6d636787482240a3a23de14144f50096",
+      "bytes": 181572,
       "width": 960,
       "height": 2340
     },
@@ -810,8 +864,8 @@
       "file": "me_no-plan_light_320x2.png",
       "state": "M1",
       "test": "M1 Me, no plan (320 dp, text ×2, light)",
-      "sha256": "a588d7849b219de0e6cb7ad250d8a258543d7b9cba6787a183ce00a9629dc50f",
-      "bytes": 176948,
+      "sha256": "865d8fe5d180afb3506c3c1a58411cd272d78449b53462df451ffcc3744aed17",
+      "bytes": 181408,
       "width": 960,
       "height": 2340
     },
@@ -837,8 +891,8 @@
       "file": "me_plan-dialog-empty_dark_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
-      "sha256": "5e7b6e0da00bcc1a0612de3d0fb91f6415c7f9b80d400c40f7dbbe15210ff289",
-      "bytes": 166515,
+      "sha256": "ea232592ec933c6bbb08f95582632df2359358fcd053bd5b8c552812e213e75f",
+      "bytes": 164198,
       "width": 960,
       "height": 2340
     },
@@ -846,8 +900,8 @@
       "file": "me_plan-dialog-empty_light_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
-      "sha256": "6d7d7b075553ee0a96105a9f38395605b3055e16ea67b28621589cdbd3b6c625",
-      "bytes": 168538,
+      "sha256": "dafe9a18d66f14a885722d9023784c7d78dc70870490513e956bd01aef1c8c0a",
+      "bytes": 166318,
       "width": 960,
       "height": 2340
     },
@@ -855,8 +909,8 @@
       "file": "me_plan-dialog-set_dark_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
-      "sha256": "852b0bbe9409d27f6b3c402b263db90cf1e489cec2b6220683f644e524245072",
-      "bytes": 174272,
+      "sha256": "19b61554b727e4cf4b9e92ef2fbe202f5d31ff650613971668cb2807c6bb9a78",
+      "bytes": 172287,
       "width": 960,
       "height": 2340
     },
@@ -864,8 +918,8 @@
       "file": "me_plan-dialog-set_light_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
-      "sha256": "f630a770cb7d5fdbe5202aa7a29c15ffbe0a51593605920c63e0c00ca670e662",
-      "bytes": 175687,
+      "sha256": "ae63cb343dc45fee02b670094dc8906d68e405089cb550a7d2ffee3df0e872f1",
+      "bytes": 173625,
       "width": 960,
       "height": 2340
     },
@@ -873,8 +927,8 @@
       "file": "me_plan-set_dark_320x2.png",
       "state": "M2",
       "test": "M2 Me, a plan set (320 dp, text ×2, dark)",
-      "sha256": "9cfbd819e51a9d7613ec29d76f3d19e9655ff2423e63c932061e1471e6615d28",
-      "bytes": 181688,
+      "sha256": "955854c5f9b71b613453004be9112ae11c95c6a2a957d1a04b71b58ea2f5ccf0",
+      "bytes": 186079,
       "width": 960,
       "height": 2340
     },
@@ -882,8 +936,8 @@
       "file": "me_plan-set_light_320x2.png",
       "state": "M2",
       "test": "M2 Me, a plan set (320 dp, text ×2, light)",
-      "sha256": "77d4c42ccf4cc1dc3514886576521308e9a3c38758dafc7b6104d056372b5586",
-      "bytes": 181540,
+      "sha256": "307d06351e28f365b08c098f1019669f4847d9e1e8a8ff577402760d4815cde3",
+      "bytes": 186004,
       "width": 960,
       "height": 2340
     },
@@ -1235,6 +1289,24 @@
       "test": "C2 three days with the stress data (320 dp, text ×2, light)",
       "sha256": "456e6ce7f3eaf601734902c879efea1727321ea42a25ca8472b1a0e734b5710e",
       "bytes": 213378,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_travel_dark_320x2.png",
+      "state": "MC3",
+      "test": "MC3 Timeline: a spend in euros, both amounts (320 dp, text ×2, dark)",
+      "sha256": "2f495a48a8df27e5dc9d56b9550108ad2168467360a2dc45f318d8cde530d4af",
+      "bytes": 172010,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_travel_light_320x2.png",
+      "state": "MC3",
+      "test": "MC3 Timeline: a spend in euros, both amounts (320 dp, text ×2, light)",
+      "sha256": "8f9a385cfd1b7446f33e7d65ac14c2b83314b378a46454c7c16694d5cf9839ad",
+      "bytes": 173317,
       "width": 960,
       "height": 2340
     }
