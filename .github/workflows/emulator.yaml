@@ -24,9 +24,9 @@ on:
         required: false
         default: "smoke"
       kind:
-        description: "The APK: debug (staging debug), reminder-now (staging debug + REMINDER_NOW), release (staging release, no DSN)"
+        description: "The APK: debug (staging debug), reminder-now (staging debug + REMINDER_NOW), release (staging release, no DSN), prod-release (the store's flavour and build: release + R8, no DSN, no network permission; a throwaway key)"
         type: choice
-        options: [debug, reminder-now, release]
+        options: [debug, reminder-now, release, prod-release]
         default: debug
       rows:
         description: "A device-rows script, tool/device-rows/<rows>.sh at flows_ref (empty: the Maestro flows by tags)"
@@ -96,15 +96,19 @@ jobs:
           [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] || fail "head_sha: the full 40-character sha"
           [[ "$FLOWS_REF" =~ ^[A-Za-z0-9._/-]{1,100}$ && "$FLOWS_REF" != *..* ]] || fail "flows_ref: letters, digits and . _ / - only"
           [[ "$TAGS" =~ ^[a-z0-9_-]+(,[a-z0-9_-]+)*$ ]] || fail "tags: comma-separated lowercase names"
-          [[ "$KIND" =~ ^(debug|reminder-now|release)$ ]] || fail "kind: debug, reminder-now or release"
+          [[ "$KIND" =~ ^(debug|reminder-now|release|prod-release)$ ]] || fail "kind: debug, reminder-now, release or prod-release"
           [[ -z "$ROWS" || "$ROWS" =~ ^[a-z0-9_-]{1,40}$ ]] || fail "rows: a script name, such as pr5"
           [[ "$ZONE" =~ ^[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}$ ]] || fail "zone: an IANA name, such as Asia/Bangkok"
           [[ -z "$FAKE_NOW" || "$FAKE_NOW" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$ ]] || fail "fake_now: YYYY-MM-DDTHH:MM:SSZ"
+          # The store's build never takes a fixed clock (the prod flavour ignores it).
+          [[ "$KIND" != prod-release || -z "$FAKE_NOW" ]] || fail "fake_now: not with prod-release"
+          # The package the flows drive: the store's for prod-release, else staging's.
+          if [ "$KIND" = prod-release ]; then APP_ID=com.burrowsoft.piggybow; else APP_ID=com.burrowsoft.piggybow.staging; fi
           {
             echo "head=$HEAD_SHA"; echo "flows=$FLOWS_REF"; echo "tags=$TAGS"; echo "kind=$KIND"
-            echo "rows=$ROWS"; echo "zone=$ZONE"; echo "fake_now=$FAKE_NOW"
+            echo "rows=$ROWS"; echo "zone=$ZONE"; echo "fake_now=$FAKE_NOW"; echo "app_id=$APP_ID"
           } >> "$GITHUB_OUTPUT"
-          echo "head $HEAD_SHA | flows $FLOWS_REF | kind $KIND | rows ${ROWS:-none} | tags $TAGS | zone $ZONE | fake_now ${FAKE_NOW:-none}"
+          echo "head $HEAD_SHA | flows $FLOWS_REF | kind $KIND ($APP_ID) | rows ${ROWS:-none} | tags $TAGS | zone $ZONE | fake_now ${FAKE_NOW:-none}"
       # The runner's ~14 GB disk fills during the native-lib strip.
       # The build, Maestro, the system image and the emulator's data all need
       # room: what this job never uses goes first.
@@ -175,14 +179,33 @@ jobs:
           FAKE_NOW: ${{ steps.in.outputs.fake_now }}
         run: |
           set -euo pipefail
-          jq --arg now "$FAKE_NOW" --arg kind "$KIND" \
-            '.FAKE_NOW = $now | if $kind == "reminder-now" then .REMINDER_NOW = "true" else . end' \
-            env/staging.json > "$RUNNER_TEMP/defines.json"
-          case "$KIND" in
-            release) mode=--release; built=app-staging-release.apk ;;
-            *) mode=--debug; built=app-staging-debug.apk ;;
-          esac
-          flutter build apk "$mode" --flavor staging --dart-define-from-file="$RUNNER_TEMP/defines.json"
+          if [ "$KIND" = prod-release ]; then
+            # The store's flavour and build type: release with R8, env/prod.json's
+            # defines (no DSN), no network permission. Signed with a key made
+            # here and deleted right after: never the upload key (another
+            # owner name), and the APK never leaves this job.
+            trap 'rm -f "$RUNNER_TEMP/throwaway.jks"' EXIT
+            cp env/prod.json "$RUNNER_TEMP/defines.json"
+            pass=$(openssl rand -hex 16)
+            echo "::add-mask::$pass"
+            keytool -genkeypair -noprompt -keystore "$RUNNER_TEMP/throwaway.jks" -storetype PKCS12 \
+              -alias throwaway -keyalg RSA -keysize 2048 -validity 1 \
+              -dname "CN=Piggybow CI throwaway" -storepass "$pass" -keypass "$pass" > /dev/null
+            PIGGYBOW_UPLOAD_KEYSTORE="$RUNNER_TEMP/throwaway.jks" PIGGYBOW_UPLOAD_KEY_ALIAS=throwaway \
+              PIGGYBOW_UPLOAD_STORE_PASSWORD="$pass" PIGGYBOW_UPLOAD_KEY_PASSWORD="$pass" \
+              flutter build apk --release --flavor prod --dart-define-from-file="$RUNNER_TEMP/defines.json"
+            rm -f "$RUNNER_TEMP/throwaway.jks"
+            built=app-prod-release.apk
+          else
+            jq --arg now "$FAKE_NOW" --arg kind "$KIND" \
+              '.FAKE_NOW = $now | if $kind == "reminder-now" then .REMINDER_NOW = "true" else . end' \
+              env/staging.json > "$RUNNER_TEMP/defines.json"
+            case "$KIND" in
+              release) mode=--release; built=app-staging-release.apk ;;
+              *) mode=--debug; built=app-staging-debug.apk ;;
+            esac
+            flutter build apk "$mode" --flavor staging --dart-define-from-file="$RUNNER_TEMP/defines.json"
+          fi
           rm -f "$RUNNER_TEMP/defines.json"
           cp "build/app/outputs/flutter-apk/$built" "$RUNNER_TEMP/under-test.apk"
           echo "APK sha256 $(sha256sum < "$RUNNER_TEMP/under-test.apk" | cut -c1-64) ($KIND, built in this job)"
@@ -208,6 +231,7 @@ jobs:
           FLOWS_REF: ${{ steps.in.outputs.flows }}
           TAGS: ${{ steps.in.outputs.tags }}
           KIND: ${{ steps.in.outputs.kind }}
+          APP_ID: ${{ steps.in.outputs.app_id }}
           ROWS: ${{ steps.in.outputs.rows }}
           ZONE: ${{ steps.in.outputs.zone }}
           OUT: ${{ runner.temp }}/evidence
@@ -254,7 +278,8 @@ jobs:
             mv -n -- "$p" "$to"
           done
           bad=$(find "$OUT" -type f \( -iname '*.apk' -o -iname '*.aab' -o -iname '*.apks' \
-            -o -iname '*.ipa' -o -iname '*.dex' -o -iname '*.jar' -o -iname '*.so' -o -iname '*.zip' \))
+            -o -iname '*.ipa' -o -iname '*.dex' -o -iname '*.jar' -o -iname '*.so' -o -iname '*.zip' \
+            -o -iname '*.jks' -o -iname '*.p12' -o -iname '*.keystore' \))
           if [ -n "$bad" ]; then echo "::error::installable files in the evidence:"; echo "$bad"; exit 1; fi
           echo "evidence: $(find "$OUT" -type f | wc -l) files"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

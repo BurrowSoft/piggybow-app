@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/button_label.dart';
+import '../../core/button_pair.dart';
 import '../../core/fit_text.dart';
+import '../../core/plan_bar.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../data/models.dart' show ReminderTime;
@@ -265,29 +268,25 @@ class _ReminderOffer extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            OverflowBar(
-              alignment: MainAxisAlignment.end,
-              overflowAlignment: OverflowBarAlignment.end,
-              spacing: 8,
-              overflowSpacing: 8,
-              children: [
-                TestId(
-                  'home-reminder-no',
-                  button: true,
-                  child: TextButton(
-                    onPressed: () => answer(yes: false),
-                    child: Text(l10n.reminderOfferNo),
-                  ),
+            // One line when both fit; else full width, the yes on top
+            // (decision 57).
+            ButtonPair(
+              secondary: TestId(
+                'home-reminder-no',
+                button: true,
+                child: TextButton(
+                  onPressed: () => answer(yes: false),
+                  child: ButtonLabel(l10n.reminderOfferNo),
                 ),
-                TestId(
-                  'home-reminder-yes',
-                  button: true,
-                  child: FilledButton(
-                    onPressed: () => answer(yes: true),
-                    child: Text(l10n.reminderOfferYes(at)),
-                  ),
+              ),
+              primary: TestId(
+                'home-reminder-yes',
+                button: true,
+                child: FilledButton(
+                  onPressed: () => answer(yes: true),
+                  child: ButtonLabel(l10n.reminderOfferYes(at)),
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -325,6 +324,16 @@ class _GoalCard extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              const SizedBox(height: 12),
+              TestId(
+                'goal-create',
+                button: true,
+                child: FilledButton.tonal(
+                  onPressed: () => context.push(GoalRoutes.create),
+                  child: ButtonLabel(l10n.goalCardEmptyButton),
+                ),
+              ),
+              // Under the button (decision 57).
               if (last != null && last.status == GoalStatus.reached) ...[
                 const SizedBox(height: 8),
                 // Opens the reached goal's read-only detail (R1).
@@ -356,15 +365,6 @@ class _GoalCard extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 12),
-              TestId(
-                'goal-create',
-                button: true,
-                child: FilledButton.tonal(
-                  onPressed: () => context.push(GoalRoutes.create),
-                  child: Text(l10n.goalCardEmptyButton),
-                ),
-              ),
             ],
           ),
         ),
@@ -501,16 +501,7 @@ class _WeekCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                // Spent ÷ plan, full at or over the plan, always the accent.
-                ExcludeSemantics(
-                  child: LinearProgressIndicator(
-                    value: percent.clamp(0, 100) / 100,
-                    color: theme.colorScheme.primary,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    minHeight: 8,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
+                PlanBar(percent: percent),
               ],
               if (week.worth > 0) ...[
                 const SizedBox(height: 12),
@@ -550,7 +541,13 @@ class _IdeaCard extends StatelessWidget {
             children: [
               Text(l10n.ideaTitle, style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
-              Text(tipText(l10n, tip), style: theme.textTheme.bodyLarge),
+              // The cards' body style (decision 57).
+              Text(
+                tipText(l10n, tip),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
               const SizedBox(height: 8),
               Align(
                 alignment: AlignmentDirectional.centerEnd,
@@ -559,7 +556,7 @@ class _IdeaCard extends StatelessWidget {
                   button: true,
                   child: TextButton(
                     onPressed: onAnother,
-                    child: Text(l10n.ideaAnother),
+                    child: ButtonLabel(l10n.ideaAnother),
                   ),
                 ),
               ),
