@@ -22,8 +22,20 @@ appId: ${APP_ID}
       - tapOn:
           id: "android:id/title"
           text: "Downloads"
+          optional: true
       - waitForAnimationToEnd:
           timeout: 3000
+      # If the root's id differs on this image: the first "Downloads" in the
+      # open drawer is the root (it worked this way in #87 run 1)
+      - runFlow:
+          when:
+            notVisible: "Files in Downloads"
+          commands:
+            - tapOn:
+                text: "Downloads"
+                index: 0
+            - waitForAnimationToEnd:
+                timeout: 3000
 # The list view shows each file as a row with its name (once switched, the
 # menu offers "Grid view" instead, and the picker remembers it)
 - tapOn:
