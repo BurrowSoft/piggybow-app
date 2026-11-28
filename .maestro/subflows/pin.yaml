@@ -1,0 +1,15 @@
+# Types a 4-digit PIN on any PIN pad (Moodbow's kept lock UI: pin-key-<d>,
+# pin-key-ok) and confirms it.
+# env: D1, D2, D3, D4
+appId: ${APP_ID}
+---
+- tapOn:
+    id: pin-key-${D1}
+- tapOn:
+    id: pin-key-${D2}
+- tapOn:
+    id: pin-key-${D3}
+- tapOn:
+    id: pin-key-${D4}
+- tapOn:
+    id: pin-key-ok
