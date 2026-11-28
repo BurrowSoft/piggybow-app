@@ -171,7 +171,9 @@ class _CategoryEditScreenState extends State<CategoryEditScreen> {
                       decoration: InputDecoration(
                         labelText: l10n.categoryNameLabel,
                         errorText: _nameError(l10n),
-                        errorMaxLines: 3,
+                        // Beside the counter, at 320 dp and text ×2, the
+                        // taken line needs 4.
+                        errorMaxLines: 5,
                       ),
                     ),
                   ),

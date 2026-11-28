@@ -212,7 +212,7 @@ void main() {
   group('names and icons', () {
     test("a built-in's in the app's language, your own as typed", () {
       final customs = {'c:a': own('a', 'Coffee runs', icon: CategoryIcon.pets)};
-      expect(categoryName(l10n, 'food', customs), 'Food');
+      expect(categoryName(l10n, 'food', customs), l10n.catFood);
       expect(categoryName(l10n, 'c:a', customs), 'Coffee runs');
       expect(categoryIcon('food', customs), SpendCategory.food.icon);
       expect(categoryIcon('c:a', customs), Icons.pets);

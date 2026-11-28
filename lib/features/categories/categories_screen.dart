@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/button_label.dart';
+import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../journal/category.dart';
@@ -235,7 +236,8 @@ class _CategoryRow extends StatelessWidget {
           icon,
           color: hidden ? theme.colorScheme.onSurfaceVariant : null,
         ),
-        title: Text(name),
+        // Each word whole beside Hide or Show, smaller only if it must.
+        title: WholeWordsText(name),
         subtitle: hidden ? Text(l10n.categoryHidden) : null,
         onTap: onTap,
         trailing: TestId(

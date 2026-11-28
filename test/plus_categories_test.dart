@@ -111,8 +111,11 @@ void main() {
       if (e.type == EntryType.spent) e,
   ];
 
+  /// What a screen reader hears: the merged node's data (the TestId's own
+  /// flags are merged into it).
   bool picked(WidgetTester tester, String id) =>
-      tester.getSemantics(byId(id)).flagsCollection.isSelected == Tristate.isTrue;
+      tester.getSemantics(byId(id)).getSemanticsData().flagsCollection.isSelected ==
+      Tristate.isTrue;
 
   Finder textIn(String id, String text) =>
       find.descendant(of: byId(id), matching: find.text(text));
@@ -252,7 +255,7 @@ void main() {
     tester.expectScreen('category-edit-screen');
     await tester.tapId('category-save');
     expect(find.text('Give it a name'), findsOneWidget);
-    await tester.enterId('category-name', 'FOOD');
+    await tester.enterId('category-name', 'GROCERIES');
     expect(find.text('You already have a category with this name'), findsOneWidget);
     await tester.enterId('category-name', 'coffee');
     expect(find.text('You already have a category with this name'), findsOneWidget);
