@@ -1,0 +1,67 @@
+appId: ${APP_ID}
+name: F-B1 (#96) - a cold start at 05:00 - the day's pig, not the night line; and #96's two visible changes - the Add sheet in euros has no "= €12.34" echo; "+ New goal" sits under the goal card
+tags: [night]
+# Run by fb1-night.sh after 96a: the device clock set by root to 05:00:00 UTC
+# and the app stopped (its data kept: 96a's spend).
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: true
+- extendedWaitUntil:
+    visible:
+      id: home-pig-line
+    timeout: 20000
+- assertNotVisible:
+    id: home-pig-line
+    text: ".*It's getting late.*"
+- takeScreenshot: 96-day-0500
+# The Add sheet in euros: no echo of the amount under it
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "12.34", EXPECT: ".*12\\.34.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-currency }
+- tapOn:
+    id: add-currency
+- scrollUntilVisible:
+    element:
+      id: currency-EUR
+    direction: DOWN
+    timeout: 20000
+- tapOn:
+    id: currency-EUR
+- extendedWaitUntil:
+    visible:
+      id: add-rate
+    timeout: 10000
+- assertNotVisible: ".*= €12\\.34.*"
+- takeScreenshot: 96-euro-sheet
+- tapOn:                                           # Cancel
+    id: add-back
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# "+ New goal" under the goal card
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env:
+      NAME: "Bike"
+      AMOUNT: "100"
+      START: "0"
+- back                                             # the goal screen sits over the tabs
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: home-new-goal }
+- assertVisible:
+    id: home-new-goal
+- takeScreenshot: 96-new-goal

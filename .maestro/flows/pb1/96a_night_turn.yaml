@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+name: F-B1 (#96) - Home open across 04:00 - just before, the sleepy pig says the night line; at 04:00 Home turns to the day's pig with no tap
+tags: [night]
+# Run by fb1-night.sh: zone UTC, the device clock set by root to 03:57:00, so
+# the setup ends before 03:59 and the turn comes while Home is open.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "12", CAT: "food" }
+- extendedWaitUntil:
+    visible:
+      id: home-pig-line
+    timeout: 10000
+- assertVisible:
+    id: home-pig-line
+    text: ".*It's getting late\\. I'll be here tomorrow\\..*"
+- takeScreenshot: 96-night-before-0400
+# No tap from here: Home turns at 04:00 while it's open
+- extendedWaitUntil:
+    notVisible:
+      id: home-pig-line
+      text: ".*It's getting late\\. I'll be here tomorrow\\..*"
+    timeout: 240000
+- assertVisible:
+    id: home-pig-line
+- takeScreenshot: 96-day-after-0400
