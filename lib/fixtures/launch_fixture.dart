@@ -389,6 +389,9 @@ Future<void> _writeStore(
   await store.setCurrency('USD');
   await store.setPicks({HappyPick.save});
   await store.setPlanMinor(25000);
+  // The reminder offer was answered long ago: Home opens on the pig, the
+  // goal, the week and the idea, with no one-time prompt in the shots.
+  await store.answerReminderOffer();
   await store.putGoal(
     Goal(
       id: store.newId(),

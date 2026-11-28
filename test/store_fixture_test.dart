@@ -40,6 +40,11 @@ void main() {
     expect(await store.currency(), 'USD');
     expect(await store.picks(), {HappyPick.save});
     expect(await store.planMinor(), 25000);
+    expect(
+      await store.reminderOfferAnswered(),
+      isTrue,
+      reason: 'no "A gentle nudge?" on Home in the shots',
+    );
     final entries = await store.entries();
     expect(entries, hasLength(8));
     expect({for (final e in entries) e.currency}, {'USD'});
@@ -126,6 +131,7 @@ void main() {
   test('STORE2: the same journal, the goal one 50-dollar save from reached', () async {
     final store = await written('STORE2');
     expect(await store.entries(), hasLength(8));
+    expect(await store.reminderOfferAnswered(), isTrue);
     final goal = (await store.activeGoal())!;
     expect(goal.status, GoalStatus.active);
     expect(await store.goalProgress(goal), 145000);
