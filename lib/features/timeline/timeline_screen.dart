@@ -350,8 +350,9 @@ class _Row extends StatelessWidget {
       button: true,
       child: InkWell(
         onTap: () => showEntrySheet(context, editing: e),
-        // Add again today (a save only while its goal is still active).
-        onLongPress: canAddAgain(e, goal)
+        // Add again today (a save only while its goal is still active; a
+        // spend in a category of your own only with Plus).
+        onLongPress: canAddAgain(e, goal, plus: context.services.plus?.active ?? false)
             ? () => offerAddAgain(context, e)
             : null,
         child: ConstrainedBox(

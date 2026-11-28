@@ -6,17 +6,21 @@ import '../../journal/entry.dart';
 import '../../journal/goal.dart';
 import '../../l10n/gen/app_localizations.dart';
 
-/// Whether [entry] can be added again today: a spend always; a save while
-/// the goal it went to ([goal]) is still active, or when it went to none.
-/// A save whose goal was reached or ended doesn't offer it.
-bool canAddAgain(Entry entry, Goal? goal) =>
-    entry.type != EntryType.saved ||
-    entry.goalId == null ||
-    goal?.status == GoalStatus.active;
+/// Whether [entry] can be added again today: a spend, except one in a
+/// category of your own while Plus is off ([plus]: your own categories are
+/// Plus's); a save while the goal it went to ([goal]) is still active, or
+/// when it went to none. A save whose goal was reached or ended doesn't
+/// offer it.
+bool canAddAgain(Entry entry, Goal? goal, {required bool plus}) =>
+    entry.type == EntryType.saved
+        ? entry.goalId == null || goal?.status == GoalStatus.active
+        : entry.customCategory == null || plus;
 
-/// [entry] again, dated today: the same type, amount, category and note.
-/// The feeling is asked fresh (none yet). A save goes to its goal, still
-/// active; a save that had none stays with none (never moved into a goal).
+/// [entry] again, dated today: the same type, amount, category (built-in or
+/// your own) and note. The feeling is asked fresh (none yet). A save goes to
+/// its own goal, still active, named outright (with two or more goals, not
+/// the one a new save goes to by default); a save that had none stays with
+/// none (never moved into a goal).
 Future<Entry> addAgainToday(AppServices services, Entry entry) =>
     services.journal.addEntry(
       type: entry.type,
@@ -24,7 +28,9 @@ Future<Entry> addAgainToday(AppServices services, Entry entry) =>
       currency: entry.currency,
       localDate: services.localDay.todayWire,
       category: entry.category,
+      customCategory: entry.customCategory,
       note: entry.note,
+      goalId: entry.type == EntryType.saved ? entry.goalId : null,
       noGoal: entry.type == EntryType.saved && entry.goalId == null,
     );
 

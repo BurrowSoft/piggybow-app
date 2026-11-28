@@ -201,7 +201,13 @@ class _EntrySheetState extends State<EntrySheet> {
       _goalId = goalId;
       _entries = entries;
       _goalName = goal?.name;
-      _canAddAgain = e != null && canAddAgain(e, goalId == null ? null : goal);
+      _canAddAgain =
+          e != null &&
+          canAddAgain(
+            e,
+            goalId == null ? null : goal,
+            plus: services.plus?.active ?? false,
+          );
       _today = today;
       _date = e?.date ?? today;
       if (e != null) {
