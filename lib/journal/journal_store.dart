@@ -7,6 +7,8 @@ import 'package:uuid/uuid.dart';
 import '../backup/backup_snapshot.dart' show JournalSnapshot;
 import '../core/clock.dart';
 import '../goal/goal_progress.dart';
+import '../money/currency.dart' show supportedCurrencies;
+import '../money/money.dart' show maxAmountMinor;
 import '../pig/pig_mood.dart' show HappyPick;
 import 'category.dart';
 import 'entry.dart';
@@ -356,6 +358,10 @@ class JournalStore extends ChangeNotifier {
   /// Journal settings that never leave this phone. None yet.
   static const staysOnPhone = <String>{};
 
+  /// The stores a backup carries. A new store is a choice too: the test that
+  /// classifies the settings checks every store this file opens.
+  static const backedUpStores = {'entries', 'goals', 'settings'};
+
   static bool travelsWith(String key) =>
       travels.contains(key) || key.startsWith(_travelsPrefix);
 
@@ -407,11 +413,17 @@ class JournalStore extends ChangeNotifier {
     return JournalSnapshot(entries: entries, goals: goals, settings: settings);
   }
 
-  /// The entry as this store writes it, or null for one it can't read or
-  /// would refuse.
+  /// The entry as this store writes it, or null for one it can't read, would
+  /// refuse, or can't show: a currency this build doesn't list (its money
+  /// can't be formatted) or an amount over [maxAmountMinor] (its edit sheet
+  /// can't open).
   static Map<String, Object?>? _entryRecord(String id, Map<String, Object?> m) {
     final entry = id.isEmpty ? null : Entry.fromMap(id, m);
-    if (entry == null) return null;
+    if (entry == null ||
+        !supportedCurrencies.contains(entry.currency) ||
+        entry.amountMinor > maxAmountMinor) {
+      return null;
+    }
     try {
       _check(entry);
     } on ArgumentError {
@@ -420,9 +432,17 @@ class JournalStore extends ChangeNotifier {
     return entry.toMap();
   }
 
-  /// The goal as this store writes it, or null for one it can't read.
-  static Map<String, Object?>? _goalRecord(String id, Map<String, Object?> m) =>
-      id.isEmpty ? null : Goal.fromMap(id, m)?.toMap();
+  /// The goal as this store writes it, or null for one it can't read or
+  /// can't show (a target or a start over [maxAmountMinor]).
+  static Map<String, Object?>? _goalRecord(String id, Map<String, Object?> m) {
+    final goal = id.isEmpty ? null : Goal.fromMap(id, m);
+    if (goal == null ||
+        goal.targetMinor > maxAmountMinor ||
+        goal.startMinor > maxAmountMinor) {
+      return null;
+    }
+    return goal.toMap();
+  }
 
   /// Replaces the whole journal with [snapshot] (a restore): every entry,
   /// goal and travelling setting goes, and the snapshot's take their place,
@@ -456,12 +476,10 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  static final _currencyCode = RegExp(r'^[A-Z]{3}$');
-
   static bool _settingFits(String key, Object? value) => switch (key) {
-    'currency' => value is String && _currencyCode.hasMatch(value),
+    'currency' => supportedCurrencies.contains(value),
     'picks' => value is List && value.every((p) => p is String),
-    'plan_minor' => value is int && value > 0,
+    'plan_minor' => value is int && value > 0 && value <= maxAmountMinor,
     'onboarded' || 'reminder_offer' => value is bool,
     _ =>
       key.startsWith(_travelsPrefix) &&

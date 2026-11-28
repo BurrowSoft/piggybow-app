@@ -11,6 +11,7 @@ import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/journal/journal_store.dart';
+import 'package:piggybow/money/money.dart' show maxAmountMinor;
 import 'package:piggybow/pig/pig_mood.dart' show HappyPick;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -181,6 +182,19 @@ void main() {
         );
       }
 
+      JournalSnapshot withGoal(void Function(Map<String, Object?>) change) {
+        final goals = {
+          for (final MapEntry(:key, :value) in good.goals.entries)
+            key: {...value},
+        };
+        change(goals['g-active']!);
+        return JournalSnapshot(
+          entries: good.entries,
+          goals: goals,
+          settings: good.settings,
+        );
+      }
+
       JournalSnapshot withSetting(String key, Object? value) => JournalSnapshot(
         entries: good.entries,
         goals: good.goals,
@@ -216,7 +230,24 @@ void main() {
           },
           settings: good.settings,
         ),
+        // Values this build can't show: a currency it doesn't list (money
+        // can't be formatted), an amount over the cap (the screens that edit
+        // it can't open). A later build that adds a currency writes these.
+        'an entry in a currency this build doesn\'t list': withEntry(
+          (m) => m['currency'] = 'XYZ',
+        ),
+        'an entry over the cap': withEntry(
+          (m) => m['amount_minor'] = maxAmountMinor + 1,
+        ),
+        'a goal target over the cap': withGoal(
+          (m) => m['target_minor'] = maxAmountMinor + 1,
+        ),
+        'a goal start over the cap': withGoal(
+          (m) => m['start_minor'] = maxAmountMinor + 1,
+        ),
+        'a plan over the cap': withSetting('plan_minor', maxAmountMinor + 1),
         'a setting that never travels': withSetting('device.account', 'x'),
+        'a currency this build doesn\'t list': withSetting('currency', 'XYZ'),
         'a lowercase currency': withSetting('currency', 'thb'),
         'a plan below 1': withSetting('plan_minor', -5),
         'picks that aren\'t names': withSetting('picks', [1, 2]),
@@ -318,6 +349,15 @@ void main() {
         isEmpty,
         reason: 'a key that travels but nothing writes',
       );
+      // A new store (a later feature's records) is a choice as well: it
+      // goes in the backup, with a schema step, or it's named as staying.
+      final stores = {
+        for (final m in RegExp(
+          r"(?:store|StoreRef<[^>]*>)\(\s*'([^']+)'",
+        ).allMatches(source))
+          m[1]!,
+      };
+      expect(stores, JournalStore.backedUpStores);
     });
   });
 
