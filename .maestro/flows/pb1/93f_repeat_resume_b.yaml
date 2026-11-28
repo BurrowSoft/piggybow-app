@@ -1,0 +1,18 @@
+appId: ${APP_ID}
+name: Risk 5 (#92, E), part 2 - 8 days later, brought back from the background (no restart) - the repeat catches up and Home says "Added from your repeats"
+tags: [risk, repeat]
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: home-repeats }
+- assertVisible:
+    id: home-repeats
+- assertVisible: ".*Added from your repeats.*"
+- takeScreenshot: 93-resume-catch-up

@@ -1,0 +1,79 @@
+appId: ${APP_ID}
+name: Risk 3 (#92), part 2 - the sheet dismissed; Delete all my data; on O1 restore the file; the weekly repeat is back in Me → Repeating entries, and the €20 spend on Timeline with "= $22.00"
+tags: [risk, backup]
+# Run by group-risk.sh after 93c and the script's copy of the file.
+---
+- back                                             # dismiss the share sheet
+- extendedWaitUntil:
+    visible:
+      id: backup-screen
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible:
+      id: tab-me
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: me-delete }
+- tapOn:
+    id: me-delete
+- tapOn:
+    id: me-delete-confirm
+- extendedWaitUntil:
+    visible:
+      id: onb-start
+    timeout: 15000
+- tapOn:
+    id: onb-restore
+- extendedWaitUntil:
+    visible:
+      id: restore-screen
+    timeout: 10000
+- tapOn:
+    id: restore-choose
+- runFlow:
+    file: ../../subflows/pick_download.yaml
+    env: { FILE: "piggybow-backu" }
+- extendedWaitUntil:
+    visible:
+      id: restore-password
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: restore-password, TEXT: "correct horse battery", EXPECT: ".*" }
+- tapOn:
+    id: restore-go
+- extendedWaitUntil:
+    visible:
+      id: restore-done
+    timeout: 60000
+- tapOn:
+    id: restore-finish
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 15000
+# The repeat came back
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: me-repeats }
+- tapOn:
+    id: me-repeats
+- extendedWaitUntil:
+    visible:
+      id: me-repeats-screen
+    timeout: 10000
+- assertVisible:
+    id: "repeat-row-.*"
+- assertVisible: "(?s).*Every week on .*"
+- takeScreenshot: 93-restored-repeat
+- back
+# The euro spend came back with its rate
+- tapOn:
+    id: tab-timeline
+- assertVisible: ".*€20\\.00.*"
+- assertVisible: ".*= \\$22\\.00.*"
+- takeScreenshot: 93-restored-euro

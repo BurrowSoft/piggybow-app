@@ -1,0 +1,85 @@
+appId: ${APP_ID}
+name: Risk 2 (#92, C+F) - a goal's €100 save at 1.10 ($110), then $50 taken out; editing the euro save below what was taken out is refused with its line; raising it to €120 is kept, and the goal shows $82.00
+tags: [risk, currency, takeout]
+# Run by group-risk.sh: zone UTC, home currency USD.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env: { NAME: "Bike", AMOUNT: "500", START: "0" }
+# €100 at 1.10 toward Bike
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: goal-add-savings }
+- tapOn:
+    id: goal-add-savings
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "100", EXPECT: ".*100.*" }
+- tapOn:
+    id: add-currency
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: currency-EUR }
+- tapOn:
+    id: currency-EUR
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-rate, TEXT: "1.10", EXPECT: ".*1\\.10?.*" }
+- assertVisible:
+    id: add-converted
+    text: ".*That's \\$110\\.00 at this rate\\..*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- assertVisible: ".*\\$110\\.00 of \\$500\\.00.*"
+# $50 taken out
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: goal-take-out }
+- tapOn:
+    id: goal-take-out
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: takeout-amount, TEXT: "50", EXPECT: ".*50.*" }
+- tapOn:
+    id: takeout-save
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- assertVisible: ".*\\$60\\.00 of \\$500\\.00.*"
+# Edit the euro save: €10 ($11) is below the $50 taken out
+- tapOn: "(?s)Saved\\s+Today.*"
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env: { ID: add-amount, TEXT: "10", EXPECT: ".*10.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- tapOn:
+    id: add-submit
+- assertVisible: ".*Some of this money was taken out of Bike\\. Change or remove that first\\..*"
+- takeScreenshot: 93-save-locked
+# €120 ($132) is fine: $132 − $50 = $82
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env: { ID: add-amount, TEXT: "120", EXPECT: ".*120.*" }
+- assertVisible:
+    id: add-rate
+    text: ".*1\\.10?.*"                            # the rate kept on edit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- assertVisible: ".*\\$82\\.00 of \\$500\\.00.*"
+- takeScreenshot: 93-goal-after-edit

@@ -1,0 +1,97 @@
+appId: ${APP_ID}
+name: Risk 3 (#92), part 1 - a journal with a weekly repeat ($12 Food) and a €20 spend at 1.10 ($22.00); Me → Back up to a file opens the share sheet (the row script copies the file while it's open)
+tags: [risk, backup]
+# Run by group-risk.sh: staging debug, zone UTC, home currency USD.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# A weekly repeat, in the home currency
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "12", EXPECT: ".*12.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-cat-food }
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-repeat }
+- tapOn:
+    id: add-repeat
+- tapOn:
+    id: repeat-choice-weekly
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# €20 at 1.10
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "20", EXPECT: ".*20.*" }
+- tapOn:
+    id: add-currency
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: currency-EUR }
+- tapOn:
+    id: currency-EUR
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-rate, TEXT: "1.10", EXPECT: ".*1\\.10?.*" }
+- assertVisible:
+    id: add-converted
+    text: ".*That's \\$22\\.00 at this rate\\..*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-cat-transport }
+- tapOn:
+    id: add-cat-transport
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# Back up
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: me-backup }
+- tapOn:
+    id: me-backup
+- extendedWaitUntil:
+    visible:
+      id: backup-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: backup-password, TEXT: "correct horse battery", EXPECT: ".*" }
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: backup-again, TEXT: "correct horse battery", EXPECT: ".*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: backup-go }
+- tapOn:
+    id: backup-go
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: 93-share-sheet

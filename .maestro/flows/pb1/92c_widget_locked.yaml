@@ -1,0 +1,50 @@
+appId: ${APP_ID}
+name: Risk 4 (#92, D) - with the app lock on, the widget shows only the pig and "Tap to open"; its "+" (or its body) goes through the lock first, then the app
+tags: [widget, risk]
+# Run by group-d.sh after 92b (the widget placed, Piggybow open). The lock's
+# test PIN is 1357 (subflow set_lock_1357).
+---
+- runFlow: ../../subflows/set_lock_1357.yaml
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible:
+      id: "com.burrowsoft.piggybow.staging:id/widget_root"
+    timeout: 15000
+# Locked face: no amount, no goal name
+- assertVisible:
+    id: "com.burrowsoft.piggybow.staging:id/widget_label"
+    text: "Tap to open"
+- assertNotVisible: ".*\\$12\\.00.*"
+- takeScreenshot: 92-widget-locked
+# The "+" when the locked face shows it, else the body: the lock comes first
+- runFlow:
+    when:
+      visible:
+        id: "com.burrowsoft.piggybow.staging:id/widget_add"
+    commands:
+      - tapOn:
+          id: "com.burrowsoft.piggybow.staging:id/widget_add"
+- runFlow:
+    when:
+      notVisible:
+        id: "com.burrowsoft.piggybow.staging:id/widget_add"
+    commands:
+      - tapOn:
+          id: "com.burrowsoft.piggybow.staging:id/widget_root"
+- extendedWaitUntil:
+    visible:
+      id: lock-screen
+    timeout: 15000
+- assertNotVisible:
+    id: add-amount                                 # nothing past the lock yet
+- takeScreenshot: 92-lock-first
+- runFlow:
+    file: ../../subflows/pin.yaml
+    env: { D1: "1", D2: "3", D3: "5", D4: "7" }
+- extendedWaitUntil:
+    visible:
+      id: "add-amount|home-add"
+    timeout: 15000
+- takeScreenshot: 92-after-unlock

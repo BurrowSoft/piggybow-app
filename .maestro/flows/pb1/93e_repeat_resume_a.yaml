@@ -1,0 +1,37 @@
+appId: ${APP_ID}
+name: Risk 5 (#92, E), part 1 - a $9 Food spend with Repeat every week, then Piggybow to the background (the row script moves the clock 8 days)
+tags: [risk, repeat]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "9", EXPECT: ".*9.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-cat-food }
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-repeat }
+- tapOn:
+    id: add-repeat
+- tapOn:
+    id: repeat-choice-weekly
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- assertNotVisible:
+    id: home-repeats
+- pressKey: Home                                    # to the background, the process kept

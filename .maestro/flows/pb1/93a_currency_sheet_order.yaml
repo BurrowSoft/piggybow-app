@@ -1,0 +1,106 @@
+appId: ${APP_ID}
+name: Risk 1 (#92, C+F) - the Add sheet in another currency, top to bottom - the currency chip, then the rate, then "That's … at this rate.", then the quick amounts (baht ones only); Repeat is off with its line; a quick amount keeps the rate
+tags: [risk, currency]
+# Run by group-risk.sh: zone UTC, home currency USD (the emulator's en-US).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# A first baht spend, so baht quick amounts exist for Food
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "300", EXPECT: ".*300.*" }
+- tapOn:
+    id: add-currency
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: currency-THB }
+- tapOn:
+    id: currency-THB
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-rate, TEXT: "0.028", EXPECT: ".*0\\.028.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-cat-food }
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# The second: Food first, then baht, then the amount
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-cat-food }
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-currency }
+- tapOn:
+    id: add-currency
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: currency-THB }
+- tapOn:
+    id: currency-THB
+- assertVisible:
+    id: add-rate
+    text: ".*0\\.028.*"                            # the last baht rate comes back
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "150", EXPECT: ".*150.*" }
+# Top to bottom: chip, rate, sentence, quick amounts
+- assertVisible:
+    id: add-rate
+    below:
+      id: add-currency
+- assertVisible:
+    id: add-converted
+    below:
+      id: add-rate
+- assertVisible:
+    id: add-converted
+    text: ".*That's \\$4\\.20 at this rate\\..*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-quick-0 }
+- assertVisible:
+    id: add-quick-0
+    below:
+      id: add-converted
+- assertVisible:
+    id: add-quick-0
+    text: ".*300.*"                                # a baht amount, not a dollar one
+- takeScreenshot: 93-currency-order
+# Repeat is off in another currency, with its line
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-repeat }
+- assertVisible: ".*Repeats work in your home currency for now\\..*"
+- takeScreenshot: 93-repeat-off
+# A quick amount keeps the rate
+- tapOn:
+    id: add-quick-0
+- assertVisible:
+    id: add-converted
+    text: ".*That's \\$8\\.40 at this rate\\..*"
+- tapOn:                                           # Cancel
+    id: add-back
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000

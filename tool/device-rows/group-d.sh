@@ -42,5 +42,12 @@ fi
 if mf flows/pb1/92b_widget_read.yaml -e "EXPECT=$EXPECT" -e SHOT=92-opened; then
   row WD-1 PASS "flows 92a + 92b ($KIND): in the picker (3×2, 'Today's spending and your goal'); dragged to the home screen and bound; it shows '$face'; a tap opens Piggybow"
 else
-  row WD-1 FAIL "flow 92b ($KIND): bound, but not read or opened"
+  row WD-1 FAIL "flow 92b ($KIND): bound, but not read or opened"; exit 1
+fi
+
+# RK-4 (the captain's risk 4): the widget with the app lock on
+if mf flows/pb1/92c_widget_locked.yaml; then
+  row WD-2 PASS "flow 92c: lock on → the widget shows only the pig and 'Tap to open' (no amount); its '+' (or body) shows the lock first; after the PIN, the app"
+else
+  row WD-2 FAIL "flow 92c (the widget with the lock on)"
 fi
