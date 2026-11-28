@@ -122,6 +122,15 @@ TextStyle? _muted(BuildContext context) {
   );
 }
 
+/// A pattern itself: in the page's ink, as Home's week card writes its
+/// totals (bodyLarge alone is muted in this theme).
+TextStyle? _ink(BuildContext context) {
+  final theme = Theme.of(context);
+  return theme.textTheme.bodyLarge?.copyWith(
+    color: theme.colorScheme.onSurface,
+  );
+}
+
 class _PlusCard extends StatelessWidget {
   const _PlusCard({required this.result});
 
@@ -150,7 +159,7 @@ class _PlusCard extends StatelessWidget {
               ),
             },
             style: result.state == PatternsState.found
-                ? theme.textTheme.bodyLarge
+                ? _ink(context)
                 : _muted(context),
           ),
         ),
@@ -313,7 +322,7 @@ class _PatternsScreenState extends State<PatternsScreen> {
                       pattern,
                       dateLocale: context.session.dateLocale,
                     ),
-                    style: theme.textTheme.bodyLarge,
+                    style: _ink(context),
                   ),
                 ],
               )
