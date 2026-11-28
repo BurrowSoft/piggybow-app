@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import com.burrowsoft.piggybow.widget.PiggybowWidget
+import com.burrowsoft.piggybow.widget.WidgetStore
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -34,6 +36,15 @@ class MainActivity : FlutterFragmentActivity() {
                     // The Android version, read once at start-up: Android 7
                     // can't draw dark navigation-bar icons (lib/core/system_bars.dart).
                     result.success(Build.VERSION.SDK_INT)
+                } else if (call.method == UPDATE_WIDGET) {
+                    // The home-screen widget's snapshot (lib/features/widget):
+                    // kept, then every widget on the home screen drawn from it.
+                    val snapshot = call.arguments as? String
+                    if (snapshot != null) {
+                        WidgetStore.save(this, snapshot)
+                        PiggybowWidget.drawAll(this)
+                    }
+                    result.success(null)
                 } else {
                     result.notImplemented()
                 }
@@ -61,5 +72,7 @@ class MainActivity : FlutterFragmentActivity() {
         const val SETTINGS_CHANNEL = "com.burrowsoft.piggybow/settings"
         const val OPEN_NOTIFICATION_SETTINGS = "openNotificationSettings"
         const val ANDROID_SDK = "androidSdk"
+        // lib/features/widget/widget_sync.dart's ChannelWidgetBridge.method.
+        const val UPDATE_WIDGET = "updateWidget"
     }
 }

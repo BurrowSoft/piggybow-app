@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The home-screen widget with room (3×2 and up): the pig, "Spent today"
+     with the amount, and "+" (Add a spend); under them the goal's rainbow,
+     its name and "{saved} of {target}" (widget/PiggybowWidget.kt). As
+     shipped, the pig and "Tap to open", until the app's snapshot arrives. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/widget_pig"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/widget_pig" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_label"
+                style="@style/WidgetLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/widget_tap_to_open" />
+
+            <TextView
+                android:id="@+id/widget_amount"
+                style="@style/WidgetAmount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/widget_add"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/widget_add_background"
+            android:contentDescription="@string/widget_add"
+            android:padding="12dp"
+            android:src="@drawable/widget_add"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/widget_goal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <!-- The five arcs, outer to inner, stacked: each lit once it's
+             reached (its own colour) or a track. Read out as one. -->
+        <FrameLayout
+            android:id="@+id/widget_rainbow"
+            android:layout_width="73dp"
+            android:layout_height="40dp"
+            android:importantForAccessibility="yes">
+
+            <ImageView
+                android:id="@+id/widget_band_1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_track_1" />
+
+            <ImageView
+                android:id="@+id/widget_band_2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_track_2" />
+
+            <ImageView
+                android:id="@+id/widget_band_3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_track_3" />
+
+            <ImageView
+                android:id="@+id/widget_band_4"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_track_4" />
+
+            <ImageView
+                android:id="@+id/widget_band_5"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:src="@drawable/widget_track_5" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/widget_goal_name"
+                style="@style/WidgetGoalName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/widget_goal_progress"
+                style="@style/WidgetGoalProgress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

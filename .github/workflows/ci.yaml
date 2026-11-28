@@ -34,7 +34,7 @@ jobs:
           fetch-depth: 0
       - id: c
         run: |
-          deps_in() { if echo "$1" | grep -qE '^(android/|pubspec\.(yaml|lock)$|\.github/workflows/)'; then echo true; else echo false; fi; }
+          deps_in() { if echo "$1" | grep -qE '^(android/|pubspec\.(yaml|lock)$|\.github/workflows/|test/contracts/widget_snapshot\.json$)'; then echo true; else echo false; fi; }
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             # A master push or a manual run: everything.
             echo "app=true" >> "$GITHUB_OUTPUT"; echo "deps=true" >> "$GITHUB_OUTPUT"; exit 0
@@ -157,6 +157,13 @@ jobs:
             | sort -u > "$RUNNER_TEMP/release-permissions.txt"
           cat "$RUNNER_TEMP/release-permissions.txt"
           diff <(sort expected-permissions.txt) "$RUNNER_TEMP/release-permissions.txt"
+      # The home-screen widget's logic (android/app/src/test), on the JVM:
+      # what it draws from the app's snapshot, read from the same
+      # test/contracts/widget_snapshot.json as the Dart tests (which is why
+      # that file also starts this job).
+      - name: Widget logic (Kotlin unit tests)
+        working-directory: android
+        run: ./gradlew --no-daemon :app:testStagingDebugUnitTest -Dorg.gradle.jvmargs=-Xmx2g
 
   # Master pushes only; a PR's APK comes from pr-apk.yaml ("apk" label).
   apk:
