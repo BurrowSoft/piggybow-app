@@ -6,6 +6,7 @@ import 'package:piggybow/core/app_config.dart';
 import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/core/clock.dart';
 import 'package:piggybow/core/device.dart';
+import 'package:piggybow/core/launch_actions.dart';
 import 'package:piggybow/core/local_day.dart';
 import 'package:piggybow/core/local_prefs.dart';
 import 'package:piggybow/core/policy.dart';
@@ -37,6 +38,28 @@ class FakeDevice implements DeviceContext {
 
   @override
   Future<String> timeZone() async => 'Asia/Bangkok';
+}
+
+/// The home-screen shortcut, as MainActivity would hand it over.
+class FakeLaunchActions implements LaunchActions {
+  /// "Add a spend" used and not yet answered; a test uses it with [use].
+  @override
+  final ValueNotifier<bool> addSpendPending = ValueNotifier<bool>(false);
+
+  /// "Add a spend" used (or the app started from it).
+  void use() {
+    addSpendPending.value = true;
+  }
+
+  @override
+  bool takeAddSpend() {
+    if (!addSpendPending.value) return false;
+    addSpendPending.value = false;
+    return true;
+  }
+
+  @override
+  Future<void> listen() async {}
 }
 
 /// The reminders as the phone would hold them.
@@ -147,6 +170,7 @@ class TestApp {
   final FakeDevice device;
   final reminders = FakeReminderScheduler();
   final notifications = FakeNotifications();
+  final launchActions = FakeLaunchActions();
   int stagingErrors = 0;
   final List<String> shippedLocales;
 
@@ -188,6 +212,7 @@ class TestApp {
     journal: journal,
     reminders: reminders,
     notifications: notifications,
+    launchActions: launchActions,
     appLock: appLock,
     plus: plus,
     stagingTestError: () => stagingErrors++,

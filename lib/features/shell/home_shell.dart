@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/launch_actions.dart';
 import '../../core/services.dart';
+import '../../journal/entry.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../router.dart';
+import '../../session/app_session.dart' show Routes;
 import '../add/entry_sheet.dart';
 import '../reminder/reminder_scheduler.dart';
 import 'even_tab_bar.dart';
@@ -28,6 +31,7 @@ class _HomeShellState extends State<HomeShell> {
   final _tabTop = {for (final tab in AppTab.values) tab: ValueNotifier(0)};
 
   ReminderScheduler? _reminders;
+  LaunchActions? _launch;
 
   @override
   void initState() {
@@ -39,6 +43,24 @@ class _HomeShellState extends State<HomeShell> {
       reminders.tapPending.addListener(_reminderTapped);
       // A start from a reminder, waiting since before the tabs were up.
       _reminderTapped();
+      final launch = _launch = context.services.launchActions;
+      launch.addSpendPending.addListener(_addSpendAsked);
+      // A start from the shortcut, the same way.
+      _addSpendAsked();
+    });
+  }
+
+  /// The home-screen shortcut, "Add a spend": Home, then the Add sheet on
+  /// Spent, once per use, and none over a sheet already up. With the lock on,
+  /// the lock screen covers it until the person unlocks.
+  void _addSpendAsked() {
+    final launch = _launch;
+    if (!mounted || launch == null || !launch.takeAddSpend()) return;
+    if (entrySheetOpen) return;
+    GoRouter.of(context).go(Routes.home);
+    // After the frame that shows Home, so the sheet opens over it.
+    WidgetsBinding.instance.endOfFrame.then((_) {
+      if (mounted && !entrySheetOpen) showEntrySheet(context, start: EntryType.spent);
     });
   }
 
@@ -61,6 +83,7 @@ class _HomeShellState extends State<HomeShell> {
   void dispose() {
     shellBarHidden.removeListener(_barChanged);
     _reminders?.tapPending.removeListener(_reminderTapped);
+    _launch?.addSpendPending.removeListener(_addSpendAsked);
     for (final ping in _tabTop.values) {
       ping.dispose();
     }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The home-screen shortcut (a long press on the icon): "Add a spend" opens
+     the app on Home with the Add sheet on Spent (MainActivity.kt, then
+     lib/core/launch_actions.dart). The dev flavour's copy (its package); the prod one is src/main/res/xml/shortcuts.xml. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="add_spend"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_add"
+        android:shortcutShortLabel="@string/shortcut_add_short"
+        android:shortcutLongLabel="@string/shortcut_add_long">
+        <intent
+            android:action="com.burrowsoft.piggybow.action.ADD_SPEND"
+            android:targetPackage="com.burrowsoft.piggybow.dev"
+            android:targetClass="com.burrowsoft.piggybow.MainActivity" />
+    </shortcut>
+</shortcuts>
