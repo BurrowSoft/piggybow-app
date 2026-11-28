@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+name: Quick amounts (#57) at large text - after flow 75 (its history kept), Food's three chips at font scale 2.0, wrapping, for a look
+tags: [quick]
+---
+- launchApp                                       # no clearState: flow 75's entries
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-quick-2
+- assertVisible:
+    id: add-quick-0
+- assertVisible:
+    id: add-quick-2
+- takeScreenshot: 75-food-chips-x2

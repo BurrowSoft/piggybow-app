@@ -1,0 +1,31 @@
+# From Home: add one spend of ${AMOUNT} in category ${CAT} (add-cat-<id>)
+# through the Add button; back on Home after it.
+# env: AMOUNT (digits, e.g. 45), CAT (food, groceries, transport, …)
+appId: ${APP_ID}
+---
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: ${AMOUNT}
+      EXPECT: ".*${AMOUNT}.*"
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-cat-${CAT}
+- tapOn:
+    id: add-cat-${CAT}
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000

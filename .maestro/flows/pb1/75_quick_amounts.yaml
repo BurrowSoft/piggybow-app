@@ -1,0 +1,157 @@
+appId: ${APP_ID}
+name: Quick amounts (#57) - the last 3 amounts spent in a category, newest first, each once; a tap fills the amount and saves nothing; other categories, Saved and editing
+tags: [quick]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# History: Food 45, 125, 45, 80 (newest last); Transport 3
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "45", CAT: "food" }
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "125", CAT: "food" }
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "45", CAT: "food" }
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "80", CAT: "food" }
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "3", CAT: "transport" }
+# Food's chips: 80, 45, 125 (newest first, 45 once, at most 3)
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-quick-0
+- assertVisible:
+    id: add-quick-0
+    text: "(?s).*Use \\$80\\.00.*"                # as read out (TalkBack)
+- assertVisible:
+    id: add-quick-1
+    text: "(?s).*\\$45\\.00.*"
+- assertVisible:
+    id: add-quick-2
+    text: "(?s).*\\$125\\.00.*"
+- assertNotVisible:
+    id: add-quick-3
+- takeScreenshot: 75-food-chips
+# A tap fills the amount, the caret at its end ("0" typed after it: 450), and saves nothing
+- tapOn:
+    id: add-quick-1
+- assertVisible:
+    id: add-amount
+    text: "(?s).*45.*"
+- tapOn:
+    id: add-amount
+- inputText: "0"
+- assertVisible:
+    id: add-amount
+    text: "(?s).*450.*"
+- assertVisible:
+    id: add-submit                                # the sheet is still open
+- tapOn: "Cancel"                                 # the sheet's X
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- tapOn:
+    id: tab-timeline
+- assertVisible:
+    id: "tl-row-.*"
+    index: 4                                      # the 5 entries
+- assertNotVisible:
+    id: "tl-row-.*"
+    index: 5                                      # nothing was saved by the chip
+- tapOn:
+    id: tab-home
+# Add then saves the chip's amount
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-quick-0
+- tapOn:
+    id: add-quick-0
+- assertVisible:
+    id: add-amount
+    text: "(?s).*80.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- tapOn:
+    id: tab-timeline
+- assertVisible:
+    id: "tl-row-.*"
+    index: 5                                      # 6 entries now
+- tapOn:
+    id: tab-home
+# Transport shows its own chip; Groceries (no history) none; Saved none
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-transport
+- tapOn:
+    id: add-cat-transport
+- assertVisible:
+    id: add-quick-0
+    text: "(?s).*\\$3\\.00.*"
+- assertNotVisible:
+    id: add-quick-1
+- tapOn:
+    id: add-cat-groceries
+- assertNotVisible:
+    id: add-quick-0
+- tapOn:
+    id: add-seg-saved
+- assertNotVisible:
+    id: add-quick-0
+- tapOn: "Cancel"
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# Editing an existing spend: no chips
+- tapOn:
+    id: tab-timeline
+- tapOn:
+    id: "tl-row-.*"
+    index: 0
+- extendedWaitUntil:
+    visible:
+      id: edit-save
+    timeout: 10000
+- assertNotVisible:
+    id: add-quick-0
+- takeScreenshot: 75-edit-no-chips
