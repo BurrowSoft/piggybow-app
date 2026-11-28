@@ -1,8 +1,8 @@
 # The store screenshots' start: a clean state, then the app launched with the
 # CASE fixture (STORE1 or STORE2; staging builds only), clock frozen at the
-# case's now. The clear runs as its own step before the launch. If Home shows
-# the reminder offer (the fixtures don't answer it), it's answered "No thanks"
-# so the shot shows the week and the idea.
+# case's now. The clear runs as its own step before the launch. The fixtures
+# mark the reminder offer answered, so Home opens on the pig, the goal, the
+# week and the tip (flow 60 asserts the offer is absent).
 # env: CASE
 appId: ${APP_ID}
 ---
@@ -24,11 +24,4 @@ appId: ${APP_ID}
           timeout: 120000
 - assertNotVisible:
     id: fixture-error
-- runFlow:
-    when:
-      visible:
-        id: home-reminder-no
-    commands:
-      - tapOn:
-          id: home-reminder-no
 - waitForAnimationToEnd
