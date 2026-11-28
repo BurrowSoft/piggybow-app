@@ -1,7 +1,8 @@
 # CI's one Flutter, set up without a third-party action, so no action runs
 # anything by tag. Every run checks the SDK it uses: a download against the
 # sha256 that Flutter's release list (releases_linux.json) gives for the
-# archive, and the SDK, downloaded or cached, against the release's revision.
+# archive, and the SDK, downloaded or cached, against the release's revision,
+# its tracked files included.
 #
 # cache "true" keeps the SDK and the pub cache between runs, with the pinned
 # actions/cache: the SDK keyed on its release and the archive's sha256, the
@@ -74,6 +75,13 @@ runs:
         head=$(git -C "$DIR/flutter" rev-parse HEAD)
         if [ "$head" != "$REVISION" ]; then
           echo "::error::The SDK is at $head, not the release's revision $REVISION."
+          exit 1
+        fi
+        # And its tracked files are that revision's, cached or not. (The
+        # ignored bin/cache isn't covered by this.)
+        if ! git -C "$DIR/flutter" diff --quiet HEAD --; then
+          echo "::error::The SDK's tracked files differ from its revision's:"
+          git -C "$DIR/flutter" status --porcelain --untracked-files=no | head -20
           exit 1
         fi
         {

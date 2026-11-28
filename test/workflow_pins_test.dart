@@ -121,7 +121,7 @@ void main() {
   });
 
   test('the Flutter action: a download is checked by its sha256, and the SDK '
-      'by its revision, before it runs', () {
+      'by its revision and its tracked files, before it runs', () {
     final a = actions[flutterAction]!;
     expect(
       RegExp(
@@ -143,13 +143,17 @@ void main() {
     );
     final unpack = a.indexOf(r'tar -xJf "$RUNNER_TEMP/flutter.tar.xz"');
     final revision = a.indexOf(r'if [ "$head" != "$REVISION" ]; then');
+    final tracked = a.indexOf(
+      r'if ! git -C "$DIR/flutter" diff --quiet HEAD --; then',
+    );
     final onPath = a.indexOf(r'>> "$GITHUB_PATH"');
     final firstRun = a.indexOf(r'"$DIR/flutter/bin/flutter" --version');
     expect(download, greaterThan(0));
     expect(check, greaterThan(download));
     expect(unpack, greaterThan(check));
     expect(revision, greaterThan(unpack));
-    expect(onPath, greaterThan(revision));
+    expect(tracked, greaterThan(revision));
+    expect(onPath, greaterThan(tracked));
     expect(firstRun, greaterThan(onPath));
   });
 
