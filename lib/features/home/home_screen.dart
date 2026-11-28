@@ -9,6 +9,7 @@ import '../../core/button_pair.dart';
 import '../../core/clock.dart' show wireDate;
 import '../../core/day_label.dart';
 import '../../core/fit_text.dart';
+import '../../core/percent.dart';
 import '../../core/plan_bar.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
@@ -758,7 +759,7 @@ class _GoalCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      l10n.goalCardPercent(percent),
+                      l10n.goalCardPercent(formatPercent(percent, locale)),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

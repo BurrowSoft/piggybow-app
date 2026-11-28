@@ -7,6 +7,7 @@ import '../../core/clock.dart';
 import '../../core/day_label.dart';
 import '../../core/fit_text.dart';
 import '../../core/line_breaks.dart';
+import '../../core/percent.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../goal/goal_pace.dart';
@@ -581,7 +582,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         return Rainbow(
                           percent: percent,
                           semanticLabel: l10n.goalRainbowLabel(
-                            percent,
+                            formatPercent(percent, locale),
                             money(_progress),
                             money(goal.targetMinor),
                           ),
