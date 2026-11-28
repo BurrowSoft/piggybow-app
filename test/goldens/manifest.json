@@ -1,7 +1,7 @@
 {
-  "source_sha": "eb734429f8c0186e4aed895a87a4a61815943895",
-  "ref": "eb734429f8c0186e4aed895a87a4a61815943895",
-  "run_id": "46126396868",
+  "source_sha": "13ae5fe636f9150e07a7131b1ffcc5e022b4b52d",
+  "ref": "13ae5fe636f9150e07a7131b1ffcc5e022b4b52d",
+  "run_id": "46127240003",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -436,6 +436,24 @@
       "bytes": 162950,
       "width": 960,
       "height": 2340
+    },
+    {
+      "file": "home_letter-card_dark_320x2.png",
+      "state": "L1",
+      "test": "L1 Home with the pig's letter about September (320 dp, text ×2, dark)",
+      "sha256": "797a516a2979e30f94441a780b025e1cb65a122578d2a089397497f2f60480ec",
+      "bytes": 73105,
+      "width": 288,
+      "height": 968
+    },
+    {
+      "file": "home_letter-card_light_320x2.png",
+      "state": "L1",
+      "test": "L1 Home with the pig's letter about September (320 dp, text ×2, light)",
+      "sha256": "c5d0b04a192b802cbeec1655b6f719210a61c47691b385e49c0afa33c3c1f5fb",
+      "bytes": 73520,
+      "width": 288,
+      "height": 968
     },
     {
       "file": "home_letter-end_dark_320x2.png",
