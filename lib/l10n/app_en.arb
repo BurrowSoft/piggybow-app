@@ -261,6 +261,7 @@
   "privacy4": "Delete all my data, in Me, erases everything Piggybow stored on this phone. You can export a copy first.",
   "privacy5": "No ads, no tracking.",
   "privacyPolicyLink": "Read the full privacy policy",
+  "@privacyPolicyLink": {"description": "A link to the full privacy policy on the website, after the in-app summary in Me → Your privacy. Shows only when the page is live."},
   "done": "Done",
   "save": "Save",
   "goalCreate": "Start my rainbow",
