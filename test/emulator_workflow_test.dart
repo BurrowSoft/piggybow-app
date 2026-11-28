@@ -53,7 +53,7 @@ void main() {
       r'[[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]',
       r'[[ "$FLOWS_REF" =~ ^[A-Za-z0-9._/-]{1,100}$ && "$FLOWS_REF" != *..* ]]',
       r'[[ "$TAGS" =~ ^[a-z0-9_-]+(,[a-z0-9_-]+)*$ ]]',
-      r'[[ "$KIND" =~ ^(debug|reminder-now|release|prod-release)$ ]]',
+      r'[[ "$KIND" =~ ^(debug|reminder-now|release|prod-release|plus-rows|plus-probe)$ ]]',
       r'[[ -z "$ROWS" || "$ROWS" =~ ^[a-z0-9_-]{1,40}$ ]]',
       r'[[ "$ZONE" =~ ^[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}$ ]]',
     ]) {
@@ -140,7 +140,9 @@ steps:
   test('prod-release: the store build, with a throwaway key', () {
     expect(
       wf,
-      contains('options: [debug, reminder-now, release, prod-release]'),
+      contains(
+        'options: [debug, reminder-now, release, prod-release, plus-rows, plus-probe]',
+      ),
     );
     expect(wf, contains(r'[[ "$KIND" != prod-release || -z "$FAKE_NOW" ]]'));
     expect(
@@ -187,6 +189,102 @@ steps:
     expect(run.indexOf('maestro --device'), greaterThan(perms));
   });
 
+  // Decision 79: Plus on the emulator, in its two staging kinds only. The
+  // tester's rows get the rows' fake store (a debug build); the probe gets
+  // the real Play Billing layer in a profile build without the network-state
+  // permission, as the store build will be, on a Play Store image.
+  test('plus-rows and plus-probe: Plus only in their staging builds; the '
+      "probe's manifest change in the runner only", () {
+    final build = wf.substring(
+      wf.indexOf('- name: Build the APK under test'),
+      wf.indexOf('- name: Maestro'),
+    );
+    final prod = build.substring(
+      build.indexOf('if [ "\$KIND" = prod-release ]; then'),
+      build.indexOf('          else\n'),
+    );
+    expect(prod, isNot(contains('PLUS')), reason: "the store's build never has Plus");
+    expect(
+      build,
+      contains(
+        r'| if $kind == "plus-rows" or $kind == "plus-probe" then .PLUS_ENABLED = "true" else . end',
+      ),
+    );
+    expect(
+      build,
+      contains(r'| if $kind == "plus-rows" then .PLUS_FAKE_STORE = "true" else . end'),
+    );
+    expect('PLUS_ENABLED = '.allMatches(wf), hasLength(1));
+    expect('PLUS_FAKE_STORE = '.allMatches(wf), hasLength(1));
+    // plus-rows is a debug build (the fake store also needs kDebugMode).
+    expect(build, contains('*) mode=--debug; built=app-staging-debug.apk ;;'));
+    // The store build's permissions: the release overlay becomes this
+    // runner's profile overlay, checked byte for byte.
+    final probe = build.substring(build.indexOf('plus-probe)\n'));
+    expect(
+      probe,
+      contains(
+        'cp android/app/src/release/AndroidManifest.xml android/app/src/profile/AndroidManifest.xml\n'
+        '                cmp -s android/app/src/release/AndroidManifest.xml android/app/src/profile/AndroidManifest.xml\n'
+        '                mode=--profile; built=app-staging-profile.apk ;;',
+      ),
+    );
+    // Never committed: the repo's profile overlay keeps INTERNET for the
+    // Flutter tool, and removes nothing.
+    final profile = File('android/app/src/profile/AndroidManifest.xml').readAsStringSync();
+    expect(profile, contains('android.permission.INTERNET'));
+    expect(profile, isNot(contains('tools:node="remove"')));
+    // The probe reads the app's own expected permissions.
+    expect(wf, contains(r'APP_DIR: ${{ github.workspace }}/app' '\n'));
+    // The probe runs before run.sh's device set-up (adb root, which a Play
+    // Store image lacks), after the emulator check.
+    final branch = run.indexOf('if [ "\$KIND" = plus-probe ]; then');
+    expect(branch, greaterThan(run.indexOf('ro.boot.qemu')));
+    expect(branch, lessThan(run.indexOf('setprop persist.sys.timezone')));
+    expect(run, contains(r'bash "$(dirname "$0")/plus_probe.sh"'));
+  });
+
+  test("plus_probe.sh: every adb call names the emulator; the app checked, "
+      'and only the lines that matter kept', () {
+    final probe = File('tool/emulator/plus_probe.sh').readAsStringSync();
+    expect(probe, contains('set -Eeuo pipefail\n'));
+    // A failed command never reads as "the app died": 8 while setting up,
+    // 9 while reading the result.
+    final setup = probe.indexOf(
+      '''trap 'echo "STOP: a set-up step failed (line \$LINENO)"; exit 8' ERR''',
+    );
+    final install = probe.indexOf(r'A install "$APK"');
+    final launch = probe.indexOf('A shell monkey');
+    final reading = probe.indexOf(
+      '''trap 'echo "STOP: reading the result failed (line \$LINENO)"; exit 9' ERR''',
+    );
+    expect(setup, greaterThan(0));
+    expect(install, greaterThan(setup));
+    expect(launch, greaterThan(install));
+    expect(reading, greaterThan(launch));
+    expect(probe.indexOf('A logcat -d'), greaterThan(reading));
+    // Exactly the store build's permissions, or no probe.
+    expect(probe, contains(r'"$APP_DIR/android/expected-permissions.txt"'));
+    expect(probe, contains(r'if ! diff -u "$RUNNER_TEMP/expected.txt" "$OUT/permissions.txt"; then'));
+    expect(probe, contains("STOP: the permissions aren't the store build's\"; exit 7"));
+    final code = probe
+        .split('\n')
+        .where((l) => !l.trimLeft().startsWith('#'))
+        .toList();
+    final adb = [
+      for (final l in code)
+        if (RegExp(r'(^|[^\w-])adb(\s|$)').hasMatch(l)) l.trim(),
+    ];
+    expect(adb, [r'A() { adb -s "$SERIAL" "$@"; }']);
+    expect(probe, contains(r'[ "$installed" != "$built" ]'));
+    expect(probe, contains('STOP: no Play Store app on this image'));
+    // The whole log stays on the runner; the evidence is its filtered lines.
+    expect(probe, contains(r'rm -f "$RUNNER_TEMP/logcat.txt"'));
+    expect(probe, contains(r'> "$OUT/probe-logcat.txt"'));
+    expect(probe, isNot(contains(r'> "$OUT/logcat')));
+    expect(probe, contains('PROBE: the app did not stay up"; exit 1'));
+  });
+
   test('no env value is printed', () {
     expect(wf, contains(r'rm -f "$RUNNER_TEMP/defines.json"'));
     expect(wf, isNot(contains('cat "\$RUNNER_TEMP/defines.json"')));
@@ -202,7 +300,17 @@ steps:
 
   test('Android 14 (API 34), the emulator action pinned by sha', () {
     expect(wf, contains('api-level: 34\n'));
-    expect(wf, contains('target: google_apis\n'));
+    // The image: google_apis, or the Play Store image for the Plus probe
+    // only, from the validated kind.
+    expect(wf, contains(r'target: ${{ steps.in.outputs.target }}' '\n'));
+    expect(
+      wf,
+      contains(
+        'if [ "\$KIND" = plus-probe ]; then TARGET=google_apis_playstore; '
+        'else TARGET=google_apis; fi',
+      ),
+    );
+    expect('google_apis_playstore'.allMatches(wf), hasLength(1));
     expect(
       wf,
       contains(
