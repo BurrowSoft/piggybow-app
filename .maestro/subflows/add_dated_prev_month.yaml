@@ -45,13 +45,18 @@ appId: ${APP_ID}
 - tapOn: "Previous month"
 - tapOn: ".*${DAY}.*"
 - tapOn: "OK"
+- waitForAnimationToEnd                   # the picker closes and the sheet scrolls back
 - runFlow:
     file: reveal.yaml
     env:
       ID: add-submit
-- tapOn:
-    id: add-submit
-- extendedWaitUntil:
-    visible:
-      id: home-add
-    timeout: 10000
+# One retry: a tap during that scroll can land on the note field instead
+- retry:
+    maxRetries: 1
+    commands:
+      - tapOn:
+          id: add-submit
+      - extendedWaitUntil:
+          visible:
+            id: home-add
+          timeout: 6000
