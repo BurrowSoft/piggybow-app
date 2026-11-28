@@ -1,0 +1,60 @@
+appId: ${APP_ID}
+name: R1's gate session (the store build, Plus off, tips off) - a cold start; a spend and a save; Timeline, Summary and Me; an export to the share sheet and back; to the background and back - the row script reads the app's network bytes before and after
+tags: [r1]
+# Run by r1-net.sh with kind=prod-release (com.burrowsoft.piggybow).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "12", CAT: "food" }
+# A save (no goal)
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-saved
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "20", EXPECT: ".*20.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- tapOn:
+    id: tab-timeline
+- assertVisible: ".*\\$12\\.00.*"
+- tapOn:
+    id: tab-summary
+- tapOn:
+    id: tab-me
+# An export to the share sheet, and back
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: me-export }
+- tapOn:
+    id: me-export
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: 95-export-sheet
+- back
+- extendedWaitUntil:
+    visible:
+      id: tab-me
+    timeout: 10000
+# To the background and back (the same process)
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 3000
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: tab-me
+    timeout: 15000
+- takeScreenshot: 95-resumed

@@ -47,18 +47,17 @@ tags: [quick]
 - assertNotVisible:
     id: add-quick-3
 - takeScreenshot: 75-food-chips
-# A tap fills the amount, the caret at its end ("0" typed after it: 450), and saves nothing
+# A tap fills the amount ("45.00"), the caret at its end (one Backspace: "45.0";
+# the field stays focused, so no tap that would move the caret), and saves nothing
 - tapOn:
     id: add-quick-1
 - assertVisible:
     id: add-amount
-    text: "(?s).*45.*"
-- tapOn:
-    id: add-amount
-- inputText: "0"
+    text: "45.00"
+- eraseText: 1
 - assertVisible:
     id: add-amount
-    text: "(?s).*450.*"
+    text: "45.0"
 - assertVisible:
     id: add-submit                                # the sheet is still open
 - tapOn: "Cancel"                                 # the sheet's X

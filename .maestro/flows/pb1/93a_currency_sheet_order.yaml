@@ -15,9 +15,11 @@ tags: [risk, currency]
     env: { ID: add-amount, TEXT: "300", EXPECT: ".*300.*" }
 - tapOn:
     id: add-currency
-- runFlow:
-    file: ../../subflows/reveal.yaml
-    env: { ID: currency-THB }
+- scrollUntilVisible:              # Thai baht is near the end of the list (33 rows): several scrolls
+    element:
+      id: currency-THB
+    direction: DOWN
+    timeout: 20000
 - tapOn:
     id: currency-THB
 - runFlow:
@@ -52,9 +54,11 @@ tags: [risk, currency]
     env: { ID: add-currency }
 - tapOn:
     id: add-currency
-- runFlow:
-    file: ../../subflows/reveal.yaml
-    env: { ID: currency-THB }
+- scrollUntilVisible:              # Thai baht is near the end of the list (33 rows): several scrolls
+    element:
+      id: currency-THB
+    direction: DOWN
+    timeout: 20000
 - tapOn:
     id: currency-THB
 - assertVisible:
