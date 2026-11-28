@@ -129,6 +129,24 @@ void main() {
     expect(await notes(tester, app), ['Bus']);
   });
 
+  testWidgets('a backup with the reminder off: no reminder line', (
+    tester,
+  ) async {
+    final app = TestApp(onboarded: false);
+    await app.pump(tester);
+    backup.picked = (
+      name: 'b.piggybow',
+      text: await backup.file(tester, reminderOn: false),
+    );
+    await tester.tapId('onb-restore');
+    await tester.tapId('restore-choose');
+    await tester.enterId('restore-password', 'correct horse');
+    await tester.tapId('restore-go');
+    expect(byId('restore-done'), findsOneWidget);
+    expect(byId('restore-reminder'), findsNothing);
+    expect(find.text(l10n.restoreReminder), findsNothing);
+  });
+
   testWidgets('over a journal with notes: Cancel keeps it, Replace replaces '
       'it', (tester) async {
     final app = TestApp();

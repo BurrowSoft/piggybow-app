@@ -54,8 +54,12 @@ class FakeBackup {
   }
 
   /// A file from another phone, sealed with "correct horse": one bus ride in
-  /// euros, the reminder on at 21:30.
-  Future<String> file(WidgetTester tester, {int schema = backupSchema}) async {
+  /// euros, the reminder at 21:30, on unless [reminderOn] says otherwise.
+  Future<String> file(
+    WidgetTester tester, {
+    int schema = backupSchema,
+    bool reminderOn = true,
+  }) async {
     final journal = (await tester.runAsync(() async {
       final other = await JournalStore.inMemory(clock: testClock);
       await other.setCurrency('EUR');
@@ -74,12 +78,12 @@ class FakeBackup {
     }))!;
     final data = BackupSnapshot(
       journal: journal,
-      prefs: const PrefsSnapshot(
+      prefs: PrefsSnapshot(
         localeCode: null,
         appearance: null,
         palette: null,
-        reminderTime: ReminderTime(21, 30),
-        reminderWasOn: true,
+        reminderTime: const ReminderTime(21, 30),
+        reminderWasOn: reminderOn,
       ),
     ).toJson();
     return jsonEncode({
