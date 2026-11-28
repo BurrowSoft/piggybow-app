@@ -44,8 +44,8 @@ tags: [repeat]
       ID: add-submit
 - waitForAnimationToEnd:              # the reveal's scroll can still be settling: a tap then lands where the button was
     timeout: 3000
-- tapOn:
-    id: add-submit
+- tapOn:                            # by where Add is drawn: after a Repeat choice its node keeps an old position (F-AS-1)
+    point: "50%,93%"
     retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:
