@@ -1,0 +1,68 @@
+appId: ${APP_ID}
+name: How did yesterday feel? (#64) - four of yesterday's spends with no feeling; the card asks about three at most; an answer sets that spend's feeling and its row goes; the next one comes in; it leaves one unanswered for 82b and 82c
+tags: [yesterday]
+# Run with zone UTC and fake_now=2026-11-28T05:00:00Z: the app's clock is
+# frozen at Saturday 28 November; yesterday is Friday 27.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- assertNotVisible:
+    id: home-yesterday                            # nothing yesterday yet
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "5", CAT: "food", DAY: "Friday, November 27, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "6", CAT: "transport", DAY: "Friday, November 27, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "7", CAT: "groceries", DAY: "Friday, November 27, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "8", CAT: "shopping", DAY: "Friday, November 27, 2026" }
+# The card: at most three rows
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-yesterday
+- assertVisible:
+    id: home-yesterday
+    text: "(?s).*How did yesterday feel\\?.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-yesterday-later
+- assertVisible:
+    id: "home-yesterday-.*-worth_it"
+    index: 2
+- assertNotVisible:
+    id: "home-yesterday-.*-worth_it"
+    index: 3
+- takeScreenshot: 82-card-three
+# Answer three: each row goes, the fourth spend comes in, then the rows run out to one
+- tapOn:
+    id: "home-yesterday-.*-worth_it"
+    index: 0
+- assertVisible:
+    id: "home-yesterday-.*-worth_it"
+    index: 2                                      # the fourth came in
+- tapOn:
+    id: "home-yesterday-.*-not_sure"
+    index: 0
+- tapOn:
+    id: "home-yesterday-.*-not_really"
+    index: 0
+- assertVisible:
+    id: "home-yesterday-.*-worth_it"
+    index: 0                                      # one left
+- assertNotVisible:
+    id: "home-yesterday-.*-worth_it"
+    index: 1
+# The answers are the spends' feelings (Timeline shows them)
+- tapOn:
+    id: tab-timeline
+- assertVisible: "(?s).*Worth it.*"
+- assertVisible: "(?s).*Not sure.*"
+- assertVisible: "(?s).*Not really.*"
+- tapOn:
+    id: tab-home

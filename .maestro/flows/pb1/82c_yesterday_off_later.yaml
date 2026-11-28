@@ -1,0 +1,66 @@
+appId: ${APP_ID}
+name: How did yesterday feel? (#64) - Me's switch hides and brings back the card; "Not now" hides it for the rest of the day, also after a relaunch (after 82a, one spend left)
+tags: [yesterday]
+---
+- launchApp                                       # no clearState
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-yesterday
+# Me's switch off: no card; on again: back
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-yesterday-feel
+- assertVisible:
+    id: me-yesterday-feel
+    checked: true
+- tapOn:
+    id: me-yesterday-feel
+- assertVisible:
+    id: me-yesterday-feel
+    checked: false
+- tapOn:
+    id: tab-home
+- assertNotVisible:
+    id: home-yesterday
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-yesterday-feel
+- tapOn:
+    id: me-yesterday-feel
+- tapOn:
+    id: tab-home
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-yesterday
+- assertVisible:
+    id: home-yesterday
+# "Not now": gone for today, also after a relaunch
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-yesterday-later
+- tapOn:
+    id: home-yesterday-later
+- assertNotVisible:
+    id: home-yesterday
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- assertNotVisible:
+    id: home-yesterday
+- takeScreenshot: 82-after-not-now

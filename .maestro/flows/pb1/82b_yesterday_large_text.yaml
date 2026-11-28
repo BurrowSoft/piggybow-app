@@ -1,0 +1,16 @@
+appId: ${APP_ID}
+name: How did yesterday feel? (#64) at large text - after 82a (one spend left), the card at font scale 2.0, rows at whole words, for a look
+tags: [yesterday]
+---
+- launchApp                                       # no clearState: 82a's entries
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-yesterday
+- assertVisible:
+    id: home-yesterday
+- takeScreenshot: 82-card-x2
