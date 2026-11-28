@@ -163,7 +163,11 @@ void main() {
         (call) async => throw PlatformException(code: 'nope'),
       );
       expect(await readAndroidSdk(), isNull, reason: 'a failed call');
-      messenger.setMockMethodCallHandler(channel, null);
+      // What iOS answers (no handler there): the same as no answer.
+      messenger.setMockMethodCallHandler(
+        channel,
+        (call) async => throw MissingPluginException(),
+      );
       expect(await readAndroidSdk(), isNull, reason: 'no handler (iOS)');
     });
 
