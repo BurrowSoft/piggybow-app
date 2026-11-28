@@ -1,0 +1,154 @@
+// The pig-tip function's routes, with everything it talks to passed in, so
+// the tests need no network, no database and no key.
+//
+//   POST /pig-tip         a tip: 200 {tip}, or 204 (no tip today: the app
+//                         shows its own), 400 a body the contract refuses
+//   POST /pig-tip/report  "Report this tip": 204, or 400
+//   POST /pig-tip/forget  turning tips off: the anonymous user goes; 204
+//
+// Anonymous users only (401 otherwise). Each request logs one line: the
+// route, the status and why, the model and its token counts. Never the
+// request, the tip or the user's id.
+
+import { validRequest, type TipRequest } from "./contract.ts";
+import { checkTip } from "./filter.ts";
+import { isTipModel, type ModelAnswer, type ModelSettings } from "./model.ts";
+
+export type Take = "ok" | "off" | "cap" | "used";
+
+export const REPORT_REASONS = ["unhelpful", "wrong", "upsetting", "advice", "other"] as const;
+export type Report = { tip: string; reason: string; model: string };
+
+export type Deps = {
+  /** The caller's id when it's a signed-in anonymous user, else null. */
+  userId(authorization: string | null): Promise<string | null>;
+  /** The settings when tips are on, else null (the kill switch). */
+  settings(): Promise<ModelSettings | null>;
+  /** One tip for [uid] today (UTC): counted when 'ok'. */
+  takeTip(uid: string, today: string): Promise<Take>;
+  ask(request: TipRequest, settings: ModelSettings): Promise<ModelAnswer>;
+  report(report: Report): Promise<void>;
+  /** Deletes the anonymous user; their counters go with them. */
+  forget(uid: string): Promise<void>;
+  /** Today in UTC, YYYY-MM-DD. */
+  today(): string;
+  log(line: Record<string, unknown>): void;
+};
+
+function noTip(headers: Record<string, string> = {}): Response {
+  return new Response(null, { status: 204, headers });
+}
+
+/** After the model was asked: which model, its tokens, and why no tip went
+ * out (a code, never the text). The staging run reads them. */
+function modelHeaders(model: string, usage: { in: number; out: number }, why?: string) {
+  return {
+    "x-tip-model": model,
+    "x-tip-usage": `in=${usage.in};out=${usage.out}`,
+    ...(why ? { "x-tip-why": why } : {}),
+  };
+}
+
+function json(status: number, body: unknown, headers: Record<string, string> = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...headers },
+  });
+}
+
+async function bodyOf(req: Request): Promise<unknown> {
+  try {
+    return await req.json();
+  } catch {
+    return undefined;
+  }
+}
+
+export async function handle(req: Request, deps: Deps): Promise<Response> {
+  const path = new URL(req.url).pathname;
+  const route = path.endsWith("/report") ? "report" : path.endsWith("/forget") ? "forget" : "tip";
+  const log = (line: Record<string, unknown>) => deps.log({ route, ...line });
+
+  if (req.method !== "POST") {
+    log({ status: 405 });
+    return new Response(null, { status: 405 });
+  }
+  try {
+    const uid = await deps.userId(req.headers.get("Authorization"));
+    if (uid === null) {
+      log({ status: 401 });
+      return new Response(null, { status: 401 });
+    }
+    if (route === "forget") {
+      await deps.forget(uid);
+      log({ status: 204 });
+      return noTip();
+    }
+    if (route === "report") return await report(req, deps, log);
+    return await tip(req, uid, deps, log);
+  } catch (error) {
+    log({ status: 503, why: error instanceof Error ? error.name : "error" });
+    return new Response(null, { status: 503 });
+  }
+}
+
+async function tip(
+  req: Request,
+  uid: string,
+  deps: Deps,
+  log: (line: Record<string, unknown>) => void,
+): Promise<Response> {
+  const request = validRequest(await bodyOf(req));
+  if (request === null) {
+    log({ status: 400, why: "invalid_value" });
+    return json(400, { code: "invalid_value" });
+  }
+  const settings = await deps.settings();
+  if (settings === null) {
+    log({ status: 204, why: "off" });
+    return noTip();
+  }
+  const take = await deps.takeTip(uid, deps.today());
+  if (take !== "ok") {
+    log({ status: 204, why: take });
+    return noTip();
+  }
+  const answer = await deps.ask(request, settings);
+  const usage = { in: answer.inputTokens ?? 0, out: answer.outputTokens ?? 0 };
+  if (!answer.ok) {
+    const model = answer.model ?? settings.model;
+    log({ status: 204, why: answer.why, model, ...usage });
+    return noTip(modelHeaders(model, usage, answer.why));
+  }
+  const verdict = checkTip(answer.text);
+  if (!verdict.ok) {
+    const why = `filter_${verdict.why}`;
+    log({ status: 204, why, model: answer.model, ...usage });
+    return noTip(modelHeaders(answer.model, usage, why));
+  }
+  log({ status: 200, model: answer.model, ...usage });
+  return json(200, { tip: verdict.tip }, modelHeaders(answer.model, usage));
+}
+
+async function report(
+  req: Request,
+  deps: Deps,
+  log: (line: Record<string, unknown>) => void,
+): Promise<Response> {
+  const body = await bodyOf(req);
+  const ok = typeof body === "object" && body !== null && !Array.isArray(body) &&
+    Object.keys(body).every((k) => k === "tip" || k === "reason" || k === "model");
+  const { tip, reason, model } = (ok ? body : {}) as Record<string, unknown>;
+  if (
+    !ok ||
+    typeof tip !== "string" || tip.length < 1 || tip.length > 400 ||
+    typeof reason !== "string" || !(REPORT_REASONS as readonly string[]).includes(reason) ||
+    !isTipModel(model)
+  ) {
+    log({ status: 400, why: "invalid_value" });
+    return json(400, { code: "invalid_value" });
+  }
+  await deps.report({ tip, reason, model });
+  log({ status: 204, reason, model });
+  return noTip();
+}

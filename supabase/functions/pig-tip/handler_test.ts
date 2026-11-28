@@ -1,0 +1,172 @@
+import fixtures from "../../fixtures/tips-run.json" with { type: "json" };
+import { type Deps, handle, type Report, type Take } from "./handler.ts";
+import type { ModelAnswer, ModelSettings } from "./model.ts";
+import { assert, assertEquals } from "./test_util.ts";
+
+const week = fixtures.weeks[1].request;
+const UID = "anon-user-1";
+const TIP = "Food led your week so far. A home-cooked dinner could be a nice change.";
+
+/** Fake deps that record their calls and the log lines. */
+function fake(over: Partial<Deps> = {}) {
+  const calls: string[] = [];
+  const logs: Array<Record<string, unknown>> = [];
+  const reports: Report[] = [];
+  const deps: Deps = {
+    userId: async (auth) => (auth === "Bearer good" ? UID : null),
+    settings: async (): Promise<ModelSettings | null> => ({ model: "claude-haiku-5-5", effort: "low" }),
+    takeTip: async (uid, today): Promise<Take> => {
+      calls.push(`take ${uid} ${today}`);
+      return "ok";
+    },
+    ask: async (): Promise<ModelAnswer> => {
+      calls.push("ask");
+      return { ok: true, text: TIP, model: "claude-haiku-5-5", inputTokens: 612, outputTokens: 88 };
+    },
+    report: async (r) => {
+      reports.push(r);
+    },
+    forget: async (uid) => {
+      calls.push(`forget ${uid}`);
+    },
+    today: () => "2026-12-02",
+    log: (line) => logs.push(line),
+    ...over,
+  };
+  return { deps, calls, logs, reports };
+}
+
+function post(path: string, body?: unknown, auth = "Bearer good"): Request {
+  return new Request(`http://localhost${path}`, {
+    method: "POST",
+    headers: { Authorization: auth, "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+}
+
+/** Nothing the person sent, nor the tip, nor their id, ever reaches a log. */
+function assertQuietLogs(logs: Array<Record<string, unknown>>) {
+  const text = JSON.stringify(logs);
+  for (const secret of [UID, TIP, "category_shares", "feelings", "picks"]) {
+    assert(!text.includes(secret), `the logs hold ${secret}`);
+  }
+}
+
+Deno.test("a tip: 200 with the tip, its model and its tokens", async () => {
+  const { deps, calls, logs } = fake();
+  const res = await handle(post("/pig-tip", week), deps);
+  assertEquals(res.status, 200);
+  assertEquals(await res.json(), { tip: TIP });
+  assertEquals(res.headers.get("x-tip-model"), "claude-haiku-5-5");
+  assertEquals(res.headers.get("x-tip-usage"), "in=612;out=88");
+  assertEquals(calls, [`take ${UID} 2026-12-02`, "ask"]);
+  assertEquals(logs, [{ route: "tip", status: 200, model: "claude-haiku-5-5", in: 612, out: 88 }]);
+  assertQuietLogs(logs);
+});
+
+Deno.test("401 without a signed-in anonymous user; 405 for anything but POST", async () => {
+  const { deps, calls } = fake();
+  assertEquals((await handle(post("/pig-tip", week, "Bearer bad"), deps)).status, 401);
+  assertEquals((await handle(post("/pig-tip", week, ""), deps)).status, 401);
+  assertEquals((await handle(new Request("http://localhost/pig-tip"), deps)).status, 405);
+  assertEquals(calls, []);
+});
+
+Deno.test("400 for a body the contract refuses, before anything is counted", async () => {
+  const { deps, calls, logs } = fake();
+  for (const body of [{ ...week, note: "Lunch at the market" }, "not json", undefined]) {
+    const res = await handle(post("/pig-tip", body), deps);
+    assertEquals(res.status, 400);
+    assertEquals(await res.json(), { code: "invalid_value" });
+  }
+  assertEquals(calls, []);
+  assertQuietLogs(logs);
+  assert(!JSON.stringify(logs).includes("market"));
+});
+
+Deno.test("204 when tips are off: nothing counted, no model asked", async () => {
+  const { deps, calls, logs } = fake({ settings: async () => null });
+  assertEquals((await handle(post("/pig-tip", week), deps)).status, 204);
+  assertEquals(calls, []);
+  assertEquals(logs, [{ route: "tip", status: 204, why: "off" }]);
+});
+
+Deno.test("204 at the daily cap, or with today's tip used: no model asked", async () => {
+  for (const take of ["cap", "used", "off"] as const) {
+    const { deps, calls, logs } = fake({ takeTip: async () => take });
+    assertEquals((await handle(post("/pig-tip", week), deps)).status, 204, take);
+    assert(!calls.includes("ask"), take);
+    assertEquals(logs, [{ route: "tip", status: 204, why: take }]);
+  }
+});
+
+Deno.test("204 when the model gives no tip, or the filter holds it back", async () => {
+  const noTip = fake({
+    ask: async () => ({ ok: false, why: "stop_refusal", model: "claude-haiku-5-5", inputTokens: 600, outputTokens: 3 }),
+  });
+  assertEquals((await handle(post("/pig-tip", week), noTip.deps)).status, 204);
+  assertEquals(noTip.logs, [{ route: "tip", status: 204, why: "stop_refusal", model: "claude-haiku-5-5", in: 600, out: 3 }]);
+
+  const guilty = "You overspent on fun this week.";
+  const held = fake({
+    ask: async () => ({ ok: true, text: guilty, model: "claude-sonnet-5-5", inputTokens: 610, outputTokens: 40 }),
+  });
+  const res = await handle(post("/pig-tip", week), held.deps);
+  assertEquals(res.status, 204);
+  assertEquals(held.logs, [{ route: "tip", status: 204, why: "filter_guilt", model: "claude-sonnet-5-5", in: 610, out: 40 }]);
+  assert(!JSON.stringify(held.logs).includes(guilty));
+  // Why, as a code, for the staging run; never the text.
+  assertEquals(res.headers.get("x-tip-why"), "filter_guilt");
+  assertEquals(res.headers.get("x-tip-model"), "claude-sonnet-5-5");
+  assertEquals(res.headers.get("x-tip-usage"), "in=610;out=40");
+  assertEquals(await res.text(), "");
+});
+
+Deno.test("no model headers on a 204 that never asked the model", async () => {
+  const { deps } = fake({ takeTip: async () => "cap" });
+  const res = await handle(post("/pig-tip", week), deps);
+  assertEquals(res.status, 204);
+  assertEquals(res.headers.get("x-tip-model"), null);
+});
+
+Deno.test("503 when the database fails, and the error's text isn't logged", async () => {
+  const { deps, logs } = fake({
+    takeTip: async () => {
+      throw new Error(`connection to ${UID} failed`);
+    },
+  });
+  assertEquals((await handle(post("/pig-tip", week), deps)).status, 503);
+  assertEquals(logs, [{ route: "tip", status: 503, why: "Error" }]);
+});
+
+Deno.test("report: the tip, a reason and the model are kept; anything else is refused", async () => {
+  const { deps, reports, logs } = fake();
+  const good = { tip: TIP, reason: "unhelpful", model: "claude-haiku-5-5" };
+  assertEquals((await handle(post("/pig-tip/report", good), deps)).status, 204);
+  assertEquals(reports, [good]);
+  for (
+    const bad of [
+      { ...good, reason: "boring" },
+      { ...good, model: "claude-opus-5-5" },
+      { ...good, tip: "" },
+      { ...good, tip: "a".repeat(401) },
+      { ...good, week },
+      { tip: TIP, reason: "wrong" },
+    ]
+  ) {
+    assertEquals((await handle(post("/pig-tip/report", bad), deps)).status, 400, JSON.stringify(bad).slice(0, 60));
+  }
+  assertEquals(reports.length, 1);
+  assertEquals(logs[0], { route: "report", status: 204, reason: "unhelpful", model: "claude-haiku-5-5" });
+  assertQuietLogs(logs);
+});
+
+Deno.test("forget: the caller's anonymous user is deleted", async () => {
+  const { deps, calls, logs } = fake();
+  assertEquals((await handle(post("/pig-tip/forget"), deps)).status, 204);
+  assertEquals(calls, [`forget ${UID}`]);
+  assertQuietLogs(logs);
+  const stranger = fake();
+  assertEquals((await handle(post("/pig-tip/forget", undefined, "Bearer bad"), stranger.deps)).status, 401);
+  assertEquals(stranger.calls, []);
+});

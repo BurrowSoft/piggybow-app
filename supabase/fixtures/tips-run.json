@@ -1,0 +1,479 @@
+{
+  "about": "The staging run's weeks: made up, never anyone's data. Each request is exactly what the app's builder would send for such a week. The run asks for one tip per week from each model.",
+  "weeks": [
+    {
+      "name": "Monday, nothing noted yet",
+      "request": {
+        "language": "en",
+        "weekday": 1,
+        "category_shares": {},
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 0
+        },
+        "saves": 0,
+        "active_goals": 0,
+        "picks": [
+          "save"
+        ]
+      }
+    },
+    {
+      "name": "Wednesday, mostly food, a plan and a goal",
+      "request": {
+        "language": "en",
+        "weekday": 3,
+        "category_shares": {
+          "food": 55,
+          "transport": 20,
+          "fun": 15,
+          "yours": 5
+        },
+        "feelings": {
+          "worth_it": 3,
+          "not_sure": 1,
+          "not_really": 1,
+          "none": 2
+        },
+        "saves": 1,
+        "plan_percent": 48,
+        "goal_percent": 30,
+        "active_goals": 1,
+        "picks": [
+          "save",
+          "plan",
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Friday, shopping leads, three felt not really",
+      "request": {
+        "language": "en",
+        "weekday": 5,
+        "category_shares": {
+          "shopping": 40,
+          "food": 30,
+          "fun": 20
+        },
+        "feelings": {
+          "worth_it": 1,
+          "not_sure": 0,
+          "not_really": 3,
+          "none": 0
+        },
+        "saves": 0,
+        "plan_percent": 92,
+        "active_goals": 0,
+        "picks": [
+          "plan"
+        ]
+      }
+    },
+    {
+      "name": "Sunday, the plan reached, two goals",
+      "request": {
+        "language": "en",
+        "weekday": 7,
+        "category_shares": {
+          "food": 60,
+          "home": 25,
+          "transport": 10
+        },
+        "feelings": {
+          "worth_it": 2,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 5
+        },
+        "saves": 2,
+        "plan_percent": 100,
+        "goal_percent": 75,
+        "active_goals": 2,
+        "picks": [
+          "save",
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Tuesday, groceries, no picks, no plan",
+      "request": {
+        "language": "en",
+        "weekday": 2,
+        "category_shares": {
+          "groceries": 70,
+          "transport": 30
+        },
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 4
+        },
+        "saves": 0,
+        "goal_percent": 10,
+        "active_goals": 1,
+        "picks": []
+      }
+    },
+    {
+      "name": "Thursday, fun and gifts, all worth it",
+      "request": {
+        "language": "en",
+        "weekday": 4,
+        "category_shares": {
+          "fun": 50,
+          "gifts": 30,
+          "food": 20
+        },
+        "feelings": {
+          "worth_it": 5,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 0
+        },
+        "saves": 1,
+        "plan_percent": 60,
+        "active_goals": 0,
+        "picks": [
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Saturday, a goal nearly there",
+      "request": {
+        "language": "en",
+        "weekday": 6,
+        "category_shares": {
+          "health": 45,
+          "food": 35,
+          "transport": 20
+        },
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 3,
+          "not_really": 0,
+          "none": 0
+        },
+        "saves": 3,
+        "goal_percent": 95,
+        "active_goals": 1,
+        "picks": [
+          "save"
+        ]
+      }
+    },
+    {
+      "name": "Monday morning, one spend",
+      "request": {
+        "language": "en",
+        "weekday": 1,
+        "category_shares": {
+          "food": 100
+        },
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 1
+        },
+        "saves": 0,
+        "plan_percent": 5,
+        "active_goals": 0,
+        "picks": [
+          "save",
+          "plan"
+        ]
+      }
+    },
+    {
+      "name": "Wednesday, your own categories lead",
+      "request": {
+        "language": "en",
+        "weekday": 3,
+        "category_shares": {
+          "food": 25,
+          "other": 15,
+          "yours": 60
+        },
+        "feelings": {
+          "worth_it": 2,
+          "not_sure": 0,
+          "not_really": 2,
+          "none": 0
+        },
+        "saves": 0,
+        "active_goals": 0,
+        "picks": [
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Friday, four felt not really, three goals",
+      "request": {
+        "language": "en",
+        "weekday": 5,
+        "category_shares": {
+          "transport": 50,
+          "home": 30,
+          "groceries": 20
+        },
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 0,
+          "not_really": 4,
+          "none": 1
+        },
+        "saves": 1,
+        "plan_percent": 75,
+        "goal_percent": 50,
+        "active_goals": 3,
+        "picks": [
+          "save",
+          "plan",
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Saturday, only saves",
+      "request": {
+        "language": "en",
+        "weekday": 6,
+        "category_shares": {},
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 0
+        },
+        "saves": 2,
+        "goal_percent": 40,
+        "active_goals": 1,
+        "picks": [
+          "save"
+        ]
+      }
+    },
+    {
+      "name": "Tuesday, home leads, not sure",
+      "request": {
+        "language": "en",
+        "weekday": 2,
+        "category_shares": {
+          "home": 80,
+          "food": 15,
+          "transport": 5
+        },
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 2,
+          "not_really": 0,
+          "none": 1
+        },
+        "saves": 0,
+        "plan_percent": 85,
+        "active_goals": 0,
+        "picks": [
+          "plan"
+        ]
+      }
+    },
+    {
+      "name": "Thursday, a goal reached",
+      "request": {
+        "language": "en",
+        "weekday": 4,
+        "category_shares": {
+          "food": 40,
+          "fun": 35,
+          "transport": 25
+        },
+        "feelings": {
+          "worth_it": 3,
+          "not_sure": 1,
+          "not_really": 0,
+          "none": 0
+        },
+        "saves": 2,
+        "goal_percent": 100,
+        "active_goals": 2,
+        "picks": [
+          "save",
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Sunday, the plan reached, five felt not really",
+      "request": {
+        "language": "en",
+        "weekday": 7,
+        "category_shares": {
+          "shopping": 50,
+          "fun": 30,
+          "food": 15,
+          "yours": 5
+        },
+        "feelings": {
+          "worth_it": 1,
+          "not_sure": 1,
+          "not_really": 5,
+          "none": 2
+        },
+        "saves": 0,
+        "plan_percent": 100,
+        "active_goals": 0,
+        "picks": [
+          "plan",
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Monday, one save and no picks",
+      "request": {
+        "language": "en",
+        "weekday": 1,
+        "category_shares": {},
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 0
+        },
+        "saves": 1,
+        "active_goals": 0,
+        "picks": []
+      }
+    },
+    {
+      "name": "Wednesday, gifts and health",
+      "request": {
+        "language": "en",
+        "weekday": 3,
+        "category_shares": {
+          "gifts": 45,
+          "health": 35,
+          "groceries": 20
+        },
+        "feelings": {
+          "worth_it": 4,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 1
+        },
+        "saves": 0,
+        "plan_percent": 40,
+        "goal_percent": 65,
+        "active_goals": 1,
+        "picks": [
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Friday, no feelings said",
+      "request": {
+        "language": "en",
+        "weekday": 5,
+        "category_shares": {
+          "food": 50,
+          "transport": 30,
+          "other": 20
+        },
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 8
+        },
+        "saves": 0,
+        "plan_percent": 70,
+        "active_goals": 0,
+        "picks": [
+          "save",
+          "plan"
+        ]
+      }
+    },
+    {
+      "name": "Saturday, only your own categories",
+      "request": {
+        "language": "en",
+        "weekday": 6,
+        "category_shares": {
+          "yours": 100
+        },
+        "feelings": {
+          "worth_it": 1,
+          "not_sure": 1,
+          "not_really": 1,
+          "none": 0
+        },
+        "saves": 1,
+        "active_goals": 0,
+        "picks": [
+          "save",
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Tuesday, four saves already",
+      "request": {
+        "language": "en",
+        "weekday": 2,
+        "category_shares": {
+          "groceries": 60,
+          "food": 40
+        },
+        "feelings": {
+          "worth_it": 2,
+          "not_sure": 0,
+          "not_really": 0,
+          "none": 0
+        },
+        "saves": 4,
+        "plan_percent": 20,
+        "goal_percent": 55,
+        "active_goals": 2,
+        "picks": [
+          "save",
+          "plan",
+          "worth"
+        ]
+      }
+    },
+    {
+      "name": "Thursday, transport leads, the plan nearly reached",
+      "request": {
+        "language": "en",
+        "weekday": 4,
+        "category_shares": {
+          "transport": 65,
+          "food": 20,
+          "fun": 10
+        },
+        "feelings": {
+          "worth_it": 0,
+          "not_sure": 2,
+          "not_really": 1,
+          "none": 3
+        },
+        "saves": 0,
+        "plan_percent": 99,
+        "goal_percent": 5,
+        "active_goals": 1,
+        "picks": [
+          "plan"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+name: Pig tips staging run
+
+# The staging samples: one tip per made-up week
+# (supabase/fixtures/tips-run.json) from piggybow-staging's pig-tip, with
+# the chosen model. The table (tips, tokens, estimated cost) goes to this
+# job's log. Fixtures only, never anyone's data. The script puts the
+# server's settings back as they were and deletes its anonymous user.
+# Manual, from master only, after the supabase-staging environment's
+# reviewer approves.
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "The model to ask"
+        type: choice
+        options: [claude-haiku-5-5, claude-sonnet-5-5]
+
+permissions:
+  contents: read
+
+# Shares the deploy's group: a run never meets a deploy halfway.
+concurrency:
+  group: supabase-staging
+  cancel-in-progress: false
+
+jobs:
+  run:
+    name: one tip per staging week
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: supabase-staging
+    env:
+      PROJECT_REF: shibvpzkwwmqpvhspfsv
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Deno 2.9.8, checked by sha256
+        run: |
+          set -euo pipefail
+          curl -fsSL -o "$RUNNER_TEMP/deno.zip" \
+            https://github.com/denoland/deno/releases/download/v2.9.8/deno-x86_64-unknown-linux-gnu.zip
+          echo "e890975bc2549807bbcc0b584ffafda72cc7c93349dd99c80483dd784f6c4609  $RUNNER_TEMP/deno.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/deno.zip" -d "$RUNNER_TEMP/deno"
+          rm -f "$RUNNER_TEMP/deno.zip"
+          echo "$RUNNER_TEMP/deno" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/deno/deno" --version
+      # The input reaches the script only as env.
+      - name: The run
+        env:
+          SUPABASE_DEPLOY_TOKEN: ${{ secrets.SUPABASE_STAGING_DEPLOY_TOKEN }}
+          ANON_KEY: ${{ vars.SUPABASE_STAGING_ANON_KEY }}
+          MODEL: ${{ inputs.model }}
+        run: >-
+          deno run --no-lock --allow-net=api.supabase.com,"$PROJECT_REF.supabase.co"
+          --allow-read=supabase/fixtures
+          --allow-env=SUPABASE_DEPLOY_TOKEN,PROJECT_REF,ANON_KEY,MODEL
+          supabase/scripts/tips-run.ts

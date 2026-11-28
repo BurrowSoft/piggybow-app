@@ -96,6 +96,36 @@ jobs:
   # No trackers in what ships, on every PR that can change the release
   # classpath (android/, pubspec) or a workflow, not only at release. No full build:
   # --config-only writes the Gradle wrapper and settings.
+  # The pig tips server (supabase/): the pig-tip function's Deno tests, with
+  # the model stubbed (no key, no call to a model), and a type check of the
+  # function as deployed. Deno is downloaded and checked by its sha256.
+  server:
+    name: server tests (deno)
+    needs: changes
+    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.app == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Deno 2.9.8, checked by sha256
+        run: |
+          set -euo pipefail
+          curl -fsSL -o "$RUNNER_TEMP/deno.zip" \
+            https://github.com/denoland/deno/releases/download/v2.9.8/deno-x86_64-unknown-linux-gnu.zip
+          echo "e890975bc2549807bbcc0b584ffafda72cc7c93349dd99c80483dd784f6c4609  $RUNNER_TEMP/deno.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/deno.zip" -d "$RUNNER_TEMP/deno"
+          rm -f "$RUNNER_TEMP/deno.zip"
+          echo "$RUNNER_TEMP/deno" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/deno/deno" --version
+      - name: The pig-tip function's tests
+        working-directory: supabase/functions/pig-tip
+        run: deno test --no-lock --allow-env
+      - name: The function as deployed type-checks
+        working-directory: supabase/functions/pig-tip
+        run: deno check --no-lock index.ts
+
   trackers:
     name: no tracking dependencies
     runs-on: ubuntu-latest

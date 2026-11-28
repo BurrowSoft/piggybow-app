@@ -1,0 +1,82 @@
+name: Supabase staging
+
+# Deploys the pig tips server to piggybow-staging:
+#   1. the migrations, through the Management API with the project's scoped
+#      access token (Database and Edge Functions only; never the database
+#      password, which would bypass the token's scope);
+#   2. the pig-tip function;
+#   3. a smoke check: a call with no user must get 401.
+# Manual, from master only. The supabase-staging environment holds the
+# token and starts the job only after its reviewer approves.
+on:
+  workflow_dispatch:
+    inputs:
+      what:
+        description: "What to deploy"
+        type: choice
+        options: [both, migrations, function]
+        default: both
+
+permissions:
+  contents: read
+
+# One deploy or staging run at a time; a running one is never cancelled.
+concurrency:
+  group: supabase-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: deploy to piggybow-staging
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: supabase-staging
+    env:
+      PROJECT_REF: shibvpzkwwmqpvhspfsv
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Deno 2.9.8, checked by sha256
+        run: |
+          set -euo pipefail
+          curl -fsSL -o "$RUNNER_TEMP/deno.zip" \
+            https://github.com/denoland/deno/releases/download/v2.9.8/deno-x86_64-unknown-linux-gnu.zip
+          echo "e890975bc2549807bbcc0b584ffafda72cc7c93349dd99c80483dd784f6c4609  $RUNNER_TEMP/deno.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/deno.zip" -d "$RUNNER_TEMP/deno"
+          rm -f "$RUNNER_TEMP/deno.zip"
+          echo "$RUNNER_TEMP/deno" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/deno/deno" --version
+      - name: Supabase CLI 3.4.0, checked by sha256
+        if: inputs.what != 'migrations'
+        run: |
+          set -euo pipefail
+          curl -fsSL -o "$RUNNER_TEMP/supabase.tar.gz" \
+            https://github.com/supabase/cli/releases/download/v3.4.0/supabase_linux_amd64.tar.gz
+          echo "d82f8fc8a1611c45b9422b10378f61df614325f7e25624acda3704544513d6ac  $RUNNER_TEMP/supabase.tar.gz" | sha256sum -c -
+          mkdir -p "$RUNNER_TEMP/supabase-cli"
+          tar -xzf "$RUNNER_TEMP/supabase.tar.gz" -C "$RUNNER_TEMP/supabase-cli"
+          rm -f "$RUNNER_TEMP/supabase.tar.gz"
+          echo "$RUNNER_TEMP/supabase-cli" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/supabase-cli/supabase" --version
+      # Each migration can run again without changing anything.
+      - name: The migrations, through the Management API
+        if: inputs.what != 'function'
+        env:
+          SUPABASE_DEPLOY_TOKEN: ${{ secrets.SUPABASE_STAGING_DEPLOY_TOKEN }}
+        run: >-
+          deno run --no-lock --allow-net=api.supabase.com
+          --allow-read=supabase/migrations
+          --allow-env=SUPABASE_DEPLOY_TOKEN,PROJECT_REF
+          supabase/scripts/sql.ts supabase/migrations/*.sql
+      - name: The pig-tip function
+        if: inputs.what != 'migrations'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_STAGING_DEPLOY_TOKEN }}
+        run: supabase functions deploy pig-tip --project-ref "$PROJECT_REF" --use-api
+      - name: Smoke check, no user so 401
+        if: inputs.what != 'migrations'
+        run: >-
+          deno run --no-lock --allow-net="$PROJECT_REF.supabase.co"
+          --allow-env=PROJECT_REF supabase/scripts/smoke.ts
