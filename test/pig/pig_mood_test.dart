@@ -15,12 +15,14 @@ const moodLines = {
 
 DateTime? _instant(Object? v) => v == null ? null : DateTime.parse(v as String);
 
+/// An entry in another currency counts at its home amount (C37).
 MoodEntry _entry(Map<String, dynamic> e) => MoodEntry(
   type: e['type'] as String,
-  amountMinor: e['amount_minor'] as int,
+  amountMinor: (e['home_minor'] ?? e['amount_minor']) as int,
   feeling: e['feeling'] as String?,
   localDate: e['local_date'] as String,
   createdAt: DateTime.parse(e['created_at'] as String),
+  auto: e['auto'] == true,
 );
 
 GoalMarks _goal(Map<String, dynamic> g) => GoalMarks(
@@ -43,7 +45,7 @@ void main() {
   final cases = (contract['cases'] as List).cast<Map<String, dynamic>>();
 
   test('the contract is loaded whole', () {
-    expect(cases.length, 35);
+    expect(cases.length, 41);
     expect(cases.map((c) => c['id']).toSet().length, cases.length, reason: 'ids are unique');
   });
 

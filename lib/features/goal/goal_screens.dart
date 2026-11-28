@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_dates.dart';
 import '../../core/button_label.dart';
+import '../../core/clock.dart';
 import '../../core/day_label.dart';
 import '../../core/fit_text.dart';
 import '../../core/line_breaks.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
+import '../../goal/goal_pace.dart';
 import '../../goal/goal_progress.dart';
 import '../../journal/entry.dart';
 import '../../journal/goal.dart';
+import '../../journal/journal_store.dart' show LockedByTakeOut;
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show PigMood;
@@ -19,12 +23,14 @@ import '../../theme/theme.dart';
 import '../add/entry_sheet.dart';
 import '../pig/pig_view.dart';
 import 'rainbow.dart';
+import 'take_out_sheet.dart';
 
 /// Up to 40 characters, as people count them.
 const goalNameMax = 40;
 
 /// Create a goal, or edit one (plan §3.4): what for, the amount, what's
-/// already saved. In onboarding it is O3 (plan §3.1), the optional first
+/// already saved, and an optional target date (feature 11; not in
+/// onboarding). In onboarding it is O3 (plan §3.1), the optional first
 /// goal: "Start my rainbow" saves it and "Maybe later" doesn't; both end
 /// onboarding, and the router goes Home.
 class GoalEditScreen extends StatefulWidget {
@@ -46,8 +52,15 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
   final _start = TextEditingController();
   Goal? _goal;
   String? _currency;
+
+  /// "YYYY-MM-DD", or null: no target date.
+  String? _targetDate;
   bool _tried = false;
   bool _busy = false;
+
+  /// The least "Already saved" can be: what was taken out of the goal beyond
+  /// its saves (0 when nothing was).
+  int _startFloor = 0;
 
   String get _locale => context.readSession.device.localeName;
 
@@ -62,18 +75,42 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
     final currency = await store.currency() ?? 'USD';
     final id = widget.goalId;
     final goal = id == null ? null : await store.goal(id);
+    final floor = goal == null ? 0 : await store.startFloor(goal);
     if (!mounted) return;
     setState(() {
       _currency = currency;
       _goal = goal;
+      _startFloor = floor;
       if (goal != null) {
         _name.text = goal.name;
         _target.text = inputAmount(goal.targetMinor, currency, _locale);
         if (goal.startMinor > 0) {
           _start.text = inputAmount(goal.startMinor, currency, _locale);
         }
+        _targetDate = goal.targetDate;
       }
     });
+  }
+
+  /// The target date's picker: from tomorrow to 10 years ahead.
+  Future<void> _pickTargetDate() async {
+    final today = context.services.localDay.today;
+    final first = addDays(today, 1);
+    final last = DateTime(today.year + 10, today.month, today.day);
+    final current = parseWireDate(_targetDate) ?? first;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current.isBefore(first)
+          ? first
+          : current.isAfter(last)
+          ? last
+          : current,
+      firstDate: first,
+      lastDate: last,
+    );
+    if (picked != null && mounted) {
+      setState(() => _targetDate = wireDate(dateOnly(picked)));
+    }
   }
 
   @override
@@ -104,12 +141,17 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
   }
 
   String? _startError(AppLocalizations l10n) {
-    if (_start.text.trim().isEmpty) return null;
-    return switch (parseAmount(
-      _start.text,
-      _currency!,
-      allowZero: true,
-    ).problem) {
+    final empty = _start.text.trim().isEmpty;
+    final parsed = empty
+        ? null
+        : parseAmount(_start.text, _currency!, allowZero: true);
+    // Not below what was taken out of the goal beyond its saves.
+    final start = empty ? 0 : parsed!.minor;
+    if (start != null && start < _startFloor) {
+      return l10n.goalStartLockedByTakeOut;
+    }
+    if (parsed == null) return null;
+    return switch (parsed.problem) {
       null => null,
       AmountProblem.tooBig => l10n.addAmountTooBig,
       _ => l10n.addAmountError,
@@ -142,19 +184,33 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
             startMinor: start,
             createdAt: now,
             updatedAt: now,
+            targetDate: _targetDate,
           )
         : old.copyWith(
             name: _name.text.trim(),
             targetMinor: target,
             startMinor: start,
             updatedAt: now,
+            targetDate: _targetDate,
           );
     // A goal beside another active one only with Plus (decision 79); the
     // way here asked for it first (Home's New goal, requirePlus).
-    await services.journal.putGoal(
-      goal,
-      allowAnother: services.plus?.active ?? false,
-    );
+    try {
+      await services.journal.putGoal(
+        goal,
+        allowAnother: services.plus?.active ?? false,
+      );
+    } on LockedByTakeOut {
+      // Taken out meanwhile: read the floor again; the field says so.
+      final floor = await services.journal.startFloor(old!);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _startFloor = floor;
+        });
+      }
+      return;
+    }
     if (widget.onboarding) {
       await _finishOnboarding(services);
     } else if (mounted) {
@@ -268,10 +324,18 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                             child: Text(l10n.goalStartLabel),
                           ),
                           errorText: _startError(l10n),
-                          errorMaxLines: 3,
+                          errorMaxLines: 6,
                         ),
                       ),
                     ),
+                    if (!onboarding) ...[
+                      const SizedBox(height: 12),
+                      _TargetDateRow(
+                        date: parseWireDate(_targetDate),
+                        onPick: _pickTargetDate,
+                        onRemove: () => setState(() => _targetDate = null),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     TestId(
                       onboarding ? 'onb-goal-start' : 'goal-submit',
@@ -306,8 +370,69 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
   }
 }
 
+/// The goal form's target date (feature 11): the field opens the date picker;
+/// with a date, a × beside it removes it.
+class _TargetDateRow extends StatelessWidget {
+  const _TargetDateRow({
+    required this.date,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final DateTime? date;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final day = date;
+    return Row(
+      children: [
+        Expanded(
+          child: TestId(
+            'goal-target-date',
+            button: true,
+            child: InkWell(
+              onTap: onPick,
+              child: InputDecorator(
+                isEmpty: day == null,
+                decoration: InputDecoration(
+                  // One line, whole: smaller only if it must.
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(l10n.goalTargetDate),
+                  ),
+                  suffixIcon: const Icon(Icons.event),
+                ),
+                child: Text(
+                  day == null
+                      ? ''
+                      : AppDates.dayMonthYear(context.session.dateLocale, day),
+                  style: context.inputText,
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (day != null)
+          TestId(
+            'goal-target-date-remove',
+            button: true,
+            child: IconButton(
+              tooltip: l10n.goalTargetDateRemove,
+              icon: const Icon(Icons.close),
+              onPressed: onRemove,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// A goal (plan §3.4): the big rainbow, how far along, its saves (newest
-/// first, tap to edit), Add savings, and Edit goal / End goal.
+/// first, tap to edit), Add savings, and Edit goal / End goal. Under "{x} to
+/// go", the pace or the target date (feature 11).
 class GoalDetailScreen extends StatefulWidget {
   const GoalDetailScreen({super.key, required this.goalId});
 
@@ -401,6 +526,18 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     final goal = _goal;
     final locale = context.session.device.localeName;
     String money(int minor) => formatMoney(minor, _currency, locale);
+    // Feature 11: the pace, or the target date, under "{x} to go".
+    final today = context.services.localDay.today;
+    final outlook = goal == null || goal.status != GoalStatus.active
+        ? null
+        : goalOutlook(
+            remainingMinor: goal.targetMinor - _progress,
+            recentMinor: recentSavesMinor(_saves, today),
+            targetDate: goal.targetDate,
+            today: wireDate(today),
+          );
+    final paceWeeks = outlook?.paceWeeks;
+    final targetOn = parseWireDate(outlook?.targetDate);
     return TestId.container(
       'goal-screen',
       child: Scaffold(
@@ -473,6 +610,24 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
+                    if (paceWeeks != null || targetOn != null)
+                      TestId(
+                        'goal-outlook',
+                        child: WholeWordsText(
+                          paceWeeks != null
+                              ? l10n.goalPaceWeeks(paceWeeks)
+                              : l10n.goalTargetOn(
+                                  AppDates.dayMonthYear(
+                                    context.session.dateLocale,
+                                    targetOn!,
+                                  ),
+                                ),
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
                     if (goal.status == GoalStatus.active) ...[
                       const SizedBox(height: 16),
                       TestId(
@@ -491,6 +646,20 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         ),
                       ),
                     ],
+                    // Money can be taken out while there's some, whatever
+                    // the goal's state: a reached goal stays reached.
+                    if (_progress > 0) ...[
+                      const SizedBox(height: 8),
+                      TestId(
+                        'goal-take-out',
+                        button: true,
+                        child: OutlinedButton(
+                          onPressed: () =>
+                              showTakeOutSheet(context, goal: goal),
+                          child: ButtonLabel(l10n.goalTakeOut),
+                        ),
+                      ),
+                    ],
                     // No saves yet: no header over nothing (decision 57).
                     if (_saves.isNotEmpty) ...[
                       const SizedBox(height: 24),
@@ -502,28 +671,60 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         ),
                       ),
                     ],
+                    // Its saves and what was taken out of it, newest first.
                     for (final e in _saves)
                       TestId(
                         'goal-save-${e.id}',
                         button: true,
                         child: InkWell(
-                          onTap: () => showEntrySheet(context, editing: e),
+                          onTap: () => e.type == EntryType.withdraw
+                              ? showTakeOutSheet(
+                                  context,
+                                  goal: goal,
+                                  editing: e,
+                                )
+                              : showEntrySheet(context, editing: e),
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(minHeight: 56),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: _SaveRow(
-                                title: e.note.isNotEmpty
-                                    ? e.note
-                                    : l10n.tlSavedRow,
-                                day: dayLabel(
-                                  l10n,
-                                  context.session.dateLocale,
-                                  e.date,
-                                  today: context.services.localDay.today,
-                                ),
-                                amount: '+${money(e.amountMinor)}',
-                              ),
+                              child: e.type == EntryType.withdraw
+                                  ? _SaveRow(
+                                      title: e.note.isNotEmpty
+                                          ? e.note
+                                          : l10n.goalTakenOutRow,
+                                      // Under a note, the line says what it
+                                      // is: "Taken out · Today".
+                                      day: [
+                                        if (e.note.isNotEmpty)
+                                          l10n.goalTakenOutRow,
+                                        dayLabel(
+                                          l10n,
+                                          context.session.dateLocale,
+                                          e.date,
+                                          today:
+                                              context.services.localDay.today,
+                                        ),
+                                      ].join(' · '),
+                                      // In ink, never red; a minus.
+                                      amount:
+                                          '$minusSign${money(e.homeMinor)}',
+                                      accent: false,
+                                    )
+                                  : _SaveRow(
+                                      title: e.note.isNotEmpty
+                                          ? e.note
+                                          : l10n.tlSavedRow,
+                                      day: dayLabel(
+                                        l10n,
+                                        context.session.dateLocale,
+                                        e.date,
+                                        today: context.services.localDay.today,
+                                      ),
+                                      // In the home currency (a save in another one,
+                                      // converted).
+                                      amount: '+${money(e.homeMinor)}',
+                                    ),
                             ),
                           ),
                         ),
@@ -537,17 +738,21 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 }
 
 /// One of a goal's saves: its note (or "Saved"), its day, and "+amount" in
-/// the accent. At large text the amount goes on its own line under the day.
+/// the accent; or money taken out of it: its note over "Taken out · day" (or
+/// "Taken out" over its day), "−amount" in ink ([accent] false).
+/// At large text the amount goes on its own line under the day.
 class _SaveRow extends StatelessWidget {
   const _SaveRow({
     required this.title,
     required this.day,
     required this.amount,
+    this.accent = true,
   });
 
   final String title;
   final String day;
   final String amount;
+  final bool accent;
 
   @override
   Widget build(BuildContext context) {
@@ -561,7 +766,9 @@ class _SaveRow extends StatelessWidget {
         maxLines: 1,
         softWrap: false,
         style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
+          color: accent
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurface,
         ),
       ),
     );

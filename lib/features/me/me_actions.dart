@@ -10,19 +10,46 @@ import '../../data/device_backend.dart';
 import '../../export/csv_export.dart';
 import '../../journal/category.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../../money/rate.dart';
 import '../../session/app_session.dart';
 
 /// The folders in the app's own cache that hold export files: ours, and the
 /// one share_plus copies a file into for the share sheet.
 const _exportFolders = ['export', 'share_plus'];
 
-/// Removes every export file left in the cache (at each start, and as part
-/// of Delete everything): an export lives only while it's being shared.
+/// A folder named by a random id (8-4-4-4-12 hex), as plugins name the copy
+/// they make of a picked or shared file.
+final _randomId = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+  caseSensitive: false,
+);
+
+String _name(FileSystemEntity entity) =>
+    entity.path.split(RegExp(r'[/\\]')).lastWhere((s) => s.isNotEmpty);
+
+/// Removes every export file left in the cache, at each start: an export
+/// lives only while it's being shared. A copy a plugin left in a folder
+/// named by a random id goes too; the rest of the cache is its owners'.
 Future<void> sweepExports({Future<Directory> Function()? cache}) async {
   final root = await (cache ?? getTemporaryDirectory)();
-  for (final name in _exportFolders) {
-    final folder = Directory('${root.path}/$name');
-    if (await folder.exists()) await folder.delete(recursive: true);
+  if (!await root.exists()) return;
+  await for (final entity in root.list()) {
+    final name = _name(entity);
+    if (entity is Directory &&
+        (_exportFolders.contains(name) || _randomId.hasMatch(name))) {
+      await entity.delete(recursive: true);
+    }
+  }
+}
+
+/// Delete everything: the app's whole cache, whatever is in it (export
+/// files, and any copy a plugin made), so "erases everything Piggybow
+/// stored" stays true.
+Future<void> clearCache({Future<Directory> Function()? cache}) async {
+  final root = await (cache ?? getTemporaryDirectory)();
+  if (!await root.exists()) return;
+  await for (final entity in root.list()) {
+    await entity.delete(recursive: true);
   }
 }
 
@@ -37,7 +64,12 @@ Future<String> journalCsv(
   final words = l10n ?? lookupAppLocalizations(const Locale('en'));
   final goals = {for (final g in await store.goals()) g.id: g.name};
   final customs = {for (final c in await store.customCategories()) c.id: c};
+  // Each repeat's kind, stopped ones too: their entries still say so.
+  final repeats = {
+    for (final r in await store.repeats()) r.id: r.schedule.kind.id,
+  };
   final entries = await store.entries();
+  final home = await store.currency() ?? 'USD';
   return buildCsv([
     for (final e in entries.reversed)
       CsvRow(
@@ -53,6 +85,10 @@ Future<String> journalCsv(
         feeling: e.feeling?.id,
         note: e.note,
         goalName: e.goalId == null ? null : goals[e.goalId],
+        repeat: e.repeatId == null ? null : repeats[e.repeatId],
+        homeMinor: e.homeMinor,
+        homeCurrency: home,
+        rateText: e.rate == null ? '' : rateText(e.rate!, currency: e.currency, home: home),
       ),
   ]);
 }
@@ -88,11 +124,11 @@ Future<void> _shareSheet(XFile file) =>
 /// Me → Delete all my data (plan §3.8, the §4.7 wipe list, decision 67):
 /// the journal; the scheduled reminders; the app lock's secure storage,
 /// every id (only after the journal is gone); every pref (the device
-/// account, its reminder, language, appearance and the rest); every export
-/// file; Plus's launch hint (the store's own record of a subscription stays:
-/// erasing the app never cancels it); pig tips' anonymous id, deleted on the
-/// server now or, with no connection, at a later start. Then a fresh device
-/// account, and
+/// account, its reminder, language, appearance and the rest); the app's
+/// whole cache (every export file, any copy a plugin made); Plus's launch
+/// hint (the store's own record of a subscription stays: erasing the app
+/// never cancels it); pig tips' anonymous id, deleted on the server now or,
+/// with no connection, at a later start. Then a fresh device account, and
 /// onboarding from O1. The lock, the
 /// prefs and the account go only after the journal did; the other steps run
 /// even if one fails; false when any did (Me says so and offers Try again).
@@ -130,7 +166,7 @@ Future<bool> deleteEverything(
   await step(() async => tipsDelete = await services.pigTips?.eraseBegin());
   final journalGone = await step(services.journal.wipe);
   await step(services.reminders.cancelAll);
-  await step(() => sweepExports(cache: cache));
+  await step(() => clearCache(cache: cache));
   await step(() async => services.plus?.forget());
   if (!journalGone) return false;
   await step(() async => services.appLock?.eraseAll());

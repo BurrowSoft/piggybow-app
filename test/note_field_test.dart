@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/line_breaks.dart';
+import 'package:piggybow/features/add/entry_sheet.dart';
 
 import 'helpers.dart';
 
@@ -40,6 +41,19 @@ void main() {
     await app.pump(tester);
     await tester.tapId('tab-timeline');
     await tester.tapId('tl-empty-add');
+    // The note is down the sheet, under the amount, its currency and the
+    // categories: on screen first.
+    await tester.scrollUntilVisible(
+      byId('add-note'),
+      120,
+      scrollable: find
+          .descendant(
+            of: find.byType(EntrySheet),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
     await tester.enterId('add-note', 'Lunch\nwith the team');
     final field = tester.widget<TextField>(
       find.descendant(of: byId('add-note'), matching: find.byType(TextField)),

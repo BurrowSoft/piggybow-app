@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../core/clock.dart' show parseWireDate;
+
 /// A goal's state (`status`). One goal is active at a time.
 enum GoalStatus {
   active('active'),
@@ -30,6 +32,7 @@ class Goal {
     this.status = GoalStatus.active,
     this.bandReachedAt = const [null, null, null, null, null],
     this.reachedAt,
+    this.targetDate,
   }) : assert(bandReachedAt.length == 5);
 
   final String id;
@@ -49,11 +52,16 @@ class Goal {
 
   /// When the target was first reached (UTC).
   final DateTime? reachedAt;
+
+  /// The day the person would like to reach it by, "YYYY-MM-DD" (feature
+  /// 11); null: none. Optional, and never compared with the pace.
+  final String? targetDate;
   final DateTime createdAt;
   final DateTime updatedAt;
 
   /// This goal with some fields changed. The stamps are sticky, so there's
-  /// no way to clear them here.
+  /// no way to clear them here; [targetDate] is kept unless given, and null
+  /// removes it.
   Goal copyWith({
     String? name,
     int? targetMinor,
@@ -62,6 +70,7 @@ class Goal {
     List<DateTime?>? bandReachedAt,
     DateTime? reachedAt,
     DateTime? updatedAt,
+    Object? targetDate = _keep,
   }) => Goal(
     id: id,
     name: name ?? this.name,
@@ -72,7 +81,12 @@ class Goal {
     reachedAt: reachedAt ?? this.reachedAt,
     createdAt: createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    targetDate: identical(targetDate, _keep)
+        ? this.targetDate
+        : targetDate as String?,
   );
+
+  static const Object _keep = Object();
 
   Map<String, Object?> toMap() => {
     'name': name,
@@ -85,6 +99,7 @@ class Goal {
     'reached_at': reachedAt?.toUtc().toIso8601String(),
     'created_at': createdAt.toUtc().toIso8601String(),
     'updated_at': updatedAt.toUtc().toIso8601String(),
+    if (targetDate != null) 'target_date': targetDate,
   };
 
   /// Null for a record this build can't read.
@@ -100,6 +115,8 @@ class Goal {
       if (start is! int || start < 0 || bands.length != 5) return null;
       DateTime? at(Object? s) =>
           s == null ? null : DateTime.parse(s as String).toUtc();
+      // A target date this build can't read is dropped, not the whole goal.
+      final targetDate = m['target_date'];
       return Goal(
         id: id,
         name: m['name'] as String,
@@ -110,6 +127,9 @@ class Goal {
         reachedAt: at(m['reached_at']),
         createdAt: at(m['created_at'])!,
         updatedAt: at(m['updated_at'])!,
+        targetDate: targetDate is String && parseWireDate(targetDate) != null
+            ? targetDate
+            : null,
       );
     } on Object {
       return null;

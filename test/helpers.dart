@@ -6,6 +6,7 @@ import 'package:piggybow/core/app_config.dart';
 import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/core/clock.dart';
 import 'package:piggybow/core/device.dart';
+import 'package:piggybow/core/launch_actions.dart';
 import 'package:piggybow/core/local_day.dart';
 import 'package:piggybow/core/local_prefs.dart';
 import 'package:piggybow/core/policy.dart';
@@ -19,6 +20,7 @@ import 'package:piggybow/journal/journal_store.dart';
 import 'package:piggybow/router.dart';
 import 'package:piggybow/session/app_session.dart';
 import 'package:piggybow/tips/pig_tips.dart';
+import 'package:sembast/sembast.dart' show disableSembastCooperator;
 
 class FakeDevice implements DeviceContext {
   FakeDevice({
@@ -38,6 +40,28 @@ class FakeDevice implements DeviceContext {
 
   @override
   Future<String> timeZone() async => 'Asia/Bangkok';
+}
+
+/// The home-screen shortcut, as MainActivity would hand it over.
+class FakeLaunchActions implements LaunchActions {
+  /// "Add a spend" used and not yet answered; a test uses it with [use].
+  @override
+  final ValueNotifier<bool> addSpendPending = ValueNotifier<bool>(false);
+
+  /// "Add a spend" used (or the app started from it).
+  void use() {
+    addSpendPending.value = true;
+  }
+
+  @override
+  bool takeAddSpend() {
+    if (!addSpendPending.value) return false;
+    addSpendPending.value = false;
+    return true;
+  }
+
+  @override
+  Future<void> listen() async {}
 }
 
 /// The reminders as the phone would hold them.
@@ -122,6 +146,7 @@ class TestApp {
   TestApp({
     String deviceLanguage = 'en',
     String? deviceCountry = 'TH',
+    String deviceLocaleName = 'en_US',
     String? chosenLocale,
     String? deviceAccount,
     this.shippedLocales = const ['en'],
@@ -141,6 +166,7 @@ class TestApp {
        device = FakeDevice(
          languageCode: deviceLanguage,
          countryCode: deviceCountry,
+         localeName: deviceLocaleName,
        );
 
   /// The app's clock (the session and services); [MovableClock] to move it.
@@ -149,6 +175,7 @@ class TestApp {
   final FakeDevice device;
   final reminders = FakeReminderScheduler();
   final notifications = FakeNotifications();
+  final launchActions = FakeLaunchActions();
   int stagingErrors = 0;
   final List<String> shippedLocales;
 
@@ -193,6 +220,7 @@ class TestApp {
     journal: journal,
     reminders: reminders,
     notifications: notifications,
+    launchActions: launchActions,
     appLock: appLock,
     plus: plus,
     pigTips: pigTips,
@@ -205,6 +233,12 @@ class TestApp {
   Future<void> openJournal() async {
     if (_journalOpen) return;
     _journalOpen = true;
+    // sembast pauses a long read for 100 µs every 4 ms of real time, on a
+    // timer: in a widget test that timer only fires when a pump moves the
+    // fake clock, so a read the app starts by itself (the repeats' catch-up
+    // at start) could stall between frames and finish after the test is
+    // done with the journal. In memory, nothing needs the pause.
+    disableSembastCooperator();
     journal = await JournalStore.inMemory(
       clock: clock,
       newId: () => 'entry-${++_ids}',

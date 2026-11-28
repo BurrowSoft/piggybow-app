@@ -4,6 +4,7 @@ import 'dart:io' show File;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
+import 'package:piggybow/money/rate.dart';
 import 'package:piggybow/pig/pig_mood.dart' show HappyPick;
 import 'package:piggybow/tips/tip_request.dart';
 
@@ -206,6 +207,55 @@ void main() {
     expect(r.categoryShares, isEmpty);
     expect(r.feelings.values, everyElement(0));
     expect(r.saves, 0);
+  });
+
+  // Wiring item 9 (#54 with #61): money taken out of savings is neither
+  // spending nor a save.
+  test('a take-out is never spending, nor a save', () {
+    final out = Entry(
+      id: 'entry-out',
+      type: EntryType.withdraw,
+      amountMinor: 90000,
+      currency: 'THB',
+      localDate: today,
+      createdAt: DateTime.utc(2026, 10, 1),
+      updatedAt: DateTime.utc(2026, 10, 1),
+      goalId: 'goal-secret',
+    );
+    final r = build([
+      entry(today, 5000, category: SpendCategory.food),
+      out,
+      entry(today, 2000, type: EntryType.saved),
+    ], planMinor: 10000);
+    expect(r.planPercent, 50);
+    expect(r.saves, 1);
+    expect(r.categoryShares, {'food': 100});
+    expect(r.feelings['none'], 1);
+  });
+
+  // Wiring item 18 (with #74): a spend in another currency counts at its
+  // home amount, in the plan and in the shares.
+  test('a spend in another currency counts at its home amount', () {
+    // EUR 12.34 at "1 EUR = 39.12 THB" is 482.74 at home.
+    final abroad = Entry(
+      id: 'entry-abroad',
+      type: EntryType.spent,
+      amountMinor: 1234,
+      currency: 'EUR',
+      localDate: today,
+      createdAt: DateTime.utc(2026, 10, 1),
+      updatedAt: DateTime.utc(2026, 10, 1),
+      category: SpendCategory.transport,
+      rate: parseRate('39.12', RateDirection.toHome, mark: '.').rate,
+      convertedMinor: 48274,
+    );
+    final r = build([
+      entry(today, 10000, category: SpendCategory.food),
+      abroad,
+    ], planMinor: 100000);
+    // 582.74 of 1,000.00; transport 482.74 and food 100.00 of 582.74.
+    expect(r.planPercent, 58);
+    expect(r.categoryShares, {'transport': 82, 'food': 17});
   });
 
   test("goal_percent stays within 0 to 100, as the contract allows, whatever is passed", () {

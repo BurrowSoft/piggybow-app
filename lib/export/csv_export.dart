@@ -4,6 +4,11 @@
 // ends, and every cell protected against spreadsheet formulas. Amounts use plainAmount ("."
 // as the mark, no grouping), so the file reads the same in every locale. A spend's category
 // comes with its display name (category_name), for categories of your own.
+//
+// amount and currency are each entry's own, as spent. The last three columns are in the
+// journal's home currency (feature 19): home_amount, the amount every total counts, on every
+// row; home_currency; and, for an entry in another currency, the rate as typed, written from
+// its digits with "." ("1 EUR = 39.12 THB"), empty for a home-currency row.
 
 import '../money/money.dart';
 
@@ -20,6 +25,11 @@ const List<String> csvColumns = [
   'feeling',
   'note',
   'goal',
+  'repeat',
+  // In the home currency, always last (feature 19).
+  'home_amount',
+  'home_currency',
+  'rate',
 ];
 
 /// One entry as it goes into the file. Ids, not labels, for type and feeling. The category
@@ -36,15 +46,31 @@ class CsvRow {
     this.feeling,
     required this.note,
     this.goalName,
+    this.repeat,
+    required this.homeMinor,
+    required this.homeCurrency,
+    this.rateText = '',
   });
 
   /// The entry's local_date, "YYYY-MM-DD".
   final String localDate;
 
-  /// "spent" or "saved".
+  /// "spent", "saved" or "withdraw".
   final String type;
+
+  /// As spent: its amount, in minor units of its [currency].
   final int amountMinor;
   final String currency;
+
+  /// The frozen home-currency amount, integer minor units of [homeCurrency]:
+  /// [amountMinor] itself for a home-currency row.
+  final int homeMinor;
+
+  /// The journal's home currency.
+  final String homeCurrency;
+
+  /// The rate as typed, "1 EUR = 39.12 THB" ("." always); empty for home rows.
+  final String rateText;
 
   /// A category id ("food", or "c:…" for one of your own); spends only.
   final String? category;
@@ -57,8 +83,12 @@ class CsvRow {
   final String? feeling;
   final String note;
 
-  /// The goal's name for a save attached to a goal; empty otherwise.
+  /// The goal's name for a save or a withdrawal attached to a goal; empty otherwise.
   final String? goalName;
+
+  /// "monthly" or "weekly" for an entry of a repeat (its first one too);
+  /// empty otherwise.
+  final String? repeat;
 }
 
 final _isoDate = RegExp(r'^\d{4}-\d{2}-\d{2}$');
@@ -86,8 +116,26 @@ String buildCsv(List<CsvRow> rows) {
     if (!_isoDate.hasMatch(r.localDate)) {
       throw ArgumentError.value(r.localDate, 'localDate', 'must be YYYY-MM-DD');
     }
-    if (r.type != 'spent' && r.type != 'saved') {
-      throw ArgumentError.value(r.type, 'type', 'must be "spent" or "saved"');
+    if (r.type != 'spent' && r.type != 'saved' && r.type != 'withdraw') {
+      throw ArgumentError.value(r.type, 'type', 'must be "spent", "saved" or "withdraw"');
+    }
+    if (r.repeat != null && r.repeat != 'monthly' && r.repeat != 'weekly') {
+      throw ArgumentError.value(r.repeat, 'repeat', 'must be "monthly" or "weekly"');
+    }
+    // The home columns, loudly: a slip here would quietly corrupt someone's
+    // totals in their spreadsheet.
+    if (r.homeCurrency.isEmpty) {
+      throw ArgumentError.value(r.homeCurrency, 'homeCurrency', 'must be set');
+    }
+    if (r.currency == r.homeCurrency) {
+      if (r.rateText.isNotEmpty) {
+        throw ArgumentError.value(r.rateText, 'rateText', 'must be empty in the home currency');
+      }
+      if (r.homeMinor != r.amountMinor) {
+        throw ArgumentError.value(r.homeMinor, 'homeMinor', 'must be the amount in the home currency');
+      }
+    } else if (r.rateText.isEmpty) {
+      throw ArgumentError.value(r.currency, 'rateText', 'is needed for another currency than the home one');
     }
     lines.add(
       [
@@ -100,6 +148,10 @@ String buildCsv(List<CsvRow> rows) {
         r.feeling ?? '',
         r.note,
         r.goalName ?? '',
+        r.repeat ?? '',
+        plainAmount(r.homeMinor, r.homeCurrency),
+        r.homeCurrency,
+        r.rateText,
       ].map(csvCell).join(','),
     );
   }

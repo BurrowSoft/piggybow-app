@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
+import 'package:piggybow/summary/unfelt_yesterday.dart';
 
 import 'helpers.dart';
 
@@ -10,6 +11,30 @@ import 'helpers.dart';
 /// answer is that spend's feeling; "Not now" hides the card until tomorrow;
 /// Me → Your pig can switch it off; Delete everything resets both.
 void main() {
+  test("a repeat's spends aren't asked about: the person didn't note them", () {
+    final t = DateTime.utc(2026, 10, 1, 2);
+    Entry spend(String id, int minute, {bool auto = false, Feeling? feeling}) => Entry(
+      id: id,
+      type: EntryType.spent,
+      amountMinor: 1250,
+      currency: 'THB',
+      localDate: '2026-10-01',
+      createdAt: t.add(Duration(minutes: minute)),
+      updatedAt: t,
+      category: SpendCategory.food,
+      feeling: feeling,
+      repeatId: auto ? 'r1' : null,
+      auto: auto,
+    );
+    final entries = [
+      spend('rent', 0, auto: true),
+      spend('lunch', 1),
+      spend('felt', 2, feeling: Feeling.worthIt),
+    ];
+    expect([for (final e in unfeltYesterday(entries, '2026-10-01')) e.id], ['lunch']);
+    expect(unfeltYesterday(entries, '2026-10-02'), isEmpty);
+  });
+
   /// A spend (or a save) on [date], a minute after the last one added.
   Future<Entry> add(
     TestApp app,

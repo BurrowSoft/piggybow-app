@@ -16,11 +16,17 @@ void main() {
       expect(currencyChangeable(entryCount: 1, goalCount: 0), isFalse);
       expect(currencyChangeable(entryCount: 0, goalCount: 1), isFalse, reason: 'an onboarding goal counts');
       expect(currencyChangeable(entryCount: 3, goalCount: 2), isFalse);
+      expect(
+        currencyChangeable(entryCount: 0, goalCount: 0, repeatCount: 1),
+        isFalse,
+        reason: 'a running repeat keeps adding in it',
+      );
     });
 
     test('negative counts are refused', () {
       expect(() => currencyChangeable(entryCount: -1, goalCount: 0), throwsArgumentError);
       expect(() => currencyChangeable(entryCount: 0, goalCount: -1), throwsArgumentError);
+      expect(() => currencyChangeable(entryCount: 0, goalCount: 0, repeatCount: -1), throwsArgumentError);
     });
   });
 

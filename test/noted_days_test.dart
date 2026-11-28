@@ -32,6 +32,24 @@ void main() {
     test('nothing yet: 0', () {
       expect(notedDays(const [], week), 0);
     });
+
+    test("a repeat's entries don't count: the person didn't note them", () {
+      final t = DateTime.utc(2026, 10, 1);
+      Entry spend(String day, {bool auto = false}) => Entry(
+        id: '$day-$auto',
+        type: EntryType.spent,
+        amountMinor: 1250,
+        currency: 'THB',
+        localDate: day,
+        createdAt: t,
+        updatedAt: t,
+        category: SpendCategory.food,
+        repeatId: auto ? 'r1' : null,
+        auto: auto,
+      );
+      expect(ownNotedDays([spend('2026-09-29'), spend('2026-09-30', auto: true), spend('2026-10-01')], week), 2);
+      expect(ownNotedDays([spend('2026-09-30', auto: true)], week), 0);
+    });
   });
 
   group("on Home's This week card", () {

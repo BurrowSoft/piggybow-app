@@ -7,6 +7,7 @@ import 'package:intl/intl.dart' show DateFormat;
 import '../../core/button_label.dart';
 import '../../core/button_pair.dart';
 import '../../core/clock.dart' show wireDate;
+import '../../core/day_label.dart';
 import '../../core/fit_text.dart';
 import '../../core/plan_bar.dart';
 import '../../core/semantics_id.dart';
@@ -24,12 +25,14 @@ import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../../summary/noted_days.dart';
 import '../../summary/summary.dart';
+import '../../summary/unfelt_yesterday.dart';
 import '../../theme/theme.dart';
 import '../../tips/tips.dart';
 import '../add/entry_sheet.dart';
 import '../goal/rainbow.dart';
 import '../pig/pig_view.dart';
 import '../plus/plus_screen.dart';
+import '../repeat/repeat_choice.dart';
 import '../shell/tab_top.dart';
 
 /// Home (plan §3.2): the pig and its line, the reminder offer after the first
@@ -55,7 +58,12 @@ class _HomeData {
     required this.unfeltYesterday,
     required this.customs,
     required this.letter,
+    required this.addedByRepeats,
   });
+
+  /// What repeats added since "Added from your repeats" was last put away,
+  /// newest first.
+  final List<Entry> addedByRepeats;
 
   final List<Entry> entries;
 
@@ -141,23 +149,24 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     final entries = await store.entries();
     final goals = await store.goals();
     final actives = await store.activeGoals();
-    // Yesterday on this phone (its own time zone): its spends with no feeling
-    // yet, in the order they were added, three at most. Never a count of the
-    // rest.
+    // Yesterday on this phone (its own time zone): the person's own spends
+    // with no feeling yet, three at most (unfeltYesterday).
     final today = localDay.today;
     final yesterday = wireDate(DateTime(today.year, today.month, today.day - 1));
     final ask = await store.yesterdayFeelOn() &&
         await store.yesterdayFeelHiddenOn() != localDay.todayWire;
-    final unfelt = ask
-        ? ([
-            for (final e in entries)
-              if (e.type == EntryType.spent && e.localDate == yesterday && e.feeling == null) e,
-          ]..sort((a, b) => a.createdAt.compareTo(b.createdAt)))
-            .take(3)
-            .toList()
-        : const <Entry>[];
+    final unfelt = ask ? unfeltYesterday(entries, yesterday) : const <Entry>[];
     final currency = await store.currency() ?? 'USD';
+    final seen = await store.repeatsSeenAt();
+    final seenIds = await store.repeatsSeenIds();
     final data = _HomeData(
+      addedByRepeats: [
+        for (final e in entries)
+          if (e.auto &&
+              (seen == null || e.createdAt.isAfter(seen)) &&
+              !seenIds.contains(e.id))
+            e,
+      ],
       entries: entries,
       goals: goals,
       actives: actives,
@@ -172,7 +181,6 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
         today: localDay.today,
         entries: entries,
         goals: goals,
-        currency: currency,
         zone: localDay.zone,
         on: await store.lettersOn(),
         dismissed: await store.letterDismissed(),
@@ -236,6 +244,11 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
                       onThanks: () =>
                           context.services.journal.dismissLetter(letter.key),
                     ),
+                  ],
+                  // Right under the pig: what repeats wrote in the journal.
+                  if (data.addedByRepeats.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _RepeatsCard(added: data.addedByRepeats),
                   ],
                   if (data.entries.isNotEmpty &&
                       !data.offerAnswered &&
@@ -310,10 +323,12 @@ class _Pig extends StatelessWidget {
         for (final e in data.entries)
           MoodEntry(
             type: e.type.id,
-            amountMinor: e.amountMinor,
+            // In the home currency (an amount in another one, converted).
+            amountMinor: e.homeMinor,
             feeling: e.feeling?.id,
             localDate: e.localDate,
             createdAt: e.createdAt,
+            auto: e.auto,
           ),
       ],
       // Every goal's stamps, ended ones too (the contract's rule 1, decision
@@ -371,6 +386,101 @@ class _Pig extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// What repeats added while the app was away, until OK: up to 3 (name,
+/// amount, day), and "and N more", which opens Timeline. The journal says
+/// so once, since it wrote there without the person.
+class _RepeatsCard extends StatelessWidget {
+  const _RepeatsCard({required this.added});
+
+  /// Newest first.
+  final List<Entry> added;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final session = context.session;
+    final locale = session.device.localeName;
+    final today = context.services.localDay.today;
+    final shown = added.take(3).toList();
+    final more = added.length - shown.length;
+    return TestId.container(
+      'home-repeats',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.repeatAddedTitle, style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              for (final e in shown)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TestId.container(
+                    'home-repeats-${e.id}',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          repeatEntryName(l10n, e),
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        // The cards' body style (decision 57).
+                        Text(
+                          [
+                            formatMoney(e.amountMinor, e.currency, locale),
+                            dayLabel(
+                              l10n,
+                              session.dateLocale,
+                              e.date,
+                              today: today,
+                            ),
+                          ].join(' · '),
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              OverflowBar(
+                alignment: MainAxisAlignment.end,
+                overflowAlignment: OverflowBarAlignment.end,
+                spacing: 8,
+                children: [
+                  if (more > 0)
+                    TestId(
+                      'home-repeats-more',
+                      button: true,
+                      child: TextButton(
+                        onPressed: () => context.go(AppTab.timeline.path),
+                        child: ButtonLabel(l10n.repeatAddedMore(more)),
+                      ),
+                    ),
+                  TestId(
+                    'home-repeats-ok',
+                    button: true,
+                    child: TextButton(
+                      // All of them, "and N more" too.
+                      onPressed: () =>
+                          context.services.journal.markRepeatsSeen(added),
+                      child: ButtonLabel(l10n.repeatAddedOk),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -654,7 +764,8 @@ class _WeekCard extends StatelessWidget {
       color: theme.colorScheme.onSurface,
     );
     final percent = week.planPercent;
-    final noted = notedDays([for (final e in data.entries) e.localDate], period);
+    // The days the person noted something: a repeat's entries don't count.
+    final noted = ownNotedDays(data.entries, period);
     final muted = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );

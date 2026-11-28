@@ -51,13 +51,14 @@ class SummaryEntry {
   SummaryEntry.of(Entry e)
     : this(
         type: e.type.id,
-        amountMinor: e.amountMinor,
+        // In the home currency (an amount in another one, converted).
+        amountMinor: e.homeMinor,
         category: e.categoryId,
         feeling: e.feeling?.id,
         localDate: e.localDate,
       );
 
-  /// "spent" or "saved".
+  /// "spent", "saved" or "withdraw".
   final String type;
   final int amountMinor;
 
@@ -96,6 +97,7 @@ class Summary {
     required this.label,
     required this.spentMinor,
     required this.savedMinor,
+    required this.takenOutMinor,
     required this.categories,
     required this.worth,
     required this.notSure,
@@ -111,6 +113,10 @@ class Summary {
   final String label;
   final int spentMinor;
   final int savedMinor;
+
+  /// What was taken out of savings in the period: its own line, never netted
+  /// against Saved (0 when nothing was).
+  final int takenOutMinor;
 
   /// Spend categories only, largest first; equal amounts by label.
   final List<CategoryRow> categories;
@@ -205,6 +211,7 @@ Summary summarize({
 }) {
   var spent = 0;
   var saved = 0;
+  var takenOut = 0;
   var worth = 0;
   var notSure = 0;
   var notReally = 0;
@@ -214,8 +221,22 @@ Summary summarize({
 
   for (final e in entries) {
     if (oldest == null || e.localDate.compareTo(oldest) < 0) oldest = e.localDate;
+    // Every entry is checked, in the period or not: an unknown type is a
+    // bug, said loudly.
+    if (e.type != 'spent' && e.type != 'saved' && e.type != 'withdraw') {
+      throw ArgumentError.value(
+        e.type,
+        'type',
+        'must be "spent", "saved" or "withdraw"',
+      );
+    }
     if (!period.contains(e.localDate)) continue;
     any = true;
+    // Taken out of savings: its own total; never a spend, never less saved.
+    if (e.type == 'withdraw') {
+      takenOut += e.amountMinor;
+      continue;
+    }
     if (e.type == 'saved') {
       saved += e.amountMinor;
       continue;
@@ -254,6 +275,7 @@ Summary summarize({
     label: periodLabel(period, today, locale),
     spentMinor: spent,
     savedMinor: saved,
+    takenOutMinor: takenOut,
     categories: rows,
     worth: worth,
     notSure: notSure,

@@ -11,14 +11,22 @@ import '../../journal/entry.dart';
 import '../../journal/goal.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
+import '../../repeat/repeat.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
+import '../../theme/theme.dart';
+import '../add/add_again.dart';
 import '../add/entry_sheet.dart';
+import '../goal/take_out_sheet.dart';
+import '../repeat/repeat_choice.dart';
 import '../../core/fit_text.dart';
 import '../shell/tab_top.dart';
+import 'timeline_search.dart';
 
 /// Every spend and save, newest day first, under day headers with that
-/// day's totals; All / Spent / Saved. A row opens its Edit sheet.
+/// day's totals; All / Spent / Saved, and a search of the notes and names
+/// (feature 15). A row opens its Edit sheet; a long-press offers to add it
+/// again today.
 class TimelineScreen extends StatefulWidget {
   const TimelineScreen({super.key});
 
@@ -36,7 +44,18 @@ class _TimelineScreenState extends State<TimelineScreen>
 
   /// Your own categories by id (Plus): a spend in one shows its name and icon.
   Map<String, CustomCategory> _customs = const {};
+
+  /// The repeats that entries belong to (stopped ones too): their mark.
+  Map<String, Repeat> _repeats = const {};
+
+  /// The journal's home currency: the day's totals are in it.
+  String _home = 'USD';
   AppServices? _services;
+
+  /// The search field is open. It stays open, with what's typed, through
+  /// sheets and tab switches; nothing of it is ever stored.
+  bool _searching = false;
+  final _query = TextEditingController();
 
   @override
   AppTab get tab => AppTab.timeline;
@@ -57,42 +76,105 @@ class _TimelineScreenState extends State<TimelineScreen>
   void dispose() {
     _services?.journal.removeListener(_load);
     _services?.localDay.removeListener(_load);
+    _query.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
     final store = context.services.journal;
     final entries = await store.entries();
+    final home = await store.currency() ?? 'USD';
     final goals = <String, Goal>{};
     for (final id in {for (final e in entries) ?e.goalId}) {
       final g = await store.goal(id);
       if (g != null) goals[id] = g;
     }
     final customs = {for (final c in await store.customCategories()) c.id: c};
+    final repeats = <String, Repeat>{};
+    for (final id in {for (final e in entries) ?e.repeatId}) {
+      final r = await store.repeat(id);
+      if (r != null) repeats[id] = r;
+    }
     if (!mounted) return;
     setState(() {
       _entries = entries;
+      _home = home;
       _goals = goals;
       _customs = customs;
+      // Nothing left to search: the field goes with the last entry.
+      if (entries.isEmpty) _endSearch();
+      _repeats = repeats;
     });
   }
+
+  /// ✕ or back: what was typed is cleared, and the field closes.
+  void _endSearch() {
+    _searching = false;
+    _query.clear();
+  }
+
+  /// What a search looks in: the note, and the name the row shows (a
+  /// spend's category, built-in or your own, as you typed it; a save's goal,
+  /// or the goal a take-out came out of).
+  List<String> _searchTexts(Entry e, AppLocalizations l10n) => [
+    e.note,
+    if (e.type == EntryType.spent)
+      categoryName(l10n, e.categoryId ?? '', _customs)
+    else if (_goals[e.goalId] case final goal?)
+      goal.name,
+  ];
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final all = _entries;
+    final words = _searching ? searchWords(_query.text) : const <String>[];
     final shown = all == null
         ? null
         : [
             for (final e in all)
-              if (_filter == _Filter.all ||
-                  (_filter == _Filter.spent) == (e.type == EntryType.spent))
+              if ((_filter == _Filter.all ||
+                      (_filter == _Filter.spent) ==
+                          (e.type == EntryType.spent)) &&
+                  matchesSearch(words, _searchTexts(e, l10n)))
                 e,
           ];
-    return TestId.container(
-      'timeline-screen',
-      child: Scaffold(
-        appBar: AppBar(title: AppBarTitle(l10n.tlTitle)),
+    return PopScope(
+      // Back with the search open clears and closes it, on Timeline.
+      canPop: !_searching,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _searching) setState(_endSearch);
+      },
+      child: TestId.container(
+        'timeline-screen',
+        child: _scaffold(context, l10n, all, shown, words),
+      ),
+    );
+  }
+
+  Widget _scaffold(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<Entry>? all,
+    List<Entry>? shown,
+    List<String> words,
+  ) => Scaffold(
+        appBar: AppBar(
+          title: AppBarTitle(l10n.tlTitle),
+          actions: [
+            // Nothing to search on the empty Timeline; none while it's open.
+            if (all != null && all.isNotEmpty && !_searching)
+              TestId(
+                'tl-search',
+                button: true,
+                child: IconButton(
+                  tooltip: l10n.tlSearch,
+                  onPressed: () => setState(() => _searching = true),
+                  icon: const Icon(Icons.search),
+                ),
+              ),
+          ],
+        ),
         floatingActionButton: all == null || all.isEmpty
             ? null
             : TestId(
@@ -112,6 +194,12 @@ class _TimelineScreenState extends State<TimelineScreen>
             ? const _Empty()
             : Column(
                 children: [
+                  if (_searching)
+                    _SearchField(
+                      controller: _query,
+                      onChanged: () => setState(() {}),
+                      onClose: () => setState(_endSearch),
+                    ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: SegmentedButton<_Filter>(
@@ -145,14 +233,97 @@ class _TimelineScreenState extends State<TimelineScreen>
                     ),
                   ),
                   Expanded(
-                    child: _Days(
-                      entries: shown!,
-                      goals: _goals,
-                      customs: _customs,
-                    ),
+                    // A search that finds nothing says so; a filter alone
+                    // that leaves nothing stays as it was.
+                    child: shown!.isEmpty && words.isNotEmpty
+                        ? const _NoMatch()
+                        : _Days(
+                            entries: shown,
+                            goals: _goals,
+                            customs: _customs,
+                            repeats: _repeats,
+                            home: _home,
+                          ),
                   ),
                 ],
               ),
+      );
+}
+
+/// The search field, full width under the app bar (feature 15): what's
+/// typed filters the list at once; ✕ clears it and closes the field.
+class _SearchField extends StatelessWidget {
+  const _SearchField({
+    required this.controller,
+    required this.onChanged,
+    required this.onClose,
+  });
+
+  final TextEditingController controller;
+  final VoidCallback onChanged;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 4, 8),
+      child: TestId(
+        'tl-search-field',
+        child: TextField(
+          controller: controller,
+          // Keyboard learning off, as on every field (#75).
+          enableIMEPersonalizedLearning: false,
+          autofocus: true,
+          textInputAction: TextInputAction.search,
+          style: context.inputText,
+          onChanged: (_) => onChanged(),
+          decoration: InputDecoration(
+            // Whole at large text: it wraps rather than being cut. Once
+            // something is typed it's gone (as a hint would be anyway), so
+            // the field is one line; emptied, it's back.
+            hintText: controller.text.isEmpty ? l10n.tlSearchHint : null,
+            hintMaxLines: 3,
+            suffixIcon: TestId(
+              'tl-search-close',
+              button: true,
+              child: IconButton(
+                tooltip: l10n.tlSearchClose,
+                onPressed: onClose,
+                icon: const Icon(Icons.close),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A search that matches nothing: said plainly where the list would be, and
+/// read out.
+class _NoMatch extends StatelessWidget {
+  const _NoMatch();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: AlignmentDirectional.topStart,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        child: TestId(
+          'tl-no-match',
+          child: Semantics(
+            liveRegion: true,
+            child: Text(
+              AppLocalizations.of(context).tlNoMatch,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -166,11 +337,17 @@ class _Days extends StatelessWidget {
     required this.entries,
     required this.goals,
     required this.customs,
+    required this.repeats,
+    required this.home,
   });
 
   final List<Entry> entries;
   final Map<String, Goal> goals;
   final Map<String, CustomCategory> customs;
+  final Map<String, Repeat> repeats;
+
+  /// The journal's home currency, for the days' totals.
+  final String home;
 
   @override
   Widget build(BuildContext context) {
@@ -193,12 +370,15 @@ class _Days extends StatelessWidget {
         _DayItem(:final date, :final entries) => _DayHeader(
           date: date,
           entries: entries,
+          home: home,
         ),
         _RowItem(:final entry) => _Row(
           entry: entry,
           goal: goals[entry.goalId],
           customs: customs,
+          repeat: repeats[entry.repeatId],
           locale: locale,
+          home: home,
         ),
       },
     );
@@ -225,10 +405,13 @@ class _RowItem extends _Item {
 
 /// Today, Yesterday or the date, with that day's totals.
 class _DayHeader extends StatelessWidget {
-  const _DayHeader({required this.date, required this.entries});
+  const _DayHeader({required this.date, required this.entries, required this.home});
 
   final DateTime date;
   final List<Entry> entries;
+
+  /// The journal's home currency: the totals are in it.
+  final String home;
 
   @override
   Widget build(BuildContext context) {
@@ -242,14 +425,16 @@ class _DayHeader extends StatelessWidget {
       date,
       today: today,
     );
-    // The day's totals in integer minor units; only the ones that aren't 0.
-    final currency = entries.first.currency;
+    // The day's totals in integer minor units of the home currency (an
+    // amount in another one, converted); only the ones that aren't 0.
+    final currency = home;
     var spent = 0, saved = 0;
+    // Money taken out of savings is in neither total (its row shows it).
     for (final e in entries) {
       if (e.type == EntryType.spent) {
-        spent += e.amountMinor;
-      } else {
-        saved += e.amountMinor;
+        spent += e.homeMinor;
+      } else if (e.type == EntryType.saved) {
+        saved += e.homeMinor;
       }
     }
     final totals = [
@@ -284,13 +469,23 @@ class _Row extends StatelessWidget {
     required this.entry,
     required this.goal,
     required this.customs,
+    required this.repeat,
     required this.locale,
+    required this.home,
   });
 
   final Entry entry;
   final Goal? goal;
   final Map<String, CustomCategory> customs;
+
+  /// The repeat the entry belongs to, if any: a small repeat mark after its
+  /// name, read out as "Repeats every month" (or week).
+  final Repeat? repeat;
   final String locale;
+
+  /// The journal's home currency: an entry in another one shows its amount
+  /// there too, under its own (feature 19).
+  final String home;
 
   @override
   Widget build(BuildContext context) {
@@ -301,7 +496,7 @@ class _Row extends StatelessWidget {
     final String title;
     final String? subtitle;
     final Widget icon;
-    final Widget amount;
+    final Widget ownAmount;
     if (e.type == EntryType.spent) {
       // A built-in's name, or your own category's (Plus).
       final categoryId = e.categoryId!;
@@ -319,8 +514,24 @@ class _Row extends StatelessWidget {
         color: theme.colorScheme.onSurfaceVariant,
       );
       // Spends in ink: never red, never a minus sign.
-      amount = Text(
+      ownAmount = Text(
         money,
+        maxLines: 1,
+        softWrap: false,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
+      );
+    } else if (e.type == EntryType.withdraw) {
+      final takenOut = goal == null
+          ? l10n.goalTakenOutRow
+          : l10n.tlTakenOutOf(goal!.name);
+      title = e.note.isNotEmpty ? e.note : takenOut;
+      subtitle = e.note.isNotEmpty ? takenOut : null;
+      icon = const _MiniRainbow();
+      // Taken out of savings: in ink, never red; a minus, as it goes down.
+      ownAmount = Text(
+        '$minusSign$money',
         maxLines: 1,
         softWrap: false,
         style: theme.textTheme.titleSmall?.copyWith(
@@ -334,7 +545,7 @@ class _Row extends StatelessWidget {
       title = e.note.isNotEmpty ? e.note : savedFor;
       subtitle = e.note.isNotEmpty ? savedFor : null;
       icon = const _MiniRainbow();
-      amount = Text(
+      ownAmount = Text(
         '+$money',
         maxLines: 1,
         softWrap: false,
@@ -343,11 +554,40 @@ class _Row extends StatelessWidget {
         ),
       );
     }
+    final takenOutOf = e.type == EntryType.withdraw ? goal : null;
+    // In another currency: "€12.34", and under it, muted, "= ฿482.74".
+    final Widget amount = e.convertedMinor == null
+        ? ownAmount
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              ownAmount,
+              Text(
+                l10n.addConverted(formatMoney(e.homeMinor, home, locale)),
+                maxLines: 1,
+                softWrap: false,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          );
     return TestId(
       'tl-row-${e.id}',
       button: true,
       child: InkWell(
-        onTap: () => showEntrySheet(context, editing: e),
+        // A withdrawal opens its own sheet (out of its goal).
+        onTap: takenOutOf != null
+            ? () => showTakeOutSheet(context, goal: takenOutOf, editing: e)
+            : e.type == EntryType.withdraw
+            ? null
+            : () => showEntrySheet(context, editing: e),
+        // Add again today (a save only while its goal is still active; a
+        // spend in a category of your own only with Plus).
+        onLongPress: canAddAgain(e, goal, plus: context.services.plus?.active ?? false)
+            ? () => offerAddAgain(context, e)
+            : null,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 56),
           child: Padding(
@@ -373,9 +613,34 @@ class _Row extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // In ink: the theme's bodyLarge is muted.
-                          Text(
-                            title,
+                          // In ink: the theme's bodyLarge is muted. A
+                          // repeat's mark follows the name (a WidgetSpan
+                          // scales with the text).
+                          Text.rich(
+                            TextSpan(
+                              text: title,
+                              children: [
+                                if (repeat case final r?)
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Padding(
+                                      padding: const EdgeInsetsDirectional.only(
+                                        start: 6,
+                                      ),
+                                      child: Icon(
+                                        Icons.repeat,
+                                        size: 16,
+                                        color:
+                                            theme.colorScheme.onSurfaceVariant,
+                                        semanticLabel: repeatA11y(
+                                          l10n,
+                                          r.schedule.kind,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                             style: theme.textTheme.bodyLarge?.copyWith(
                               color: theme.colorScheme.onSurface,
                             ),

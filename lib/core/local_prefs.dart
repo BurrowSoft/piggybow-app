@@ -35,8 +35,9 @@ abstract interface class LocalPrefs {
 
   /// The device account (DeviceBackend) as JSON: its id and settings. Null
   /// before the first start, and after Delete.
-  /// The pig's name (feature 1), this device only; null: none. Not journal
-  /// data: never in the export. Delete everything clears it with the rest.
+  /// The pig's name (feature 1), kept in this device's prefs; null: none.
+  /// Not journal data, so never in the CSV export; a backup file carries it
+  /// (schema 2). Delete everything clears it with the rest.
   String? get pigName;
   Future<void> setPigName(String? value);
 

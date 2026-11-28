@@ -8,6 +8,7 @@ import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/journal/journal_store.dart';
+import 'package:piggybow/money/rate.dart';
 import 'package:piggybow/pig/pig_mood.dart' show HappyPick;
 
 import 'helpers.dart';
@@ -118,12 +119,26 @@ void main() {
     test(
       'every contract case and R0, R32, R100 load; an unknown id says so',
       () {
+        // The cases with an entry a repeat added play in the mood tests
+        // only: their fixture says so instead of writing them.
+        final auto = {
+          for (final c in (jsonDecode(casesJson)['cases'] as List))
+            if (((c as Map<String, dynamic>)['entries'] as List).any(
+              (e) => (e as Map<String, dynamic>)['auto'] == true,
+            ))
+              c['id'] as String,
+        };
+        expect(auto, {'C38', 'C39'});
         for (final id in [...caseIds, 'R0', 'R32', 'R100']) {
           final f = LaunchFixture.byId(id, casesJson);
+          if (auto.contains(id)) {
+            expect(f.error, contains('a repeat added'), reason: id);
+            continue;
+          }
           expect(f.error, isNull, reason: id);
           expect(f.check(f.today), isNull, reason: id);
         }
-        expect(caseIds, hasLength(35));
+        expect(caseIds, hasLength(41));
         final unknown = LaunchFixture.byId('C99', casesJson);
         expect(unknown.error, contains('C99'));
         expect(unknown.check('2026-12-02'), contains('C99'));
@@ -249,6 +264,35 @@ void main() {
         isTrue,
         reason: 'straight to Home, past onboarding',
       );
+    });
+
+    test('every entry in another currency: written with its rate, and the '
+        "store's conversion is the case's home_minor", () async {
+      var checked = 0;
+      final contract = jsonDecode(casesJson) as Map<String, dynamic>;
+      for (final c in (contract['cases'] as List).cast<Map<String, dynamic>>()) {
+        final abroad = [
+          for (final e in (c['entries'] as List).cast<Map<String, dynamic>>())
+            if (e['currency'] != null) e,
+        ];
+        if (abroad.isEmpty) continue;
+        final store = await written(LaunchFixture.byId(c['id'] as String, casesJson));
+        final kept = [
+          for (final e in await store.entries())
+            if (e.currency != contract['currency']) e,
+        ];
+        expect(kept, hasLength(abroad.length), reason: '${c['id']}');
+        for (final (i, e) in abroad.indexed) {
+          final k = kept.reversed.elementAt(i);
+          checked++;
+          expect(
+            (k.currency, k.amountMinor, k.rate, k.homeMinor),
+            (e['currency'], e['amount_minor'], Rate.fromMap(e['rate']), e['home_minor']),
+            reason: '${c['id']}',
+          );
+        }
+      }
+      expect(checked, greaterThan(0), reason: 'C37');
     });
 
     test("every case: an active goal's card shows the bands it stamped", () async {

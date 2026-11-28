@@ -6,6 +6,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// The dart-defines Flutter passes (-Pdart-defines: base64 KEY=VALUE pairs,
+// comma-separated), from --dart-define-from-file=env/<flavor>.json.
+val dartDefines: Map<String, String> =
+    (project.findProperty("dart-defines") as String?)
+        .orEmpty()
+        .split(",")
+        .filter { it.isNotEmpty() }
+        .map { String(Base64.getDecoder().decode(it), Charsets.UTF_8) }
+        .associate { it.substringBefore("=") to it.substringAfter("=", "") }
+
 android {
     namespace = "com.burrowsoft.piggybow"
     compileSdk = flutter.compileSdkVersion
@@ -30,6 +40,21 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // The home-screen widget (AndroidManifest.xml) is a Plus perk, so it's
+        // offered only in builds with Plus (feature 16). A release with Plus
+        // stops below, so no release offers it yet.
+        resValue("bool", "widget_enabled", (dartDefines["PLUS_ENABLED"] == "true").toString())
+    }
+
+    // The JVM tests (src/test) say each case, passed or not, so CI's log can
+    // be read test by test; a failure with its full stack.
+    testOptions {
+        unitTests.all {
+            it.testLogging {
+                events("passed", "skipped", "failed")
+                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            }
+        }
     }
 
     // dev = local work, staging = testers + Maestro (Android forbids a flavor named "test"), prod = the store build.
@@ -119,17 +144,7 @@ gradle.taskGraph.whenReady {
 // A release build sends nothing: src/release/AndroidManifest.xml removes
 // INTERNET and ACCESS_NETWORK_STATE. A release that would need the network
 // (a Sentry DSN, or Plus with Play Billing) stops here, so that file changes
-// in the same reviewed PR. The dart-defines are the ones Flutter passes
-// (-Pdart-defines: base64 KEY=VALUE pairs, comma-separated), from
-// --dart-define-from-file=env/<flavor>.json.
-val dartDefines: Map<String, String> =
-    (project.findProperty("dart-defines") as String?)
-        .orEmpty()
-        .split(",")
-        .filter { it.isNotEmpty() }
-        .map { String(Base64.getDecoder().decode(it), Charsets.UTF_8) }
-        .associate { it.substringBefore("=") to it.substringAfter("=", "") }
-
+// in the same reviewed PR.
 gradle.taskGraph.whenReady {
     val release = allTasks.any { it.name.contains("Release") }
     val dsn = dartDefines["SENTRY_DSN"].orEmpty().isNotBlank()
@@ -160,5 +175,9 @@ configurations.all {
 
 dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
+    // The widget's logic, tested on the JVM (src/test): JUnit, and the JSON
+    // parser Android has built in (android.jar only stubs it off a phone).
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
 }
 

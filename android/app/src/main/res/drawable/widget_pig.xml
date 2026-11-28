@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The calm pig, for the home-screen widget: assets/pig/pig-calm.svg as an
+     Android vector, shape for shape (ellipses and circles as arcs; the
+     flopped ear's mirror as a group). The same in light and dark. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp"
+    android:height="40dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    <!-- Its shadow. -->
+    <path
+        android:fillAlpha="0.08"
+        android:fillColor="#2B2438"
+        android:pathData="M36,184 a64,6 0 1,0 128,0 a64,6 0 1,0 -128,0 z" />
+    <!-- The ear that stands up. -->
+    <path
+        android:fillColor="#F9C5D3"
+        android:pathData="M34,96 Q30,72 32,50 Q48,56 68,70 Z"
+        android:strokeColor="#F9C5D3"
+        android:strokeLineJoin="round"
+        android:strokeWidth="7" />
+    <path
+        android:fillColor="#F3A3B9"
+        android:pathData="M40.5,91.1 Q38,76.2 37.7,59.9 Q49.1,66.3 61.5,74.9 Z"
+        android:strokeColor="#F3A3B9"
+        android:strokeLineJoin="round"
+        android:strokeWidth="4" />
+    <!-- The flopped ear, mirrored onto the right. -->
+    <group
+        android:scaleX="-1"
+        android:translateX="200">
+        <path
+            android:fillColor="#F9C5D3"
+            android:pathData="M36,98 Q20,96 14,80 Q34,58 66,70 Z"
+            android:strokeColor="#F9C5D3"
+            android:strokeLineJoin="round"
+            android:strokeWidth="8" />
+        <path
+            android:fillColor="#F3A3B9"
+            android:pathData="M41.7,92.7 Q31.8,91.4 25.1,81.2 Q40.5,67.9 60.3,75.3 Z"
+            android:strokeColor="#F3A3B9"
+            android:strokeLineJoin="round"
+            android:strokeWidth="5" />
+    </group>
+    <!-- Head and body. -->
+    <path
+        android:fillColor="#F9C5D3"
+        android:pathData="M22,142 Q20,64 100,62 Q180,64 178,142 Q178,180 100,180 Q22,180 22,142 Z" />
+    <!-- The tuft. -->
+    <path
+        android:fillColor="#D27D97"
+        android:pathData="M89,68 h22 a3,3 0 0,1 0,6 h-22 a3,3 0 0,1 0,-6 z" />
+    <!-- Cheeks. -->
+    <path
+        android:fillAlpha="0.55"
+        android:fillColor="#F48FAA"
+        android:pathData="M34,140 a12,7.5 0 1,0 24,0 a12,7.5 0 1,0 -24,0 z" />
+    <path
+        android:fillAlpha="0.55"
+        android:fillColor="#F48FAA"
+        android:pathData="M142,140 a12,7.5 0 1,0 24,0 a12,7.5 0 1,0 -24,0 z" />
+    <!-- Eyes, each with its light. -->
+    <path
+        android:fillColor="#2B2438"
+        android:pathData="M53.5,118 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M62.4,114.9 a2.7,2.7 0 1,0 5.4,0 a2.7,2.7 0 1,0 -5.4,0 z" />
+    <path
+        android:fillColor="#2B2438"
+        android:pathData="M129.5,118 a8.5,8.5 0 1,0 17,0 a8.5,8.5 0 1,0 -17,0 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M138.4,114.9 a2.7,2.7 0 1,0 5.4,0 a2.7,2.7 0 1,0 -5.4,0 z" />
+    <!-- Snout and nostrils. -->
+    <path
+        android:fillColor="#F3A3B9"
+        android:pathData="M80,130 a20,13 0 1,0 40,0 a20,13 0 1,0 -40,0 z" />
+    <path
+        android:fillColor="#C46A87"
+        android:pathData="M90,130 a3,4.5 0 1,0 6,0 a3,4.5 0 1,0 -6,0 z" />
+    <path
+        android:fillColor="#C46A87"
+        android:pathData="M104,130 a3,4.5 0 1,0 6,0 a3,4.5 0 1,0 -6,0 z" />
+    <!-- The smile. -->
+    <path
+        android:pathData="M93,152 Q100,159 107,152"
+        android:strokeColor="#2B2438"
+        android:strokeLineCap="round"
+        android:strokeWidth="3.5" />
+</vector>

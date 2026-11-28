@@ -3,6 +3,7 @@ import 'dart:convert' show utf8;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/export/csv_export.dart';
 import 'package:piggybow/journal/category.dart';
+import 'package:piggybow/money/rate.dart';
 
 /// A small RFC 4180 reader for the tests: quoted cells, doubled quotes, CRLF records.
 List<List<String>> readCsv(String text) {
@@ -57,9 +58,11 @@ CsvRow spend({String note = 'Lunch', String date = '2026-12-02'}) => CsvRow(
   categoryName: 'Food',
   feeling: 'worth_it',
   note: note,
+  homeMinor: 12050,
+  homeCurrency: 'THB',
 );
 
-const header = 'date,type,amount,currency,category,category_name,feeling,note,goal';
+const header = 'date,type,amount,currency,category,category_name,feeling,note,goal,repeat,home_amount,home_currency,rate';
 
 void main() {
   test('an empty export is the BOM and the header, ending in CRLF', () {
@@ -80,15 +83,54 @@ void main() {
         currency: 'THB',
         note: '',
         goalName: 'Trip to Chiang Mai',
+        homeMinor: 50000,
+        homeCurrency: 'THB',
       ),
-      const CsvRow(localDate: '2026-12-04', type: 'saved', amountMinor: 1200, currency: 'JPY', note: 'Coins'),
+      const CsvRow(
+        localDate: '2026-12-04',
+        type: 'saved',
+        amountMinor: 1200,
+        currency: 'JPY',
+        note: 'Coins',
+        homeMinor: 1200,
+        homeCurrency: 'JPY',
+      ),
     ]);
     expect(
       csv,
       '\uFEFF$header\r\n'
-      '2026-12-02,spent,120.50,THB,food,Food,worth_it,Lunch,\r\n'
-      '2026-12-03,saved,500.00,THB,,,,,Trip to Chiang Mai\r\n'
-      '2026-12-04,saved,1200,JPY,,,,Coins,\r\n',
+      '2026-12-02,spent,120.50,THB,food,Food,worth_it,Lunch,,,120.50,THB,\r\n'
+      '2026-12-03,saved,500.00,THB,,,,,Trip to Chiang Mai,,500.00,THB,\r\n'
+      '2026-12-04,saved,1200,JPY,,,,Coins,,,1200,JPY,\r\n',
+    );
+  });
+
+  test("an entry of a repeat says the repeat's kind; nothing else may go there", () {
+    final csv = buildCsv([
+      const CsvRow(
+        localDate: '2026-12-01',
+        type: 'spent',
+        amountMinor: 1200000,
+        currency: 'THB',
+        category: 'home',
+        note: 'Rent',
+        repeat: 'monthly',
+        homeMinor: 1200000,
+        homeCurrency: 'THB',
+      ),
+      const CsvRow(localDate: '2026-12-04', type: 'saved', amountMinor: 50000, currency: 'THB', note: '', repeat: 'weekly', homeMinor: 50000, homeCurrency: 'THB'),
+    ]);
+    expect(
+      csv,
+      '\uFEFF$header\r\n'
+      '2026-12-01,spent,12000.00,THB,home,,,Rent,,monthly,12000.00,THB,\r\n'
+      '2026-12-04,saved,500.00,THB,,,,,,weekly,500.00,THB,\r\n',
+    );
+    expect(
+      () => buildCsv([
+        const CsvRow(localDate: '2026-12-01', type: 'spent', amountMinor: 1, currency: 'THB', category: 'food', note: '', repeat: 'yearly', homeMinor: 1, homeCurrency: 'THB'),
+      ]),
+      throwsArgumentError,
     );
   });
 
@@ -117,7 +159,7 @@ void main() {
       test(note.replaceAll('\n', r'\n').replaceAll('\r', r'\r'), () {
         final rows = roundTrip([spend(note: note)]);
         expect(rows.length, 2);
-        expect(rows[1].length, 9);
+        expect(rows[1].length, 13);
         expect(rows[1][7], note);
       });
     }
@@ -149,6 +191,8 @@ void main() {
         currency: 'USD',
         note: '',
         goalName: '=HYPERLINK("x")',
+        homeMinor: 100,
+        homeCurrency: 'USD',
       );
       expect(roundTrip([row])[1][8], '\'=HYPERLINK("x")');
     });
@@ -164,9 +208,17 @@ void main() {
 
   test('amounts use "." and no grouping, whatever the currency', () {
     final rows = roundTrip([
-      const CsvRow(localDate: '2026-12-02', type: 'spent', amountMinor: 999999999999, currency: 'EUR', category: 'other', note: ''),
-      const CsvRow(localDate: '2026-12-02', type: 'spent', amountMinor: 5, currency: 'USD', category: 'other', note: ''),
-      const CsvRow(localDate: '2026-12-02', type: 'spent', amountMinor: 1500000, currency: 'VND', category: 'other', note: ''),
+      for (final (minor, currency) in [(999999999999, 'EUR'), (5, 'USD'), (1500000, 'VND')])
+        CsvRow(
+          localDate: '2026-12-02',
+          type: 'spent',
+          amountMinor: minor,
+          currency: currency,
+          category: 'other',
+          note: '',
+          homeMinor: minor,
+          homeCurrency: currency,
+        ),
     ]);
     expect(rows.skip(1).map((r) => r[2]), ['9999999999.99', '0.05', '1500000']);
   });
@@ -175,13 +227,94 @@ void main() {
     expect(() => buildCsv([spend(date: '2026-12-2')]), throwsArgumentError);
     expect(() => buildCsv([spend(date: '02/12/2026')]), throwsArgumentError);
     expect(
-      () => buildCsv([const CsvRow(localDate: '2026-12-02', type: 'spend', amountMinor: 1, currency: 'USD', note: '')]),
+      () => buildCsv([
+        const CsvRow(
+          localDate: '2026-12-02',
+          type: 'spend',
+          amountMinor: 1,
+          currency: 'USD',
+          note: '',
+          homeMinor: 1,
+          homeCurrency: 'USD',
+        ),
+      ]),
       throwsArgumentError,
     );
     expect(
-      () => buildCsv([const CsvRow(localDate: '2026-12-02', type: 'spent', amountMinor: -1, currency: 'USD', note: '')]),
+      () => buildCsv([
+        const CsvRow(
+          localDate: '2026-12-02',
+          type: 'spent',
+          amountMinor: -1,
+          currency: 'USD',
+          note: '',
+          homeMinor: -1,
+          homeCurrency: 'USD',
+        ),
+      ]),
       throwsArgumentError,
     );
+  });
+
+  group('the home currency (feature 19): the last three columns', () {
+    CsvRow trip({
+      int amountMinor = 1234,
+      String currency = 'EUR',
+      int homeMinor = 48274,
+      String homeCurrency = 'THB',
+      String rateText = '1 EUR = 39.12 THB',
+    }) => CsvRow(
+      localDate: '2026-12-02',
+      type: 'spent',
+      amountMinor: amountMinor,
+      currency: currency,
+      category: 'food',
+      note: '',
+      homeMinor: homeMinor,
+      homeCurrency: homeCurrency,
+      rateText: rateText,
+    );
+
+    test('a spend in another currency: as spent, then at home, with its rate', () {
+      final rows = roundTrip([
+        trip(),
+        trip(amountMinor: 1000, currency: 'JPY', homeMinor: 23010, rateText: '1 JPY = 0.2301 THB'),
+        trip(rateText: '1 THB = 0.0256 EUR'),
+      ]);
+      // category_name and repeat (A, E) come before the home columns (item 20).
+      expect(rows[1], ['2026-12-02', 'spent', '12.34', 'EUR', 'food', '', '', '', '', '', '482.74', 'THB', '1 EUR = 39.12 THB']);
+      expect(rows[2].sublist(2, 4), ['1000', 'JPY']);
+      expect(rows[2].sublist(10), ['230.10', 'THB', '1 JPY = 0.2301 THB']);
+      expect(rows[3].last, '1 THB = 0.0256 EUR');
+    });
+
+    test('a rate typed with a comma is written with "." (the file reads the same everywhere)', () {
+      final typed = parseRate('39,12', RateDirection.toHome, mark: ',').rate!;
+      final text = rateText(typed, currency: 'EUR', home: 'THB');
+      expect(text, '1 EUR = 39.12 THB');
+      expect(roundTrip([trip(rateText: text)])[1].last, '1 EUR = 39.12 THB');
+    });
+
+    test('no home currency throws', () {
+      expect(() => buildCsv([trip(homeCurrency: '')]), throwsArgumentError);
+    });
+
+    test('a home-currency row with a rate, or another amount at home, throws', () {
+      expect(
+        () => buildCsv([trip(currency: 'THB', amountMinor: 48274, homeMinor: 48274)]),
+        throwsArgumentError,
+        reason: 'a rate in the home currency',
+      );
+      expect(
+        () => buildCsv([trip(currency: 'THB', amountMinor: 48274, homeMinor: 48275, rateText: '')]),
+        throwsArgumentError,
+        reason: 'home_amount must be the amount',
+      );
+    });
+
+    test('a row in another currency without its rate throws', () {
+      expect(() => buildCsv([trip(rateText: '')]), throwsArgumentError);
+    });
   });
 
   test('the file name uses the local date', () {
@@ -202,8 +335,10 @@ void main() {
         category: 'c:7f3a',
         categoryName: 'Coffee runs',
         note: '',
+        homeMinor: 300,
+        homeCurrency: 'THB',
       ),
-      const CsvRow(localDate: '2026-12-03', type: 'saved', amountMinor: 100, currency: 'THB', note: ''),
+      const CsvRow(localDate: '2026-12-03', type: 'saved', amountMinor: 100, currency: 'THB', note: '', homeMinor: 100, homeCurrency: 'THB'),
     ]);
     expect([rows[1][4], rows[1][5]], ['food', 'Food']);
     expect([rows[2][4], rows[2][5]], ['c:7f3a', 'Coffee runs']);
@@ -219,6 +354,8 @@ void main() {
       category: 'c:7f3a',
       categoryName: '=HYPERLINK("x")',
       note: '',
+      homeMinor: 300,
+      homeCurrency: 'THB',
     );
     expect(roundTrip([row])[1][5], '\'=HYPERLINK("x")');
   });
@@ -227,5 +364,37 @@ void main() {
     final id = '${CustomCategory.idPrefix}7f3a';
     expect(neutralizeCell(id), id);
     expect(CustomCategory.idPrefix, isNot(matches(RegExp(r'^[=+\-@\t\r]'))));
+  });
+
+  // Money taken out of savings (feature 5; agreed with PB Web Dev): the type's id, untranslated
+  // like spent and saved; the amount positive, as for a spend; the goal named; no category or
+  // feeling.
+  test('a withdrawal, exactly', () {
+    final csv = buildCsv(const [
+      CsvRow(
+        localDate: '2026-12-05',
+        type: 'withdraw',
+        amountMinor: 2000,
+        currency: 'THB',
+        note: 'New tyre',
+        goalName: 'Bike',
+        homeMinor: 2000,
+        homeCurrency: 'THB',
+      ),
+    ]);
+    expect(csv, '$csvBom$header\r\n2026-12-05,withdraw,20.00,THB,,,,New tyre,Bike,,20.00,THB,\r\n');
+  });
+
+  test('a type other than spent, saved or withdraw throws, and says which are', () {
+    expect(
+      () => buildCsv([const CsvRow(localDate: '2026-12-02', type: 'withdrawal', amountMinor: 1, currency: 'USD', note: '', homeMinor: 1, homeCurrency: 'USD')]),
+      throwsA(
+        isA<ArgumentError>().having(
+          (e) => e.message,
+          'message',
+          'must be "spent", "saved" or "withdraw"',
+        ),
+      ),
+    );
   });
 }

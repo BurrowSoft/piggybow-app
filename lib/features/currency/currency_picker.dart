@@ -20,6 +20,7 @@ Future<void> changeCurrency(BuildContext context) async {
   final changeable = currencyChangeable(
     entryCount: (await store.entries()).length,
     goalCount: (await store.goals()).length,
+    repeatCount: (await store.repeats()).where((r) => r.running).length,
   );
   final current = await store.currency() ?? 'USD';
   if (!context.mounted) return;

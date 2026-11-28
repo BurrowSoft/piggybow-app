@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The home-screen widget (feature 16): its colours (values-night has the
+     dark ones), its text styles, and the only words Android itself shows,
+     each the app's own (lib/l10n/app_en.arb, pinned by
+     test/widget_android_test.dart). Everything else comes in the snapshot. -->
+<resources>
+    <!-- lib/theme/theme.dart's cream, ink, muted and accent. -->
+    <color name="widget_surface">#FBF6F1</color>
+    <color name="widget_ink">#2B2438</color>
+    <color name="widget_muted">#6B6278</color>
+    <color name="widget_accent">#A8456A</color>
+    <color name="widget_on_accent">#FFFFFF</color>
+    <!-- lib/features/goal/rainbow.dart: the track, and the arcs outer to
+         inner (rose, peach, gold, mint, lavender), the same in the dark. -->
+    <color name="widget_track">#ECE6F0</color>
+    <color name="widget_band_1">#E27D9A</color>
+    <color name="widget_band_2">#F2A07B</color>
+    <color name="widget_band_3">#F3C24F</color>
+    <color name="widget_band_4">#8CCFB0</color>
+    <color name="widget_band_5">#9B84D6</color>
+    <!-- #51's Plus themes (lib/theme/palettes.dart): each one's accent (the
+         "+") and the rainbow's empty track; values-night has the dark ones.
+         The default theme's are widget_accent and widget_track above. -->
+    <color name="widget_accent_plum">#6A4FB3</color>
+    <color name="widget_accent_apricot">#9C4519</color>
+    <color name="widget_accent_blueberry">#3C5A7A</color>
+    <color name="widget_track_plum">#ECE6F0</color>
+    <color name="widget_track_apricot">#ECE6F0</color>
+    <color name="widget_track_blueberry">#ECE6F0</color>
+
+    <style name="WidgetLabel">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/widget_muted</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <!-- The amount, in one line, smaller only if it must (Android 8+). -->
+    <style name="WidgetAmount">
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/widget_ink</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:autoSizeTextType">uniform</item>
+        <item name="android:autoSizeMinTextSize">11sp</item>
+        <item name="android:autoSizeMaxTextSize">18sp</item>
+    </style>
+
+    <style name="WidgetGoalName">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/widget_ink</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+    </style>
+
+    <style name="WidgetGoalProgress">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">@color/widget_muted</item>
+        <item name="android:maxLines">2</item>
+    </style>
+
+    <string name="widget_description">Today\'s spending and your goal</string>
+    <string name="widget_tap_to_open">Tap to open</string>
+</resources>

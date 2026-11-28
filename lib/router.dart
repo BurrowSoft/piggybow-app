@@ -6,10 +6,12 @@ import 'features/categories/categories_screen.dart';
 import 'features/categories/category_edit_screen.dart';
 import 'features/goal/goal_screens.dart';
 import 'features/home/home_screen.dart';
+import 'features/me/backup_screens.dart';
 import 'features/me/me_screen.dart';
 import 'features/me/reached_goals_screen.dart';
 import 'features/onboarding/onboarding_screens.dart';
 import 'features/plus/plus_screen.dart';
+import 'features/repeat/repeats_screen.dart';
 import 'features/shell/home_shell.dart';
 import 'features/start/start_screen.dart';
 import 'features/summary/patterns_view.dart';
@@ -47,6 +49,9 @@ abstract final class OnboardingRoutes {
   static const happy = '/onboarding/happy';
   static const goal = '/onboarding/goal';
 
+  /// "Moving from another phone?": restore a backup file before setting up.
+  static const restore = '/onboarding/restore';
+
   static bool contains(String location) =>
       location == welcome || location.startsWith('$welcome/');
 }
@@ -75,6 +80,14 @@ abstract final class MeRoutes {
 
   /// Categories: what the Add sheet offers.
   static const categories = '/me/categories';
+
+  /// Money → Repeating entries, and one repeat's page.
+  static const repeats = '/me/repeats';
+  static String repeat(String id) => '/me/repeats/$id';
+
+  /// Your data: the backup file, made and restored (feature 21).
+  static const backup = '/me/backup';
+  static const restore = '/me/restore';
 }
 
 /// A category of your own, made or edited (Plus), over everything: the Add
@@ -178,6 +191,11 @@ GoRouter buildRouter({
               child: GoalEditScreen(onboarding: true),
             ),
           ),
+          GoRoute(
+            path: 'restore',
+            builder: (context, state) =>
+                const ScaffoldMessenger(child: RestoreScreen()),
+          ),
         ],
       ),
       GoRoute(
@@ -254,6 +272,25 @@ GoRouter buildRouter({
                             ),
                           ),
                         ],
+                      ),
+                      GoRoute(
+                        path: 'repeats',
+                        builder: (context, state) => const RepeatsScreen(),
+                        routes: [
+                          GoRoute(
+                            path: ':id',
+                            builder: (context, state) =>
+                                RepeatScreen(repeatId: state.pathParameters['id']!),
+                          ),
+                        ],
+                      ),
+                      GoRoute(
+                        path: 'backup',
+                        builder: (context, state) => const BackupScreen(),
+                      ),
+                      GoRoute(
+                        path: 'restore',
+                        builder: (context, state) => const RestoreScreen(),
                       ),
                     ],
                     if (tab == AppTab.summary)

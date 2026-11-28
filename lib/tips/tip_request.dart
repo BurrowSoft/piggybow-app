@@ -99,10 +99,13 @@ TipRequest buildTipRequest({
       saves++;
       continue;
     }
-    spent += e.amountMinor;
+    // Money taken out of savings is never spending (nor a save).
+    if (e.type != EntryType.spent) continue;
+    // At its home amount: a spend in another currency, converted (#74).
+    spent += e.homeMinor;
     final key =
         e.category?.id ?? (e.customCategory == null ? null : tipYoursBucket);
-    if (key != null) byCategory[key] = (byCategory[key] ?? 0) + e.amountMinor;
+    if (key != null) byCategory[key] = (byCategory[key] ?? 0) + e.homeMinor;
     final feeling = e.feeling?.id ?? 'none';
     feelings[feeling] = (feelings[feeling] ?? 0) + 1;
   }

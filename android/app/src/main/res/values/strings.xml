@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The home-screen shortcut's labels (res/xml/shortcuts.xml): the
+         launcher shows them before the app starts, so they live here, not in
+         the app's ARB files. -->
+    <string name="shortcut_add_long">Add a spend</string>
+    <string name="shortcut_add_short">Add</string>
+</resources>

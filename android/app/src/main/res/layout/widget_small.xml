@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The home-screen widget at its smallest (2×1): the pig, and "Spent today"
+     with the amount, or one line (widget/PiggybowWidget.kt). As shipped, the
+     pig and "Tap to open", until the app's snapshot arrives. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:padding="12dp">
+
+    <ImageView
+        android:id="@+id/widget_pig"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/widget_pig" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="10dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/widget_label"
+            style="@style/WidgetLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_tap_to_open" />
+
+        <TextView
+            android:id="@+id/widget_amount"
+            style="@style/WidgetAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/widget_add"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/widget_add_background"
+        android:contentDescription="@string/shortcut_add_long"
+        android:padding="12dp"
+        android:src="@drawable/widget_add"
+        android:visibility="gone" />
+</LinearLayout>

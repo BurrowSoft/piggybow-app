@@ -30,6 +30,15 @@ void main() {
       // London, 25 October 2026: 00:30 BST → 06:00 GMT is 6 h 30 min (01:00 happens twice).
       expect(until('2026-10-24T23:30:00Z', 'Europe/London'), const Duration(hours: 6, minutes: 30));
     });
+
+    test("midnight only: the repeats' catch-up turn", () {
+      Duration midnight(String utc, String zone) =>
+          Clock(fixed: DateTime.parse(utc)).untilNextTurn(zone, hours: const [0]);
+      // 08:30 in Bangkok → midnight, past 22:00.
+      expect(midnight('2026-10-02T01:30:00Z', 'Asia/Bangkok'), const Duration(hours: 15, minutes: 30));
+      // London, 29 March 2026: 00:30 GMT → midnight BST is 22 h 30 min (an hour is skipped).
+      expect(midnight('2026-03-29T00:30:00Z', 'Europe/London'), const Duration(hours: 22, minutes: 30));
+    });
   });
 
   group('Home', () {
