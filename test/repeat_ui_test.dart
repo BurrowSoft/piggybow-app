@@ -193,11 +193,21 @@ void main() {
         'repeat-entry-1-2026-12-01',
         'repeat-entry-1-2027-01-01',
       });
+    });
 
-      // A weekly gym from today, Friday 2 October; a week later, on resume,
-      // its next one shows (the false-clock ones stay put away).
-      await tester.runAsync(
-        () => app.journal.addEntry(
+    testWidgets('after that, what a repeat adds in real time still shows, once', (tester) async {
+      final clock = MovableClock(DateTime.utc(2027, 1, 1, 2));
+      final app = TestApp(clock: clock);
+      await tester.runAsync(app.openJournal);
+      // All before the app opens: rent caught up under the false clock
+      // (Nov, Dec, Jan), put away by OK once it's right (2 October), and a
+      // weekly gym from that Friday. The app opens a week later.
+      await tester.runAsync(() async {
+        await rent(app, day: '2026-10-01');
+        final early = await app.journal.catchUpRepeats(today: '2027-01-01');
+        clock.now = DateTime.utc(2026, 10, 2, 1, 30);
+        await app.journal.markRepeatsSeen(early);
+        await app.journal.addEntry(
           type: EntryType.spent,
           amountMinor: 50000,
           currency: 'THB',
@@ -206,11 +216,10 @@ void main() {
           note: 'Gym',
           repeat: const RepeatSchedule.weekly(5),
           today: '2026-10-02',
-        ),
-      );
-      clock.now = DateTime.utc(2026, 10, 9, 1, 30);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
-      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+        );
+        clock.now = DateTime.utc(2026, 10, 9, 1, 30);
+      });
+      await app.pump(tester);
       await waitFor(tester, byId('home-repeats'));
       expect(byId('home-repeats-repeat-entry-3-2026-10-09'), findsOneWidget);
       expect(byId('home-repeats-repeat-entry-1-2026-11-01'), findsNothing);
@@ -225,12 +234,10 @@ void main() {
         'repeat-entry-1-2027-01-01',
       });
       // Deleted, an id isn't kept any more.
-      await tester.runAsync(
-        () => app.journal.deleteEntry('repeat-entry-1-2027-01-01'),
-      );
-      await tester.runAsync(
-        () => app.journal.markRepeatsSeen(const <Entry>[]),
-      );
+      await tester.runAsync(() async {
+        await app.journal.deleteEntry('repeat-entry-1-2027-01-01');
+        await app.journal.markRepeatsSeen(const <Entry>[]);
+      });
       expect(await tester.runAsync(app.journal.repeatsSeenIds), {
         'repeat-entry-1-2026-11-01',
         'repeat-entry-1-2026-12-01',
