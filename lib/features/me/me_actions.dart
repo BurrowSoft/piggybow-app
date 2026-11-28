@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -88,8 +89,14 @@ Future<bool> deleteEverything(
     try {
       await run();
       return true;
-    } on Object {
+    } on Object catch (error, stack) {
       done = false;
+      // The person sees "Not everything was erased"; a debug build or a
+      // test also says which step and why (never a release build).
+      assert(() {
+        debugPrint('Delete everything: a step failed: $error\n$stack');
+        return true;
+      }());
       return false;
     }
   }
