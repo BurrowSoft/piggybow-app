@@ -299,7 +299,7 @@
   "sumEmptyWeek": "Nothing noted for this week.",
   "sumEmptyMonth": "Nothing noted for this month.",
 
-  "meSecPlus": "Piggybow Plus",
+  "meSecPlus": "Plus",
   "@meSecPlus": {"description": "Me's section for Piggybow Plus."},
   "mePlus": "Piggybow Plus",
   "@mePlus": {"description": "Me's row that opens the paywall."},

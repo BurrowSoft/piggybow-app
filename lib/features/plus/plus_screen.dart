@@ -125,9 +125,10 @@ class _PlusScreenState extends State<PlusScreen> {
     final muted = theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant);
     final plans = plus.plans;
     return [
+      // Body text: at large sizes the plans stay near the top (UX).
       WholeWordsText(
         l10n.plusIntro,
-        style: theme.textTheme.titleLarge?.copyWith(color: theme.colorScheme.onSurface),
+        style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
         textAlign: TextAlign.center,
       ),
       const SizedBox(height: 8),
@@ -278,21 +279,22 @@ class _PlanCard extends StatelessWidget {
                 style: theme.textTheme.titleMedium?.copyWith(color: theme.colorScheme.onSurface),
               ),
               const SizedBox(height: 4),
-              TestId.container(
-                '$id-price',
-                child: WholeWordsText(
-                  monthly ? l10n.plusPriceMonthly(price) : l10n.plusPriceYearly(price),
-                  style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
-                ),
-              ),
+              // With the free week, its line alone (it names the price);
+              // else the price line (UX: the price never shows twice).
               if (plan.trialOffered)
                 TestId.container(
                   '$id-trial',
                   child: WholeWordsText(
                     monthly ? l10n.plusTrialMonthly(price) : l10n.plusTrialYearly(price),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                    style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
+                  ),
+                )
+              else
+                TestId.container(
+                  '$id-price',
+                  child: WholeWordsText(
+                    monthly ? l10n.plusPriceMonthly(price) : l10n.plusPriceYearly(price),
+                    style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
                   ),
                 ),
               const SizedBox(height: 12),

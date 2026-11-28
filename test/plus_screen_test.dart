@@ -110,9 +110,11 @@ void main() {
       expect(byId(id), findsOneWidget, reason: id);
     }
     expect(find.text('£2.99 a month'), findsOneWidget);
-    expect(find.text('£19.99 a year'), findsOneWidget);
-    expect(find.text('Free for 7 days, then £19.99 a year'), findsOneWidget);
     expect(byId('plus-plan-monthly-trial'), findsNothing);
+    // With the free week, its line alone: the price never shows twice.
+    expect(find.text('Free for 7 days, then £19.99 a year'), findsOneWidget);
+    expect(find.text('£19.99 a year'), findsNothing);
+    expect(byId('plus-plan-yearly-price'), findsNothing);
     expect(find.text('Start monthly'), findsOneWidget);
     expect(find.text('Start your free week'), findsOneWidget);
     expect(find.text('Cancel anytime in Google Play.'), findsOneWidget);
@@ -120,6 +122,16 @@ void main() {
     // No link before its page is live.
     expect(byId('plus-terms'), findsNothing);
     expect(byId('plus-privacy'), findsNothing);
+  });
+
+  testWidgets('no free week offered: the yearly price line, and its own Start', (
+    tester,
+  ) async {
+    await open(tester, store: FakePlusStore(trialOffered: false), location: '/plus');
+    expect(find.text('£19.99 a year'), findsOneWidget);
+    expect(byId('plus-plan-yearly-trial'), findsNothing);
+    expect(find.text('Start yearly'), findsOneWidget);
+    expect(find.text('Start your free week'), findsNothing);
   });
 
   testWidgets("the iPhone: the App Store's cancel line, and no other store named", (
