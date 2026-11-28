@@ -20,6 +20,7 @@ import '../../pig/pig_mood.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../../summary/summary.dart';
+import '../../theme/theme.dart';
 import '../../tips/tips.dart';
 import '../add/entry_sheet.dart';
 import '../goal/rainbow.dart';
@@ -261,6 +262,7 @@ class _Pig extends StatelessWidget {
       today: services.localDay.todayWire,
     );
     final key = pigBubbleKey(state, services.lastAdd.value);
+    final name = context.session.pigName;
     return Column(
       children: [
         // Its own node, read before the line: "Your pig looks calm." (R2).
@@ -270,6 +272,21 @@ class _Pig extends StatelessWidget {
           label: pigA11yLabel(l10n, state.mood),
           child: PigView(mood: state.mood),
         ),
+        // Its name, if it has one (feature 1): small and muted, above the
+        // speech box.
+        if (name != null) ...[
+          const SizedBox(height: 4),
+          TestId.container(
+            'home-pig-name',
+            child: Text(
+              name,
+              textAlign: TextAlign.center,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: context.palette.mutedText),
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
         TestId.container(
           'home-pig-line',
