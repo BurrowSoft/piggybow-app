@@ -8,12 +8,14 @@
 #        export to the share sheet and back, background and resume
 #   R1-2 the bytes: 0 before, 0 after (a minute's wait for anything deferred)
 # The positive control (the Reviewer's terms), before each reading: the
-# device's shell (uid 2000) fetches a small file from a listener on this
-# runner (10.0.2.2 is the runner's 127.0.0.1), so a known uid has just
-# talked. The run stops (a failed run, never zero) when the dump has no
-# entries at all, when the fetch didn't arrive, when uid 2000 shows no bytes,
-# or when its bytes didn't grow from before to after. Only counts and uid
-# 2000's sums are printed; the dump itself never leaves the runner.
+# device's shell fetches a small file from a listener on this runner
+# (10.0.2.2 is the runner's 127.0.0.1), so a known uid has just talked. That
+# uid is read from the device each time (id -u): 0 when adbd runs as root
+# (run.sh roots google_apis images), 2000 when it doesn't. The run stops (a
+# failed run, never zero) when the dump has no
+# entries at all, when the fetch didn't arrive, when the shell's uid shows no
+# bytes, or when its bytes didn't grow from before to after. Only counts and
+# that uid's sums are printed; the dump itself never leaves the runner.
 . "$(dirname "$0")/lib.sh"
 guard_emulator
 
@@ -40,7 +42,12 @@ uid_bytes(){ # uid_bytes <uid> < dump: "<rx> <tx>" summed over the uid's tag-0 e
     END { printf "%d %d\n", rx, tx }'
 }
 control(){ # control <before|after>: the reader's positive control; any miss stops the run
-  local n crx ctx
+  local n crx ctx cu
+  cu=$(A shell id -u | tr -d '\r')
+  if ! [[ "$cu" =~ ^[0-9]+$ ]]; then
+    echo "$(stamp) STOP: control $1: the shell's uid isn't a number (\"$cu\")"
+    row R1-2 FAIL "control $1: the shell's uid couldn't be read: a failed run, not zero"; exit 1
+  fi
   A shell "printf 'GET /control.txt HTTP/1.0\r\n\r\n' | nc -w 3 10.0.2.2 $CTL_PORT" > "$OUT/control-$1.fetch" 2>&1 || true
   if ! grep -q piggybow-r1-control "$OUT/control-$1.fetch"; then
     echo "$(stamp) STOP: control $1: the shell's fetch from the runner didn't arrive ($(head -c 120 "$OUT/control-$1.fetch" | tr '\n' ' '))"
@@ -49,18 +56,18 @@ control(){ # control <before|after>: the reader's positive control; any miss sto
   A shell dumpsys netstats --poll >/dev/null 2>&1 || true
   A shell dumpsys netstats detail | tr -d '\r' > "$T/dump-$1.txt"
   n=$(grep -c 'ident=' "$T/dump-$1.txt" || true)
-  read -r crx ctx < <(uid_bytes 2000 < "$T/dump-$1.txt")
+  read -r crx ctx < <(uid_bytes "$cu" < "$T/dump-$1.txt")
   rm -f "$T/dump-$1.txt"
-  echo "$(stamp) control $1: netstats entries: ${n:-0} | uid 2000 (the shell, which just fetched from the runner): rx $crx tx $ctx"
+  echo "$(stamp) control $1: netstats entries: ${n:-0} | the shell's uid $cu, which just fetched from the runner: rx $crx tx $ctx"
   if [ "${n:-0}" -eq 0 ]; then
     echo "$(stamp) STOP: control $1: netstats entries: 0, an empty dump"
     row R1-2 FAIL "control $1: an empty netstats dump: a failed run, not zero"; exit 1
   fi
   if [ "$crx" -eq 0 ] || [ "$ctx" -eq 0 ]; then
-    echo "$(stamp) STOP: control $1: uid 2000 shows no bytes after its own fetch"
-    row R1-2 FAIL "control $1: the known-talking uid 2000 shows rx $crx tx $ctx: the reader sees nothing, a failed run"; exit 1
+    echo "$(stamp) STOP: control $1: the shell's uid $cu shows no bytes after its own fetch"
+    row R1-2 FAIL "control $1: the known-talking uid $cu (the shell) shows rx $crx tx $ctx: the reader sees nothing, a failed run"; exit 1
   fi
-  eval "ctl_rx_$1=$crx"
+  eval "ctl_rx_$1=$crx; ctl_uid_$1=$cu"
 }
 
 [ -f "$NETB" ] || { row R1-0 FAIL "no ci/tool/emulator/net_bytes.sh at this ref: dispatch with --ref feat/tips-in-release"; exit 1; }
@@ -91,8 +98,12 @@ fi
 
 sleep 60   # anything deferred (a job with a network constraint) has its chance
 control after
+if [ "$ctl_uid_after" != "$ctl_uid_before" ]; then
+  echo "$(stamp) STOP: control after: the shell's uid changed ($ctl_uid_before → $ctl_uid_after)"
+  row R1-2 FAIL "control after: the shell's uid changed during the run: a failed run, not zero"; exit 1
+fi
 if [ "$ctl_rx_after" -le "$ctl_rx_before" ]; then
-  echo "$(stamp) STOP: control after: uid 2000's rx didn't grow ($ctl_rx_before → $ctl_rx_after) after a second fetch"
+  echo "$(stamp) STOP: control after: uid $ctl_uid_after's rx didn't grow ($ctl_rx_before → $ctl_rx_after) after a second fetch"
   row R1-2 FAIL "control after: the reader didn't see the second fetch: a failed run, not zero"; exit 1
 fi
 netread after
