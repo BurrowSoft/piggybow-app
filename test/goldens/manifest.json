@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "4b4d13815d01350455fd3b7a76c5f0ecb07d8fef",
+  "ref": "4b4d13815d01350455fd3b7a76c5f0ecb07d8fef",
+  "run_id": "46126957748",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -1188,8 +1188,8 @@
       "file": "timeline_full-end_dark_320x2.png",
       "state": "C2",
       "test": "C2 three days with the stress data (320 dp, text ×2, dark)",
-      "sha256": "f27cf0f0a28314bd038dd6db100253bfca5643e10d5927adb3dfbc9fc547c100",
-      "bytes": 190967,
+      "sha256": "89fed74f6c4066ed0901f2e1f2b92479cdf4c6ec1f949a207983fe245a007ff0",
+      "bytes": 192491,
       "width": 960,
       "height": 2340
     },
@@ -1197,8 +1197,8 @@
       "file": "timeline_full-end_light_320x2.png",
       "state": "C2",
       "test": "C2 three days with the stress data (320 dp, text ×2, light)",
-      "sha256": "95f8c9901e1ac6a1fd8b0b0faa005cbeeb81abd06d851e2c3babde5e425c12f9",
-      "bytes": 191951,
+      "sha256": "f173063068e07ce199ab9bc124fad5945918be31005fb086db8e1f861c97a646",
+      "bytes": 193644,
       "width": 960,
       "height": 2340
     },
@@ -1206,8 +1206,8 @@
       "file": "timeline_full_dark_320x2.png",
       "state": "C2",
       "test": "C2 three days with the stress data (320 dp, text ×2, dark)",
-      "sha256": "96661403a27dec9f15e86dd03eca3a460ce7baca5919c49bdcf27277e14a9fba",
-      "bytes": 212459,
+      "sha256": "9ab0bf94fc899275fb9102de8d5a137bcf97045b1238d15cf42cd4082f95e91c",
+      "bytes": 214141,
       "width": 960,
       "height": 2340
     },
@@ -1215,8 +1215,62 @@
       "file": "timeline_full_light_320x2.png",
       "state": "C2",
       "test": "C2 three days with the stress data (320 dp, text ×2, light)",
-      "sha256": "456e6ce7f3eaf601734902c879efea1727321ea42a25ca8472b1a0e734b5710e",
-      "bytes": 213378,
+      "sha256": "f0f7cf1b824dd7db98d7fa3353a37b324f884501e28db9853366a0b8456bb4eb",
+      "bytes": 215144,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-closed_dark_320x2.png",
+      "state": "TS3",
+      "test": "TS3 the icon, before the search opens (320 dp, text ×2, dark)",
+      "sha256": "0d455336780908ab9f540ac08259091512a17c8bf3d50cbf99c52e041bfcf907",
+      "bytes": 193901,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-closed_light_320x2.png",
+      "state": "TS3",
+      "test": "TS3 the icon, before the search opens (320 dp, text ×2, light)",
+      "sha256": "1af2112f892b5af5b3975e86e46682468c168b8862d15ca670364d4e177e821c",
+      "bytes": 194695,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-coffee_dark_320x2.png",
+      "state": "TS1",
+      "test": "TS1 the field open on \"coffee\" (320 dp, text ×2, dark)",
+      "sha256": "580464195e6fece13c8eaa19749228a4abbbbc6b5aa27c3965cba62c9392637c",
+      "bytes": 128322,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-coffee_light_320x2.png",
+      "state": "TS1",
+      "test": "TS1 the field open on \"coffee\" (320 dp, text ×2, light)",
+      "sha256": "dc4e9f2001d4ac9907aa6cd10a42795cebd0c24c9d8587c64dc009db350e2415",
+      "bytes": 129084,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-no-match_dark_320x2.png",
+      "state": "TS2",
+      "test": "TS2 nothing matches (320 dp, text ×2, dark)",
+      "sha256": "b121e68fc2b666caebd0bb556815ab22cc2091d98cb24ecb4728360c4748d283",
+      "bytes": 86810,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-no-match_light_320x2.png",
+      "state": "TS2",
+      "test": "TS2 nothing matches (320 dp, text ×2, light)",
+      "sha256": "1d90c9b4a9c7564ceb67be0349f21033a25473d781658d652c9851ca0ae3ea8f",
+      "bytes": 87162,
       "width": 960,
       "height": 2340
     }
