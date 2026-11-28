@@ -1,6 +1,6 @@
 appId: ${APP_ID}
 name: PR 3 goal create, detail, Add savings, first band - the rainbow fills, the pig shows the band line, not the after-save reaction
-tags: [pb1, goal]
+tags: [pb1, goal, band]
 ---
 # Ids as in #18 (803b9df): goal-create (Home's empty card), goal-name /
 # goal-amount / goal-start / goal-submit (the form), goal-screen (detail),
@@ -61,9 +61,16 @@ tags: [pb1, goal]
 - assertVisible:
     id: "goal-save-.*"
 - takeScreenshot: 20-goal-detail-25
-# Home: Delighted, and the band line beats pigAfterSave (spec §4.7 bubble priority)
+# Home: Delighted, and the band line beats pigAfterSave (spec §4.7 bubble priority).
+# The goal's detail covers the tab bar (a pushed screen): back by its app bar arrow.
 - tapOn:
-    id: tab-home
+    text: "Back"
+    above:
+      id: goal-add-savings
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 10000
 - assertVisible:
     id: home-pig
     text: "(?i).*delighted.*"                   # the mood is the node's value
