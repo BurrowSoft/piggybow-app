@@ -783,33 +783,52 @@ class _RepeatInfo extends StatelessWidget {
         ? (repeat.running ? l10n.repeatFrom(schedule) : l10n.repeatFromStopped)
         : (repeat.running ? schedule : null);
     if (text == null) return const SizedBox.shrink();
+    final line = Row(
+      children: [
+        Icon(Icons.repeat, color: theme.colorScheme.onSurfaceVariant),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+    final manage = repeat.running
+        ? TestId(
+            'edit-repeat-manage',
+            button: true,
+            child: TextButton(
+              onPressed: onManage,
+              child: ButtonLabel(l10n.repeatManage),
+            ),
+          )
+        : null;
+    // At large text Manage goes under the line, at its end, as a Timeline
+    // row's amount does: the line keeps the sheet's width.
+    final stacked = MediaQuery.textScalerOf(context).scale(1) >= 1.3;
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: TestId.container(
         'edit-repeat',
-        child: Row(
-          children: [
-            Icon(Icons.repeat, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                text,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+        child: stacked
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  line,
+                  if (manage != null)
+                    Align(alignment: AlignmentDirectional.centerEnd, child: manage),
+                ],
+              )
+            : Row(
+                children: [
+                  Expanded(child: line),
+                  ?manage,
+                ],
               ),
-            ),
-            if (repeat.running)
-              TestId(
-                'edit-repeat-manage',
-                button: true,
-                child: TextButton(
-                  onPressed: onManage,
-                  child: ButtonLabel(l10n.repeatManage),
-                ),
-              ),
-          ],
-        ),
       ),
     );
   }
