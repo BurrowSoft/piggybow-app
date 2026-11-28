@@ -13,6 +13,7 @@ void main() {
       expect(AppDates.full(l, d), 'วันศุกร์ที่ 2 ตุลาคม 2569');
       expect(AppDates.monthYear(l, d), 'ตุลาคม 2569');
       expect(AppDates.dayShort(l, d), 'ศุกร์ 2 ต.ค.');
+      expect(AppDates.dayShortWithYear(l, d), '${AppDates.dayShort(l, d)} 2569');
       expect(AppDates.year(l, 2026), '2569');
     }
   });

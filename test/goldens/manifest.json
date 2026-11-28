@@ -1,7 +1,7 @@
 {
-  "source_sha": "09993c1f7db26f11a2f2e555393d327a96365ce8",
-  "ref": "09993c1f7db26f11a2f2e555393d327a96365ce8",
-  "run_id": "46083284542",
+  "source_sha": "d447e0ed637f53637ff4e3429393cb39c2121201",
+  "ref": "d447e0ed637f53637ff4e3429393cb39c2121201",
+  "run_id": "46085547381",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -93,6 +93,159 @@
       "sha256": "9944854128a2423be721741077eb3d900fb8171064882490f084edd5c9ab0a63",
       "bytes": 148972,
       "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_empty-week_dark_360x1.png",
+      "state": "SW0",
+      "test": "an empty week (360 dp, text ×1, dark)",
+      "sha256": "cbf45ef59eecaf725102bdef56ef8100740975b8de2d288dcd4dd1f35a2131fa",
+      "bytes": 74899,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_empty-week_light_320x2.png",
+      "state": "SW0",
+      "test": "an empty week (320 dp, text ×2, light)",
+      "sha256": "843555b98ac9803f04ad558b56e7795998eaf88a3682e495629dc1048f58c9d9",
+      "bytes": 105313,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_empty-week_light_360x1.png",
+      "state": "SW0",
+      "test": "an empty week (360 dp, text ×1, light)",
+      "sha256": "e7d74083ca1ab6e02a59b629dbb3048c33fcd271053a14e14bb5ee453416548c",
+      "bytes": 74094,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_nine-at-max-end_dark_360x1.png",
+      "state": "SW9",
+      "test": "nine categories at the largest amount (360 dp, text ×1, dark)",
+      "sha256": "bb7688d26b576532a0257bf8e2f607bf7e6c7efaaf706aae6c530c476c02f650",
+      "bytes": 216258,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_nine-at-max-end_light_320x2.png",
+      "state": "SW9",
+      "test": "nine categories at the largest amount (320 dp, text ×2, light)",
+      "sha256": "38e70b17bc57d0bf45e1d48e4fbcfae89378920eb5ff2fc88d22fe91a1dff16b",
+      "bytes": 191462,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_nine-at-max-end_light_360x1.png",
+      "state": "SW9",
+      "test": "nine categories at the largest amount (360 dp, text ×1, light)",
+      "sha256": "2f0cb418aa4a1df51e925f2e81a19785bf5d51aa3eccda93174688c15b4f1e4f",
+      "bytes": 216761,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_nine-at-max_dark_360x1.png",
+      "state": "SW9",
+      "test": "nine categories at the largest amount (360 dp, text ×1, dark)",
+      "sha256": "c092250f870d82eece8ffc4fa25a6d8d65257904026af5e5bfbd72ca38212f0c",
+      "bytes": 218778,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_nine-at-max_light_320x2.png",
+      "state": "SW9",
+      "test": "nine categories at the largest amount (320 dp, text ×2, light)",
+      "sha256": "423ec4795de8a232c92a74f2411f3896142c9ede256ec73355bfc517a2d93077",
+      "bytes": 200152,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_nine-at-max_light_360x1.png",
+      "state": "SW9",
+      "test": "nine categories at the largest amount (360 dp, text ×1, light)",
+      "sha256": "b5cbdf7513c4e367bf50f8f21b64c04d621a1298118cc63309530493a8deae0f",
+      "bytes": 217964,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_s1-december-end_light_320x2.png",
+      "state": "SM1",
+      "test": "S1 December (320 dp, text ×2, light)",
+      "sha256": "661a06430d167458df943d57ed1d12b0dce9326df38df4a5bd6b8d7190eb2d97",
+      "bytes": 185431,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_s1-december_dark_360x1.png",
+      "state": "SM1",
+      "test": "S1 December (360 dp, text ×1, dark)",
+      "sha256": "d7bdb08c3db29d3e0d7145e4041c8882cccddcbc2d3d89d1b7bcfd24ad0ecd4a",
+      "bytes": 140644,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_s1-december_light_320x2.png",
+      "state": "SM1",
+      "test": "S1 December (320 dp, text ×2, light)",
+      "sha256": "6146584d032f2accd5b5c016bdc3ea7d65cb6aeb1f8bcc50196b58e2099b85ca",
+      "bytes": 191604,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_s1-december_light_360x1.png",
+      "state": "SM1",
+      "test": "S1 December (360 dp, text ×1, light)",
+      "sha256": "6444ba6cba94a3000dcffdd2fa6e4a90898a746640df408461c8fb3b313e6f66",
+      "bytes": 142406,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_s1-week-end_light_320x2.png",
+      "state": "SW1",
+      "test": "S1 this week: every card (320 dp, text ×2, light)",
+      "sha256": "4c8f2561a3c0d89791ee91e761cc040ba39e370d8afc6d5c5611f3ae849cd91d",
+      "bytes": 179059,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_s1-week_dark_360x1.png",
+      "state": "SW1",
+      "test": "S1 this week: every card (360 dp, text ×1, dark)",
+      "sha256": "f7763707ed76c26180d36c34e52f4dc2501e870b63f1928f59fa956211189f11",
+      "bytes": 165132,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_s1-week_light_320x2.png",
+      "state": "SW1",
+      "test": "S1 this week: every card (320 dp, text ×2, light)",
+      "sha256": "4825e32cedab60db4370be90fd61d842a966d51c68f78ee57b6f91229452ef4a",
+      "bytes": 187173,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_s1-week_light_360x1.png",
+      "state": "SW1",
+      "test": "S1 this week: every card (360 dp, text ×1, light)",
+      "sha256": "a42c79d30187636194a8c3dc3db92ea24f72b43cac8c2cb1ef13da1fb82eb726",
+      "bytes": 167418,
+      "width": 1080,
       "height": 2340
     },
     {

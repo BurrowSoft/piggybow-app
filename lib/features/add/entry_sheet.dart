@@ -14,6 +14,7 @@ import '../../journal/journal_store.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/currency.dart';
 import '../../money/money.dart';
+import '../../pig/pig_mood.dart' show PigReaction;
 import '../../session/session_scope.dart';
 import '../../theme/theme.dart';
 
@@ -154,7 +155,8 @@ class _EntrySheetState extends State<EntrySheet> {
       _busy = true;
       _failed = false;
     });
-    final store = context.services.journal;
+    final services = context.services;
+    final store = services.journal;
     final editing = widget.editing;
     try {
       if (editing == null) {
@@ -167,6 +169,15 @@ class _EntrySheetState extends State<EntrySheet> {
           feeling: _feeling,
           note: _note.text,
         );
+        // The pig answers what was just added (plan §4.4).
+        services.lastAdd.value = !spend
+            ? PigReaction.save
+            : switch (_feeling) {
+                Feeling.worthIt => PigReaction.worth,
+                Feeling.notSure => PigReaction.notSure,
+                Feeling.notReally => PigReaction.notReally,
+                null => PigReaction.spend,
+              };
       } else {
         await store.updateEntry(
           editing.copyWith(
