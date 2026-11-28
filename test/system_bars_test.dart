@@ -3,11 +3,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/core/device.dart';
 import 'package:piggybow/core/system_bars.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 
+import 'app_lock_test.dart' show FakeBiometrics;
 import 'helpers.dart';
 
 /// The system bars over every page: see-through, so the page shows behind
@@ -267,5 +269,84 @@ void main() {
       expect(byId('goal-done-screen'), findsOneWidget);
       expectPageSystemBars(dark, 'the celebration');
     });
+
+    /// The app with a PIN set; [locked]: as at a cold start, the lock on top.
+    Future<void> openWithLock(
+      WidgetTester tester, {
+      required bool locked,
+    }) async {
+      await forgetTheLastStyle(tester);
+      final lock = AppLock(
+        store: MemorySecretStore(),
+        biometrics: FakeBiometrics()..has = false,
+        firstRun: MemoryFirstRunMarker(),
+        iterations: 50,
+      );
+      await tester.runAsync(() => lock.setPin('2468'));
+      if (locked) lock.lockNow();
+      final app = TestApp(appLock: lock)..prefs.appearance = appearance;
+      await tester.runAsync(app.openJournal);
+      await app.pump(tester);
+      final ready = byId(locked ? 'lock-screen' : 'home-screen');
+      for (var i = 0; i < 40 && ready.evaluate().isEmpty; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.pumpAndSettle();
+      expect(ready, findsOneWidget);
+    }
+
+    // The 6c smoke on 817805b: the lock's status bar took the style of Home's
+    // AppBar under it. The lock and the cover now set their own.
+    testWidgets('the lock at a cold start, over Home: its own bars, icons '
+        'for $appearance', (tester) async {
+      await openWithLock(tester, locked: true);
+      expect(find.byType(AppBar), findsOneWidget, reason: "Home's, under it");
+      expectPageSystemBars(dark, 'the lock');
+    });
+
+    testWidgets('the app-switcher cover, over Home: its own bars, icons for '
+        '$appearance', (tester) async {
+      await openWithLock(tester, locked: false);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      expect(byId('lock-cover'), findsOneWidget);
+      expectPageSystemBars(dark, 'the cover');
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      expect(byId('lock-cover'), findsNothing);
+    });
   }
+
+  // Android's own windows (the splash, the window behind the app) ask for
+  // the same status-bar icons as the app's pages: dark on the light
+  // background, white on the dark one. A mismatch left Android re-tinting
+  // only some icons after start-up (the 6c smoke on 817805b).
+  test("Android's themes: dark status-bar icons in light, white in dark", () {
+    const light = 'android:windowLightStatusBar">true</item>';
+    String style(String file, String name) {
+      final xml = File('android/app/src/main/res/$file/styles.xml')
+          .readAsStringSync();
+      final match = RegExp(
+        '<style name="$name"[^>]*>(.*?)</style>',
+        dotAll: true,
+      ).firstMatch(xml);
+      expect(match, isNotNull, reason: '$file: $name');
+      return match!.group(1)!;
+    }
+
+    for (final file in ['values', 'values-v31']) {
+      for (final name in ['LaunchTheme', 'NormalTheme']) {
+        expect(style(file, name), contains(light), reason: '$file: $name');
+      }
+    }
+    for (final file in ['values-night', 'values-night-v31']) {
+      for (final name in ['LaunchTheme', 'NormalTheme']) {
+        expect(
+          style(file, name),
+          isNot(contains(light)),
+          reason: '$file: $name',
+        );
+      }
+    }
+  });
 }

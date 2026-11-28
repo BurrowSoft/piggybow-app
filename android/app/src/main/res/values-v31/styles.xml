@@ -5,9 +5,13 @@
         <item name="android:windowBackground">@drawable/launch_background</item>
         <item name="android:windowSplashScreenBackground">@color/splash_background</item>
         <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+        <!-- Dark status-bar icons on the cream splash, as the app asks for once
+             it runs: no white-to-dark switch at start-up (values/styles.xml). -->
+        <item name="android:windowLightStatusBar">true</item>
     </style>
     <!-- Behind the Flutter UI once it starts (as in values/styles.xml). -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

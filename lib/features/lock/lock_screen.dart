@@ -9,6 +9,7 @@ import '../../core/button_pair.dart';
 import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
+import '../../core/system_bars.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../lock_rules/lock_rules.dart';
 import '../../session/app_session.dart';
@@ -613,7 +614,9 @@ class ForgotPinDialog extends StatelessWidget {
 /// Wraps the app: the lock screen over everything while locked (and while
 /// Forgot PIN's erase runs); a plain cover while the app is in the
 /// background, so the app switcher's preview shows nothing. The lock belongs
-/// to the phone, not to an account (decision 70).
+/// to the phone, not to an account (decision 70). Both set the system bars
+/// for their own background ([PageSystemBars]), whatever page is under them:
+/// otherwise the status bar takes the style of that page's AppBar.
 class LockGate extends StatefulWidget {
   const LockGate({
     super.key,
@@ -689,13 +692,17 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
             ),
             if (showLock)
               Positioned.fill(
-                child: LockScreen(lock: lock, session: widget.session),
+                child: PageSystemBars(
+                  child: LockScreen(lock: lock, session: widget.session),
+                ),
               )
             else if (covered)
               Positioned.fill(
-                child: TestId.container(
-                  'lock-cover',
-                  child: ColoredBox(color: context.palette.background),
+                child: PageSystemBars(
+                  child: TestId.container(
+                    'lock-cover',
+                    child: ColoredBox(color: context.palette.background),
+                  ),
                 ),
               ),
           ],
