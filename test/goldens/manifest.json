@@ -1,7 +1,7 @@
 {
-  "source_sha": "324e58bbd82eae8a78fbd7c66cf751ff986f4df3",
-  "ref": "324e58bbd82eae8a78fbd7c66cf751ff986f4df3",
-  "run_id": "46088504223",
+  "source_sha": "428a2df604bc4a0d85595663c1bd4594224fac0b",
+  "ref": "428a2df604bc4a0d85595663c1bd4594224fac0b",
+  "run_id": "46092944946",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -528,240 +528,6 @@
       "height": 2340
     },
     {
-      "file": "me-picker_picks-end_dark_320x2.png",
-      "state": "M6",
-      "test": "M6 the picker in Me (320 dp, text ×2, dark)",
-      "sha256": "cbf8e7e167f5b829f80cb429988c979c2965f72428581dd35057430ed20544ce",
-      "bytes": 130580,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me-picker_picks-end_light_320x2.png",
-      "state": "M6",
-      "test": "M6 the picker in Me (320 dp, text ×2, light)",
-      "sha256": "8078af08a174cc61f5d10cf6e585ec95fbf161dce3935c41c02acfb649cac273",
-      "bytes": 130989,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me-picker_picks_dark_320x2.png",
-      "state": "M6",
-      "test": "M6 the picker in Me (320 dp, text ×2, dark)",
-      "sha256": "aa8021341d30b8e5ae9f22ed718600071715906a98fe7ebf162feea5f8130149",
-      "bytes": 153900,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me-picker_picks_light_320x2.png",
-      "state": "M6",
-      "test": "M6 the picker in Me (320 dp, text ×2, light)",
-      "sha256": "13a2cff8d45c039e331aef8b56a0a49be16c09a23840ad6e2d6a43e62919fef0",
-      "bytes": 154074,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me-privacy_lines-end_dark_320x2.png",
-      "state": "M8",
-      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, dark)",
-      "sha256": "c6b3ea9b007abd3d48cbc5b79cd883412c2db1c46e55c23b642e04c25d4ac67b",
-      "bytes": 205219,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me-privacy_lines-end_light_320x2.png",
-      "state": "M8",
-      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
-      "sha256": "6d4a43f2894d7a5999c8fe61527b55246e994d8ecc81c81de888d63ee84fbb92",
-      "bytes": 206503,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me-privacy_lines_dark_320x2.png",
-      "state": "M8",
-      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, dark)",
-      "sha256": "1420cc1afdd0002b5243d098e934fe75967f4943b2eeee738323bf52ff9401f9",
-      "bytes": 219144,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me-privacy_lines_light_320x2.png",
-      "state": "M8",
-      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
-      "sha256": "30f94d7c74549d940c1016ce1690abcacc1b4dca621692719659ec9a39a3ebbc",
-      "bytes": 219885,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_delete-all_dark_320x2.png",
-      "state": "M7",
-      "test": "M7 \"Delete everything?\" (320 dp, text ×2, dark)",
-      "sha256": "e650123ed2df45638c9c681a6e89912e760ec44d8f2b36ce44dac0dfbd1fa154",
-      "bytes": 193892,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_delete-all_light_320x2.png",
-      "state": "M7",
-      "test": "M7 \"Delete everything?\" (320 dp, text ×2, light)",
-      "sha256": "76f85430067fa97c9a38fe4e37075f66fae3ccc2453d159d7fa57755b16d744c",
-      "bytes": 195963,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_delete-failed-end_dark_320x2.png",
-      "state": "M9",
-      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, dark)",
-      "sha256": "cd0ff2844ca9834af679b1c8b5813300f2e24d06be3a05c1aa59eb4415abac87",
-      "bytes": 201150,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_delete-failed-end_light_320x2.png",
-      "state": "M9",
-      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, light)",
-      "sha256": "a1647334016c1318a8afdda2a7b03082719e5ef2ce4cf4fcb2befb2be4ae8d25",
-      "bytes": 203201,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_delete-failed_dark_320x2.png",
-      "state": "M9",
-      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, dark)",
-      "sha256": "2d7f9c2a20611f8f997daf982e09152df83099e4d968bbb2261da7f35a380119",
-      "bytes": 195165,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_delete-failed_light_320x2.png",
-      "state": "M9",
-      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, light)",
-      "sha256": "81633e5392b8dd6bfb5b046e7c97b5d4a9952185d4598b58aa394c020b7cf01a",
-      "bytes": 197160,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_no-plan-end_dark_320x2.png",
-      "state": "M1",
-      "test": "M1 Me, no plan (320 dp, text ×2, dark)",
-      "sha256": "51baa627f04434b11703d6892b9e675f0f803a7a90a5624e715c6ecc08236f72",
-      "bytes": 141688,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_no-plan-end_light_320x2.png",
-      "state": "M1",
-      "test": "M1 Me, no plan (320 dp, text ×2, light)",
-      "sha256": "66ab583e2631ef63c6969c7c1d3674c53836658f0c697aae93bae2a1835e04e7",
-      "bytes": 141455,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_no-plan_dark_320x2.png",
-      "state": "M1",
-      "test": "M1 Me, no plan (320 dp, text ×2, dark)",
-      "sha256": "abbec9e958b8ca17922372a49a070842ff50a859dc15a9cd4eadb18006f81af3",
-      "bytes": 177066,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_no-plan_light_320x2.png",
-      "state": "M1",
-      "test": "M1 Me, no plan (320 dp, text ×2, light)",
-      "sha256": "a588d7849b219de0e6cb7ad250d8a258543d7b9cba6787a183ce00a9629dc50f",
-      "bytes": 176948,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_notifications-off_dark_320x2.png",
-      "state": "M3",
-      "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, dark)",
-      "sha256": "f4f6becb97e13c283146e8157c33b2a6a5588b48885e6f8cdaf089032d481973",
-      "bytes": 184176,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_notifications-off_light_320x2.png",
-      "state": "M3",
-      "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, light)",
-      "sha256": "f8b224787e2bbcbbc3ba0e20671af2377afb0152db8e2da4080ccffdf9d618b6",
-      "bytes": 184167,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_plan-dialog-empty_dark_320x2.png",
-      "state": "M4",
-      "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
-      "sha256": "5e7b6e0da00bcc1a0612de3d0fb91f6415c7f9b80d400c40f7dbbe15210ff289",
-      "bytes": 166515,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_plan-dialog-empty_light_320x2.png",
-      "state": "M4",
-      "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
-      "sha256": "6d7d7b075553ee0a96105a9f38395605b3055e16ea67b28621589cdbd3b6c625",
-      "bytes": 168538,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_plan-dialog-set_dark_320x2.png",
-      "state": "M5",
-      "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
-      "sha256": "852b0bbe9409d27f6b3c402b263db90cf1e489cec2b6220683f644e524245072",
-      "bytes": 174272,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_plan-dialog-set_light_320x2.png",
-      "state": "M5",
-      "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
-      "sha256": "f630a770cb7d5fdbe5202aa7a29c15ffbe0a51593605920c63e0c00ca670e662",
-      "bytes": 175687,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_plan-set_dark_320x2.png",
-      "state": "M2",
-      "test": "M2 Me, a plan set (320 dp, text ×2, dark)",
-      "sha256": "9cfbd819e51a9d7613ec29d76f3d19e9655ff2423e63c932061e1471e6615d28",
-      "bytes": 181688,
-      "width": 960,
-      "height": 2340
-    },
-    {
-      "file": "me_plan-set_light_320x2.png",
-      "state": "M2",
-      "test": "M2 Me, a plan set (320 dp, text ×2, light)",
-      "sha256": "77d4c42ccf4cc1dc3514886576521308e9a3c38758dafc7b6104d056372b5586",
-      "bytes": 181540,
-      "width": 960,
-      "height": 2340
-    },
-    {
       "file": "pig_calm_dark_200x1.png",
       "state": "P2",
       "test": "the pig, calm (dark)",
@@ -936,8 +702,8 @@
       "file": "summary_nine-at-max-end_dark_360x1.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (360 dp, text ×1, dark)",
-      "sha256": "bb7688d26b576532a0257bf8e2f607bf7e6c7efaaf706aae6c530c476c02f650",
-      "bytes": 216258,
+      "sha256": "e1104be1ab78a37ff2f4178b574f31392ae3a86e7e648e48506567b19dc48ca7",
+      "bytes": 215866,
       "width": 1080,
       "height": 2340
     },
@@ -954,8 +720,8 @@
       "file": "summary_nine-at-max-end_light_360x1.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (360 dp, text ×1, light)",
-      "sha256": "2f0cb418aa4a1df51e925f2e81a19785bf5d51aa3eccda93174688c15b4f1e4f",
-      "bytes": 216761,
+      "sha256": "8331eec56d9f5a63d211e6d08e723856c2b1ae5671c5a9e3eb006ce2422aff79",
+      "bytes": 216397,
       "width": 1080,
       "height": 2340
     },
@@ -963,8 +729,8 @@
       "file": "summary_nine-at-max_dark_360x1.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (360 dp, text ×1, dark)",
-      "sha256": "c092250f870d82eece8ffc4fa25a6d8d65257904026af5e5bfbd72ca38212f0c",
-      "bytes": 218778,
+      "sha256": "e499ad5a410b90ba8fc3a71523c08285a13c953ebdfe28e2c665168331a15d93",
+      "bytes": 193909,
       "width": 1080,
       "height": 2340
     },
@@ -972,8 +738,8 @@
       "file": "summary_nine-at-max_light_320x2.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (320 dp, text ×2, light)",
-      "sha256": "423ec4795de8a232c92a74f2411f3896142c9ede256ec73355bfc517a2d93077",
-      "bytes": 200152,
+      "sha256": "31ccdb0fe9a21d255eed003b085c2f65ba24603b15b757162548f9c893ed50a3",
+      "bytes": 182473,
       "width": 960,
       "height": 2340
     },
@@ -981,8 +747,8 @@
       "file": "summary_nine-at-max_light_360x1.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (360 dp, text ×1, light)",
-      "sha256": "b5cbdf7513c4e367bf50f8f21b64c04d621a1298118cc63309530493a8deae0f",
-      "bytes": 217964,
+      "sha256": "cb2b46348b82062db77bd45e1d9400f11a860abf672d1ba4d377af6762a058fc",
+      "bytes": 193612,
       "width": 1080,
       "height": 2340
     },
