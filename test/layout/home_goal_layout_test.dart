@@ -99,6 +99,18 @@ void main() {
       .descendant(of: byId(screenId), matching: find.byType(Scrollable))
       .first;
 
+  /// Scrolls Home's list back to [target] and centres it, for a golden of
+  /// something that neither the top nor the end shows.
+  Future<void> centreForGolden(WidgetTester tester, Finder target) async {
+    await tester.scrollUntilVisible(
+      target,
+      -200,
+      scrollable: listIn('home-screen'),
+    );
+    await Scrollable.ensureVisible(tester.element(target), alignment: 0.5);
+    await tester.pumpAndSettle();
+  }
+
   Goal longGoal({int target = amountMax, int start = 0}) => Goal(
     id: 'g1',
     name: goal40,
@@ -239,6 +251,16 @@ void main() {
             state: 'full',
             stateId: 'H2',
           );
+          // The offer's buttons in view (decision 57): neither the top nor
+          // the end shows them.
+          await centreForGolden(tester, find.byType(ButtonPair));
+          await expectLayoutGolden(
+            tester,
+            c,
+            screen: 'home',
+            state: 'full-offer',
+            stateId: 'H2',
+          );
         }
       },
     );
@@ -269,6 +291,15 @@ void main() {
             listIn('home-screen'),
             screen: 'home',
             state: 'reached',
+            stateId: 'H4',
+          );
+          // The empty goal card in view: "Reached:" under its button.
+          await centreForGolden(tester, byId('goal-card-reached'));
+          await expectLayoutGolden(
+            tester,
+            c,
+            screen: 'home',
+            state: 'reached-card',
             stateId: 'H4',
           );
         }
