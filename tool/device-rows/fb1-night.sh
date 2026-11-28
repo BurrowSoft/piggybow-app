@@ -6,9 +6,10 @@
 #        04:00, then the day's pig at 04:00 with no tap
 #   NB-2 flow 96b: a cold start at 05:00: the day's pig (F-B1 saw the night
 #        line there); the Add sheet in euros has no "= €12.34" echo
-#   NB-3 flow 96c, Plus kinds only (plus-owned): "+ New goal" under the goal
+#   NB-3 flow 96c, Plus kinds only (plus-owned, plus-rows): "+ New goal" under the goal
 #        card (looked at in the shot); builds without Plus have no such button
-# Dispatch with kind=plus-owned so NB-3 runs; on debug it's an INFO row.
+# Dispatch with a Plus kind (fb1-pa3.sh uses plus-rows) so NB-3 runs; on
+# debug it's an INFO row.
 . "$(dirname "$0")/lib.sh"
 guard_emulator
 
