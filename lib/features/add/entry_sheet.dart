@@ -657,8 +657,6 @@ class _EntrySheetState extends State<EntrySheet> {
   }
 }
 
-/// The nine categories, three to a row; each row as tall as its tallest
-/// label (large text wraps, never cuts).
 /// Feature 3: the last different amounts spent in the picked category,
 /// newest first, as chips; a tap uses one ("Use $12.50").
 class _QuickAmounts extends StatelessWidget {
@@ -708,6 +706,8 @@ class _QuickAmounts extends StatelessWidget {
   }
 }
 
+/// The nine categories, three to a row; each row as tall as its tallest
+/// label (large text wraps, never cuts).
 class _CategoryGrid extends StatelessWidget {
   const _CategoryGrid({required this.selected, required this.onPick});
 
