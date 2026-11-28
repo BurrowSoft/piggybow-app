@@ -255,7 +255,7 @@
   "meVersion": "Version {version} ({build})",
   "@meVersion": {"placeholders":{"version":{"type":"String"},"build":{"type":"String"}}},
   "privacyTitle": "Your privacy",
-  "privacy1": "Your entries, goals and settings are stored on this phone, and in your phone's own backup if you've turned it on.",
+  "privacy1": "Your entries, goals and settings are stored on this phone, and in your phone's own backup (Google or iCloud) if you've turned it on; on Android, only when that backup is end-to-end encrypted.",
   "privacy2": "Piggybow has no account and no server for your money notes.",
   "privacy3": "If the app crashes, it can send a crash report with technical details only, never your entries.",
   "privacy4": "Delete all my data, in Me, erases everything Piggybow stored on this phone. You can export a copy first.",
