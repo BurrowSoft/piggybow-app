@@ -243,75 +243,77 @@ class _HappyScreenState extends State<HappyScreen> {
       child: Scaffold(
         // A plain back bar: the title is the headline below, whole at any size.
         appBar: AppBar(),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-          children: [
-            Text(
-              inMe ? l10n.meHappy : l10n.onbHappyTitle,
-              style: theme.textTheme.headlineSmall,
-            ),
-            if (!inMe) ...[
-              const SizedBox(height: 8),
-              Text(l10n.onbHappyBody, style: theme.textTheme.bodyLarge),
-            ],
-            const SizedBox(height: 16),
-            for (final pick in HappyPick.values) ...[
-              _PickCard(
-                pick: pick,
-                selected: _picks.contains(pick),
-                onChanged: (on) => _toggle(pick, on),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+            children: [
+              Text(
+                inMe ? l10n.meHappy : l10n.onbHappyTitle,
+                style: theme.textTheme.headlineSmall,
               ),
-              if (pick == HappyPick.plan && _picks.contains(HappyPick.plan)) ...[
+              if (!inMe) ...[
                 const SizedBox(height: 8),
-                TestId(
-                  'onb-plan',
-                  child: TextField(
-                    controller: _plan,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    style: context.inputText,
-                    onChanged: (_) => setState(() {
-                      _problem = null;
-                      _planTooBig = false;
-                    }),
-                    decoration: InputDecoration(
-                      // One line, whole: smaller only if it must.
-                      label: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(l10n.happyPlanField),
-                      ),
-                      errorText: planError,
-                      errorMaxLines: 3,
-                    ),
-                  ),
-                ),
+                Text(l10n.onbHappyBody, style: theme.textTheme.bodyLarge),
               ],
-              const SizedBox(height: 8),
-            ],
-            if (_problem == PicksProblem.pickOne)
-              Semantics(
-                liveRegion: true,
-                child: Text(
-                  l10n.happyPickOne,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.error,
+              const SizedBox(height: 16),
+              for (final pick in HappyPick.values) ...[
+                _PickCard(
+                  pick: pick,
+                  selected: _picks.contains(pick),
+                  onChanged: (on) => _toggle(pick, on),
+                ),
+                if (pick == HappyPick.plan && _picks.contains(HappyPick.plan)) ...[
+                  const SizedBox(height: 8),
+                  TestId(
+                    'onb-plan',
+                    child: TextField(
+                      controller: _plan,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      style: context.inputText,
+                      onChanged: (_) => setState(() {
+                        _problem = null;
+                        _planTooBig = false;
+                      }),
+                      decoration: InputDecoration(
+                        // One line, whole: smaller only if it must.
+                        label: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(l10n.happyPlanField),
+                        ),
+                        errorText: planError,
+                        errorMaxLines: 3,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+              ],
+              if (_problem == PicksProblem.pickOne)
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    l10n.happyPickOne,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 16),
+              TestId(
+                inMe ? 'me-happy-done' : 'onb-continue',
+                button: true,
+                child: FilledButton(
+                  onPressed: _busy ? null : _continue,
+                  child: Text(
+                    inMe ? l10n.done : l10n.onbContinue,
+                    textAlign: TextAlign.center,
                   ),
                 ),
               ),
-            const SizedBox(height: 16),
-            TestId(
-              inMe ? 'me-happy-done' : 'onb-continue',
-              button: true,
-              child: FilledButton(
-                onPressed: _busy ? null : _continue,
-                child: Text(
-                  inMe ? l10n.done : l10n.onbContinue,
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

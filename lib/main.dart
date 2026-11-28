@@ -15,6 +15,7 @@ import 'core/local_prefs.dart';
 import 'core/sentry_setup.dart';
 import 'core/services.dart';
 import 'core/startup_trace.dart';
+import 'core/system_bars.dart';
 import 'data/device_backend.dart';
 import 'features/me/me_actions.dart';
 import 'features/onboarding/onboarding_screens.dart';
@@ -32,6 +33,9 @@ import 'session/app_session.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Behind the system bars on every Android version (Android 15+ already
+  // draws the app there): no black strip under the gesture handle.
+  unawaited(enableEdgeToEdge());
   final config = AppConfig.fromEnvironment();
   const device = PlatformDeviceContext();
 
@@ -45,6 +49,8 @@ Future<void> main() async {
   unawaited(sweepExports().then((_) {}, onError: (Object _) {}));
   final prefsLoad = SharedLocalPrefs.load();
   final timeZoneLoad = device.timeZone();
+  // Android 7 can't draw dark navigation-bar icons: its bar stays dark.
+  final sdkLoad = readAndroidSdk();
   // Read before the first frame: a cold start with the lock on must never
   // render the app unlocked.
   final appLock = config.appLockEnabled
@@ -75,6 +81,7 @@ Future<void> main() async {
 
   StartupTrace.mark('prefs');
   final prefs = await prefsLoad;
+  navIconsCanBeDark = navIconsCanBeDarkOn(await sdkLoad);
   // v0.1 runs on the phone only: no account, no server.
   StartupTrace.mark('backend');
   final backend = await DeviceBackend.open(
