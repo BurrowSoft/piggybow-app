@@ -1,5 +1,6 @@
 // Goldens: Home with the pig's monthly letter (every fact in it) at 320 dp ×2
-// (decision 44), and its layout in every case.
+// (decision 44), the screen's top and end and the letter card alone; and its
+// layout in every case.
 @Tags(['golden'])
 library;
 
@@ -11,6 +12,7 @@ import 'package:piggybow/journal/goal.dart';
 
 import '../helpers.dart';
 import '../helpers/fonts.dart';
+import '../helpers/goldens.dart';
 import 'layout_matrix.dart';
 
 /// L1: Home on 2 October (08:30 in Bangkok), and September's letter: a goal
@@ -85,6 +87,21 @@ void main() {
           screen: 'home',
           state: 'letter',
           stateId: 'L1',
+        );
+        // At text ×2 the letter's middle falls between those two shots: the
+        // card alone, whole (its part below the screen's edge included).
+        await settleForGolden(tester, homeList(), end: false);
+        await tester.ensureVisible(byId('home-letter'));
+        await tester.pumpAndSettle();
+        await expectGolden(
+          tester,
+          byId('home-letter'),
+          screen: 'home',
+          state: 'letter-card',
+          stateId: 'L1',
+          brightness: c.brightness,
+          width: c.width.toInt(),
+          textScale: c.textScale.toInt(),
         );
       }
     });
