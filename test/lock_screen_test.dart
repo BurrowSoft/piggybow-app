@@ -30,7 +30,7 @@ void main() {
   /// Frames with real time between them: the wipe sweeps the cache with real
   /// file calls.
   Future<void> waitFor(WidgetTester tester, Finder f) async {
-    for (var i = 0; i < 40 && f.evaluate().isEmpty; i++) {
+    for (var i = 0; i < 100 && f.evaluate().isEmpty; i++) {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 20)),
       );
@@ -224,11 +224,19 @@ void main() {
     await tester.tapId('lock-forgot-erase');
     await tester.tapId('lock-erase-confirm');
     await waitFor(tester, byId('onb-welcome'));
-    tester.expectScreen('onb-welcome');
-    expect(byId('lock-screen'), findsNothing);
-    expect(lock.enabled, isFalse);
+    // Each step of the way, so a miss says where it stopped.
+    expect(
+      find.text('Not everything was erased'),
+      findsNothing,
+      reason: 'a wipe step failed',
+    );
+    expect(lock.erasing, isFalse, reason: 'the erase still running');
+    expect(lock.enabled, isFalse, reason: 'the lock still on');
     expect(secrets.values, isEmpty, reason: 'the PIN and its settings');
     expect(await tester.runAsync(app.journal.isBlank), isTrue);
+    expect(app.services.onboarded.value, isFalse, reason: 'onboarding next');
+    expect(byId('lock-screen'), findsNothing);
+    tester.expectScreen('onb-welcome');
   });
 
   testWidgets(
