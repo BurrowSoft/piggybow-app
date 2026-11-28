@@ -116,6 +116,51 @@ void main() {
       find.descendant(of: byId(id), matching: find.text(text));
 
   group('with Plus', () {
+    testWidgets('your own category stands out, under its own name, on the '
+        'card and on Patterns', (tester) async {
+      // 6 worth-it spends in your own category and 15 not-sure ones in
+      // Other: 21 with a feeling, and only your category stands out.
+      await open(
+        tester,
+        plusOn: true,
+        seed: (app) async {
+          await app.journal.putCustomCategory(
+            CustomCategory(
+              id: 'c:bubble',
+              name: 'Bubble tea',
+              icon: CategoryIcon.drinks,
+              createdAt: testClock.nowUtc(),
+            ),
+          );
+          for (var i = 0; i < 6; i++) {
+            await app.journal.addEntry(
+              type: EntryType.spent,
+              amountMinor: 500,
+              currency: 'USD',
+              localDate: '2026-10-01',
+              customCategory: 'c:bubble',
+              feeling: Feeling.worthIt,
+            );
+          }
+          for (var i = 0; i < 15; i++) {
+            await spend(
+              app,
+              Feeling.notSure,
+              category: SpendCategory.other,
+              day: '2026-09-30',
+            );
+          }
+        },
+      );
+      const bubble = 'Bubble tea: most spends felt worth it';
+      expect(textIn('sum-patterns-line', bubble), findsOneWidget);
+      await tester.tapId('sum-patterns-see-all');
+      tester.expectScreen('patterns-screen');
+      expect(textIn('patterns-line-0', bubble), findsOneWidget);
+      expect(byId('patterns-line-1'), findsNothing);
+      expect(find.textContaining('c:bubble'), findsNothing, reason: 'never an id');
+    });
+
     testWidgets('the first pattern at the end of Summary; all three on '
         'Patterns, with the window and what was read', (tester) async {
       await open(tester, seed: rich, plusOn: true);
@@ -252,17 +297,19 @@ void main() {
           FeelingPattern.categoryWorth(c.id),
           FeelingPattern.categoryMixed(c.id),
         ])
-          patternText(en, pattern, dateLocale: 'en_US'),
+          patternText(en, pattern, dateLocale: 'en_US', customs: const {}),
       for (var day = DateTime.monday; day <= DateTime.sunday; day++)
         patternText(
           en,
           FeelingPattern.weekdayWorth(day),
           dateLocale: 'en_US',
+          customs: const {},
         ),
       patternText(
         en,
         const FeelingPattern.overallWorth(),
         dateLocale: 'en_US',
+        customs: const {},
       ),
     ];
     expect(patterns, contains(food));

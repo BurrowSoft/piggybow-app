@@ -522,16 +522,7 @@ class _WeekCard extends StatelessWidget {
     final week = summarize(
       period: periodContaining(PeriodKind.week, today),
       today: today,
-      entries: [
-        for (final e in data.entries)
-          SummaryEntry(
-            type: e.type.id,
-            amountMinor: e.amountMinor,
-            category: e.categoryId,
-            feeling: e.feeling?.id,
-            localDate: e.localDate,
-          ),
-      ],
+      entries: [for (final e in data.entries) SummaryEntry.of(e)],
       planMinor: data.plan,
       locale: context.session.dateLocale,
       categoryLabel: (id) => SpendCategory.fromId(id)?.label(l10n) ?? id,

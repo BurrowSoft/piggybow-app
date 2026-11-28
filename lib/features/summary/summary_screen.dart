@@ -79,16 +79,7 @@ class _SummaryScreenState extends State<SummaryScreen>
     final store = context.services.journal;
     final entries = await store.entries();
     final data = _SummaryData(
-      entries: [
-        for (final e in entries)
-          SummaryEntry(
-            type: e.type.id,
-            amountMinor: e.amountMinor,
-            category: e.categoryId,
-            feeling: e.feeling?.id,
-            localDate: e.localDate,
-          ),
-      ],
+      entries: [for (final e in entries) SummaryEntry.of(e)],
       currency: await store.currency() ?? 'USD',
       planMinor: await store.planMinor(),
       customs: {for (final c in await store.customCategories()) c.id: c},
@@ -213,7 +204,7 @@ class _SummaryScreenState extends State<SummaryScreen>
         ],
         // Plus's Patterns (feature 20): the last 8 weeks, whatever period
         // is shown; the teaser without Plus; nothing in a build without it.
-        PatternsCard(entries: data.entries),
+        PatternsCard(entries: data.entries, customs: data.customs),
       ],
     );
   }

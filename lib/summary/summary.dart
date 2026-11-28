@@ -8,6 +8,7 @@
 
 import 'package:intl/intl.dart' show DateFormat, Intl;
 
+import '../journal/entry.dart' show Entry;
 import '../money/locale.dart' show parseLocale;
 
 enum PeriodKind { week, month }
@@ -43,6 +44,18 @@ class SummaryEntry {
     this.feeling,
     required this.localDate,
   });
+
+  /// [e] as Summary, Home and Patterns all read it: by its category's id,
+  /// built-in or your own, so every view counts the same spends. Notes are
+  /// never read.
+  SummaryEntry.of(Entry e)
+    : this(
+        type: e.type.id,
+        amountMinor: e.amountMinor,
+        category: e.categoryId,
+        feeling: e.feeling?.id,
+        localDate: e.localDate,
+      );
 
   /// "spent" or "saved".
   final String type;
