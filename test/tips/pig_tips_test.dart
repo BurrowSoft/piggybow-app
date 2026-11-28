@@ -350,6 +350,29 @@ void main() {
     expect(store.values.containsKey(PigTipsService.reportsKey), isFalse);
   });
 
+  test("a reported tip gives way to the day's static tip for the rest of the day, after a restart too", () async {
+    final t = await turnedOn();
+    http.answer(tipPath, tipAnswer());
+    final tip = await t.tipFor('2026-12-02') as WrittenTip;
+    // Offline: the report waits, but the tip is set aside at once.
+    http.offline = true;
+    await t.report(tip, TipReportReason.upsetting);
+    expect(await t.tipFor('2026-12-02'), staticToday);
+    final restarted = tips();
+    await restarted.load();
+    expect(await restarted.tipFor('2026-12-02'), staticToday);
+    expect(http.paths.where((p) => p == tipPath), hasLength(1), reason: 'never asked again that day');
+    // The next day's tip is a new one.
+    http.offline = false;
+    http.answer(reportPath, const TipsResponse(204));
+    http.answer(tipPath, tipAnswer(text: 'Maybe a slow morning walk.', sig: 'sig-2'));
+    expect(await t.tipFor('2026-12-03'), isA<WrittenTip>());
+    // A fake that does the same, for the screens' tests.
+    final fake = FakePigTips(on: true, tip: tip);
+    await fake.report(tip, TipReportReason.wrong);
+    expect(await fake.tipFor('2026-12-02'), staticToday);
+  });
+
   test('turnOff: off at once, the withdrawal recorded, and the id deleted on the server', () async {
     final t = await turnedOn();
     http.answer(forgetPath, const TipsResponse(204));

@@ -203,11 +203,30 @@ steps:
     );
     expect(prod, isNot(contains('TIPS_TEST_URL')));
     expect(prod, isNot(contains('AI_TIPS_ENABLED')));
-    expect(build, contains(r'| if $kind == "tips-mock" then .AI_TIPS_ENABLED = "true" else . end'));
-    expect(
-      build,
-      contains(r'| if $kind == "tips-mock" then .TIPS_TEST_URL = "http://10.0.2.2:8787" else . end'),
-    );
+    // Each define on exactly two lines, matched literally: tips-mock's words
+    // in the kinds' description, and its one jq line. TIPS_TEST_URL's is the
+    // jq program's last line: its closing quote and the shell's line
+    // continuation.
+    for (final (define, line) in [
+      ('AI_TIPS_ENABLED', r'| if $kind == "tips-mock" then .AI_TIPS_ENABLED = "true" else . end'),
+      (
+        'TIPS_TEST_URL',
+        r'| if $kind == "tips-mock" then .TIPS_TEST_URL = "http://10.0.2.2:8787" else . end' "' \\",
+      ),
+    ]) {
+      final lines = [
+        for (final l in wf.split('\n'))
+          if (l.contains(define)) l.trim(),
+      ];
+      expect(lines, hasLength(2), reason: "$define: the kinds' description and its one jq line");
+      expect(lines.first, startsWith('description: "The APK:'), reason: define);
+      expect(
+        lines.first,
+        contains('tips-mock (staging debug + AI_TIPS_ENABLED + TIPS_TEST_URL=http://10.0.2.2:8787:'),
+        reason: define,
+      );
+      expect(lines.last, line, reason: define);
+    }
     expect('AI_TIPS_ENABLED = '.allMatches(wf), hasLength(1));
     expect('TIPS_TEST_URL = '.allMatches(wf), hasLength(1));
     // No build case of its own: a staging debug build.

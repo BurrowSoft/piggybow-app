@@ -133,7 +133,9 @@ abstract interface class PigTips {
   Future<TipOfDay> tipFor(String todayWire);
 
   /// "Report this tip": its text, its model, its signature and the reason.
-  /// Never throws: with no answer, it's sent at a later start or resume.
+  /// The reported tip gives way to its day's static tip for the rest of that
+  /// day, after a restart too. Never throws: with no answer, the report is
+  /// sent at a later start or resume.
   Future<void> report(WrittenTip tip, TipReportReason reason);
 
   /// Delete everything, before the phone's secure storage is erased: tips
@@ -330,6 +332,7 @@ class PigTipsService implements PigTips {
   Future<void> report(WrittenTip tip, TipReportReason reason) => _oneAtATime(() async {
     final item = {'tip': tip.text, 'reason': reason.name, 'model': tip.model, 'sig': tip.sig};
     try {
+      await _setAside(tip);
       if (await _sendReport(sessionKey, item)) return;
       final queue = [...await _readQueue(), item];
       await _writeQueue(queue.length > maxQueuedReports ? queue.sublist(queue.length - maxQueuedReports) : queue);
@@ -337,6 +340,17 @@ class PigTipsService implements PigTips {
       // Never thrown at the person: the report screen says thanks either way.
     }
   });
+
+  /// A reported tip: its day keeps no written tip any more, so the day's
+  /// static tip shows for the rest of it, and that day is never asked again.
+  Future<void> _setAside(WrittenTip tip) async {
+    final answered = await _readDay(tip.day);
+    if (answered?.tip == tip) await _writeDay(tip.day, null);
+    if (_askingDay == tip.day) {
+      _askingDay = null;
+      _asking = null;
+    }
+  }
 
   /// True once the server has answered for good (kept, refused, or over the
   /// day's limits): never sent again. False: no answer, so later.
@@ -573,6 +587,8 @@ class FakePigTips implements PigTips {
   @override
   Future<void> report(WrittenTip tip, TipReportReason reason) async {
     reports.add((tip, reason));
+    // As the service: the reported tip gives way to its day's static tip.
+    if (this.tip == tip) this.tip = StaticTip(tipForDay(parseWireDate(tip.day) ?? DateTime(2001)));
   }
 
   @override

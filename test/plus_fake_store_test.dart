@@ -91,9 +91,9 @@ void main() {
         (
           'PLUS_ROWS_OWNED',
           'plus-owned (plus-rows + PLUS_ROWS_OWNED: Plus on with nothing bought, for the Plus-on rows)',
-          // The jq program's last line: its closing quote and the shell's
-          // line continuation.
-          r'| if $kind == "plus-owned" then .PLUS_ROWS_OWNED = "true" else . end' "' \\",
+          // No longer the jq program's last line (tips-mock's lines follow;
+          // emulator_workflow_test pins the real last one).
+          r'| if $kind == "plus-owned" then .PLUS_ROWS_OWNED = "true" else . end',
         ),
       ]) {
         final lines = [
