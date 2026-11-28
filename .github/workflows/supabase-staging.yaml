@@ -64,7 +64,9 @@ jobs:
       # twice to prove it, then supabase/checks/after-migrations.sql checks
       # the result (one settings row; the clean-up and the idle users'
       # deletion scheduled once each; that deletion allowed to delete Auth
-      # users).
+      # users; the API roles' privileges on the tables), and
+      # after-migrations-calls.sql makes the function's counting calls as
+      # service_role, rolled back.
       - name: The migrations, through the Management API
         if: inputs.what != 'function'
         env:
@@ -74,7 +76,7 @@ jobs:
           --allow-read=supabase/migrations,supabase/checks
           --allow-env=SUPABASE_DEPLOY_TOKEN,PROJECT_REF
           supabase/scripts/sql.ts supabase/migrations/*.sql supabase/migrations/*.sql
-          supabase/checks/after-migrations.sql
+          supabase/checks/after-migrations.sql supabase/checks/after-migrations-calls.sql
       # --yes: CLI 3.4.0 asks to confirm a deploy, and with no terminal it
       # changes nothing and fails. --project-ref still works in 3.4.0 (v4
       # renames it --remote).

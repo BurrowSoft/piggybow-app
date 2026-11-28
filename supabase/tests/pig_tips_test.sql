@@ -151,6 +151,28 @@ begin
   end loop;
 end $$;
 
+-- And with only that, service_role still counts a tip and keeps a report:
+-- take_tip and file_report reach the tables as their owner.
+do $$
+declare
+  u uuid := gen_random_uuid();
+  took text;
+  filed text;
+begin
+  insert into auth.users (id) values (u);
+  update public.tip_settings set enabled = true, daily_cap = 300, per_person_daily = 1 where id = 1;
+  set local role service_role;
+  took := public.take_tip(u, '2027-02-01');
+  filed := public.file_report(u, '2027-02-01', 'A tip to report.', 'other', 'claude-sonnet-5-5');
+  reset role;
+  assert took = 'ok', 'service_role counts a tip through take_tip: ' || took;
+  assert filed = 'ok', 'service_role keeps a report through file_report: ' || filed;
+end $$;
+
+-- The deploy's own check runs here too: as service_role, for a made-up
+-- user, rolled back. It must pass, and keep nothing.
+\i supabase/checks/after-migrations-calls.sql
+
 -- A forgotten user's counters go with them.
 do $$
 declare

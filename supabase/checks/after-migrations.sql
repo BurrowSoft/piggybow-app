@@ -15,8 +15,15 @@ begin
   -- The API roles on the tables, whatever the project's automatic grants:
   -- service_role reads tip_settings and nothing else; anon and authenticated
   -- have nothing.
+  if not has_schema_privilege('service_role', 'public', 'usage') then
+    raise exception 'service_role can''t use the public schema';
+  end if;
   if not has_table_privilege('service_role', 'public.tip_settings', 'select') then
     raise exception 'service_role can''t read tip_settings';
+  end if;
+  if not has_function_privilege('service_role', 'public.take_tip(uuid, date)', 'execute')
+     or not has_function_privilege('service_role', 'public.file_report(uuid, date, text, text, text)', 'execute') then
+    raise exception 'service_role can''t call take_tip or file_report';
   end if;
   if has_table_privilege('service_role', 'public.tip_settings', 'insert, update, delete') then
     raise exception 'service_role can change tip_settings';
