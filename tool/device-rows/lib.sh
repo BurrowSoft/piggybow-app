@@ -36,6 +36,12 @@ row(){ # row <id> PASS|FAIL|INFO <evidence>   (INFO: recorded, not counted)
   case "$2" in PASS) PASSES=$((PASSES + 1)) ;; INFO) ;; *) FAILS=$((FAILS + 1)) ;; esac
 }
 
+# The run's exit status follows the rows: call it last in the script's EXIT
+# trap. Any failed row makes the run fail, so a green run never hides a ❌;
+# the workflow uploads the evidence either way. With no failed row, a
+# script's own exit code (an early STOP) is kept.
+rows_exit(){ [ "$FAILS" -eq 0 ] || exit 1; }
+
 # Refuse anything that isn't an emulator (a real phone may be attached to a
 # machine that runs this by mistake).
 guard_emulator(){

@@ -17,6 +17,7 @@ DEVPIN=1111   # the emulator's own screen lock, for R6 only
 cleanup(){
   A shell locksettings clear --old "$DEVPIN" >/dev/null 2>&1
   echo "$(stamp) END: $PASSES pass, $FAILS fail (the log and the screenshots decide)"
+  rows_exit
 }
 trap cleanup EXIT
 
