@@ -39,7 +39,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// The app with one entry, locked with the PIN 2468.
+  /// The app with one entry (a save), locked with the PIN 2468.
   Future<TestApp> openLocked(WidgetTester tester) async {
     tester.view.devicePixelRatio = 3;
     tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
@@ -50,7 +50,7 @@ void main() {
     await tester.runAsync(app.openJournal);
     await tester.runAsync(
       () => app.journal.addEntry(
-        type: EntryType.spent,
+        type: EntryType.saved,
         amountMinor: 1000,
         currency: 'THB',
         localDate: '2026-10-01',
