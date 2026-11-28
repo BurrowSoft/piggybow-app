@@ -83,7 +83,11 @@ void main() {
         '40-character goal ($c)', (tester) async {
       await open(tester, c);
       await tester.tapId('tl-search');
+      double fieldHeight() => tester.getSize(byId('tl-search-field')).height;
+      final empty = fieldHeight();
       await tester.enterId('tl-search-field', 'carrot');
+      // Typed, the field is one line: at text ×2 shorter than its hint.
+      expect(fieldHeight(), c.textScale > 1 ? lessThan(empty) : lessThanOrEqualTo(empty), reason: 'S2');
       expect(byId('tl-row-entry-2'), findsOneWidget);
       expect(byId('tl-row-entry-3'), findsNothing);
       await expectSoundLayout(tester, reason: 'S2 the note');
@@ -96,6 +100,9 @@ void main() {
       expect(byId('tl-row-entry-1'), findsOneWidget);
       expect(byId('tl-row-entry-2'), findsNothing);
       await expectSoundLayout(tester, reason: 'S2 the goal');
+      // Emptied, it grows back to show its hint whole.
+      await tester.enterId('tl-search-field', '');
+      expect(fieldHeight(), empty, reason: 'S2 emptied');
     });
 
     testWidgets('S3 nothing matches ($c)', (tester) async {
