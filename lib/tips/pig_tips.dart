@@ -151,22 +151,15 @@ abstract interface class PigTips {
 /// session and the day's answer in [SecretStore] (never in a backup).
 class PigTipsService implements PigTips {
   PigTipsService({
-    required bool enabled,
-    required TipsEndpoint? endpoint,
-    required TipsHttp http,
-    required SecretStore store,
-    required Clock clock,
-    required String Function() language,
-    required Future<TipRequest> Function(String todayWire) requestFor,
-    required Future<void> Function(List<ConsentItem> consents) recordConsents,
-  }) : _enabled = enabled,
-       _endpoint = endpoint,
-       _http = http,
-       _store = store,
-       _clock = clock,
-       _language = language,
-       _requestFor = requestFor,
-       _recordConsents = recordConsents;
+    required this._enabled,
+    required this._endpoint,
+    required this._http,
+    required this._store,
+    required this._clock,
+    required this._language,
+    required this._requestFor,
+    required this._recordConsents,
+  });
 
   final bool _enabled;
   final TipsEndpoint? _endpoint;
