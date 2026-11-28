@@ -51,6 +51,8 @@ class _PigNameDialogState extends State<_PigNameDialog> {
         'me-pig-name-field',
         child: TextField(
           controller: _name,
+          // Keyboard learning off, as on every field (#75).
+          enableIMEPersonalizedLearning: false,
           autofocus: true,
           maxLength: pigNameMaxLength,
           textCapitalization: TextCapitalization.words,
