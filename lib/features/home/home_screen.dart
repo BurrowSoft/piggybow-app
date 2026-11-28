@@ -681,23 +681,28 @@ class _NoGoalCard extends StatelessWidget {
 
 /// Home's New goal, under the last goal card, in builds with Plus: a goal
 /// beside the ones there needs Plus (decision 79), so without it the
-/// paywall opens first.
+/// paywall opens first. Quiet, so Add stays Home's main action: "+ New
+/// goal" as a text button in the accent, sized to its words, at the cards'
+/// end.
 class _NewGoal extends StatelessWidget {
   const _NewGoal();
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return TestId(
-      'home-new-goal',
-      button: true,
-      child: FilledButton.tonalIcon(
-        onPressed: () async {
-          if (!await requirePlus(context)) return;
-          if (context.mounted) unawaited(context.push(GoalRoutes.create));
-        },
-        icon: const Icon(Icons.add),
-        label: ButtonLabel(l10n.homeNewGoal),
+    return Align(
+      alignment: AlignmentDirectional.centerEnd,
+      child: TestId(
+        'home-new-goal',
+        button: true,
+        child: TextButton.icon(
+          onPressed: () async {
+            if (!await requirePlus(context)) return;
+            if (context.mounted) unawaited(context.push(GoalRoutes.create));
+          },
+          icon: const Icon(Icons.add),
+          label: ButtonLabel(l10n.homeNewGoal),
+        ),
       ),
     );
   }
