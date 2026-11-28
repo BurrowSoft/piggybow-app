@@ -656,12 +656,18 @@ class JournalStore extends ChangeNotifier {
     'onboarded',
     'reminder_offer',
     'hidden_categories',
+    // Me → Your pig's switches, and the month whose letter was put away
+    // (UX, 28 Nov): a restore in the same month doesn't show it again.
+    'yesterday_feel_off',
+    'letters_off',
+    'letter_dismissed',
   };
 
   static const _travelsPrefix = 'celebrated.';
 
-  /// Journal settings that never leave this phone. None yet.
-  static const staysOnPhone = <String>{};
+  /// Journal settings that never leave this phone: today's "Not now" on
+  /// Home's yesterday question, a one-day state (UX, 28 Nov).
+  static const staysOnPhone = {'yesterday_feel_hidden'};
 
   /// The stores a backup carries. A new store is a choice too: the test that
   /// classifies the settings checks every store this file opens.
