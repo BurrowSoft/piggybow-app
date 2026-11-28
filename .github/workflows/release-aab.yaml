@@ -73,14 +73,9 @@ jobs:
           key: gradle-${{ runner.os }}-apk-${{ hashFiles('android/**/*.gradle*', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
           restore-keys: |
             gradle-${{ runner.os }}-apk-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
-        with:
-          flutter-version: 3.47.5
-          channel: stable
-          # Off in this job only: flutter-action's own cache steps use
-          # actions/cache by tag, which a pin here can't reach, and this job
-          # holds the upload key. The SDK and the packages download fresh.
-          cache: false
+      # No cache in this job, which holds the upload key: it downloads the
+      # SDK and checks it every time, and the packages download fresh.
+      - uses: ./.github/actions/flutter
       # 15 Nov: build 12 was killed twice (exit 143 in bundleProdRelease, then in
       # verifyNoTrackingDeps' configure). android/gradle.properties asks for
       # -Xmx8G (for local machines), more than this runner's ~7 GB. The user-home

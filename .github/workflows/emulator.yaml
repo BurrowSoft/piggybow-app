@@ -172,11 +172,10 @@ jobs:
           key: gradle-${{ runner.os }}-apk-${{ hashFiles('app/android/**/*.gradle*', 'app/android/gradle.properties', 'app/android/gradle/wrapper/gradle-wrapper.properties', 'app/pubspec.lock') }}
           restore-keys: |
             gradle-${{ runner.os }}-apk-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./ci/.github/actions/flutter
         with:
-          flutter-version: 3.47.5
-          channel: stable
           cache: true
+          lockfile: app/pubspec.lock
       # The APK this run tests, from head_sha, outside the evidence folder.
       # No env value is printed.
       - name: Build the APK under test

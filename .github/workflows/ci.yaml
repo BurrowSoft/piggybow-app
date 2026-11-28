@@ -18,7 +18,8 @@ permissions:
 jobs:
   # Budget: analyze + test are skipped on a docs-only PR (*.md), and the
   # tracker check runs only when what Gradle resolves can change (android/,
-  # pubspec) or a workflow does (it may change how Gradle runs). Not
+  # pubspec) or a workflow or our own action does (it may change how Gradle
+  # runs; the Flutter action holds the Flutter release). Not
   # paths-ignore: a workflow skipped by a path filter leaves the required check
   # "Expected" forever, while a skipped job counts as passed.
   changes:
@@ -35,7 +36,7 @@ jobs:
           persist-credentials: false
       - id: c
         run: |
-          deps_in() { if echo "$1" | grep -qE '^(android/|pubspec\.(yaml|lock)$|\.github/workflows/)'; then echo true; else echo false; fi; }
+          deps_in() { if echo "$1" | grep -qE '^(android/|pubspec\.(yaml|lock)$|\.github/(workflows|actions)/)'; then echo true; else echo false; fi; }
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             # A master push or a manual run: everything.
             echo "app=true" >> "$GITHUB_OUTPUT"; echo "deps=true" >> "$GITHUB_OUTPUT"; exit 0
@@ -61,10 +62,8 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./.github/actions/flutter
         with:
-          flutter-version: 3.47.5
-          channel: stable
           cache: true
       - run: flutter pub get --enforce-lockfile
       - name: l10n parity (every shipped ARB matches app_en.arb)
@@ -131,10 +130,8 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-trackers-
             gradle-${{ runner.os }}-apk-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./.github/actions/flutter
         with:
-          flutter-version: 3.47.5
-          channel: stable
           cache: true
       - run: flutter build apk --config-only --flavor staging
       - name: verifyNoTrackingDeps
@@ -196,10 +193,8 @@ jobs:
           key: gradle-${{ runner.os }}-apk-${{ hashFiles('android/**/*.gradle*', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
           restore-keys: |
             gradle-${{ runner.os }}-apk-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./.github/actions/flutter
         with:
-          flutter-version: 3.47.5
-          channel: stable
           cache: true
       # Builds only: no APK is uploaded (the repo is public).
       - run: flutter build apk --debug --flavor staging --dart-define-from-file=env/staging.json
