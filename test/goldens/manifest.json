@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "a2e849f59370d39f13d2c82fe8d8e99f7f63b36f",
+  "ref": "a2e849f59370d39f13d2c82fe8d8e99f7f63b36f",
+  "run_id": "46121923154",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -81,8 +81,8 @@
       "file": "delete-dialog_confirm_dark_320x2.png",
       "state": "B1",
       "test": "A7 edit, on an older day; B1 the delete dialog (320 dp, text ×2, dark)",
-      "sha256": "8ceec56ea1b9c323101e8a65d3b95495cb296f45bcc7c2949fec963270a5ffc2",
-      "bytes": 145851,
+      "sha256": "2d203bff7e26baf9ee7dc950e30d30f32a68148fd6e371409b095707e86e1f7d",
+      "bytes": 146534,
       "width": 960,
       "height": 2340
     },
@@ -90,8 +90,26 @@
       "file": "delete-dialog_confirm_light_320x2.png",
       "state": "B1",
       "test": "A7 edit, on an older day; B1 the delete dialog (320 dp, text ×2, light)",
-      "sha256": "9944854128a2423be721741077eb3d900fb8171064882490f084edd5c9ab0a63",
-      "bytes": 148972,
+      "sha256": "9fc5826e3c251fd1e928d5f044085569664dc5d0cfb759ad9676e2fc7c3c55a9",
+      "bytes": 149753,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_menu_dark_320x2.png",
+      "state": "RG2",
+      "test": "RG2 the edit sheet's menu, open (320 dp, text ×2, dark)",
+      "sha256": "0cc92676c6c9e889fe4de868ae6e5a7b2e3a4eadcc13d0989657b4fe5e7a92fe",
+      "bytes": 156104,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_menu_light_320x2.png",
+      "state": "RG2",
+      "test": "RG2 the edit sheet's menu, open (320 dp, text ×2, light)",
+      "sha256": "c8467bff5e818ac611d6d258bb45197e67e671525360e78a73a79b47f6781483",
+      "bytes": 156373,
       "width": 960,
       "height": 2340
     },
@@ -1164,6 +1182,42 @@
       "sha256": "a42c79d30187636194a8c3dc3db92ea24f72b43cac8c2cb1ef13da1fb82eb726",
       "bytes": 167418,
       "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "timeline_add-again-sheet_dark_320x2.png",
+      "state": "RG1",
+      "test": "RG1 the long-press sheet (320 dp, text ×2, dark)",
+      "sha256": "8ada6fb553401b68695e736c5989395e40b6f0125281dde499800915662e5970",
+      "bytes": 120936,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_add-again-sheet_light_320x2.png",
+      "state": "RG1",
+      "test": "RG1 the long-press sheet (320 dp, text ×2, light)",
+      "sha256": "25004ff22ff85ca0cbca94eb185c33ab817c24e96be3714ae123c9d22e7e44a3",
+      "bytes": 123942,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_added-again_dark_320x2.png",
+      "state": "RG3",
+      "test": "RG3 Added again for today, with Undo (320 dp, text ×2, dark)",
+      "sha256": "4af468f5c639303812d93546a1460e083555243094e7e564d443de6a887ff706",
+      "bytes": 198807,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_added-again_light_320x2.png",
+      "state": "RG3",
+      "test": "RG3 Added again for today, with Undo (320 dp, text ×2, light)",
+      "sha256": "36192bba11bd95797c90d928cf7468854c3f6235206cee054a51083a2cda787e",
+      "bytes": 199738,
+      "width": 960,
       "height": 2340
     },
     {
