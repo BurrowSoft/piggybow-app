@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/app_dates.dart';
 import '../../core/button_label.dart';
+import '../../core/clock.dart';
 import '../../core/day_label.dart';
 import '../../core/fit_text.dart';
 import '../../core/line_breaks.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
+import '../../goal/goal_pace.dart';
 import '../../goal/goal_progress.dart';
 import '../../journal/entry.dart';
 import '../../journal/goal.dart';
@@ -24,7 +27,8 @@ import 'rainbow.dart';
 const goalNameMax = 40;
 
 /// Create a goal, or edit one (plan §3.4): what for, the amount, what's
-/// already saved. In onboarding it is O3 (plan §3.1), the optional first
+/// already saved, and an optional target date (feature 11; not in
+/// onboarding). In onboarding it is O3 (plan §3.1), the optional first
 /// goal: "Start my rainbow" saves it and "Maybe later" doesn't; both end
 /// onboarding, and the router goes Home.
 class GoalEditScreen extends StatefulWidget {
@@ -46,6 +50,9 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
   final _start = TextEditingController();
   Goal? _goal;
   String? _currency;
+
+  /// "YYYY-MM-DD", or null: no target date.
+  String? _targetDate;
   bool _tried = false;
   bool _busy = false;
 
@@ -72,8 +79,30 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
         if (goal.startMinor > 0) {
           _start.text = inputAmount(goal.startMinor, currency, _locale);
         }
+        _targetDate = goal.targetDate;
       }
     });
+  }
+
+  /// The target date's picker: from tomorrow to 10 years ahead.
+  Future<void> _pickTargetDate() async {
+    final today = context.services.localDay.today;
+    final first = addDays(today, 1);
+    final last = DateTime(today.year + 10, today.month, today.day);
+    final current = parseWireDate(_targetDate) ?? first;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: current.isBefore(first)
+          ? first
+          : current.isAfter(last)
+          ? last
+          : current,
+      firstDate: first,
+      lastDate: last,
+    );
+    if (picked != null && mounted) {
+      setState(() => _targetDate = wireDate(dateOnly(picked)));
+    }
   }
 
   @override
@@ -142,12 +171,14 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
             startMinor: start,
             createdAt: now,
             updatedAt: now,
+            targetDate: _targetDate,
           )
         : old.copyWith(
             name: _name.text.trim(),
             targetMinor: target,
             startMinor: start,
             updatedAt: now,
+            targetDate: _targetDate,
           );
     await services.journal.putGoal(goal);
     if (widget.onboarding) {
@@ -261,6 +292,14 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                         ),
                       ),
                     ),
+                    if (!onboarding) ...[
+                      const SizedBox(height: 12),
+                      _TargetDateRow(
+                        date: parseWireDate(_targetDate),
+                        onPick: _pickTargetDate,
+                        onRemove: () => setState(() => _targetDate = null),
+                      ),
+                    ],
                     const SizedBox(height: 24),
                     TestId(
                       onboarding ? 'onb-goal-start' : 'goal-submit',
@@ -295,8 +334,69 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
   }
 }
 
+/// The goal form's target date (feature 11): the field opens the date picker;
+/// with a date, a × beside it removes it.
+class _TargetDateRow extends StatelessWidget {
+  const _TargetDateRow({
+    required this.date,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final DateTime? date;
+  final VoidCallback onPick;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final day = date;
+    return Row(
+      children: [
+        Expanded(
+          child: TestId(
+            'goal-target-date',
+            button: true,
+            child: InkWell(
+              onTap: onPick,
+              child: InputDecorator(
+                isEmpty: day == null,
+                decoration: InputDecoration(
+                  // One line, whole: smaller only if it must.
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(l10n.goalTargetDate),
+                  ),
+                  suffixIcon: const Icon(Icons.event),
+                ),
+                child: Text(
+                  day == null
+                      ? ''
+                      : AppDates.dayMonthYear(context.session.dateLocale, day),
+                  style: context.inputText,
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (day != null)
+          TestId(
+            'goal-target-date-remove',
+            button: true,
+            child: IconButton(
+              tooltip: l10n.goalTargetDateRemove,
+              icon: const Icon(Icons.close),
+              onPressed: onRemove,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// A goal (plan §3.4): the big rainbow, how far along, its saves (newest
-/// first, tap to edit), Add savings, and Edit goal / End goal.
+/// first, tap to edit), Add savings, and Edit goal / End goal. Under "{x} to
+/// go", the pace or the target date (feature 11).
 class GoalDetailScreen extends StatefulWidget {
   const GoalDetailScreen({super.key, required this.goalId});
 
@@ -390,6 +490,18 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
     final goal = _goal;
     final locale = context.session.device.localeName;
     String money(int minor) => formatMoney(minor, _currency, locale);
+    // Feature 11: the pace, or the target date, under "{x} to go".
+    final today = context.services.localDay.today;
+    final outlook = goal == null || goal.status != GoalStatus.active
+        ? null
+        : goalOutlook(
+            remainingMinor: goal.targetMinor - _progress,
+            recentMinor: recentSavesMinor(_saves, today),
+            targetDate: goal.targetDate,
+            today: wireDate(today),
+          );
+    final paceWeeks = outlook?.paceWeeks;
+    final targetOn = parseWireDate(outlook?.targetDate);
     return TestId.container(
       'goal-screen',
       child: Scaffold(
@@ -460,6 +572,24 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    if (paceWeeks != null || targetOn != null)
+                      TestId(
+                        'goal-outlook',
+                        child: WholeWordsText(
+                          paceWeeks != null
+                              ? l10n.goalPaceWeeks(paceWeeks)
+                              : l10n.goalTargetOn(
+                                  AppDates.dayMonthYear(
+                                    context.session.dateLocale,
+                                    targetOn!,
+                                  ),
+                                ),
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     if (goal.status == GoalStatus.active) ...[
