@@ -75,12 +75,6 @@ ParsedAmount parseAmount(String text, String currency, {bool allowZero = false})
 
 /// [minor] units of [currency] as the [locale] shows money: (123456, THB, en_US) → "฿1,234.56";
 /// (123456, EUR, de_DE) → "1.234,56 €" with a no-break space. Equal to intl's own output.
-/// A whole percent (0 to 100) as the phone's region writes it: "37%" in
-/// English, "37 %" in French and German. The double is for display only
-/// (decision 52): no amount of money is ever a double.
-String formatPercent(int percent, String locale) =>
-    NumberFormat.percentPattern(intlNumberLocale(locale)).format(percent / 100);
-
 String formatMoney(int minor, String currency, String locale) {
   _checkNotNegative(minor);
   final digits = minorDigitsOf(currency);

@@ -7,6 +7,7 @@
 // on, it holds nothing from the journal at all (no amount, no goal name),
 // just the state and its one line.
 
+import '../../core/percent.dart';
 import '../../goal/goal_progress.dart';
 import '../../journal/entry.dart';
 import '../../journal/goal.dart';
