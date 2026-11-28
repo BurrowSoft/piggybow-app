@@ -541,6 +541,10 @@ class ForgotPinDialog extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final device = paths == ForgotPinPaths.deviceThenErase;
     return AlertDialog(
+      // Closer to the screen's edges than a standard dialog (16 dp, not 40),
+      // so on a narrow phone at large text its labels wrap little and both
+      // ways back stay readable (decision 71).
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       // At the largest text sizes its words outgrow a small screen.
       scrollable: true,
       // Whole words at large text: a dialog is narrow.
