@@ -311,8 +311,10 @@ steps:
 
   // The app's own network use, for the evidence: the store build sends
   // nothing with pig tips off, and the Plus probe records what Play Billing
-  // sends. One uid's bytes, through the named emulator only.
-  test("net_bytes.sh: one uid's bytes from netstats, and the probe reads it around the wait", () {
+  // sends. One uid's bytes, through the named emulator only, each reading
+  // with a positive control: a known uid has just talked, so a reading that
+  // can't see traffic stops instead of passing for zero bytes.
+  test("net_bytes.sh: one uid's bytes from netstats; the probe reads it around the wait, with its control", () {
     final net = File('tool/emulator/net_bytes.sh').readAsStringSync();
     expect(net, contains('set -Eeuo pipefail\n'));
     final code = net
@@ -336,6 +338,30 @@ steps:
     expect(before, greaterThan(0));
     expect(before, lessThan(probe.indexOf('A shell monkey')));
     expect(after, greaterThan(probe.indexOf(r'sleep "$WAIT"')));
+    // The control: the listener up, the shell's fetch right before each
+    // reading, the uid it measured passed on, its bytes grown by the second
+    // fetch, the same uid both times, and the listener gone at the end.
+    expect(probe, contains(r'. "$(dirname "$0")/net_control.sh"'));
+    expect(probe, contains('trap control_stop EXIT\n'));
+    final start = probe.indexOf('\ncontrol_start\n');
+    final fetchBefore = probe.indexOf('\ncontrol_fetch before\n');
+    final fetchAfter = probe.indexOf('\ncontrol_fetch after\n');
+    expect(start, greaterThan(0));
+    expect(fetchBefore, greaterThan(start));
+    expect(fetchBefore, lessThan(before));
+    expect(fetchAfter, greaterThan(probe.indexOf(r'sleep "$WAIT"')));
+    expect(fetchAfter, lessThan(after));
+    expect(r'.txt" "$CONTROL_UID")'.allMatches(probe), hasLength(2));
+    expect(probe, contains(r'[ "$rx1" -le "$rx0" ]'));
+    expect(probe, contains(r'[ "$CONTROL_UID" != "$control_uid_before" ]'));
+    expect(net, contains('stop "netstats printed no entries"'));
+    expect(net, contains(r'stop "the control uid $CONTROL_UID shows no bytes"'));
+    final control = File('tool/emulator/net_control.sh').readAsStringSync();
+    final controlCode = control.split('\n').where((l) => !l.trimLeft().startsWith('#')).join('\n');
+    expect(RegExp(r'(^|[^\w-])adb(\s|$)', multiLine: true).hasMatch(controlCode), isFalse, reason: "the caller's A() only");
+    expect(control, contains(r'--bind 127.0.0.1 --directory "$CONTROL_DIR"'));
+    expect(control, contains(r'nc -w 3 10.0.2.2 $CONTROL_PORT"'));
+    expect(control, contains('CONTROL_UID=\$(A shell id -u'));
   });
 
   test("plus_probe.sh: every adb call names the emulator; the app checked, "

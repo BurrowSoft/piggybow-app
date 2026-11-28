@@ -8,7 +8,10 @@
 # own process. The probe installs the app, starts it (Plus starts Play
 # Billing at launch), waits, then says whether the app is still up, what was
 # logged, and how many bytes the app's own uid received and sent meanwhile
-# (net_bytes.sh: data, not a pass or fail).
+# (net_bytes.sh: data, not a pass or fail). Each reading has a positive
+# control (net_control.sh): the device's shell has just fetched from this
+# runner, and a reading that can't see that, or misses the second fetch,
+# stops the probe.
 #
 # env: APK (a staging profile build with PLUS_ENABLED and the release
 #      manifest overlay), APP_DIR (the app's checkout), OUT (the evidence
@@ -57,9 +60,16 @@ fi
 store=$(A shell pm path com.android.vending | tr -d '\r' || true)
 if [ -z "$store" ]; then echo "STOP: no Play Store app on this image"; exit 7; fi
 
-# The app's own network use before it starts, for the bytes Play Billing sends.
+# The app's own network use before it starts, for the bytes Play Billing
+# sends, read right after the control's fetch.
 NET="$(dirname "$0")/net_bytes.sh"
-net_before=$(bash "$NET" "$SERIAL" "$APP_ID" "$OUT/probe-netstats-before.txt")
+. "$(dirname "$0")/net_control.sh"
+trap control_stop EXIT
+control_start
+control_fetch before
+control_uid_before=$CONTROL_UID
+net_before=$(bash "$NET" "$SERIAL" "$APP_ID" "$OUT/probe-netstats-before.txt" "$CONTROL_UID") \
+  || { printf '%s\n' "$net_before"; echo "STOP: the network reading before the launch failed"; exit 8; }
 echo "before: $net_before"
 
 A logcat -c
@@ -78,13 +88,29 @@ crashes=$(grep -A3 'FATAL EXCEPTION' "$RUNNER_TEMP/logcat.txt" | grep -cF "Proce
 rm -f "$RUNNER_TEMP/logcat.txt"
 jobs=$(A shell dumpsys jobscheduler | tr -d '\r')
 grep -A6 -F "$APP_ID" <<< "$jobs" > "$OUT/probe-jobs.txt" || echo "no job of $APP_ID" > "$OUT/probe-jobs.txt"
-net_after=$(bash "$NET" "$SERIAL" "$APP_ID" "$OUT/probe-netstats-after.txt")
+control_fetch after
+if [ "$CONTROL_UID" != "$control_uid_before" ]; then
+  echo "STOP: the shell's uid changed between the readings ($control_uid_before → $CONTROL_UID)"
+  exit 9
+fi
+net_after=$(bash "$NET" "$SERIAL" "$APP_ID" "$OUT/probe-netstats-after.txt" "$CONTROL_UID") \
+  || { printf '%s\n' "$net_after"; echo "STOP: the network reading after the wait failed"; exit 9; }
+echo "after: $net_after"
+# The reader saw the second fetch: the control uid's received bytes grew.
+control_rx() { sed -n 's/^control uid [0-9]*: rx \([0-9]*\) tx .*/\1/p' <<< "$1"; }
+rx0=$(control_rx "$net_before")
+rx1=$(control_rx "$net_after")
+if ! [[ "$rx0" =~ ^[0-9]+$ && "$rx1" =~ ^[0-9]+$ ]] || [ "$rx1" -le "$rx0" ]; then
+  echo "STOP: the control's rx didn't grow (${rx0:-?} → ${rx1:-?}): the reading missed its fetch"
+  exit 9
+fi
+app_net() { grep '^uid ' <<< "$1" || true; }
 
 security=$(grep -c 'SecurityException' "$OUT/probe-logcat.txt" || true)
 billing=$(grep -cE 'BillingClient|BillingLogger' "$OUT/probe-logcat.txt" || true)
 echo "app up: ${pid:-no} | crashes: $crashes | SecurityException lines: $security | Play Billing lines: $billing"
 echo "== $APP_ID's jobs"; cat "$OUT/probe-jobs.txt"
-echo "== $APP_ID's network: before $net_before | after $net_after"
+echo "== $APP_ID's network: before $(app_net "$net_before") | after $(app_net "$net_after")"
 if [ -z "$pid" ] || [ "$crashes" != 0 ]; then
   echo "PROBE: the app did not stay up"; exit 1
 fi
