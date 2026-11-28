@@ -125,6 +125,9 @@ void main() {
   for (final c in layoutCases) {
     testWidgets('G1 Home: two goals of the longest names, and New goal ($c)', (tester) async {
       await open(tester, c);
+      // Home's list is built lazily: at large text New goal is further down.
+      await tester.revealId('home-new-goal');
+      await tester.pumpAndSettle();
       expect(byId('home-new-goal'), findsOneWidget);
       await checkScrolled(tester, 'home-screen', 'G1');
     });
