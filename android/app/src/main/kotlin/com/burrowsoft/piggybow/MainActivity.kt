@@ -30,6 +30,10 @@ class MainActivity : FlutterFragmentActivity() {
                         }
                     }
                     result.success(null)
+                } else if (call.method == ANDROID_SDK) {
+                    // The Android version, read once at start-up: Android 7
+                    // can't draw dark navigation-bar icons (lib/core/system_bars.dart).
+                    result.success(Build.VERSION.SDK_INT)
                 } else {
                     result.notImplemented()
                 }
@@ -56,5 +60,6 @@ class MainActivity : FlutterFragmentActivity() {
         // The same names as lib/core/device.dart (a test checks both sides).
         const val SETTINGS_CHANNEL = "com.burrowsoft.piggybow/settings"
         const val OPEN_NOTIFICATION_SETTINGS = "openNotificationSettings"
+        const val ANDROID_SDK = "androidSdk"
     }
 }

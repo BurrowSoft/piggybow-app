@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/clock.dart';
 import 'package:piggybow/features/reminder/reminder_plan.dart';
 import 'package:piggybow/features/reminder/reminder_scheduler.dart';
+import 'package:piggybow/theme/theme.dart' show PiggybowColors;
 import 'package:timezone/timezone.dart' as tz;
 
 /// PlatformReminderScheduler on the plugin's Android method channel
@@ -99,6 +100,13 @@ void main() {
     final specifics = first['platformSpecifics'].toString();
     expect(specifics, contains(PlatformReminderScheduler.channelId));
     expect(specifics, contains('inexactAllowWhileIdle'));
+    // The shade's accent is the app's berry (#A8456A), not the system's colour.
+    final android = Map<String, Object?>.from(first['platformSpecifics'] as Map);
+    final accent = [
+      for (final k in ['colorAlpha', 'colorRed', 'colorGreen', 'colorBlue']) android[k] as int,
+    ].fold(0, (argb, c) => (argb << 8) | c);
+    expect(accent, PiggybowColors.deepRose.toARGB32());
+    expect(accent, 0xFFA8456A);
   });
 
   test('cancelAll initialises the plugin first (small icon)', () async {
