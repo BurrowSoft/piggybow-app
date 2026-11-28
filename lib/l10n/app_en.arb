@@ -361,5 +361,17 @@
   "deleteAllPlusPlay": "Your Plus subscription keeps running until you cancel it in Google Play.",
   "@deleteAllPlusPlay": {"description": "Delete everything, while Plus is on (Android)."},
   "deleteAllPlusApple": "Your Plus subscription keeps running until you cancel it in the App Store.",
-  "@deleteAllPlusApple": {"description": "Delete everything, while Plus is on (iPhone)."}
+  "@deleteAllPlusApple": {"description": "Delete everything, while Plus is on (iPhone)."},
+
+  "addSaveToward": "Save toward",
+  "@addSaveToward": {"description": "The Add sheet's goal choice for a save, with two or more active goals (Plus)."},
+  "homeNewGoal": "New goal",
+  "@homeNewGoal": {"description": "Home's button under the last goal card; a goal beside the others needs Plus."},
+  "meReachedGoals": "Reached goals",
+  "@meReachedGoals": {"description": "Me's row to the reached goals, once a first goal is reached."},
+  "meReachedGoalsCount": "{count, plural, =1{1 goal reached} other{{count} goals reached}}",
+  "@meReachedGoalsCount": {"placeholders": {"count": {"type": "int"}}},
+  "reachedGoalsTitle": "Reached goals",
+  "reachedGoalOn": "Reached {date}",
+  "@reachedGoalOn": {"description": "date is the day the goal was reached, e.g. Wed, Sep 30.", "placeholders": {"date": {"type": "String"}}}
 }

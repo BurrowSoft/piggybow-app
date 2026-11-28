@@ -1,7 +1,7 @@
 {
-  "source_sha": "e7ca7d4c916a84d4715ec36bf0c7c3fc78e1436e",
-  "ref": "e7ca7d4c916a84d4715ec36bf0c7c3fc78e1436e",
-  "run_id": "46117915493",
+  "source_sha": "a17347569e48ac8f52241f854f52ce2687e97e68",
+  "ref": "a17347569e48ac8f52241f854f52ce2687e97e68",
+  "run_id": "46115346956",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -74,6 +74,24 @@
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, light)",
       "sha256": "11c1fcbf356cfb25c65740cb4db1ca75b55819ac36a9da79293f5cee8cad24a7",
       "bytes": 191588,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_save-toward_dark_320x2.png",
+      "state": "PG2",
+      "test": "PG2 the Add sheet: Save toward (320 dp, text ×2, dark)",
+      "sha256": "24f8f83621987391562c67057fd2514974f637818396ae97f2723eccb5ccab95",
+      "bytes": 115922,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_save-toward_light_320x2.png",
+      "state": "PG2",
+      "test": "PG2 the Add sheet: Save toward (320 dp, text ×2, light)",
+      "sha256": "09d98b00b39167d47dbb91bf8466e2a2398b2cd9e991b7368b3ed13f2e54c303",
+      "bytes": 116702,
       "width": 960,
       "height": 2340
     },
@@ -438,6 +456,24 @@
       "height": 2340
     },
     {
+      "file": "home_new-goal_dark_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, dark)",
+      "sha256": "96c5270fe65fb82c3df6fc4cb6b03df09e965d8fd4ea330be5208789f124d363",
+      "bytes": 184101,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_new-goal_light_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, light)",
+      "sha256": "4e6cec57259bb0f80115b6a3075f784312f49c5dd9c9548558caa0edad172f22",
+      "bytes": 184696,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "home_reached-card_dark_320x2.png",
       "state": "H4",
       "test": "H4/H5 Home after a goal was reached: \"Reached:\" and the longest line (320 dp, text ×2, dark)",
@@ -524,6 +560,24 @@
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, light)",
       "sha256": "2ab26dc2922ca7af16458ecb275ac5313d020b3dc400c3379101dee826332276",
       "bytes": 162520,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_two-goals_dark_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, dark)",
+      "sha256": "83896c3cd90cec4967a9b4705b92d4fdd8246fa6f6c4bb5757b7e3161783fa43",
+      "bytes": 176035,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_two-goals_light_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, light)",
+      "sha256": "073a5afd051c76ef6a589e6e812111c359049d62c2ea98e8560822a8fdd99b51",
+      "bytes": 177307,
       "width": 960,
       "height": 2340
     },
@@ -924,6 +978,24 @@
       "height": 2340
     },
     {
+      "file": "me_reached-row_dark_320x2.png",
+      "state": "PG3",
+      "test": "PG3 Me's Reached goals row (320 dp, text ×2, dark)",
+      "sha256": "01a7e0e1d388f41650b2aa765203d09b67d4b3bd41680d1530aad7d396b8189a",
+      "bytes": 179273,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_reached-row_light_320x2.png",
+      "state": "PG3",
+      "test": "PG3 Me's Reached goals row (320 dp, text ×2, light)",
+      "sha256": "044f53860c125d5e481e79111f0f7c7acfc2bb18ab4411ab919ff077a0806909",
+      "bytes": 179991,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "pig_calm_dark_200x1.png",
       "state": "P2",
       "test": "the pig, calm (dark)",
@@ -1071,8 +1143,8 @@
       "file": "plus_pending_dark_320x2.png",
       "state": "PL2",
       "test": "PL2 a pending payment's note (320 dp, text ×2, dark)",
-      "sha256": "e218cef31b7cf48b20aa295f47a7b84a4dbb9357b75970f0dc2e53e0c56c6e3e",
-      "bytes": 212718,
+      "sha256": "8c06995bb87ae6d6a7a25a4bf159c57ed779a3008ab251bc7a7a1cb3bdd9d381",
+      "bytes": 209312,
       "width": 960,
       "height": 2340
     },
@@ -1080,8 +1152,8 @@
       "file": "plus_pending_light_320x2.png",
       "state": "PL2",
       "test": "PL2 a pending payment's note (320 dp, text ×2, light)",
-      "sha256": "8b2b34b63e6f44ac1160e17b1423ccf280149d3ef35a2f24244f21c3aa186357",
-      "bytes": 213513,
+      "sha256": "489afa3426cbc960d40b9f0ed0ddf66b7942cc80f4ce24ccb26cfc4af4c3d950",
+      "bytes": 210840,
       "width": 960,
       "height": 2340
     },
@@ -1156,6 +1228,24 @@
       "bytes": 52392,
       "width": 960,
       "height": 960
+    },
+    {
+      "file": "reached_list_dark_320x2.png",
+      "state": "PG4",
+      "test": "PG4 the Reached goals list (320 dp, text ×2, dark)",
+      "sha256": "8a5994e28b576789d609a0a09a7c5076b3afec82cdcbda7c0e35a8b64fae60a5",
+      "bytes": 114686,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "reached_list_light_320x2.png",
+      "state": "PG4",
+      "test": "PG4 the Reached goals list (320 dp, text ×2, light)",
+      "sha256": "12c1848211b0b3df0db642a00ee3fe672bb1c5fe2901be696cc83fa7cd4c5d20",
+      "bytes": 114450,
+      "width": 960,
+      "height": 2340
     },
     {
       "file": "summary_empty-week_dark_360x1.png",

@@ -142,7 +142,9 @@ class JournalStore extends ChangeNotifier {
     return m == null ? null : Entry.fromMap(id, m);
   }
 
-  /// Adds a spend or a save. A save goes to the active goal, if any.
+  /// Adds a spend or a save. A save goes to [goalId] when it names an active
+  /// goal (the Add sheet's choice with several goals), else to the goal a
+  /// save goes to by default ([activeGoal]), if any.
   Future<Entry> addEntry({
     required EntryType type,
     required int amountMinor,
@@ -151,6 +153,7 @@ class JournalStore extends ChangeNotifier {
     SpendCategory? category,
     Feeling? feeling,
     String note = '',
+    String? goalId,
   }) async {
     final now = _clock.nowUtc();
     final spend = type == EntryType.spent;
@@ -162,7 +165,7 @@ class JournalStore extends ChangeNotifier {
       category: spend ? category : null,
       feeling: spend ? feeling : null,
       note: note.trim(),
-      goalId: spend ? null : (await activeGoal())?.id,
+      goalId: spend ? null : await _saveGoal(goalId),
       localDate: localDate,
       createdAt: now,
       updatedAt: now,
@@ -175,15 +178,18 @@ class JournalStore extends ChangeNotifier {
   }
 
   /// Saves an edit. Spent ↔ Saved is allowed: a spend drops its goal, a save
-  /// drops its category and feeling and goes to the active goal if it had
-  /// none. Its id, currency and creation time never change.
+  /// drops its category and feeling and goes to the goal chosen, else to
+  /// the default goal, if it had none. A save moved to another goal moves
+  /// only to an active one. Its id, currency and creation time never change.
   Future<Entry> updateEntry(Entry changed) async {
     final old = await entry(changed.id);
     if (old == null) throw StateError('no entry ${changed.id}');
     final spend = changed.type == EntryType.spent;
     var goalId = spend ? null : changed.goalId;
     if (!spend && old.type == EntryType.spent) {
-      goalId = (await activeGoal())?.id;
+      goalId = await _saveGoal(changed.goalId);
+    } else if (!spend && goalId != null && goalId != old.goalId) {
+      goalId = await _saveGoal(goalId);
     }
     final updated = Entry(
       id: old.id,
@@ -218,13 +224,58 @@ class JournalStore extends ChangeNotifier {
   /// A new id for a record (a goal made on its screen).
   String newId() => _newId();
 
-  /// The active goal, if any (one at a time).
-  Future<Goal?> activeGoal() async {
-    final s = await _goals.findFirst(
+  /// Every active goal, oldest first, so Home's cards keep their places.
+  /// One without Plus; with Plus several (decision 79), and those stay after
+  /// Plus ends.
+  Future<List<Goal>> activeGoals() async {
+    final snaps = await _goals.find(
       _db,
-      finder: Finder(filter: Filter.equals('status', GoalStatus.active.id)),
+      finder: Finder(
+        filter: Filter.equals('status', GoalStatus.active.id),
+        sortOrders: [SortOrder('created_at')],
+      ),
     );
-    return s == null ? null : Goal.fromMap(s.key, s.value);
+    return [for (final s in snaps) ?Goal.fromMap(s.key, s.value)];
+  }
+
+  /// The goal a new save goes to by default, if any: the active goal, or
+  /// with several, the one last saved to (else the oldest).
+  Future<Goal?> activeGoal() async {
+    final active = await activeGoals();
+    if (active.length <= 1) return active.firstOrNull;
+    final ids = {for (final g in active) g.id};
+    Entry? last;
+    for (final e in await entries()) {
+      if (e.type != EntryType.saved || !ids.contains(e.goalId)) continue;
+      if (last == null || e.createdAt.isAfter(last.createdAt)) last = e;
+    }
+    final lastGoal = last?.goalId;
+    return lastGoal == null
+        ? active.first
+        : active.firstWhere((g) => g.id == lastGoal);
+  }
+
+  /// The goal a save goes to: [chosen] when it names an active goal
+  /// (anything else is refused), else the default ([activeGoal]).
+  Future<String?> _saveGoal(String? chosen) async {
+    if (chosen == null) return (await activeGoal())?.id;
+    final g = await goal(chosen);
+    if (g == null || g.status != GoalStatus.active) {
+      throw ArgumentError.value(chosen, 'goalId', 'not an active goal');
+    }
+    return chosen;
+  }
+
+  /// Reached goals, the latest reached first (Me's Reached goals).
+  Future<List<Goal>> reachedGoals() async {
+    final reached = [
+      for (final g in await goals())
+        if (g.status == GoalStatus.reached) g,
+    ];
+    reached.sort(
+      (a, b) => (b.reachedAt ?? b.updatedAt).compareTo(a.reachedAt ?? a.updatedAt),
+    );
+    return reached;
   }
 
   Future<Goal?> goal(String id) async {
@@ -233,19 +284,28 @@ class JournalStore extends ChangeNotifier {
   }
 
   /// Stores [goal]; a new target can reach it (the goal screens own the
-  /// other rules).
-  Future<void> putGoal(Goal goal) async {
+  /// other rules). A goal becomes active beside another only with
+  /// [allowAnother] (Plus, decision 79); a goal that's already active can
+  /// always be edited, so goals kept after Plus ends stay editable.
+  Future<void> putGoal(Goal goal, {bool allowAnother = false}) async {
     if (goal.targetMinor <= 0) {
       throw ArgumentError.value(goal.targetMinor, 'targetMinor');
     }
     if (goal.startMinor < 0) {
       throw ArgumentError.value(goal.startMinor, 'startMinor');
     }
-    // One active goal at a time: a second one is refused, whatever asks.
-    if (goal.status == GoalStatus.active) {
-      final active = await activeGoal();
-      if (active != null && active.id != goal.id) {
-        throw StateError('goal ${active.id} is already active');
+    // Without Plus, one active goal at a time: a second one is refused,
+    // whatever asks.
+    if (goal.status == GoalStatus.active && !allowAnother) {
+      final stored = await this.goal(goal.id);
+      if (stored?.status != GoalStatus.active) {
+        final others = [
+          for (final g in await activeGoals())
+            if (g.id != goal.id) g.id,
+        ];
+        if (others.isNotEmpty) {
+          throw StateError('goal ${others.first} is already active');
+        }
       }
     }
     await _goals.record(goal.id).put(_db, goal.toMap());
@@ -288,7 +348,8 @@ class JournalStore extends ChangeNotifier {
   /// After a change that can move [goalId]'s progress (a save added, edited,
   /// moved or deleted, or the goal edited): a band, or the goal reached, is
   /// stamped the first time it completes, and never unstamped. A reached
-  /// goal is no longer the active one, so the next save goes to no goal.
+  /// goal is no longer active, so the next save goes to another active goal,
+  /// if any.
   /// Only the active goal moves: an ended goal is never stamped (so never
   /// celebrated), and a reached one is already complete.
   Future<void> _advance(String? goalId) async {

@@ -149,7 +149,12 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
             startMinor: start,
             updatedAt: now,
           );
-    await services.journal.putGoal(goal);
+    // A goal beside another active one only with Plus (decision 79); the
+    // way here asked for it first (Home's New goal, requirePlus).
+    await services.journal.putGoal(
+      goal,
+      allowAnother: services.plus?.active ?? false,
+    );
     if (widget.onboarding) {
       await _finishOnboarding(services);
     } else if (mounted) {
@@ -474,8 +479,13 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         'goal-add-savings',
                         button: true,
                         child: FilledButton.icon(
-                          onPressed: () =>
-                              showEntrySheet(context, start: EntryType.saved),
+                          // This goal's own: with several, the sheet starts
+                          // on it.
+                          onPressed: () => showEntrySheet(
+                            context,
+                            start: EntryType.saved,
+                            goalId: goal.id,
+                          ),
                           icon: const Icon(Icons.add),
                           label: Text(l10n.goalAddSavings),
                         ),
