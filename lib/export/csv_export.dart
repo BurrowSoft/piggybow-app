@@ -2,7 +2,8 @@
 //
 // UTF-8 with a byte-order mark (so Excel reads Thai and emoji), RFC 4180 quoting, CRLF line
 // ends, and every cell protected against spreadsheet formulas. Amounts use plainAmount ("."
-// as the mark, no grouping), so the file reads the same in every locale.
+// as the mark, no grouping), so the file reads the same in every locale. A spend's category
+// comes with its display name (category_name), for categories of your own.
 
 import '../money/money.dart';
 

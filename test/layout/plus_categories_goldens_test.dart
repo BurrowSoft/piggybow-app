@@ -8,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:piggybow/core/app_config.dart';
-import 'package:piggybow/features/add/entry_sheet.dart';
 import 'package:piggybow/features/plus/fake_plus_store.dart';
 import 'package:piggybow/features/plus/plus_entitlement.dart';
 import 'package:piggybow/features/plus/plus_store.dart';
@@ -41,10 +40,6 @@ void main() {
 
   Finder listIn(String screenId) => find
       .descendant(of: byId(screenId), matching: find.byType(Scrollable))
-      .first;
-
-  Finder sheetList() => find
-      .descendant(of: find.byType(EntrySheet), matching: find.byType(Scrollable))
       .first;
 
   /// Fun hidden; your own Coffee runs, and Pets (hidden on Categories, so
@@ -134,8 +129,11 @@ void main() {
       await tester.tapId('home-add');
       FocusManager.instance.primaryFocus?.unfocus();
       await tester.pumpAndSettle();
-      await tester.scrollUntilVisible(byId('add-cat-add'), 120, scrollable: sheetList());
+      // The whole grid in view: its first row at the top of the sheet's list.
+      await Scrollable.ensureVisible(tester.element(byId('add-cat-food')));
       await tester.pumpAndSettle();
+      expect(byId('add-cat-custom-1'), findsOneWidget);
+      expect(byId('add-cat-add'), findsOneWidget);
       await expectLayoutGolden(
         tester,
         c,
