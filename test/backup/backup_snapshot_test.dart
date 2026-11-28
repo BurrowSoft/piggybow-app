@@ -235,6 +235,24 @@ void main() {
       expect(BackupSnapshot.fromJson(file(null)).prefs.pigName, isNull);
     });
 
+    // #85 with #47: with Plus, several goals are active at once, and a
+    // backup carries them all.
+    test('several active goals come back', () async {
+      await fill(store);
+      await store.putGoal(
+        goal('g-second', GoalStatus.active),
+        allowAnother: true,
+      );
+      final backup = await store.snapshot();
+      expect(
+        backup.goals.values.where((g) => g['status'] == GoalStatus.active.id),
+        hasLength(2),
+      );
+      final target = await other();
+      await target.replaceWith(backup);
+      expect(plain(await target.snapshot()), plain(backup));
+    });
+
     test('a failure halfway leaves the old journal exactly as it was', () async {
       await fill(store);
       final backup = await store.snapshot();
@@ -369,15 +387,6 @@ void main() {
           goals: {
             ...good.goals,
             'g-bad': {'name': 'Bike'},
-          },
-          categories: good.categories,
-          settings: good.settings,
-        ),
-        'a second active goal': JournalSnapshot(
-          entries: good.entries,
-          goals: {
-            ...good.goals,
-            'g-two': goal('g-two', GoalStatus.active).toMap(),
           },
           categories: good.categories,
           settings: good.settings,

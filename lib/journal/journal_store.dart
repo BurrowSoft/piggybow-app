@@ -1148,9 +1148,10 @@ class JournalStore extends ChangeNotifier {
   /// [snapshot] as this store would write it. A [FormatException] for
   /// anything it never writes: an entry, goal or category of your own it
   /// can't read or would refuse, a spend in a category of your own the
-  /// backup doesn't carry, two of your own with the same name, a second
-  /// active goal, a repeat it can't read or would refuse, a setting that
-  /// doesn't travel or holds the wrong kind of value.
+  /// backup doesn't carry, two of your own with the same name, a repeat it
+  /// can't read or would refuse, a setting that doesn't travel or holds the
+  /// wrong kind of value. Several active goals are fine (#47: Plus allows
+  /// them, and a backup carries them all).
   static JournalSnapshot checkSnapshot(JournalSnapshot snapshot) {
     final categories = <String, Map<String, Object?>>{};
     final names = <String>{};
@@ -1173,14 +1174,9 @@ class JournalStore extends ChangeNotifier {
       entries[key] = record;
     }
     final goals = <String, Map<String, Object?>>{};
-    var active = 0;
     for (final MapEntry(:key, :value) in snapshot.goals.entries) {
-      final record =
+      goals[key] =
           _goalRecord(key, value) ?? (throw FormatException('goal $key'));
-      if (record['status'] == GoalStatus.active.id && ++active > 1) {
-        throw const FormatException('a second active goal');
-      }
-      goals[key] = record;
     }
     final repeats = <String, Map<String, Object?>>{};
     for (final MapEntry(:key, :value) in snapshot.repeats.entries) {
