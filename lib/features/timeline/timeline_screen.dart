@@ -99,6 +99,8 @@ class _TimelineScreenState extends State<TimelineScreen>
                 'tl-add',
                 button: true,
                 child: FloatingActionButton(
+                  // Its own tag: Home's Add button is alive in the shell too.
+                  heroTag: 'tl-add',
                   tooltip: l10n.addSheetLabel,
                   onPressed: () => showEntrySheet(context),
                   child: const Icon(Icons.add),
