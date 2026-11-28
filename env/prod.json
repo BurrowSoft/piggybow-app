@@ -12,8 +12,8 @@
   "PRIVACY_URL": "https://www.piggybow.com/privacy",
   "SUPPORT_URL": "https://www.piggybow.com/support",
   "TERMS_URL": "",
-  "AI_TIPS_ENABLED": "false",
+  "AI_TIPS_ENABLED": "true",
   "TIPS_URL": "https://zpmvixoaydiltdspmcoc.supabase.co",
-  "TIPS_ANON_KEY": "",
+  "TIPS_ANON_KEY": "MISSING-prod-publishable-key",
   "TIPS_REGION": "us-east-1"
 }

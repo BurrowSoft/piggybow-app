@@ -10,12 +10,11 @@ abstract final class PolicyVersions {
   static const terms = '';
 
   /// The pig tips consent sheet's AI text and its 18+ line, recorded at its
-  /// Yes (the only place either is asked today). Set once their words are
-  /// final, and bumped whenever they change, so a record always names what
-  /// was agreed. Empty until then: a debug build that offers tips records
-  /// an empty version.
-  static const ai = '';
-  static const age18 = '';
+  /// Yes (the only place either is asked today): the texts approved on
+  /// 28 Nov 2026. Bump one whenever its words change, so a record always
+  /// names what was agreed.
+  static const ai = 'ai-tips-2026-11-28';
+  static const age18 = 'age18-2026-11-28';
 
   /// Pig tips' texts are final: the consent sheet's AI text and its 18+ line
   /// have their versions. Until then, no release build offers tips
