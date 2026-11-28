@@ -39,6 +39,16 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// A journal change made in runAsync reloads Home on real time: frames with
+  /// real time between them, until [f] shows or a while has passed.
+  Future<void> waitFor(WidgetTester tester, Finder f) async {
+    for (var i = 0; i < 40 && f.evaluate().isEmpty; i++) {
+      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 20)));
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pumpAndSettle();
+  }
+
   /// Home's list scrolled to Today's idea, right under the card's place: the
   /// card is built there if it's shown at all.
   Future<void> expectNoCard(WidgetTester tester) async {
@@ -113,15 +123,16 @@ void main() {
 
     await tester.tapId('home-yesterday-later');
     await expectNoCard(tester);
-    // Still hidden when Home reloads later that day.
+    // Still hidden when Home reads again later that day (given the time to
+    // show it, were it not hidden).
     await tester.runAsync(() => add(app, clock, '2026-10-02', type: EntryType.saved));
-    await tester.pumpAndSettle();
+    await waitFor(tester, byId('home-yesterday'));
     await expectNoCard(tester);
 
     // The next day, 2 October is yesterday, and its spend is asked about.
     clock.now = DateTime.utc(2026, 10, 3, 1, 30);
     await tester.runAsync(() => add(app, clock, '2026-10-03', type: EntryType.saved));
-    await tester.pumpAndSettle();
+    await waitFor(tester, byId('home-yesterday'));
     await tester.revealId('home-yesterday');
     expect(byId('home-yesterday-entry-2'), findsOneWidget);
     expect(byId('home-yesterday-entry-1'), findsNothing);
