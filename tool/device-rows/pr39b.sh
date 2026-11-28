@@ -60,6 +60,22 @@ if diag_round r9e-diag; then
   if grep -q 'journal\.db' "$OUT/r9e-diag-files-after.txt"; then row R9e-diag-journal PASS "journal.db came back"; else row R9e-diag-journal INFO "no journal.db after the restore"; fi
 fi
 A shell bmgr wipe com.android.localtransport/.LocalTransport "$P" >/dev/null 2>&1
+
+# R9e-real: the transport also reporting real client-side encryption (the
+# parameter name, is_encrypted, is from memory of AOSP; the round says what it saw)
+A shell settings put secure "$LTP" fake_encryption_flag=true,is_encrypted=true
+if diag_round r9e-real; then
+  if [ "$PK" = Success ] && grep -q 'journal\.db' "$OUT/r9e-real-files-after.txt"; then
+    row R9e-real PASS "with real encryption reported: the app backed up and journal.db came back"
+    if grep -q 'FlutterSharedPreferences\.xml' "$OUT/r9e-real-files-after.txt"; then row R9e-real-prefs PASS "FlutterSharedPreferences.xml came back"; else row R9e-real-prefs FAIL "no FlutterSharedPreferences.xml after the restore"; fi
+    if grep -qi 'FlutterSecureStorage' "$OUT/r9e-real-files-after.txt"; then row R9e-real-pin FAIL "secure storage (the PIN) came back"; else row R9e-real-pin PASS "no secure-storage file after the restore"; fi
+    if grep -qE 'piggybow-[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv|/cache/' "$OUT/r9e-real-files-after.txt"; then row R9e-real-cache FAIL "an export or cache file came back"; else row R9e-real-cache PASS "no export or cache file after the restore"; fi
+    if mf flows/pb1/46b_after_restore.yaml; then row R9e-real-app PASS "flow 46b"; else row R9e-real-app FAIL "flow 46b"; fi
+  else
+    row R9e-real INFO "with is_encrypted=true too: the app's result ${PK:-none} (the parameter may not exist on this image; see r9e-real-backup-logcat.txt)"
+  fi
+fi
+A shell bmgr wipe com.android.localtransport/.LocalTransport "$P" >/dev/null 2>&1
 A shell locksettings clear --old "$DEVPIN" >/dev/null 2>&1
 
 # R9t: a device-to-device transfer, where #39 asks for no encryption
