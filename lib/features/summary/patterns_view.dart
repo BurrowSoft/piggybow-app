@@ -20,13 +20,16 @@ import '../plus/plus_screen.dart';
 // last 8 weeks; without it, a plain teaser once there's enough to go on, with
 // "See Plus" and "Hide" (for good). A build without Plus shows nothing.
 
-/// One pattern in words, never a number.
+/// One pattern in words, never a number. A category is named as the app
+/// shows it: a built-in's in the app's language, your own as typed
+/// ([customs] by id).
 String patternText(
   AppLocalizations l10n,
   FeelingPattern pattern, {
   required String dateLocale,
+  required Map<String, CustomCategory> customs,
 }) {
-  String category(String id) => SpendCategory.fromId(id)?.label(l10n) ?? id;
+  String category(String id) => categoryName(l10n, id, customs);
   return switch (pattern.kind) {
     PatternKind.overallWorth => l10n.patternsOverallWorth,
     PatternKind.categoryWorth => l10n.patternsCategoryWorth(
@@ -44,21 +47,32 @@ String patternText(
   };
 }
 
-FeelingPatterns _patterns(BuildContext context, List<SummaryEntry> entries) {
+FeelingPatterns _patterns(
+  BuildContext context,
+  List<SummaryEntry> entries,
+  Map<String, CustomCategory> customs,
+) {
   final l10n = AppLocalizations.of(context);
   return feelingPatterns(
     entries: entries,
     today: context.services.localDay.todayWire,
-    categoryLabel: (id) => SpendCategory.fromId(id)?.label(l10n) ?? id,
+    categoryLabel: (id) => categoryName(l10n, id, customs),
   );
 }
 
 /// The end of Summary: the first pattern with Plus, the teaser without it.
 class PatternsCard extends StatefulWidget {
-  const PatternsCard({super.key, required this.entries});
+  const PatternsCard({
+    super.key,
+    required this.entries,
+    required this.customs,
+  });
 
-  /// The whole journal, as Summary reads it.
+  /// The whole journal, as Summary reads it (SummaryEntry.of).
   final List<SummaryEntry> entries;
+
+  /// Your own categories, by id, for their names.
+  final Map<String, CustomCategory> customs;
 
   @override
   State<PatternsCard> createState() => _PatternsCardState();
@@ -72,8 +86,10 @@ class _PatternsCardState extends State<PatternsCard> {
     return ListenableBuilder(
       listenable: plus,
       builder: (context, _) {
-        final result = _patterns(context, widget.entries);
-        if (plus.active) return _PlusCard(result: result);
+        final result = _patterns(context, widget.entries, widget.customs);
+        if (plus.active) {
+          return _PlusCard(result: result, customs: widget.customs);
+        }
         final prefs = context.session.prefs;
         if (result.state == PatternsState.notYet ||
             prefs.patternsTeaserHidden) {
@@ -132,9 +148,10 @@ TextStyle? _ink(BuildContext context) {
 }
 
 class _PlusCard extends StatelessWidget {
-  const _PlusCard({required this.result});
+  const _PlusCard({required this.result, required this.customs});
 
   final FeelingPatterns result;
+  final Map<String, CustomCategory> customs;
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +173,7 @@ class _PlusCard extends StatelessWidget {
                 l10n,
                 first!,
                 dateLocale: context.session.dateLocale,
+                customs: customs,
               ),
             },
             style: result.state == PatternsState.found
@@ -243,6 +261,7 @@ class PatternsScreen extends StatefulWidget {
 
 class _PatternsScreenState extends State<PatternsScreen> {
   List<SummaryEntry>? _entries;
+  Map<String, CustomCategory> _customs = const {};
   AppServices? _services;
 
   @override
@@ -265,21 +284,15 @@ class _PatternsScreenState extends State<PatternsScreen> {
   }
 
   Future<void> _load() async {
-    final entries = await context.services.journal.entries();
+    final store = context.services.journal;
+    final entries = await store.entries();
+    final customs = {for (final c in await store.customCategories()) c.id: c};
     if (!mounted) return;
-    setState(
-      () => _entries = [
-        // Notes are never read: SummaryEntry has none.
-        for (final e in entries)
-          SummaryEntry(
-            type: e.type.id,
-            amountMinor: e.amountMinor,
-            category: e.category?.id,
-            feeling: e.feeling?.id,
-            localDate: e.localDate,
-          ),
-      ],
-    );
+    setState(() {
+      // As Summary reads them, your own categories included.
+      _entries = [for (final e in entries) SummaryEntry.of(e)];
+      _customs = customs;
+    });
   }
 
   @override
@@ -305,7 +318,7 @@ class _PatternsScreenState extends State<PatternsScreen> {
   Widget _body(BuildContext context, List<SummaryEntry> entries, bool plus) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final result = _patterns(context, entries);
+    final result = _patterns(context, entries, _customs);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
@@ -327,6 +340,7 @@ class _PatternsScreenState extends State<PatternsScreen> {
                       l10n,
                       pattern,
                       dateLocale: context.session.dateLocale,
+                      customs: _customs,
                     ),
                     style: _ink(context),
                   ),

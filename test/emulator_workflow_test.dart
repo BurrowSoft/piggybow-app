@@ -224,6 +224,17 @@ steps:
     expect('PLUS_ENABLED = '.allMatches(wf), hasLength(1));
     expect('PLUS_FAKE_STORE = '.allMatches(wf), hasLength(1));
     expect('PLUS_ROWS_OWNED = '.allMatches(wf), hasLength(1));
+    // plus-owned is only ever picked by hand: it isn't the input's default,
+    // and a pull request's run is always debug (above). It has no build case
+    // of its own, so it stays a staging debug build.
+    expect(
+      wf,
+      contains(
+        '        options: [debug, reminder-now, release, prod-release, plus-rows, plus-owned, plus-probe]\n'
+        '        default: debug\n',
+      ),
+    );
+    expect(build, isNot(contains('plus-owned)')));
     // plus-rows and plus-owned are debug builds (the fake store also needs
     // kDebugMode).
     expect(build, contains('*) mode=--debug; built=app-staging-debug.apk ;;'));
@@ -398,6 +409,15 @@ steps:
 
   test('run.sh: the zone, gesture navigation and en-US are checked', () {
     expect(run, contains('setprop persist.sys.timezone "\$ZONE"'));
+    // adbd can drop the first connection while it restarts as root: one
+    // more try once the device is back, and a second failure still stops.
+    expect(
+      run,
+      contains(
+        '  A root >/dev/null || { sleep 3; A wait-for-device; A root >/dev/null; }\n'
+        '  A wait-for-device\n',
+      ),
+    );
     expect(run, contains('STOP: the zone is'));
     expect(run, contains('navbar.gestural'));
     expect(run, contains('STOP: the locale is'));

@@ -672,9 +672,9 @@ class MeLockPage extends StatelessWidget {
   }
 }
 
-/// Me → Your privacy (plan §3.8): in the app while the web policy isn't
-/// live. The crash-report line only in builds with a Sentry DSN; the full
-/// policy's link comes with PRIVACY_URL and its own copy.
+/// Me → Your privacy (plan §3.8): the short version, in the app. The
+/// crash-report line only in builds with a Sentry DSN; after the lines, the
+/// full policy's link once PRIVACY_URL is set, opening in the browser.
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
 
@@ -704,6 +704,21 @@ class PrivacyScreen extends StatelessWidget {
                   line,
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: theme.colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            if (config.privacyUrl.isNotEmpty)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TestId(
+                  'privacy-policy',
+                  button: true,
+                  child: TextButton(
+                    onPressed: () => launchUrl(
+                      Uri.parse(config.privacyUrl),
+                      mode: LaunchMode.externalApplication,
+                    ),
+                    child: Text(l10n.privacyPolicyLink),
                   ),
                 ),
               ),

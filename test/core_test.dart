@@ -61,7 +61,7 @@ void main() {
 
   // v0.1 runs on the phone only (no account, no server): no env file may
   // carry a backend, and none may ever hold a secret.
-  test('the env files: no backend, no secret, no DSN, no page links yet', () {
+  test('the env files: no backend, no secret, no DSN; only live page links', () {
     for (final flavor in ['dev', 'staging', 'prod']) {
       final text = File('env/$flavor.json').readAsStringSync();
       final e = env(flavor);
@@ -78,9 +78,18 @@ void main() {
       expect(text, isNot(contains('sentry.io')), reason: flavor);
       // No Sentry project yet: crash reports are off in every build.
       expect(e['SENTRY_DSN'], isEmpty, reason: flavor);
-      // Links appear only once each page is live (a link never 404s).
-      expect(e['PRIVACY_URL'], isEmpty, reason: flavor);
-      expect(e['SUPPORT_URL'], isEmpty, reason: flavor);
+      // Links appear only once each page is live (a link never 404s). The
+      // privacy policy and support pages are; the terms page isn't yet.
+      expect(
+        e['PRIVACY_URL'],
+        'https://www.piggybow.com/privacy',
+        reason: flavor,
+      );
+      expect(
+        e['SUPPORT_URL'],
+        'https://www.piggybow.com/support',
+        reason: flavor,
+      );
       expect(e['TERMS_URL'], isEmpty, reason: flavor);
     }
   });

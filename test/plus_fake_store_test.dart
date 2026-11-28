@@ -80,13 +80,21 @@ void main() {
         }
         continue;
       }
-      // The emulator: each define in the kinds' description and its one line.
-      for (final (define, line) in [
+      // The emulator: each define on exactly two lines, matched literally:
+      // its kind's words in the kinds' description, and its one jq line.
+      for (final (define, kind, line) in [
         (
           'PLUS_FAKE_STORE',
+          'plus-rows (staging debug + PLUS_ENABLED + PLUS_FAKE_STORE: the paywall with prices that never buy)',
           r'| if $kind == "plus-rows" or $kind == "plus-owned" then .PLUS_FAKE_STORE = "true" else . end',
         ),
-        ('PLUS_ROWS_OWNED', r'| if $kind == "plus-owned" then .PLUS_ROWS_OWNED = "true" else . end'),
+        (
+          'PLUS_ROWS_OWNED',
+          'plus-owned (plus-rows + PLUS_ROWS_OWNED: Plus on with nothing bought, for the Plus-on rows)',
+          // The jq program's last line: its closing quote and the shell's
+          // line continuation.
+          r'| if $kind == "plus-owned" then .PLUS_ROWS_OWNED = "true" else . end' "' \\",
+        ),
       ]) {
         final lines = [
           for (final l in text.split('\n'))
@@ -94,7 +102,9 @@ void main() {
         ];
         expect(lines, hasLength(2), reason: "$define: the kinds' description and its one line");
         expect(lines.first, startsWith('description: "The APK:'), reason: define);
-        expect(lines.last, startsWith(line), reason: define);
+        expect(define.allMatches(lines.first), hasLength(1), reason: define);
+        expect(lines.first, contains(kind), reason: define);
+        expect(lines.last, line, reason: define);
       }
     }
     // The release build is never a debug one.
