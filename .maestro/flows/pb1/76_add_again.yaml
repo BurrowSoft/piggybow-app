@@ -1,0 +1,193 @@
+appId: ${APP_ID}
+name: Add an entry again today (#56) - a long-press on a Timeline row offers it; the copy is dated today with no feeling; Undo removes only the copy; the edit sheet's menu offers it too; a save with no goal stays with none; a save to a reached goal doesn't offer it
+tags: [again]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# A spend: 12.50, Food & drinks, Worth it, "Lunch with Mai"
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "12.50", EXPECT: ".*12\\.50.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-feel-worth
+- tapOn:
+    id: add-feel-worth
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-note, TEXT: "Lunch with Mai", EXPECT: ".*Lunch with Mai.*" }
+- runFlow:
+    when:
+      visible:
+        text: "Back"
+        below:
+          id: add-note
+    commands:
+      - tapOn:
+          text: "Back"
+          below:
+            id: add-note
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- tapOn:
+    id: tab-timeline
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Lunch with Mai.*Worth it.*"
+# A long-press offers it; the copy is today's, with no feeling
+- longPressOn:
+    id: "tl-row-.*"
+    text: "(?s).*Lunch with Mai.*"
+- extendedWaitUntil:
+    visible:
+      id: tl-repeat
+    timeout: 10000
+- takeScreenshot: 76-long-press-sheet
+- tapOn:
+    id: tl-repeat
+- extendedWaitUntil:
+    visible: ".*Added again for today.*"
+    timeout: 10000
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Lunch with Mai.*"
+    index: 1                                      # two rows now
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Worth it.*"
+    index: 0
+- assertNotVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Worth it.*"
+    index: 1                                      # the copy has no feeling
+- takeScreenshot: 76-added-again
+# Undo removes only the copy
+- tapOn: "Undo"
+- extendedWaitUntil:
+    notVisible:
+      id: "tl-row-.*"
+      text: "(?s).*Lunch with Mai.*"
+      index: 1
+    timeout: 10000
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Lunch with Mai.*Worth it.*"     # the original stays
+# The edit sheet's menu offers it too
+- tapOn:
+    id: "tl-row-.*"
+    text: "(?s).*Lunch with Mai.*"
+- extendedWaitUntil:
+    visible:
+      id: edit-save
+    timeout: 10000
+- tapOn:
+    id: edit-more
+- tapOn:
+    id: edit-repeat
+- extendedWaitUntil:
+    visible: ".*Added again for today.*"
+    timeout: 10000
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Lunch with Mai.*"
+    index: 1
+- tapOn: "Undo"
+- extendedWaitUntil:
+    notVisible:
+      id: "tl-row-.*"
+      text: "(?s).*Lunch with Mai.*"
+      index: 1
+    timeout: 10000
+# A save with no goal: its copy has no goal either
+- tapOn:
+    id: tab-home
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-saved
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "7", EXPECT: ".*7.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- tapOn:
+    id: tab-timeline
+- longPressOn:
+    id: "tl-row-.*"
+    text: "(?s).*\\+\\$7\\.00.*"
+- extendedWaitUntil:
+    visible:
+      id: tl-repeat
+    timeout: 10000
+- tapOn:
+    id: tl-repeat
+- extendedWaitUntil:
+    visible: ".*Added again for today.*"
+    timeout: 10000
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*\\+\\$7\\.00.*"
+    index: 1                                      # the copy
+- assertNotVisible: "(?s).*Saved for .*"         # neither save has a goal
+- tapOn: "Undo"
+# A save to a goal that was then reached: no offer
+- tapOn:
+    id: tab-home
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env: { NAME: "Bike", AMOUNT: "100", START: "0" }
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/add_savings.yaml
+    env: { AMOUNT: "100", GOAL: "Bike" }
+- extendedWaitUntil:
+    visible:
+      id: goal-done-screen
+    timeout: 10000
+- tapOn:
+    id: goal-done-close
+- runFlow:
+    when:
+      visible:
+        id: goal-screen
+    commands:
+      - tapOn: "Back"
+- tapOn:
+    id: tab-timeline
+- longPressOn:
+    id: "tl-row-.*"
+    text: "(?s).*Saved for Bike.*"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: tl-repeat
+- takeScreenshot: 76-reached-goal-no-offer
