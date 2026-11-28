@@ -47,7 +47,9 @@ tags: [pb1, me]
     id: onb-pick-save
     checked: true
 - tapOn: "Back"                    # the app bar arrow
-# B. Plan as the only pick: Remove plan opens the picker first ("Pick at least one.")
+# B. Plan as the only pick (decision 29): Remove plan opens the picker first, with the
+# plan shown unpicked. Nothing is saved until a new pick is made: Back keeps the plan;
+# Done with nothing picked asks for one (happyPickOne); a new pick, then Done, removes it.
 - runFlow: ../../subflows/fresh_launch.yaml
 - tapOn:
     id: onb-start
@@ -69,13 +71,55 @@ tags: [pb1, me]
     id: me-plan
 - tapOn:
     id: me-plan-remove
+- extendedWaitUntil:
+    visible:
+      id: me-happy-done
+    timeout: 10000
 - assertVisible:
-    id: onb-pick-save                    # the picker opened first
+    id: onb-pick-plan
+    checked: false                          # shown unpicked
+- assertVisible:
+    id: onb-pick-save
+    checked: false
+- assertNotVisible: ".*Pick at least one\\..*"   # not before Done
+- takeScreenshot: 34-remove-plan-picker
+# Back changes nothing: the plan and its pick are still there
+- tapOn:
+    text: "Back"
+    above:
+      id: onb-pick-save
+- extendedWaitUntil:
+    visible:
+      id: me-plan
+    timeout: 10000
+- assertVisible:
+    id: me-plan
+    text: ".*2,000.*"
+# Done with nothing picked asks for one
+- tapOn:
+    id: me-plan
+- tapOn:
+    id: me-plan-remove
+- extendedWaitUntil:
+    visible:
+      id: me-happy-done
+    timeout: 10000
+- tapOn:
+    id: me-happy-done
 - assertVisible: ".*Pick at least one\\..*"
+- takeScreenshot: 34-pick-at-least-one
+# A new pick, then Done: the plan goes, the new pick stays
 - tapOn:
     id: onb-pick-save
 - tapOn:
     id: me-happy-done
+- extendedWaitUntil:
+    visible:
+      id: me-plan
+    timeout: 10000
 - assertVisible:
     id: me-plan
     text: ".*Not set.*"
+- assertVisible:
+    id: me-happy
+    text: ".*Saving something each week.*"

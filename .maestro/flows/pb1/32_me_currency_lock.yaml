@@ -55,7 +55,7 @@ tags: [pb1, me]
     id: me-currency
 - assertVisible: ".*Currency is set.*"
 - assertNotVisible:
-    id: "currency-.*"
+    id: "currency-[A-Z]{3}"           # no currency rows (the dialog's own OK is currency-fixed-ok)
 - tapOn:
     id: currency-fixed-ok
 # Delete everything -> O1, and the currency can change again
@@ -74,4 +74,4 @@ tags: [pb1, me]
 - tapOn:
     id: onb-currency-change
 - assertVisible:
-    id: "currency-.*"
+    id: "currency-[A-Z]{3}"
