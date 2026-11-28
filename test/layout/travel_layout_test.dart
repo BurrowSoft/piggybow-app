@@ -76,10 +76,19 @@ void main() {
   Future<void> travelSpend(WidgetTester tester, String rate) async {
     await tester.tapId('tl-empty-add');
     await tester.enterId('add-amount', '12.34');
-    await tester.tapId('add-currency');
+    await reveal(tester, 'add-currency');
+    await tester.tap(byId('add-currency'));
+    await tester.pumpAndSettle();
     await tester.tapId('currency-EUR');
     await reveal(tester, 'add-rate');
     await tester.enterId('add-rate', rate);
+  }
+
+  /// The sheet back at its top, with no caret.
+  Future<void> sheetTop(WidgetTester tester) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    tester.state<ScrollableState>(sheetList()).position.jumpTo(0);
+    await tester.pumpAndSettle();
   }
 
   for (final c in layoutCases) {
@@ -88,9 +97,11 @@ void main() {
     ) async {
       await open(tester, c);
       await travelSpend(tester, '39.12');
+      expect(find.text('1 EUR ='), findsOneWidget);
+      // The amount and its two lines, at the top.
+      await sheetTop(tester);
       expectOneLine(tester, '= ${eur(1234)}', reason: 'MC1 as spent');
       expectOneLine(tester, '= ${thb(48274)}', reason: 'MC1 at home');
-      expect(find.text('1 EUR ='), findsOneWidget);
       await reveal(tester, 'add-cat-food');
       await tester.tap(byId('add-cat-food'));
       await tester.pumpAndSettle();
@@ -121,9 +132,10 @@ void main() {
       expect(byId('add-converted'), findsNothing);
       await checkSheet(tester, 'MC2');
       if (c.takesGolden) {
-        // The rate field and its line on screen, with no caret.
-        FocusManager.instance.primaryFocus?.unfocus();
-        await tester.pumpAndSettle();
+        // The rate field and its line on screen, with no caret: back to the
+        // top (checkSheet left the sheet at its end), then down to the rate.
+        await sheetTop(tester);
+        await reveal(tester, 'add-rate');
         await tester.ensureVisible(byId('add-rate'));
         await tester.pumpAndSettle();
         await expectLayoutGolden(
