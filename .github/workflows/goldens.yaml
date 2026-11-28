@@ -54,10 +54,16 @@ jobs:
           [[ "$sha" =~ ^[0-9a-f]{40}$ ]]
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "rendering $sha"
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      # This workflow's own commit, for its Flutter action: the root holds
+      # the commit rendered, which may be older than the action.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          flutter-version: 3.47.5
-          channel: stable
+          path: ci
+          sparse-checkout: .github/actions/
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: ./ci/.github/actions/flutter
+        with:
           cache: true
       - run: flutter pub get --enforce-lockfile
       # Every golden-tagged test, each golden rewritten. expectGolden prints

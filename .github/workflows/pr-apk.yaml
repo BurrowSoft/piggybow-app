@@ -57,10 +57,8 @@ jobs:
           key: gradle-${{ runner.os }}-apk-${{ hashFiles('android/**/*.gradle*', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
           restore-keys: |
             gradle-${{ runner.os }}-apk-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./.github/actions/flutter
         with:
-          flutter-version: 3.47.5
-          channel: stable
           cache: true
       - run: flutter build apk --debug --flavor staging --dart-define-from-file=env/staging.json
       # What the tester's rows read from the log, without downloading the APK:
