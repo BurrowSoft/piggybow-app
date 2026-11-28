@@ -16,6 +16,7 @@ guard_emulator
 cleanup(){
   A shell cmd statusbar collapse >/dev/null 2>&1
   echo "$(stamp) END: $PASSES pass, $FAILS fail (the log and the screenshots decide)"
+  rows_exit
 }
 trap cleanup EXIT
 
