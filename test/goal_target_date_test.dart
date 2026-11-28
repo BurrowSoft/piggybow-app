@@ -90,6 +90,46 @@ void main() {
       );
     });
 
+    // A take-out (#61) slows the pace: the last 4 weeks are saves less
+    // withdrawals (UX).
+    test('a take-out nets out: 300 − 300 is no pace', () {
+      final recent = recentSavesMinor([
+        entry('2026-10-01', 300),
+        entry('2026-10-02', 300, type: EntryType.withdraw),
+      ], today);
+      expect(recent, 0);
+      expect(goalPaceWeeks(remainingMinor: 1000, recentMinor: recent), isNull);
+      expect(
+        goalOutlook(
+          remainingMinor: 1000,
+          recentMinor: recent,
+          targetDate: null,
+          today: '2026-10-02',
+        ).paceWeeks,
+        isNull,
+      );
+    });
+
+    test('500 − 200: the pace on 300', () {
+      final recent = recentSavesMinor([
+        entry('2026-09-30', 500),
+        entry('2026-10-01', 200, type: EntryType.withdraw),
+      ], today);
+      expect(recent, 300);
+      // ceil(1200 × 4 ÷ 300) = 16 weeks.
+      expect(goalPaceWeeks(remainingMinor: 1200, recentMinor: recent), 16);
+    });
+
+    test('a take-out before the 4 weeks doesn\'t count', () {
+      expect(
+        recentSavesMinor([
+          entry('2026-09-04', 400, type: EntryType.withdraw),
+          entry('2026-10-01', 500),
+        ], today),
+        500,
+      );
+    });
+
     test('weeks: ceil(what is left × 4 ÷ the last 4 weeks)', () {
       expect(goalPaceWeeks(remainingMinor: 10000, recentMinor: 10000), 4);
       expect(goalPaceWeeks(remainingMinor: 10001, recentMinor: 10000), 5);

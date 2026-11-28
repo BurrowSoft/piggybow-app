@@ -15,18 +15,25 @@ const goalPaceDays = 28;
 /// Beyond this many weeks the pace line isn't shown.
 const goalPaceMaxWeeks = 52;
 
-/// What was saved to a goal from [today] − 27 days to [today], by each save's
-/// own day. Only saves count: "already saved" at the start isn't in [entries].
+/// What went into a goal from [today] − 27 days to [today], by each entry's
+/// own day: its saves less what was taken out of it (#61), so a take-out
+/// slows the pace. Zero or less: no pace ([goalPaceWeeks]). "Already saved"
+/// at the start isn't in [entries].
 int recentSavesMinor(Iterable<Entry> entries, DateTime today) {
   final from = wireDate(addDays(today, 1 - goalPaceDays));
   final to = wireDate(today);
   var sum = 0;
   for (final e in entries) {
-    if (e.type != EntryType.saved) continue;
+    final sign = switch (e.type) {
+      EntryType.saved => 1,
+      EntryType.withdraw => -1,
+      EntryType.spent => 0,
+    };
+    if (sign == 0) continue;
     if (e.localDate.compareTo(from) < 0 || e.localDate.compareTo(to) > 0) {
       continue;
     }
-    sum += e.amountMinor;
+    sum += sign * e.amountMinor;
   }
   return sum;
 }
