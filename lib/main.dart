@@ -19,6 +19,9 @@ import 'data/device_backend.dart';
 import 'features/me/me_actions.dart';
 import 'features/onboarding/onboarding_screens.dart';
 import 'features/pig/pig_view.dart';
+import 'features/plus/iap_plus_store.dart';
+import 'features/plus/plus_entitlement.dart';
+import 'features/plus/rows_plus_store.dart';
 import 'features/reminder/reminder_scheduler.dart';
 import 'fixtures/launch_fixture.dart';
 import 'journal/journal_store.dart';
@@ -124,6 +127,17 @@ Future<void> main() async {
   }
 
   StartupTrace.mark('services');
+  // Piggybow Plus (decision 79), only where PLUS_ENABLED is on (never in a
+  // release build: AppConfig). The rows' fake store needs PLUS_FAKE_STORE
+  // too, on a debug build of staging.
+  final plusStore = !config.plusEnabled
+      ? null
+      : config.plusFakeStore
+      ? RowsPlusStore()
+      : platformPlusStore();
+  final plus = plusStore == null
+      ? null
+      : PlusEntitlement(store: plusStore, hint: FilePlusHint(), clock: clock);
   final services = AppServices(
     clock: clock,
     localDay: localDay,
@@ -131,8 +145,15 @@ Future<void> main() async {
     reminders: PlatformReminderScheduler(),
     notifications: const PlatformNotificationPermission(),
     appLock: appLock,
+    plus: plus,
     onboarded: await onboardedAtStart(journal),
   );
+  // The store's answer at launch and on every resume (the launch hint
+  // shows Plus until it comes).
+  if (plus != null) {
+    unawaited(plus.start());
+    AppLifecycleListener(onResume: () => unawaited(plus.refresh()));
+  }
   // A reminder tapped, or the start it made, opens the Add sheet.
   unawaited(services.reminders.listen());
   // The pig's reaction to an Add lasts until the app goes to the background.

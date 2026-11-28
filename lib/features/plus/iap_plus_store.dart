@@ -3,12 +3,16 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:in_app_purchase_android/billing_client_wrappers.dart'
+    show PurchaseStateWrapper;
 import 'package:in_app_purchase_android/in_app_purchase_android.dart';
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart'
     show InAppPurchaseStoreKitPlatformAddition;
-import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart' show SK2Product;
+import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart' show SK2Product, SK2Transaction;
 import 'package:in_app_purchase_storekit/store_kit_wrappers.dart'
     show SKProductDiscountPaymentMode, SKProductDiscountWrapper, SKRequestMaker, SKSubscriptionPeriodUnit;
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'plus_store.dart';
 
@@ -26,20 +30,75 @@ bool appleFreeWeek({required bool eligible, required SKProductDiscountWrapper? i
           (unit == SKSubscriptionPeriodUnit.day && units == 7));
 }
 
+/// A Play pricing phase: its price in micros (an int, never a float), the
+/// store's formatted price, its ISO 8601 billing period ("P1M") and how many
+/// times it bills.
+typedef PlayPhase = ({int micros, String price, String period, int cycles});
+
+/// One Play offer as [playPlans] reads it: its base plan, its offer id (null
+/// for the base plan itself), its phases and the store's own object.
+typedef PlayOffer = ({String basePlanId, String? offerId, List<PlayPhase> phases, Object handle});
+
+/// Whether a Play phase is a free week: free, billed once, for a week.
+bool playFreeWeek(PlayPhase phase) =>
+    phase.micros == 0 && phase.cycles == 1 && (phase.period == 'P1W' || phase.period == 'P7D');
+
+/// Plus's plans from Play's offers, monthly first. A plan is on sale when
+/// its base plan is, at the base plan's paid price. It has the free week
+/// when Play returns an offer on it that starts with a free week (Play
+/// returns an offer only to an eligible account): buying the plan then buys
+/// that offer. Any other offer is ignored, so the app never calls something
+/// else a free week.
+List<PlusPlan> playPlans(List<PlayOffer> offers) {
+  final plans = <PlusPlan>[];
+  for (final (id, period) in const [
+    (plusPlayMonthlyPlan, PlusPeriod.month),
+    (plusPlayYearlyPlan, PlusPeriod.year),
+  ]) {
+    final mine = offers.where((o) => o.basePlanId == id);
+    final base = mine.where((o) => o.offerId == null).firstOrNull;
+    final paid = base?.phases.where((p) => p.micros > 0).lastOrNull;
+    if (base == null || paid == null) continue;
+    final trial = mine
+        .where((o) => o.offerId != null && o.phases.isNotEmpty && playFreeWeek(o.phases.first))
+        .firstOrNull;
+    plans.add(
+      PlusPlan(
+        period: period,
+        price: paid.price,
+        trialOffered: trial != null,
+        handle: (trial ?? base).handle,
+      ),
+    );
+  }
+  return plans;
+}
+
+/// Play's own page for Plus's subscription; it opens in the Play Store app.
+Uri playSubscriptionsUri(String packageName) => Uri.https(
+  'play.google.com',
+  '/store/account/subscriptions',
+  {'sku': plusPlayProductId, 'package': packageName},
+);
+
 /// What the store layer needs from in_app_purchase, so the logic below is
 /// tested without a store (IapPlusStore takes a fake).
 abstract interface class IapGateway {
   Stream<List<PurchaseDetails>> get purchases;
   Future<bool> isAvailable();
 
-  /// The product to sell, its formatted price and whether the free week is
-  /// offered to this account; null when the store has no such product.
-  Future<({Object handle, String price, bool trial})?> product(String id);
+  /// The plans the store offers this account, monthly first.
+  Future<List<PlusPlan>> plans();
   Future<bool> buy(Object handle);
-  Future<void> restore();
-  Future<void> complete(PurchaseDetails purchase);
 
-  /// Apple's manage-subscriptions sheet; nothing on Play.
+  /// The store account's active purchases; null when the store can't say.
+  Future<List<PlusProof>?> owned();
+
+  /// Finishes the purchase behind [handle] (Play's acknowledgement,
+  /// StoreKit's finish).
+  Future<void> complete(Object handle);
+
+  /// The store's own subscription page.
   Future<void> manageSubscriptions();
 }
 
@@ -47,30 +106,26 @@ abstract interface class IapGateway {
 /// (pinned). Everything happens between the app and the store on the
 /// phone (decision 79).
 class IapPlusStore implements PlusStore {
-  IapPlusStore({
-    required this.source,
-    IapGateway? gateway,
-    this.restoreQuiet = const Duration(seconds: 3),
-  }) : _gateway = gateway ?? PluginIapGateway(source);
+  IapPlusStore({required this.source, IapGateway? gateway})
+    : _gateway = gateway ?? PluginIapGateway(source);
 
   @override
   final PlusSource source;
   final IapGateway _gateway;
-
-  /// How long a Restore listens for what the store reports.
-  final Duration restoreQuiet;
 
   /// How long a purchase sheet may stay open before it counts as failed.
   static const buyLimit = Duration(minutes: 10);
 
   StreamSubscription<List<PurchaseDetails>>? _sub;
   Completer<PlusBuyOutcome>? _buying;
-  List<PlusProof>? _restoring;
-  Object? _handle;
 
-  /// Purchases the store reported with nobody waiting (finished elsewhere,
-  /// or left unfinished last time): handed back by the next Restore.
+  /// Purchases the store reported with nobody waiting: handed over by
+  /// [takeUnclaimed], announced on [changes].
   final _unclaimed = <PlusProof>[];
+  final _changes = _Changes();
+
+  @override
+  Listenable get changes => _changes;
 
   void _listen() => _sub ??= _gateway.purchases.listen(_onPurchases);
 
@@ -80,11 +135,13 @@ class IapPlusStore implements PlusStore {
         : (p.purchaseID ?? ''),
     productId: p.productID,
     handle: p,
+    needsFinish: p.pendingCompletePurchase,
   );
 
   void _onPurchases(List<PurchaseDetails> list) {
+    var unclaimed = false;
     for (final p in list) {
-      if (p.productID != plusProductId) continue;
+      if (!isPlusProduct(p.productID)) continue;
       final buying = _buying;
       switch (p.status) {
         case PurchaseStatus.pending:
@@ -94,9 +151,11 @@ class IapPlusStore implements PlusStore {
             buying.complete(PlusBought(_proof(p)));
           } else {
             _unclaimed.add(_proof(p));
+            unclaimed = true;
           }
         case PurchaseStatus.restored:
-          (_restoring ?? _unclaimed).add(_proof(p));
+          _unclaimed.add(_proof(p));
+          unclaimed = true;
         case PurchaseStatus.canceled:
           if (buying != null && !buying.isCompleted) buying.complete(const PlusCancelled());
           _completeQuietly(p);
@@ -105,6 +164,7 @@ class IapPlusStore implements PlusStore {
           _completeQuietly(p);
       }
     }
+    if (unclaimed) _changes.ping();
   }
 
   /// A cancelled or failed transaction still waiting to be completed is
@@ -131,23 +191,20 @@ class IapPlusStore implements PlusStore {
   }
 
   @override
-  Future<PlusProduct?> product() async {
+  Future<List<PlusPlan>> plans() async {
     _listen();
     try {
-      if (!await _gateway.isAvailable()) return null;
-      final p = await _gateway.product(plusProductId);
-      if (p == null) return null;
-      _handle = p.handle;
-      return PlusProduct(price: p.price, trialOffered: p.trial);
+      if (!await _gateway.isAvailable()) return const [];
+      return await _gateway.plans();
     } on Object {
-      return null;
+      return const [];
     }
   }
 
   @override
-  Future<PlusBuyOutcome> buy() async {
+  Future<PlusBuyOutcome> buy(PlusPlan plan) async {
     _listen();
-    final handle = _handle ?? (await product() == null ? null : _handle);
+    final handle = plan.handle;
     if (handle == null) return const PlusBuyFailed();
     final waiting = _buying = Completer<PlusBuyOutcome>();
     try {
@@ -162,39 +219,38 @@ class IapPlusStore implements PlusStore {
   }
 
   @override
-  Future<List<PlusProof>> restore() async {
+  Future<List<PlusProof>?> owned() async {
     _listen();
-    final found = _restoring = [..._unclaimed];
-    _unclaimed.clear();
     try {
-      await _gateway.restore();
-      // The store reports restored purchases on the stream, with no "done":
-      // listen a moment.
-      await Future<void>.delayed(restoreQuiet);
+      if (!await _gateway.isAvailable()) return null;
+      final found = await _gateway.owned();
+      if (found == null) return null;
+      // Plus's own purchases, one proof per purchase.
+      final seen = <String>{};
+      return [
+        for (final p in found)
+          if (isPlusProduct(p.productId) && p.token.isNotEmpty && seen.add(p.token)) p,
+      ];
     } on Object {
-      // Nothing found, as far as anyone can tell.
-    } finally {
-      _restoring = null;
+      return null;
     }
-    // One proof per token (the same purchase can come twice).
-    final seen = <String>{};
-    return [
-      for (final p in found)
-        if (p.token.isNotEmpty && seen.add(p.token)) p,
-    ];
   }
 
   @override
   Future<void> finish(PlusProof proof) async {
-    final p = proof.handle;
-    if (p is PurchaseDetails && p.pendingCompletePurchase) await _gateway.complete(p);
+    final handle = proof.handle;
+    if (proof.needsFinish && handle != null) await _gateway.complete(handle);
   }
 }
 
-/// The real store. Play: one product with offers (the base plan, and the
-/// free week as an offer); the free week is bought when Play returns it
-/// (only to an eligible account). Apple: StoreKit 2, which says whether
-/// this Apple ID may have the introductory offer.
+class _Changes extends ChangeNotifier {
+  void ping() => notifyListeners();
+}
+
+/// The real store. Play: the subscription's base plans and their offers;
+/// the free week is bought when Play returns it (only to an eligible
+/// account). Apple: StoreKit 2, which says whether this Apple ID may have a
+/// product's introductory offer.
 class PluginIapGateway implements IapGateway {
   // StoreKit 2 is the plugin's only default now (enableStoreKit2 is
   // deprecated for it).
@@ -210,54 +266,62 @@ class PluginIapGateway implements IapGateway {
   Future<bool> isAvailable() => _iap.isAvailable();
 
   @override
-  Future<({Object handle, String price, bool trial})?> product(String id) async {
-    final res = await _iap.queryProductDetails({id});
-    if (res.productDetails.isEmpty) return null;
+  Future<List<PlusPlan>> plans() async {
     if (source == PlusSource.play) {
-      final offers = res.productDetails.whereType<GooglePlayProductDetails>().toList();
-      if (offers.isEmpty) return null;
-      GooglePlayProductDetails? base, trial;
-      for (final o in offers) {
-        final i = o.subscriptionIndex;
-        final details = o.productDetails.subscriptionOfferDetails;
-        if (i == null || details == null) continue;
-        final d = details[i];
-        if (d.offerId == null) base ??= o;
-        if (d.pricingPhases.isNotEmpty && d.pricingPhases.first.priceAmountMicros == 0) {
-          trial ??= o;
-        }
-      }
-      final sell = trial ?? base ?? offers.first;
-      // The price: the base plan's (its one phase), never the trial's 0.
-      final priced = base ?? sell;
-      final offers0 = priced.productDetails.subscriptionOfferDetails;
-      final phases = offers0?[priced.subscriptionIndex ?? 0].pricingPhases;
-      final paid = (phases ?? const []).where((ph) => ph.priceAmountMicros > 0);
-      final price = paid.isNotEmpty ? paid.last.formattedPrice : priced.price;
-      return (handle: sell, price: price, trial: trial != null);
+      final res = await _iap.queryProductDetails({plusPlayProductId});
+      return playPlans([
+        for (final o in res.productDetails.whereType<GooglePlayProductDetails>())
+          ?_playOffer(o),
+      ]);
     }
-    // Apple: StoreKit applies its introductory offer to every eligible
-    // Apple ID, so the app reports what StoreKit offers.
-    final p = res.productDetails.first;
-    var eligible = false;
+    final res = await _iap.queryProductDetails({plusAppleMonthlyId, plusAppleYearlyId});
+    final plans = <PlusPlan>[];
+    for (final (id, period) in const [
+      (plusAppleMonthlyId, PlusPeriod.month),
+      (plusAppleYearlyId, PlusPeriod.year),
+    ]) {
+      final p = res.productDetails.where((d) => d.id == id).firstOrNull;
+      if (p == null) continue;
+      plans.add(
+        PlusPlan(period: period, price: p.price, trialOffered: await _appleFreeWeek(id), handle: p),
+      );
+    }
+    return plans;
+  }
+
+  PlayOffer? _playOffer(GooglePlayProductDetails o) {
+    final i = o.subscriptionIndex;
+    final details = o.productDetails.subscriptionOfferDetails;
+    if (i == null || details == null || i >= details.length) return null;
+    final d = details[i];
+    return (
+      basePlanId: d.basePlanId,
+      offerId: d.offerId,
+      phases: [
+        for (final ph in d.pricingPhases)
+          (
+            micros: ph.priceAmountMicros,
+            price: ph.formattedPrice,
+            period: ph.billingPeriod,
+            cycles: ph.billingCycleCount,
+          ),
+      ],
+      handle: o,
+    );
+  }
+
+  /// StoreKit 2's word for this Apple ID on [id]'s introductory offer.
+  Future<bool> _appleFreeWeek(String id) async {
     try {
-      // StoreKit 2's own answer for this Apple ID.
-      eligible = await SK2Product.isIntroductoryOfferEligible(id);
+      if (!await SK2Product.isIntroductoryOfferEligible(id)) return false;
+      // StoreKit 2's wrapper doesn't expose the introductory offer, so
+      // StoreKit 1's introductoryPrice says which it is.
+      final sk1 = await SKRequestMaker().startProductRequest([id]);
+      final intro = sk1.products.isEmpty ? null : sk1.products.first.introductoryPrice;
+      return appleFreeWeek(eligible: true, intro: intro);
     } on Object {
-      eligible = false;
+      return false;
     }
-    // StoreKit 2's wrapper doesn't expose the introductory offer, so
-    // StoreKit 1's introductoryPrice says which it is.
-    SKProductDiscountWrapper? intro;
-    if (eligible) {
-      try {
-        final sk1 = await SKRequestMaker().startProductRequest([id]);
-        intro = sk1.products.isEmpty ? null : sk1.products.first.introductoryPrice;
-      } on Object {
-        intro = null;
-      }
-    }
-    return (handle: p, price: p.price, trial: appleFreeWeek(eligible: eligible, intro: intro));
   }
 
   @override
@@ -270,17 +334,59 @@ class PluginIapGateway implements IapGateway {
   }
 
   @override
-  Future<void> restore() => _iap.restorePurchases();
+  Future<List<PlusProof>?> owned() async {
+    if (source == PlusSource.play) {
+      final res = await _iap
+          .getPlatformAddition<InAppPurchaseAndroidPlatformAddition>()
+          .queryPastPurchases();
+      if (res.error != null) return null;
+      return [
+        for (final p in res.pastPurchases)
+          // A pending payment isn't Plus yet, and can't be finished.
+          if (p.billingClientPurchase.purchaseState == PurchaseStateWrapper.purchased)
+            PlusProof(
+              token: p.verificationData.serverVerificationData,
+              productId: p.productID,
+              handle: p,
+              needsFinish: p.pendingCompletePurchase,
+            ),
+      ];
+    }
+    // Both lists hold verified transactions only (the plugin drops the rest).
+    final unfinished = {for (final t in await SK2Transaction.unfinishedTransactions()) t.id};
+    return [
+      for (final t in await SK2Transaction.currentEntitlements())
+        PlusProof(
+          token: t.id,
+          productId: t.productId,
+          handle: t,
+          needsFinish: unfinished.contains(t.id),
+        ),
+    ];
+  }
 
   @override
-  Future<void> complete(PurchaseDetails purchase) => _iap.completePurchase(purchase);
+  Future<void> complete(Object handle) async {
+    if (handle is PurchaseDetails) {
+      if (handle.pendingCompletePurchase) await _iap.completePurchase(handle);
+    } else if (handle is SK2Transaction) {
+      await SK2Transaction.finish(int.parse(handle.id));
+    }
+  }
 
   @override
   Future<void> manageSubscriptions() async {
-    if (source != PlusSource.apple) return;
-    await _iap
-        .getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>()
-        .showManageSubscriptions();
+    if (source == PlusSource.apple) {
+      await _iap
+          .getPlatformAddition<InAppPurchaseStoreKitPlatformAddition>()
+          .showManageSubscriptions();
+      return;
+    }
+    final info = await PackageInfo.fromPlatform();
+    await launchUrl(
+      playSubscriptionsUri(info.packageName),
+      mode: LaunchMode.externalApplication,
+    );
   }
 }
 

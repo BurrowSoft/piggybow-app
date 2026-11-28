@@ -12,6 +12,7 @@ import 'package:piggybow/core/policy.dart';
 import 'package:piggybow/core/services.dart';
 import 'package:piggybow/data/device_backend.dart';
 import 'package:piggybow/data/models.dart';
+import 'package:piggybow/features/plus/plus_entitlement.dart';
 import 'package:piggybow/features/reminder/reminder_plan.dart';
 import 'package:piggybow/features/reminder/reminder_scheduler.dart';
 import 'package:piggybow/journal/journal_store.dart';
@@ -127,6 +128,7 @@ class TestApp {
     this.currency = 'THB',
     this.onboarded = true,
     this.config = const AppConfig(flavor: Flavor.staging),
+    this.plus,
     Clock? clock,
   }) : clock = clock ?? testClock,
        prefs = MemoryLocalPrefs(
@@ -159,6 +161,10 @@ class TestApp {
   /// The build's configuration (a Sentry DSN, the policy and help links).
   final AppConfig config;
 
+  /// Piggybow Plus; null = a build without it (PLUS_ENABLED off). [pump]
+  /// starts it, as main does.
+  final PlusEntitlement? plus;
+
   late final DeviceBackend backend;
   late final AppSession session;
 
@@ -177,6 +183,7 @@ class TestApp {
     reminders: reminders,
     notifications: notifications,
     appLock: appLock,
+    plus: plus,
     stagingTestError: () => stagingErrors++,
     onboarded: onboarded,
   );
@@ -222,6 +229,7 @@ class TestApp {
       clock: clock,
     );
     await session.restore();
+    await plus?.start();
     await tester.pumpWidget(
       PiggybowApp(
         config: config,
