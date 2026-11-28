@@ -56,16 +56,17 @@ tags: [risk, currency, takeout]
       id: goal-screen
     timeout: 10000
 - assertVisible: ".*\\$60\\.00 of \\$500\\.00.*"
-# Edit the euro save: €10 ($11) is below the $50 taken out
+# Edit the euro save: €10 ($11) is below the $50 taken out (the edit sheet saves
+# with edit-save, not add-submit)
 - tapOn: "(?s)Saved\\s+Today.*"
 - runFlow:
     file: ../../subflows/replace_into.yaml
     env: { ID: add-amount, TEXT: "10", EXPECT: ".*10.*" }
 - runFlow:
     file: ../../subflows/reveal.yaml
-    env: { ID: add-submit }
+    env: { ID: edit-save }
 - tapOn:
-    id: add-submit
+    id: edit-save
 - assertVisible: ".*Some of this money was taken out of Bike\\. Change or remove that first\\..*"
 - takeScreenshot: 93-save-locked
 # €120 ($132) is fine: $132 − $50 = $82
@@ -76,7 +77,7 @@ tags: [risk, currency, takeout]
     id: add-rate
     text: ".*1\\.10?.*"                            # the rate kept on edit
 - tapOn:
-    id: add-submit
+    id: edit-save
 - extendedWaitUntil:
     visible:
       id: goal-screen

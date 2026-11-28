@@ -25,6 +25,9 @@ cleanup(){
   rows_exit
 }
 trap cleanup EXIT
+between_rows(){ # a row starts clean whatever the last one left open (a sheet, the keyboard)
+  A shell am force-stop "$APP_ID"; A shell input keyevent KEYCODE_HOME; sleep 1
+}
 
 A root >/dev/null 2>&1 || { sleep 3; A wait-for-device; A root >/dev/null 2>&1; }
 sleep 3; A wait-for-device
@@ -40,12 +43,14 @@ else
   row RK-1 FAIL "flow 93a"
 fi
 
+between_rows
 if mf flows/pb1/93b_euro_save_take_out.yaml; then
   row RK-2 PASS "flow 93b: €100 at 1.10 (\$110), \$50 out (\$60); editing to €10 refused ('Some of this money was taken out of Bike…'); €120 kept with its rate: \$82.00"
 else
   row RK-2 FAIL "flow 93b"
 fi
 
+between_rows
 if mf flows/pb1/93c_backup_with_repeat_euro.yaml; then
   NAME=$(A shell run-as "$APP_ID" ls cache/export 2>/dev/null | tr -d '\r' | grep -E '^piggybow-backup-[0-9-]+\.piggybow$' | head -1 || true)
   if [ -n "$NAME" ]; then
@@ -64,6 +69,7 @@ else
   row RK-3 FAIL "flow 93c"
 fi
 
+between_rows
 if mf flows/pb1/93e_repeat_resume_a.yaml; then
   D8=$(date -u -d "$D0 + 8 days" +%Y-%m-%d)
   setclock "$D8" 12:00:00

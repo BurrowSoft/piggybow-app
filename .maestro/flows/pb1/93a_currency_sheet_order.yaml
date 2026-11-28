@@ -96,9 +96,15 @@ tags: [risk, currency]
     env: { ID: add-repeat }
 - assertVisible: ".*Repeats work in your home currency for now\\..*"
 - takeScreenshot: 93-repeat-off
-# A quick amount keeps the rate
+# A quick amount keeps the rate (back up to it: the Repeat row scrolled it off)
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-quick-0 }
 - tapOn:
     id: add-quick-0
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-converted }
 - assertVisible:
     id: add-converted
     text: ".*That's \\$8\\.40 at this rate\\..*"
