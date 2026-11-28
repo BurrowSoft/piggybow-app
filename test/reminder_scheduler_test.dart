@@ -86,12 +86,16 @@ void main() {
       'zonedSchedule',
     ]);
 
-    final first = Map<String, dynamic>.from(
-      calls.firstWhere((c) => c.method == 'zonedSchedule').arguments as Map,
-    );
+    final scheduled = [
+      for (final c in calls.where((call) => call.method == 'zonedSchedule'))
+        Map<String, dynamic>.from(c.arguments as Map),
+    ];
+    final first = scheduled.first;
     expect(first['id'], 1);
     expect(first['title'], 'Piggybow');
-    expect(first['body'], 'How was today?');
+    // The body follows the day: 1 January has the first, the 2nd the next.
+    expect(first['body'], 'One?');
+    expect(scheduled[1]['body'], 'Two?');
     final specifics = first['platformSpecifics'].toString();
     expect(specifics, contains(PlatformReminderScheduler.channelId));
     expect(specifics, contains('inexactAllowWhileIdle'));
