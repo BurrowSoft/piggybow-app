@@ -19,8 +19,11 @@
 // 6. Whatever happened: tip_settings back as they were, and the run's user
 //    forgotten.
 // 7. Prints a table for the job's log, with an estimated cost, the reports'
-//    two answers, the guard's and the retention counts; then fails when the
-//    sign-up added to Auth's audit log.
+//    two answers, the guard's, the forget's and the retention counts. Then
+//    it fails (exit 1) unless every check held: at least 16 of the 20 weeks
+//    got a tip and none a 5xx, each week 200 or 204; the reports 204 then
+//    400; the guard 204 "region" away and 200 at home; the run's user
+//    forgotten (204); and no Auth audit log row added.
 //
 //   SUPABASE_DEPLOY_TOKEN=… PROJECT_REF=… ANON_KEY=… MODEL=… deno run \
 //     --allow-net --allow-read=supabase/fixtures \
@@ -76,7 +79,12 @@ const rows: Row[] = [];
 const guard: string[] = [];
 const reports: string[] = [];
 const retention: string[] = [];
+/** What didn't hold: any of these fails the run, after it's printed. */
+const failures: string[] = [];
+/** A confirmation needs most weeks to get a tip: 16 of the 20. */
+const MIN_TIPS = 16;
 let auditGrew = false;
+let forgotten: number | null = null;
 let access = "";
 /** Counts only, never a value: Auth's sessions, those that keep an IP
  * address, and Auth's audit log rows in the database. */
@@ -168,6 +176,15 @@ try {
     });
   }
 
+  const tipsGiven = rows.filter((r) => r.status === 200).length;
+  const fiveHundreds = rows.filter((r) => r.status >= 500).length;
+  const neither = rows.filter((r) => r.status !== 200 && r.status !== 204).map((r) => r.status);
+  if (fiveHundreds > 0) failures.push(`${fiveHundreds} of the ${rows.length} weeks got a 5xx`);
+  if (neither.length > 0) failures.push(`weeks answered neither 200 nor 204: ${neither.join(", ")}`);
+  if (tipsGiven < MIN_TIPS) {
+    failures.push(`${tipsGiven} tips out of ${rows.length}, fewer than ${MIN_TIPS}`);
+  }
+
   // Reports, end to end: a tip as given, with its signature, is kept (204);
   // the same tip with one character changed is refused (400). The kept one
   // is the model's words for a made-up week, gone after 90 days.
@@ -183,8 +200,14 @@ try {
       return res.status;
     };
     const changed = shown.text.endsWith(".") ? `${shown.text.slice(0, -1)}!` : `${shown.text}.`;
-    reports.push(`- Its own tip, as given: ${await send(shown.text)} (204 expected).`);
-    reports.push(`- One character changed: ${await send(changed)} (400 expected).`);
+    const kept = await send(shown.text);
+    const refused = await send(changed);
+    reports.push(`- Its own tip, as given: ${kept} (204 expected).`);
+    reports.push(`- One character changed: ${refused} (400 expected).`);
+    if (kept !== 204) failures.push(`a report of a tip as given: ${kept}, not 204`);
+    if (refused !== 400) failures.push(`a report of a changed tip: ${refused}, not 400`);
+  } else {
+    failures.push("no tip to report, so the reports weren't checked");
   }
 
   // The region guard, end to end. A region the function can't be in gets no
@@ -194,11 +217,15 @@ try {
   const away = await askTip(fixtures.weeks[0].request);
   await away.body?.cancel();
   const ranIn = away.headers.get("x-tip-region") ?? "";
+  const awayWhy = away.headers.get("x-tip-why") ?? "none";
   guard.push(
-    `- A region it can't be in: ${away.status}, why ${away.headers.get("x-tip-why") ?? "none"}; ` +
+    `- A region it can't be in: ${away.status}, why ${awayWhy}; ` +
       `it ran in ${ranIn || "?"} (the platform's x-sb-edge-region: ` +
       `${away.headers.get("x-sb-edge-region") ?? "?"}).`,
   );
+  if (away.status !== 204 || awayWhy !== "region") {
+    failures.push(`the guard, away: ${away.status} why ${awayWhy}, not 204 region`);
+  }
   if (REGION.test(ranIn) && ranIn !== "unknown") {
     await runSql(ref, token, `update public.tip_settings set region = '${ranIn}' where id = 1`);
     const home = await askTip(fixtures.weeks[0].request, { "x-region": ranIn });
@@ -207,6 +234,9 @@ try {
       `- Its own region, pinned with x-region: ${home.status}, why ` +
         `${home.headers.get("x-tip-why") ?? "none"} (ran in ${home.headers.get("x-sb-edge-region") ?? "?"}).`,
     );
+    if (home.status !== 200) failures.push(`the guard, at home: ${home.status}, not 200`);
+  } else {
+    failures.push(`the guard didn't say where it ran (${ranIn || "nothing"}), so home wasn't checked`);
   }
 } finally {
   // Back as it was, whatever happened above.
@@ -222,6 +252,7 @@ try {
       headers: { apikey: anon, Authorization: `Bearer ${access}` },
     });
     await forget.body?.cancel();
+    forgotten = forget.status;
   }
 }
 
@@ -249,10 +280,14 @@ console.log(
     `region ${wasRegion}.`,
 );
 console.log(`\nRetention (counts only):\n${retention.join("\n") || "- not reached"}`);
+console.log(`\nThe run's user forgotten: ${forgotten ?? "not asked"} (204 expected).`);
+if (forgotten !== 204) failures.push(`the run's user forgotten: ${forgotten ?? "not asked"}, not 204`);
 if (auditGrew) {
-  console.log(
-    "\nSTOP: Auth's audit log in the database grew with the anonymous sign-up, or couldn't be " +
-      'counted. Turn off "Write audit logs to the database" in the project\'s Auth settings.',
+  failures.push(
+    "Auth's audit log in the database grew with the sign-up, or couldn't be counted: turn off " +
+      '"Write audit logs to the database" in the project\'s Auth settings',
   );
-  Deno.exit(1);
 }
+console.log(`\nChecks: ${failures.length === 0 ? "all held" : `${failures.length} failed`}`);
+for (const f of failures) console.log(`- ${f}`);
+if (failures.length > 0) Deno.exit(1);

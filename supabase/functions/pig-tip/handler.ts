@@ -37,6 +37,9 @@ export type Deps = {
   userId(authorization: string | null): Promise<string | null>;
   /** The settings when tips are on, else null (the kill switch). */
   settings(): Promise<TipSettings | null>;
+  /** Whether the function holds an admin key (keys.ts): without one nothing
+   * can be checked, counted or deleted, and every route answers 503. */
+  admin: boolean;
   /** The region this function runs in, as the runtime says (null: unsaid). */
   region: string | null;
   /** Signs the tips given and checks the reports' (null: no key). */
@@ -91,6 +94,10 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   if (req.method !== "POST") {
     log({ status: 405 });
     return new Response(null, { status: 405 });
+  }
+  if (!deps.admin) {
+    log({ status: 503, why: "no_admin_key" });
+    return new Response(null, { status: 503 });
   }
   try {
     const uid = await deps.userId(req.headers.get("Authorization"));
