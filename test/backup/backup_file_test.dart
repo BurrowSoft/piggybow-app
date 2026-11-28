@@ -213,8 +213,15 @@ void main() {
       final watch = Stopwatch()..start();
       for (final change in <void Function(Map<String, dynamic>)>[
         (m) => m['kdf']['memoryKiB'] = 10 * 1024 * 1024,
+        // 256 MiB and 10 passes: tens of seconds of pure-Dart Argon2id on a
+        // phone, or out of memory. Version 1 never asks for that.
+        (m) => m['kdf']['memoryKiB'] = 256 * 1024,
+        (m) => m['kdf']['iterations'] = 10,
+        (m) => m['kdf']['memoryKiB'] = 64 * 1024 + 1,
+        (m) => m['kdf']['iterations'] = 5,
         (m) => m['kdf']['iterations'] = 1000,
         (m) => m['kdf']['parallelism'] = 64,
+        (m) => m['kdf']['parallelism'] = 5,
         (m) => m['kdf']['memoryKiB'] = 4,
       ]) {
         await expectLater(
@@ -223,6 +230,30 @@ void main() {
         );
       }
       expect(watch.elapsed, lessThan(const Duration(seconds: 2)));
+    });
+
+    test("version 1's bounds: near its own cost, at most 64 MiB, 4 passes, 4 lanes", () {
+      const inside = [
+        BackupKdf.v1,
+        BackupKdf(memoryKiB: 64 * 1024, iterations: 4, parallelism: 4),
+        BackupKdf(memoryKiB: 8, iterations: 1, parallelism: 1),
+      ];
+      const outside = [
+        BackupKdf(memoryKiB: 64 * 1024 + 1, iterations: 2, parallelism: 1),
+        BackupKdf(memoryKiB: 19456, iterations: 5, parallelism: 1),
+        BackupKdf(memoryKiB: 19456, iterations: 2, parallelism: 5),
+        BackupKdf(memoryKiB: 19456, iterations: 0, parallelism: 1),
+        BackupKdf(memoryKiB: 19456, iterations: 2, parallelism: 0),
+        BackupKdf(memoryKiB: 31, iterations: 1, parallelism: 4),
+      ];
+      String cost(BackupKdf k) =>
+          '${k.memoryKiB} KiB, t ${k.iterations}, p ${k.parallelism}';
+      for (final kdf in inside) {
+        expect(kdf.withinBounds, isTrue, reason: cost(kdf));
+      }
+      for (final kdf in outside) {
+        expect(kdf.withinBounds, isFalse, reason: cost(kdf));
+      }
     });
 
     test('larger than the cap: not a backup', () async {

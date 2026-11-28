@@ -48,15 +48,18 @@ class BackupKdf {
   final int iterations;
   final int parallelism;
 
-  /// What a file may ask for. Argon2 needs 8 KiB per lane at least; more
-  /// than 256 MiB or 10 passes isn't something Piggybow ever writes.
+  /// What a version 1 file may ask for, checked before any key is made:
+  /// costs near [v1]'s, at most 64 MiB, 4 passes and 4 lanes (Argon2 needs
+  /// 8 KiB per lane at least). Pure-Dart Argon2id on a phone at more would
+  /// take tens of seconds or run out of memory. A later version that raises
+  /// the cost raises these with its own version number.
   bool get withinBounds =>
       parallelism >= 1 &&
       parallelism <= 4 &&
       memoryKiB >= 8 * parallelism &&
-      memoryKiB <= 256 * 1024 &&
+      memoryKiB <= 64 * 1024 &&
       iterations >= 1 &&
-      iterations <= 10;
+      iterations <= 4;
 }
 
 /// Why a file didn't open.
@@ -91,10 +94,16 @@ List<int> _secureBytes(int length) => [
 
 final _aes = AesGcm.with256bits();
 
-Map<String, Object?> _header(BackupKdf kdf, List<int> salt, List<int> nonce) =>
-    {
-      'format': backupFormat,
-      'version': backupVersion,
+/// The header as [version] writes it: sealing passes [backupVersion], opening
+/// the file's own version, so a later build still opens older files.
+Map<String, Object?> _header(
+  int version,
+  BackupKdf kdf,
+  List<int> salt,
+  List<int> nonce,
+) => {
+  'format': backupFormat,
+  'version': version,
       'kdf': {
         'name': 'argon2id',
         'memoryKiB': kdf.memoryKiB,
@@ -128,7 +137,7 @@ Future<String> sealBackup(
 }) async {
   final salt = randomBytes(16);
   final nonce = randomBytes(12);
-  final header = _header(kdf, salt, nonce);
+  final header = _header(backupVersion, kdf, salt, nonce);
   final box = await _aes.encrypt(
     gzip.encode(utf8.encode(jsonEncode(data))),
     secretKey: await _key(password, salt, kdf),
@@ -201,7 +210,7 @@ Future<Object?> openBackup(String file, String password) async {
         mac: Mac(sealed.sublist(sealed.length - 16)),
       ),
       secretKey: await _key(password, salt, kdf),
-      aad: _aad(_header(kdf, salt, nonce)),
+      aad: _aad(_header(version, kdf, salt, nonce)),
     );
   } on SecretBoxAuthenticationError {
     throw const BackupWontOpen();
