@@ -66,6 +66,22 @@ void main() {
       expect(idea(tester), tipOn(tester, DateTime(2026, 10, 3)));
     });
 
+    testWidgets('a new day starts on its own idea, after "Another idea" the day before', (tester) async {
+      final clock = MovableClock(DateTime.utc(2026, 10, 2, 16, 59));
+      final app = TestApp(clock: clock);
+      await openHome(tester, app);
+      // Twice: one step would land on the next day's idea anyway.
+      await tester.tapId('home-idea-another');
+      await tester.tapId('home-idea-another');
+      expect(idea(tester), isNot(tipOn(tester, DateTime(2026, 10, 2))));
+      expect(idea(tester), isNot(tipOn(tester, DateTime(2026, 10, 3))));
+
+      clock.now = DateTime.utc(2026, 10, 2, 17, 0, 1);
+      await tester.pump(const Duration(seconds: 61));
+      await tester.pumpAndSettle();
+      expect(idea(tester), tipOn(tester, DateTime(2026, 10, 3)));
+    });
+
     testWidgets('coming back to the app reads again', (tester) async {
       // Noon on 2 October; the next turn (22:00) is far off.
       final clock = MovableClock(DateTime.utc(2026, 10, 2, 5));

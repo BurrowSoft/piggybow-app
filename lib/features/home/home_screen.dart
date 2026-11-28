@@ -61,7 +61,11 @@ class _HomeData {
 class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
   _HomeData? _data;
   AppServices? _services;
+
+  /// "Another idea" picks, for the day they were picked on ([_readDay]): a
+  /// new day starts on its own idea.
   int? _tip;
+  String? _readDay;
 
   /// Home reads again at the next local turn (Clock.turnHours) and when the
   /// app comes back: what it shows depends on the phone's day and hour, not
@@ -111,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
 
   Future<void> _load() async {
     final store = context.services.journal;
+    final localDay = context.services.localDay;
     final entries = await store.entries();
     final goals = await store.goals();
     final active = await store.activeGoal();
@@ -136,7 +141,12 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       }
     }
     if (!mounted) return;
-    setState(() => _data = data);
+    final day = localDay.todayWire;
+    setState(() {
+      _data = data;
+      if (_readDay != day) _tip = null;
+      _readDay = day;
+    });
     _armTurn();
   }
 
