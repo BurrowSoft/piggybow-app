@@ -491,6 +491,8 @@ class _PlanDialogState extends State<_PlanDialog> {
       content: TestId(
         'me-plan-amount',
         child: TextField(
+          // Asks the keyboard not to learn from what is typed here (Android).
+          enableIMEPersonalizedLearning: false,
           controller: _amount,
           autofocus: true,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),

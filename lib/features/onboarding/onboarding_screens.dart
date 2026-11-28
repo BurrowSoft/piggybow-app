@@ -267,6 +267,8 @@ class _HappyScreenState extends State<HappyScreen> {
                   TestId(
                     'onb-plan',
                     child: TextField(
+                      // Asks the keyboard not to learn from what is typed here (Android).
+                      enableIMEPersonalizedLearning: false,
                       controller: _plan,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,

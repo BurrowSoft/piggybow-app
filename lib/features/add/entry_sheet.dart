@@ -392,6 +392,8 @@ class _EntrySheetState extends State<EntrySheet> {
                         TestId(
                           'add-amount',
                           child: TextField(
+                            // Asks the keyboard not to learn from what is typed here (Android).
+                            enableIMEPersonalizedLearning: false,
                             controller: _amount,
                             autofocus: !_editing,
                             keyboardType: TextInputType.numberWithOptions(
@@ -476,6 +478,8 @@ class _EntrySheetState extends State<EntrySheet> {
                         TestId(
                           'add-note',
                           child: TextField(
+                            // Asks the keyboard not to learn from what is typed here (Android).
+                            enableIMEPersonalizedLearning: false,
                             controller: _note,
                             maxLength: maxNoteLength,
                             // Up to 3 lines, so a long note is seen whole;

@@ -200,6 +200,8 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                     TestId(
                       'goal-name',
                       child: TextField(
+                        // Asks the keyboard not to learn from what is typed here (Android).
+                        enableIMEPersonalizedLearning: false,
                         controller: _name,
                         autofocus: !editing && !onboarding,
                         textCapitalization: TextCapitalization.sentences,
@@ -227,6 +229,8 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                     TestId(
                       'goal-amount',
                       child: TextField(
+                        // Asks the keyboard not to learn from what is typed here (Android).
+                        enableIMEPersonalizedLearning: false,
                         controller: _target,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
@@ -244,6 +248,8 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                     TestId(
                       'goal-start',
                       child: TextField(
+                        // Asks the keyboard not to learn from what is typed here (Android).
+                        enableIMEPersonalizedLearning: false,
                         controller: _start,
                         keyboardType: const TextInputType.numberWithOptions(
                           decimal: true,
