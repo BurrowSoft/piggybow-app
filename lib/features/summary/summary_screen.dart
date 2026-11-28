@@ -78,7 +78,8 @@ class _SummaryScreenState extends State<SummaryScreen>
         for (final e in entries)
           SummaryEntry(
             type: e.type.id,
-            amountMinor: e.amountMinor,
+            // In the home currency (an amount in another one, converted).
+            amountMinor: e.homeMinor,
             category: e.category?.id,
             feeling: e.feeling?.id,
             localDate: e.localDate,

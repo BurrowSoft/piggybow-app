@@ -1,6 +1,7 @@
 {
-  "about": "Piggybow's pig mood contract. Every case is one test of the pure mood function. Inputs: picks, plan_minor, entries, the goals' sticky timestamps, now (a UTC instant) and today (the device's local date). Amounts are integer minor units in a 2-digit currency. created_at and the goal timestamps are UTC; local_date and today are the device's local dates. Expected lines are ARB keys; args fill their placeholders. A goal's target_minor, start_minor and status appear only in the cases that are about them (C24, C29, C31); the mood function reads only the sticky timestamps.",
+  "about": "Piggybow's pig mood contract. Every case is one test of the pure mood function. Inputs: picks, plan_minor, entries, the goals' sticky timestamps, now (a UTC instant) and today (the device's local date). Amounts are integer minor units of the contract's currency (2 digits); an entry in another currency (C37) also gives its own currency, the rate typed and home_minor, its amount in the contract's currency, which is what the mood counts. created_at and the goal timestamps are UTC; local_date and today are the device's local dates. Expected lines are ARB keys; args fill their placeholders. A goal's target_minor, start_minor and status appear only in the cases that are about them (C24, C29, C31); the mood function reads only the sticky timestamps.",
   "rules": [
+    "An entry's amount is its home_minor when it has one (an entry in another currency), else its amount_minor.",
     "This week = entries whose local_date is from this week's Monday to today.",
     "save is met when at least 1 saved entry is this week.",
     "plan is met when plan_minor is set, at least 1 entry is this week, and this week's spends are <= plan_minor.",
@@ -494,6 +495,19 @@
       ],
       "goals": [],
       "expect": { "mood": "happy", "line": "pigHappyWorth" }
+    },
+    {
+      "id": "C37",
+      "why": "a spend in another currency counts at its home amount: 10000 JPY at 1 JPY = 0.0067 USD is home_minor 6700, within plan_minor 9000, so plan is met (an implementation that read amount_minor would miss the plan and give calm, pigCalm3)",
+      "now": "2026-12-02T05:00:00Z",
+      "today": "2026-12-02",
+      "picks": ["plan"],
+      "plan_minor": 9000,
+      "entries": [
+        { "type": "spent", "amount_minor": 10000, "currency": "JPY", "rate": { "units": 67, "scale": 4, "dir": "to_home" }, "home_minor": 6700, "category": "food", "feeling": null, "local_date": "2026-12-02", "created_at": "2026-12-02T03:00:00Z" }
+      ],
+      "goals": [],
+      "expect": { "mood": "happy", "line": "pigHappyPlan" }
     }
   ]
 }

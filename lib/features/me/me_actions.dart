@@ -7,6 +7,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../core/services.dart';
 import '../../data/device_backend.dart';
 import '../../export/csv_export.dart';
+import '../../money/rate.dart';
 import '../../session/app_session.dart';
 
 /// The folders in the app's own cache that hold export files: ours, and the
@@ -29,6 +30,7 @@ Future<String> journalCsv(AppServices services) async {
   final store = services.journal;
   final goals = {for (final g in await store.goals()) g.id: g.name};
   final entries = await store.entries();
+  final home = await store.currency() ?? 'USD';
   return buildCsv([
     for (final e in entries.reversed)
       CsvRow(
@@ -40,6 +42,9 @@ Future<String> journalCsv(AppServices services) async {
         feeling: e.feeling?.id,
         note: e.note,
         goalName: e.goalId == null ? null : goals[e.goalId],
+        homeMinor: e.homeMinor,
+        homeCurrency: home,
+        rateText: e.rate == null ? '' : rateText(e.rate!, currency: e.currency, home: home),
       ),
   ]);
 }

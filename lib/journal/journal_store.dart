@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../core/clock.dart';
 import '../goal/goal_progress.dart';
+import '../money/rate.dart';
 import '../pig/pig_mood.dart' show HappyPick;
 import 'category.dart';
 import 'entry.dart';
@@ -25,22 +26,39 @@ class JournalStore extends ChangeNotifier {
   /// files/): the phone's backup rules name it (decision 72).
   static const fileName = 'journal.db';
 
+  /// The journal's format. 2 since entries in another currency (feature 19):
+  /// a journal of a later format, written by a newer Piggybow, is refused
+  /// ([JournalTooNew]), never half-read.
+  static const format = 2;
+
   /// The journal file in the app's private support folder.
   static Future<JournalStore> open({required Clock clock}) async {
     final dir = await getApplicationSupportDirectory();
     final db = await databaseFactoryIo.openDatabase('${dir.path}/$fileName');
+    await _checkFormat(db);
     return JournalStore._(db, clock: clock);
   }
 
-  /// A fresh, empty journal in memory (tests).
+  /// An empty journal in memory (tests); [factory] opens the same one again.
   static Future<JournalStore> inMemory({
     required Clock clock,
     String Function()? newId,
-  }) async => JournalStore._(
-    await newDatabaseFactoryMemory().openDatabase('journal.db'),
-    clock: clock,
-    newId: newId,
-  );
+    DatabaseFactory? factory,
+  }) async {
+    final db = await (factory ?? newDatabaseFactoryMemory()).openDatabase('journal.db');
+    await _checkFormat(db);
+    return JournalStore._(db, clock: clock, newId: newId);
+  }
+
+  /// Refuses a newer format; marks an older (or a new) journal with this one.
+  static Future<void> _checkFormat(Database db) async {
+    final stored = await _settings.record('format').get(db);
+    if (stored is int && stored > format) {
+      await db.close();
+      throw JournalTooNew(stored);
+    }
+    if (stored != format) await _settings.record('format').put(db, format);
+  }
 
   final Database _db;
   final Clock _clock;
@@ -143,6 +161,10 @@ class JournalStore extends ChangeNotifier {
   }
 
   /// Adds a spend or a save. A save goes to the active goal, if any.
+  ///
+  /// In another currency than the journal's, it needs the [rate] typed: the
+  /// amount is converted once, into the home currency, and that rate is kept
+  /// as the last one for [currency] (feature 19).
   Future<Entry> addEntry({
     required EntryType type,
     required int amountMinor,
@@ -151,9 +173,11 @@ class JournalStore extends ChangeNotifier {
     SpendCategory? category,
     Feeling? feeling,
     String note = '',
+    Rate? rate,
   }) async {
     final now = _clock.nowUtc();
     final spend = type == EntryType.spent;
+    final converted = await _converted(amountMinor, currency, rate);
     final entry = Entry(
       id: _newId(),
       type: type,
@@ -166,9 +190,12 @@ class JournalStore extends ChangeNotifier {
       localDate: localDate,
       createdAt: now,
       updatedAt: now,
+      rate: converted == null ? null : rate,
+      convertedMinor: converted,
     );
     _check(entry);
     await _entries.record(entry.id).put(_db, entry.toMap());
+    if (entry.rate != null) await _keepRate(currency, entry.rate!);
     await _advance(entry.goalId);
     notifyListeners();
     return entry;
@@ -176,7 +203,11 @@ class JournalStore extends ChangeNotifier {
 
   /// Saves an edit. Spent ↔ Saved is allowed: a spend drops its goal, a save
   /// drops its category and feeling and goes to the active goal if it had
-  /// none. Its id, currency and creation time never change.
+  /// none. Its id and creation time never change.
+  ///
+  /// Its currency may: in another currency than the journal's it needs a
+  /// rate, and its amount is converted again (that entry only); back in the
+  /// journal's currency it keeps no rate.
   Future<Entry> updateEntry(Entry changed) async {
     final old = await entry(changed.id);
     if (old == null) throw StateError('no entry ${changed.id}');
@@ -185,11 +216,12 @@ class JournalStore extends ChangeNotifier {
     if (!spend && old.type == EntryType.spent) {
       goalId = (await activeGoal())?.id;
     }
+    final converted = await _converted(changed.amountMinor, changed.currency, changed.rate);
     final updated = Entry(
       id: old.id,
       type: changed.type,
       amountMinor: changed.amountMinor,
-      currency: old.currency,
+      currency: changed.currency,
       category: spend ? changed.category : null,
       feeling: spend ? changed.feeling : null,
       note: changed.note.trim(),
@@ -197,13 +229,58 @@ class JournalStore extends ChangeNotifier {
       localDate: changed.localDate,
       createdAt: old.createdAt,
       updatedAt: _clock.nowUtc(),
+      rate: converted == null ? null : changed.rate,
+      convertedMinor: converted,
     );
     _check(updated);
     await _entries.record(updated.id).put(_db, updated.toMap());
+    if (updated.rate != null) await _keepRate(updated.currency, updated.rate!);
     await _advance(old.goalId);
     if (updated.goalId != old.goalId) await _advance(updated.goalId);
     notifyListeners();
     return updated;
+  }
+
+  /// [amountMinor] of [currency] in the journal's home currency, or null when
+  /// [currency] is the home one (a rate is then refused). Another currency
+  /// needs a [rate], and a result from 1 minor unit to the 12-digit cap.
+  Future<int?> _converted(int amountMinor, String currency, Rate? rate) async {
+    final home = await this.currency();
+    if (home == null || currency == home) {
+      if (rate != null) {
+        throw ArgumentError.value(rate, 'rate', 'only for another currency than the journal\'s');
+      }
+      return null;
+    }
+    if (rate == null) {
+      throw ArgumentError.value(currency, 'currency', 'another currency needs a rate');
+    }
+    if (amountMinor <= 0) throw ArgumentError.value(amountMinor, 'amountMinor');
+    final converted = toHomeMinor(
+      amountMinor: amountMinor,
+      currency: currency,
+      home: home,
+      rate: rate,
+    );
+    if (converted == null) {
+      throw ArgumentError.value(amountMinor, 'amountMinor', 'out of range in $home');
+    }
+    return converted;
+  }
+
+  /// The last rate typed for [currency] (to fill in the next one), if any.
+  Future<Rate?> lastRate(String currency) async {
+    final rates = await _settings.record('rates').get(_db);
+    return rates is Map ? Rate.fromMap(rates[currency]) : null;
+  }
+
+  Future<void> _keepRate(String currency, Rate rate) async {
+    final record = _settings.record('rates');
+    final rates = await record.get(_db);
+    await record.put(_db, {
+      if (rates is Map) ...rates.cast<String, Object?>(),
+      currency: rate.toMap(),
+    });
   }
 
   Future<void> deleteEntry(String id) async {
@@ -268,11 +345,12 @@ class JournalStore extends ChangeNotifier {
       if (e.type == EntryType.saved && e.goalId == goalId) e,
   ];
 
-  /// A goal's progress: what was already saved, plus every save that names it.
+  /// A goal's progress: what was already saved, plus every save that names it
+  /// (a save in another currency at its home amount).
   Future<int> goalProgress(Goal goal) async {
     var sum = goal.startMinor;
     for (final e in await goalSaves(goal.id)) {
-      sum += e.amountMinor;
+      sum += e.homeMinor;
     }
     return sum;
   }
@@ -332,6 +410,8 @@ class JournalStore extends ChangeNotifier {
       await _entries.delete(txn);
       await _goals.delete(txn);
       await _settings.delete(txn);
+      // Still this format: an emptied journal isn't an older one.
+      await _settings.record('format').put(txn, format);
     });
     notifyListeners();
   }
@@ -352,4 +432,16 @@ class JournalStore extends ChangeNotifier {
       throw ArgumentError('the note is over $maxNoteLength characters');
     }
   }
+}
+
+/// The journal was written by a newer Piggybow, in a later
+/// [JournalStore.format]: the app asks for an update instead of opening it.
+class JournalTooNew implements Exception {
+  const JournalTooNew(this.format);
+
+  /// The journal's own format.
+  final int format;
+
+  @override
+  String toString() => 'JournalTooNew($format)';
 }

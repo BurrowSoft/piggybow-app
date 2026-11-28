@@ -297,5 +297,7 @@
   "sumWorthLine": "{worth} worth it · {notSure} not sure · {notReally} not really",
   "@sumWorthLine": {"placeholders": {"worth": {"type": "int"}, "notSure": {"type": "int"}, "notReally": {"type": "int"}}},
   "sumEmptyWeek": "Nothing noted for this week.",
-  "sumEmptyMonth": "Nothing noted for this month."
+  "sumEmptyMonth": "Nothing noted for this month.",
+  "journalTooNew": "Update Piggybow to open this journal.",
+  "@journalTooNew": {"description": "Shown instead of the app when the journal on the phone was written by a newer version of Piggybow (for example, restored from a backup of a newer install)."}
 }

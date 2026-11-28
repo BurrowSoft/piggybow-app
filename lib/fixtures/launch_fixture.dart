@@ -8,6 +8,7 @@ import '../journal/category.dart';
 import '../journal/entry.dart';
 import '../journal/goal.dart';
 import '../journal/journal_store.dart';
+import '../money/rate.dart';
 import '../pig/pig_mood.dart' show HappyPick;
 
 /// Launch fixtures for the on-device flows (staging builds only). Maestro
@@ -183,7 +184,10 @@ Future<void> _writeCase(
   if (shown != null) {
     final saved = entries
         .where((e) => e['type'] == 'saved')
-        .fold<int>(0, (sum, e) => sum + (e['amount_minor'] as int));
+        .fold<int>(
+          0,
+          (sum, e) => sum + ((e['home_minor'] ?? e['amount_minor']) as int),
+        );
     final band = _highestBand(shown);
     await _putGoal(
       store,
@@ -195,13 +199,16 @@ Future<void> _writeCase(
   }
   for (final e in entries) {
     clock.now = _at(e['created_at'])!;
+    // An entry in another currency (C37) is added with the rate it gives:
+    // the store converts it, as when a person types it.
     await store.addEntry(
       type: EntryType.fromId(e['type'])!,
       amountMinor: e['amount_minor'] as int,
-      currency: currency,
+      currency: e['currency'] as String? ?? currency,
       localDate: e['local_date'] as String,
       category: SpendCategory.fromId(e['category']),
       feeling: Feeling.fromId(e['feeling']),
+      rate: Rate.fromMap(e['rate']),
     );
   }
   clock.now = _at(c['now'])!;

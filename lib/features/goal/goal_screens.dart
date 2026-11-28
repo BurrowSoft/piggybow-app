@@ -506,7 +506,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                                   e.date,
                                   today: context.services.localDay.today,
                                 ),
-                                amount: '+${money(e.amountMinor)}',
+                                // In the home currency (a save in another one,
+                                // converted).
+                                amount: '+${money(e.homeMinor)}',
                               ),
                             ),
                           ),

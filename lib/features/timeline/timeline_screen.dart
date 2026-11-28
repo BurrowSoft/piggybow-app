@@ -32,6 +32,9 @@ class _TimelineScreenState extends State<TimelineScreen>
   _Filter _filter = _Filter.all;
   List<Entry>? _entries;
   Map<String, Goal> _goals = const {};
+
+  /// The journal's home currency: the day's totals are in it.
+  String _home = 'USD';
   AppServices? _services;
 
   @override
@@ -59,6 +62,7 @@ class _TimelineScreenState extends State<TimelineScreen>
   Future<void> _load() async {
     final store = context.services.journal;
     final entries = await store.entries();
+    final home = await store.currency() ?? 'USD';
     final goals = <String, Goal>{};
     for (final id in {for (final e in entries) ?e.goalId}) {
       final g = await store.goal(id);
@@ -67,6 +71,7 @@ class _TimelineScreenState extends State<TimelineScreen>
     if (!mounted) return;
     setState(() {
       _entries = entries;
+      _home = home;
       _goals = goals;
     });
   }
@@ -139,7 +144,7 @@ class _TimelineScreenState extends State<TimelineScreen>
                     ),
                   ),
                   Expanded(
-                    child: _Days(entries: shown!, goals: _goals),
+                    child: _Days(entries: shown!, goals: _goals, home: _home),
                   ),
                 ],
               ),
@@ -152,10 +157,13 @@ class _TimelineScreenState extends State<TimelineScreen>
 /// header, then its rows. Only what is on screen is built, even for a
 /// thousand entries on one day.
 class _Days extends StatelessWidget {
-  const _Days({required this.entries, required this.goals});
+  const _Days({required this.entries, required this.goals, required this.home});
 
   final List<Entry> entries;
   final Map<String, Goal> goals;
+
+  /// The journal's home currency, for the days' totals.
+  final String home;
 
   @override
   Widget build(BuildContext context) {
@@ -178,6 +186,7 @@ class _Days extends StatelessWidget {
         _DayItem(:final date, :final entries) => _DayHeader(
           date: date,
           entries: entries,
+          home: home,
         ),
         _RowItem(:final entry) => _Row(
           entry: entry,
@@ -209,10 +218,13 @@ class _RowItem extends _Item {
 
 /// Today, Yesterday or the date, with that day's totals.
 class _DayHeader extends StatelessWidget {
-  const _DayHeader({required this.date, required this.entries});
+  const _DayHeader({required this.date, required this.entries, required this.home});
 
   final DateTime date;
   final List<Entry> entries;
+
+  /// The journal's home currency: the totals are in it.
+  final String home;
 
   @override
   Widget build(BuildContext context) {
@@ -226,14 +238,15 @@ class _DayHeader extends StatelessWidget {
       date,
       today: today,
     );
-    // The day's totals in integer minor units; only the ones that aren't 0.
-    final currency = entries.first.currency;
+    // The day's totals in integer minor units of the home currency (an
+    // amount in another one, converted); only the ones that aren't 0.
+    final currency = home;
     var spent = 0, saved = 0;
     for (final e in entries) {
       if (e.type == EntryType.spent) {
-        spent += e.amountMinor;
+        spent += e.homeMinor;
       } else {
-        saved += e.amountMinor;
+        saved += e.homeMinor;
       }
     }
     final totals = [

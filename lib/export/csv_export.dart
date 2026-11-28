@@ -3,6 +3,11 @@
 // UTF-8 with a byte-order mark (so Excel reads Thai and emoji), RFC 4180 quoting, CRLF line
 // ends, and every cell protected against spreadsheet formulas. Amounts use plainAmount ("."
 // as the mark, no grouping), so the file reads the same in every locale.
+//
+// amount and currency are each entry's own, as spent. The last three columns are in the
+// journal's home currency (feature 19): home_amount, the amount every total counts, on every
+// row; home_currency; and, for an entry in another currency, the rate as typed, written from
+// its digits with "." ("1 EUR = 39.12 THB"), empty for a home-currency row.
 
 import '../money/money.dart';
 
@@ -18,6 +23,10 @@ const List<String> csvColumns = [
   'feeling',
   'note',
   'goal',
+  // In the home currency, always last (feature 19).
+  'home_amount',
+  'home_currency',
+  'rate',
 ];
 
 /// One entry as it goes into the file. Ids, not labels, for type, category and feeling.
@@ -31,6 +40,9 @@ class CsvRow {
     this.feeling,
     required this.note,
     this.goalName,
+    required this.homeMinor,
+    required this.homeCurrency,
+    this.rateText = '',
   });
 
   /// The entry's local_date, "YYYY-MM-DD".
@@ -38,8 +50,20 @@ class CsvRow {
 
   /// "spent" or "saved".
   final String type;
+
+  /// As spent: its amount, in minor units of its [currency].
   final int amountMinor;
   final String currency;
+
+  /// The frozen home-currency amount, integer minor units of [homeCurrency]:
+  /// [amountMinor] itself for a home-currency row.
+  final int homeMinor;
+
+  /// The journal's home currency.
+  final String homeCurrency;
+
+  /// The rate as typed, "1 EUR = 39.12 THB" ("." always); empty for home rows.
+  final String rateText;
 
   /// A category id ("food"); spends only.
   final String? category;
@@ -80,6 +104,21 @@ String buildCsv(List<CsvRow> rows) {
     if (r.type != 'spent' && r.type != 'saved') {
       throw ArgumentError.value(r.type, 'type', 'must be "spent" or "saved"');
     }
+    // The home columns, loudly: a slip here would quietly corrupt someone's
+    // totals in their spreadsheet.
+    if (r.homeCurrency.isEmpty) {
+      throw ArgumentError.value(r.homeCurrency, 'homeCurrency', 'must be set');
+    }
+    if (r.currency == r.homeCurrency) {
+      if (r.rateText.isNotEmpty) {
+        throw ArgumentError.value(r.rateText, 'rateText', 'must be empty in the home currency');
+      }
+      if (r.homeMinor != r.amountMinor) {
+        throw ArgumentError.value(r.homeMinor, 'homeMinor', 'must be the amount in the home currency');
+      }
+    } else if (r.rateText.isEmpty) {
+      throw ArgumentError.value(r.currency, 'rateText', 'is needed for another currency than the home one');
+    }
     lines.add(
       [
         r.localDate,
@@ -90,6 +129,9 @@ String buildCsv(List<CsvRow> rows) {
         r.feeling ?? '',
         r.note,
         r.goalName ?? '',
+        plainAmount(r.homeMinor, r.homeCurrency),
+        r.homeCurrency,
+        r.rateText,
       ].map(csvCell).join(','),
     );
   }
