@@ -48,7 +48,10 @@ void main() {
     expect('RowsPlusStore('.allMatches(main), hasLength(1));
   });
 
-  test('no env file and no workflow turns it on', () {
+  // Changed on purpose (decision 79, UX): the emulator's plus-rows kind, a
+  // staging debug build, is the one place that turns it on, for the tester's
+  // rows. Every other workflow, Codemagic and every env file still never do.
+  test("no env file turns it on, and no workflow but the emulator's plus-rows build", () {
     for (final f in Directory(
       'env',
     ).listSync().whereType<File>().where((f) => f.path.endsWith('.json'))) {
@@ -61,10 +64,20 @@ void main() {
       File('codemagic.yaml'),
     ]) {
       expect(f.existsSync(), isTrue, reason: f.path);
+      final text = f.readAsStringSync();
+      if (!f.path.replaceAll(String.fromCharCode(92), '/').endsWith('/emulator.yaml')) {
+        expect(text, isNot(contains('PLUS_FAKE_STORE')), reason: f.path);
+        continue;
+      }
+      final lines = [
+        for (final l in text.split('\n'))
+          if (l.contains('PLUS_FAKE_STORE')) l.trim(),
+      ];
+      expect(lines, hasLength(2), reason: 'the kind\'s description and its one define');
+      expect(lines.first, startsWith('description: "The APK:'));
       expect(
-        f.readAsStringSync(),
-        isNot(contains('PLUS_FAKE_STORE')),
-        reason: f.path,
+        lines.last,
+        startsWith(r'| if $kind == "plus-rows" then .PLUS_FAKE_STORE = "true" else . end'),
       );
     }
     // The release build is never a debug one.

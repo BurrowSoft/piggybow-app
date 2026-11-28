@@ -28,6 +28,15 @@ if [ "$(prop ro.kernel.qemu)" != 1 ] && [ "$(prop ro.boot.qemu)" != 1 ]; then
   echo "REFUSING: $SERIAL does not report an emulator"; exit 9
 fi
 
+# The Plus probe (kind plus-probe) is its own script, on a Play Store image:
+# no adb root there, and no zone, navigation or flows to set up.
+if [ "$KIND" = plus-probe ]; then
+  echo "emulator $SERIAL: Android $(prop ro.build.version.release) (API $(prop ro.build.version.sdk)) | head $HEAD_SHA | kind $KIND"
+  export APK OUT SERIAL APP_ID
+  bash "$(dirname "$0")/plus_probe.sh"
+  exit
+fi
+
 # The time zone, before the app ever starts (UTC by default, for the
 # fixtures). google_apis images allow adb root; the result is checked.
 if [ "$(prop persist.sys.timezone)" != "$ZONE" ]; then
