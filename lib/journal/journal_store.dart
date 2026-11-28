@@ -369,13 +369,9 @@ class JournalStore extends ChangeNotifier {
     final settings = await _settings.find(txn);
     return JournalSnapshot(
       entries: {
-        for (final s in entries)
-          if (_entryRecord(s.key, s.value) case final m?) s.key: m,
+        for (final s in entries) s.key: ?_entryRecord(s.key, s.value),
       },
-      goals: {
-        for (final s in goals)
-          if (_goalRecord(s.key, s.value) case final m?) s.key: m,
-      },
+      goals: {for (final s in goals) s.key: ?_goalRecord(s.key, s.value)},
       settings: {
         for (final s in settings)
           if (_settingFits(s.key, s.value)) s.key: _plain(s.value),
