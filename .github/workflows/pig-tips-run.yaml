@@ -47,11 +47,12 @@ jobs:
           rm -f "$RUNNER_TEMP/deno.zip"
           echo "$RUNNER_TEMP/deno" >> "$GITHUB_PATH"
           "$RUNNER_TEMP/deno/deno" --version
-      # The input reaches the script only as env.
+      # The input reaches the script only as env. The publishable key isn't
+      # secret, but the environment keeps it as a secret, with the token.
       - name: The run
         env:
           SUPABASE_DEPLOY_TOKEN: ${{ secrets.SUPABASE_STAGING_DEPLOY_TOKEN }}
-          ANON_KEY: ${{ vars.SUPABASE_STAGING_ANON_KEY }}
+          ANON_KEY: ${{ secrets.SUPABASE_STAGING_ANON_KEY }}
           MODEL: ${{ inputs.model }}
         run: >-
           deno run --no-lock --allow-net=api.supabase.com,"$PROJECT_REF.supabase.co"
