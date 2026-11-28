@@ -155,6 +155,8 @@ class _CategoryEditScreenState extends State<CategoryEditScreen> {
                     'category-name',
                     child: TextField(
                       controller: _name,
+                      // Keyboard learning off, as on every field (#75).
+                      enableIMEPersonalizedLearning: false,
                       autofocus: !_editing,
                       textCapitalization: TextCapitalization.sentences,
                       // Up to 3 lines, so a long name is seen whole, but one
