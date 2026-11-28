@@ -5,21 +5,25 @@ import '../../backup/backup_file.dart';
 import '../../backup/backup_flow.dart';
 import '../../backup/backup_snapshot.dart';
 import '../../core/fit_text.dart';
+import '../../core/labeled_field.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../session/app_session.dart' show Routes;
 import '../../session/session_scope.dart';
+import '../../theme/theme.dart';
 import '../onboarding/onboarding_screens.dart' show onboardedAtStart;
 
 /// A password field for a backup: hidden unless shown, and the keyboard
-/// neither learns it nor suggests (it's never stored or logged).
+/// neither learns it nor suggests (it's never stored or logged). Its label
+/// is never cut off (LabeledField).
 class _PasswordField extends StatelessWidget {
   const _PasswordField({
     required this.id,
     required this.label,
     required this.controller,
     required this.shown,
+    this.focusNode,
     this.autofocus = false,
     this.onSubmitted,
     this.toggle,
@@ -29,6 +33,7 @@ class _PasswordField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final bool shown;
+  final FocusNode? focusNode;
   final bool autofocus;
   final ValueChanged<String>? onSubmitted;
 
@@ -38,18 +43,33 @@ class _PasswordField extends StatelessWidget {
   @override
   Widget build(BuildContext context) => TestId(
     id,
-    child: TextField(
-      controller: controller,
-      autofocus: autofocus,
-      obscureText: !shown,
-      autocorrect: false,
-      enableSuggestions: false,
-      enableIMEPersonalizedLearning: false,
-      onSubmitted: onSubmitted,
-      decoration: InputDecoration(labelText: label, suffixIcon: toggle),
+    child: LabeledField(
+      label: label,
+      decoration: InputDecoration(suffixIcon: toggle),
+      field: (decoration) => TextField(
+        controller: controller,
+        // What people type is ink, never the hint grey (decision 206).
+        style: context.inputText,
+        focusNode: focusNode,
+        autofocus: autofocus,
+        obscureText: !shown,
+        autocorrect: false,
+        enableSuggestions: false,
+        enableIMEPersonalizedLearning: false,
+        onSubmitted: onSubmitted,
+        decoration: decoration,
+      ),
     ),
   );
 }
+
+/// A zero-width space: a line may break there, and nothing shows.
+final _breakHere = String.fromCharCode(0x200B);
+
+/// A file name ("piggybow-backup-2026-09-30.piggybow") is one long word: on
+/// a narrow line it may break after its own - . and _, never inside a part.
+String _breakable(String name) =>
+    name.replaceAllMapped(RegExp('[-._]'), (m) => '${m[0]}$_breakHere');
 
 class _ShowToggle extends StatelessWidget {
   const _ShowToggle({
@@ -394,38 +414,31 @@ class _RestoreScreenState extends State<RestoreScreen> {
                   if (file != null) ...[
                     TestId.container(
                       'restore-file',
-                      // A file name is one long word: one line, ended with
-                      // "…" when it's longer, never broken mid-word.
-                      child: Text(
-                        file.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                      child: Semantics(
+                        label: file.name,
+                        child: ExcludeSemantics(
+                          child: Text(
+                            _breakable(file.name),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    TestId(
-                      'restore-password',
-                      child: TextField(
-                        controller: _password,
-                        focusNode: _focus,
-                        autofocus: true,
-                        obscureText: !_shown,
-                        autocorrect: false,
-                        enableSuggestions: false,
-                        enableIMEPersonalizedLearning: false,
-                        onSubmitted: (_) => _busy ? null : _restore(),
-                        decoration: InputDecoration(
-                          labelText: l10n.backupPassword,
-                          suffixIcon: _ShowToggle(
-                            id: 'restore-show',
-                            shown: _shown,
-                            onChanged: (shown) =>
-                                setState(() => _shown = shown),
-                          ),
-                        ),
+                    _PasswordField(
+                      id: 'restore-password',
+                      label: l10n.backupPassword,
+                      controller: _password,
+                      focusNode: _focus,
+                      shown: _shown,
+                      autofocus: true,
+                      onSubmitted: (_) => _busy ? null : _restore(),
+                      toggle: _ShowToggle(
+                        id: 'restore-show',
+                        shown: _shown,
+                        onChanged: (shown) => setState(() => _shown = shown),
                       ),
                     ),
                   ],

@@ -106,7 +106,14 @@ void main() {
     await tester.tapId('onb-restore');
     tester.expectScreen('restore-screen');
     await tester.tapId('restore-choose');
-    expect(find.text('piggybow-backup-2026-09-30.piggybow'), findsOneWidget);
+    // The name as picked (it may break after its - and . on a narrow line).
+    final shown = tester
+        .widget<Text>(
+          find.descendant(of: byId('restore-file'), matching: find.byType(Text)),
+        )
+        .data!
+        .replaceAll(String.fromCharCode(0x200B), '');
+    expect(shown, 'piggybow-backup-2026-09-30.piggybow');
     await tester.enterId('restore-password', 'correct horse');
     await tester.tapId('restore-go');
     expect(
