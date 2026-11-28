@@ -26,7 +26,7 @@ Set<String> vectorColours(String path) => RegExp(r'android:(?:fill|stroke)Color=
 
 String hexOf(int argb) => '#${(argb & 0xFFFFFF).toRadixString(16).toUpperCase().padLeft(6, '0')}';
 
-/// A vector drawable's <path>: the transform of the <group>s around it (x' = sx * x + tx,
+/// A vector drawable's `path`: the transform of the `group`s around it (x' = sx * x + tx,
 /// y' = sy * y + ty, in viewport units) and the numbers in its path data.
 typedef VectorPath = ({double sx, double sy, double tx, double ty, List<double> numbers});
 
