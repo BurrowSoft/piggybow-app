@@ -32,11 +32,15 @@ class _SummaryData {
     required this.entries,
     required this.currency,
     required this.planMinor,
+    required this.customs,
   });
 
   final List<SummaryEntry> entries;
   final String currency;
   final int? planMinor;
+
+  /// Your own categories by id (Plus): their spends show under their names.
+  final Map<String, CustomCategory> customs;
 }
 
 class _SummaryScreenState extends State<SummaryScreen>
@@ -79,13 +83,14 @@ class _SummaryScreenState extends State<SummaryScreen>
           SummaryEntry(
             type: e.type.id,
             amountMinor: e.amountMinor,
-            category: e.category?.id,
+            category: e.categoryId,
             feeling: e.feeling?.id,
             localDate: e.localDate,
           ),
       ],
       currency: await store.currency() ?? 'USD',
       planMinor: await store.planMinor(),
+      customs: {for (final c in await store.customCategories()) c.id: c},
     );
     if (!mounted) return;
     setState(() => _data = data);
@@ -141,7 +146,7 @@ class _SummaryScreenState extends State<SummaryScreen>
       entries: data.entries,
       planMinor: data.planMinor,
       locale: context.session.dateLocale,
-      categoryLabel: (id) => SpendCategory.fromId(id)?.label(l10n) ?? id,
+      categoryLabel: (id) => categoryName(l10n, id, data.customs),
     );
     final week = _kind == PeriodKind.week;
     final locale = context.session.device.localeName;
@@ -193,7 +198,7 @@ class _SummaryScreenState extends State<SummaryScreen>
             const SizedBox(height: 12),
             _CategoryCard(
               rows: s.categories,
-              label: (id) => SpendCategory.fromId(id)?.label(l10n) ?? id,
+              label: (id) => categoryName(l10n, id, data.customs),
               money: money,
               percent: NumberFormat.percentPattern(intlNumberLocale(locale)),
             ),

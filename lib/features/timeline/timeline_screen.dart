@@ -6,6 +6,7 @@ import '../../core/clock.dart';
 import '../../core/day_label.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
+import '../../journal/category.dart';
 import '../../journal/entry.dart';
 import '../../journal/goal.dart';
 import '../../l10n/gen/app_localizations.dart';
@@ -32,6 +33,9 @@ class _TimelineScreenState extends State<TimelineScreen>
   _Filter _filter = _Filter.all;
   List<Entry>? _entries;
   Map<String, Goal> _goals = const {};
+
+  /// Your own categories by id (Plus): a spend in one shows its name and icon.
+  Map<String, CustomCategory> _customs = const {};
   AppServices? _services;
 
   @override
@@ -64,10 +68,12 @@ class _TimelineScreenState extends State<TimelineScreen>
       final g = await store.goal(id);
       if (g != null) goals[id] = g;
     }
+    final customs = {for (final c in await store.customCategories()) c.id: c};
     if (!mounted) return;
     setState(() {
       _entries = entries;
       _goals = goals;
+      _customs = customs;
     });
   }
 
@@ -137,7 +143,11 @@ class _TimelineScreenState extends State<TimelineScreen>
                     ),
                   ),
                   Expanded(
-                    child: _Days(entries: shown!, goals: _goals),
+                    child: _Days(
+                      entries: shown!,
+                      goals: _goals,
+                      customs: _customs,
+                    ),
                   ),
                 ],
               ),
@@ -150,10 +160,15 @@ class _TimelineScreenState extends State<TimelineScreen>
 /// header, then its rows. Only what is on screen is built, even for a
 /// thousand entries on one day.
 class _Days extends StatelessWidget {
-  const _Days({required this.entries, required this.goals});
+  const _Days({
+    required this.entries,
+    required this.goals,
+    required this.customs,
+  });
 
   final List<Entry> entries;
   final Map<String, Goal> goals;
+  final Map<String, CustomCategory> customs;
 
   @override
   Widget build(BuildContext context) {
@@ -180,6 +195,7 @@ class _Days extends StatelessWidget {
         _RowItem(:final entry) => _Row(
           entry: entry,
           goal: goals[entry.goalId],
+          customs: customs,
           locale: locale,
         ),
       },
@@ -262,10 +278,16 @@ class _DayHeader extends StatelessWidget {
 }
 
 class _Row extends StatelessWidget {
-  const _Row({required this.entry, required this.goal, required this.locale});
+  const _Row({
+    required this.entry,
+    required this.goal,
+    required this.customs,
+    required this.locale,
+  });
 
   final Entry entry;
   final Goal? goal;
+  final Map<String, CustomCategory> customs;
   final String locale;
 
   @override
@@ -279,7 +301,9 @@ class _Row extends StatelessWidget {
     final Widget icon;
     final Widget amount;
     if (e.type == EntryType.spent) {
-      final category = e.category!.label(l10n);
+      // A built-in's name, or your own category's (Plus).
+      final categoryId = e.categoryId!;
+      final category = categoryName(l10n, categoryId, customs);
       final feeling = switch (e.feeling) {
         Feeling.worthIt => l10n.feelWorth,
         Feeling.notSure => l10n.feelNotSure,
@@ -288,7 +312,10 @@ class _Row extends StatelessWidget {
       };
       title = e.note.isNotEmpty ? e.note : category;
       subtitle = [category, ?feeling].join(' · ');
-      icon = Icon(e.category!.icon, color: theme.colorScheme.onSurfaceVariant);
+      icon = Icon(
+        categoryIcon(categoryId, customs),
+        color: theme.colorScheme.onSurfaceVariant,
+      );
       // Spends in ink: never red, never a minus sign.
       amount = Text(
         money,

@@ -48,6 +48,7 @@ class JournalStore extends ChangeNotifier {
 
   static final _entries = stringMapStoreFactory.store('entries');
   static final _goals = stringMapStoreFactory.store('goals');
+  static final _categories = stringMapStoreFactory.store('categories');
   static final _settings = StoreRef<String, Object?>('settings');
 
   // ------------------------------------------------------------ settings
@@ -151,18 +152,21 @@ class JournalStore extends ChangeNotifier {
     required String currency,
     required String localDate,
     SpendCategory? category,
+    String? customCategory,
     Feeling? feeling,
     String note = '',
     String? goalId,
   }) async {
     final now = _clock.nowUtc();
     final spend = type == EntryType.spent;
+    if (spend && customCategory != null) await _checkCustom(customCategory);
     final entry = Entry(
       id: _newId(),
       type: type,
       amountMinor: amountMinor,
       currency: currency,
-      category: spend ? category : null,
+      category: spend && customCategory == null ? category : null,
+      customCategory: spend ? customCategory : null,
       feeling: spend ? feeling : null,
       note: note.trim(),
       goalId: spend ? null : await _saveGoal(goalId),
@@ -191,12 +195,15 @@ class JournalStore extends ChangeNotifier {
     } else if (!spend && goalId != null && goalId != old.goalId) {
       goalId = await _saveGoal(goalId);
     }
+    final custom = spend ? changed.customCategory : null;
+    if (custom != null && custom != old.customCategory) await _checkCustom(custom);
     final updated = Entry(
       id: old.id,
       type: changed.type,
       amountMinor: changed.amountMinor,
       currency: old.currency,
-      category: spend ? changed.category : null,
+      category: spend && custom == null ? changed.category : null,
+      customCategory: custom,
       feeling: spend ? changed.feeling : null,
       note: changed.note.trim(),
       goalId: goalId,
@@ -385,6 +392,82 @@ class JournalStore extends ChangeNotifier {
         );
   }
 
+  // ---------------------------------------------------------- categories
+
+  /// Your own categories (Plus, decision 79), oldest first, hidden ones too.
+  /// They're never deleted, only hidden.
+  Future<List<CustomCategory>> customCategories() async {
+    final snaps = await _categories.find(
+      _db,
+      finder: Finder(sortOrders: [SortOrder('created_at')]),
+    );
+    return [for (final s in snaps) ?CustomCategory.fromMap(s.key, s.value)];
+  }
+
+  /// A new id for a category of your own.
+  String newCategoryId() => '${CustomCategory.idPrefix}${_newId()}';
+
+  /// Stores [category]: its name trimmed, never empty, at most
+  /// [categoryNameMax] characters, and not the name of another of your own
+  /// (in any case; the screen also checks the built-ins' names).
+  Future<void> putCustomCategory(CustomCategory category) async {
+    if (!CustomCategory.isCustomId(category.id)) {
+      throw ArgumentError.value(category.id, 'id');
+    }
+    final name = category.name.trim();
+    if (name.isEmpty || name.characters.length > categoryNameMax) {
+      throw ArgumentError.value(category.name, 'name');
+    }
+    final lower = name.toLowerCase();
+    for (final c in await customCategories()) {
+      if (c.id != category.id && c.name.toLowerCase() == lower) {
+        throw StateError('a category named "$name" exists');
+      }
+    }
+    await _categories
+        .record(category.id)
+        .put(_db, category.copyWith(name: name).toMap());
+    notifyListeners();
+  }
+
+  /// The built-in categories hidden from the Add sheet (free for everyone).
+  Future<Set<SpendCategory>> hiddenBuiltIns() async {
+    final ids = await _settings.record('hidden_categories').get(_db);
+    return {
+      for (final id in ids is List ? ids : const []) ?SpendCategory.fromId(id),
+    };
+  }
+
+  Future<void> setBuiltInHidden(SpendCategory category, bool hidden) async {
+    final now = await hiddenBuiltIns();
+    if (hidden) {
+      now.add(category);
+    } else {
+      now.remove(category);
+    }
+    await _settings.record('hidden_categories').put(_db, [
+      for (final c in SpendCategory.values)
+        if (now.contains(c)) c.id,
+    ]);
+    notifyListeners();
+  }
+
+  /// Hides a category of your own from the Add sheet, or shows it again
+  /// (free, like the built-ins'); its spends keep it either way.
+  Future<void> setCustomHidden(String id, bool hidden) async {
+    await _checkCustom(id);
+    await _categories.record(id).update(_db, {'hidden': hidden});
+    notifyListeners();
+  }
+
+  /// A spend goes only to a category of your own that exists.
+  Future<void> _checkCustom(String id) async {
+    if (!CustomCategory.isCustomId(id) ||
+        !await _categories.record(id).exists(_db)) {
+      throw ArgumentError.value(id, 'customCategory', 'no such category');
+    }
+  }
+
   // ---------------------------------------------------------------- all
 
   /// Erases every entry, goal and journal setting on the phone.
@@ -392,6 +475,7 @@ class JournalStore extends ChangeNotifier {
     await _db.transaction((txn) async {
       await _entries.delete(txn);
       await _goals.delete(txn);
+      await _categories.delete(txn);
       await _settings.delete(txn);
     });
     notifyListeners();
@@ -406,7 +490,9 @@ class JournalStore extends ChangeNotifier {
     if (e.date.isAfter(DateTime(9999))) {
       throw ArgumentError.value(e.localDate, 'localDate');
     }
-    if (e.type == EntryType.spent && e.category == null) {
+    if (e.type == EntryType.spent &&
+        e.category == null &&
+        e.customCategory == null) {
       throw ArgumentError('a spend needs a category');
     }
     if (e.note.characters.length > maxNoteLength) {

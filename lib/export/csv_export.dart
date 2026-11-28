@@ -15,12 +15,15 @@ const List<String> csvColumns = [
   'amount',
   'currency',
   'category',
+  'category_name',
   'feeling',
   'note',
   'goal',
 ];
 
-/// One entry as it goes into the file. Ids, not labels, for type, category and feeling.
+/// One entry as it goes into the file. Ids, not labels, for type and feeling. The category
+/// has its id and, right after it, its display name: the id of a category of your own (Plus,
+/// "c:…") means nothing to a reader.
 class CsvRow {
   const CsvRow({
     required this.localDate,
@@ -28,6 +31,7 @@ class CsvRow {
     required this.amountMinor,
     required this.currency,
     this.category,
+    this.categoryName,
     this.feeling,
     required this.note,
     this.goalName,
@@ -41,8 +45,12 @@ class CsvRow {
   final int amountMinor;
   final String currency;
 
-  /// A category id ("food"); spends only.
+  /// A category id ("food", or "c:…" for one of your own); spends only.
   final String? category;
+
+  /// The category's display name; spends only. A built-in's is in the app's language when the
+  /// file is made (so two exports made in two languages differ here); your own is as typed.
+  final String? categoryName;
 
   /// "worth_it", "not_sure" or "not_really"; spends only.
   final String? feeling;
@@ -87,6 +95,7 @@ String buildCsv(List<CsvRow> rows) {
         plainAmount(r.amountMinor, r.currency),
         r.currency,
         r.category ?? '',
+        r.categoryName ?? '',
         r.feeling ?? '',
         r.note,
         r.goalName ?? '',
