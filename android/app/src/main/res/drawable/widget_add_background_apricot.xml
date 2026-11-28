@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget's "+" (Add a spend) in the apricot theme (#51): a circle in its accent. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <solid android:color="@color/widget_accent_apricot" />
+</shape>

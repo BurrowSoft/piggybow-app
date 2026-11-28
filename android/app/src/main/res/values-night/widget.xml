@@ -9,4 +9,11 @@
     <color name="widget_accent">#D88AA6</color>
     <color name="widget_on_accent">#2B2438</color>
     <color name="widget_track">#3A3350</color>
+    <!-- #51's Plus themes in the dark. -->
+    <color name="widget_accent_plum">#B9A6EC</color>
+    <color name="widget_accent_apricot">#E9B949</color>
+    <color name="widget_accent_blueberry">#9FB6D0</color>
+    <color name="widget_track_plum">#352D4D</color>
+    <color name="widget_track_apricot">#4A3429</color>
+    <color name="widget_track_blueberry">#263340</color>
 </resources>

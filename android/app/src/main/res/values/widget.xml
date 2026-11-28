@@ -18,6 +18,15 @@
     <color name="widget_band_3">#F3C24F</color>
     <color name="widget_band_4">#8CCFB0</color>
     <color name="widget_band_5">#9B84D6</color>
+    <!-- #51's Plus themes (lib/theme/palettes.dart): each one's accent (the
+         "+") and the rainbow's empty track; values-night has the dark ones.
+         The default theme's are widget_accent and widget_track above. -->
+    <color name="widget_accent_plum">#6A4FB3</color>
+    <color name="widget_accent_apricot">#9C4519</color>
+    <color name="widget_accent_blueberry">#3C5A7A</color>
+    <color name="widget_track_plum">#ECE6F0</color>
+    <color name="widget_track_apricot">#ECE6F0</color>
+    <color name="widget_track_blueberry">#ECE6F0</color>
 
     <style name="WidgetLabel">
         <item name="android:textSize">13sp</item>

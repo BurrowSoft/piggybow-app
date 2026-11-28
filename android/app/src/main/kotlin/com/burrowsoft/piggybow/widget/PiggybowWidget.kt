@@ -88,8 +88,8 @@ class PiggybowWidget : AppWidgetProvider() {
                 context.packageName,
                 if (wide) R.layout.widget_wide else R.layout.widget_small,
             )
-            // The default theme's colours (the layouts): each Plus theme's own
-            // join with the themes (PR #51), from face.theme.
+            // The default theme's colours are the layouts'; a Plus theme's
+            // accent (the "+") and rainbow track come from face.theme (#51).
             views.setOnClickPendingIntent(R.id.widget_root, openApp(context))
             when (face) {
                 is WidgetFace.Closed -> closed(views, face.text, wide)
@@ -119,6 +119,7 @@ class PiggybowWidget : AppWidgetProvider() {
                 return
             }
             views.setViewVisibility(R.id.widget_add, View.VISIBLE)
+            views.setInt(R.id.widget_add, "setBackgroundResource", addBackground(face.theme))
             views.setOnClickPendingIntent(R.id.widget_add, addSpend(context))
             views.setViewVisibility(R.id.widget_goal, View.VISIBLE)
             val goal = face.goal
@@ -131,7 +132,7 @@ class PiggybowWidget : AppWidgetProvider() {
             views.setViewVisibility(R.id.widget_rainbow, View.VISIBLE)
             views.setContentDescription(R.id.widget_rainbow, goal.label)
             for (i in 0 until 5) {
-                views.setImageViewResource(BAND_VIEWS[i], if (goal.bands[i]) BAND_LIT[i] else BAND_TRACK[i])
+                views.setImageViewResource(BAND_VIEWS[i], if (goal.bands[i]) BAND_LIT[i] else bandTrack(face.theme)[i])
             }
             views.setTextViewText(R.id.widget_goal_name, goal.name)
             views.setViewVisibility(R.id.widget_goal_progress, View.VISIBLE)
@@ -149,6 +150,37 @@ class PiggybowWidget : AppWidgetProvider() {
             R.drawable.widget_track_1, R.drawable.widget_track_2, R.drawable.widget_track_3,
             R.drawable.widget_track_4, R.drawable.widget_track_5,
         )
+        private val TRACK_PLUM = intArrayOf(
+            R.drawable.widget_track_plum_1, R.drawable.widget_track_plum_2, R.drawable.widget_track_plum_3,
+            R.drawable.widget_track_plum_4, R.drawable.widget_track_plum_5,
+        )
+        private val TRACK_APRICOT = intArrayOf(
+            R.drawable.widget_track_apricot_1, R.drawable.widget_track_apricot_2, R.drawable.widget_track_apricot_3,
+            R.drawable.widget_track_apricot_4, R.drawable.widget_track_apricot_5,
+        )
+        private val TRACK_BLUEBERRY = intArrayOf(
+            R.drawable.widget_track_blueberry_1, R.drawable.widget_track_blueberry_2, R.drawable.widget_track_blueberry_3,
+            R.drawable.widget_track_blueberry_4, R.drawable.widget_track_blueberry_5,
+        )
+
+        /**
+         * face.theme's "+" circle and empty rainbow: #51's Plus themes by
+         * their ids (lib/theme/palettes.dart's names), else the default.
+         * Resources, not colours, so the launcher picks the night ones.
+         */
+        private fun addBackground(theme: String): Int = when (theme) {
+            "plum" -> R.drawable.widget_add_background_plum
+            "apricot" -> R.drawable.widget_add_background_apricot
+            "blueberry" -> R.drawable.widget_add_background_blueberry
+            else -> R.drawable.widget_add_background
+        }
+
+        private fun bandTrack(theme: String): IntArray = when (theme) {
+            "plum" -> TRACK_PLUM
+            "apricot" -> TRACK_APRICOT
+            "blueberry" -> TRACK_BLUEBERRY
+            else -> BAND_TRACK
+        }
 
         /**
          * The app, from the widget: its own action, so a running app hears

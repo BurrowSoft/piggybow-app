@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/theme/palettes.dart';
 import 'package:piggybow/core/app_config.dart';
 import 'package:piggybow/features/widget/widget_sync.dart';
 import 'package:piggybow/router.dart';
@@ -116,4 +117,33 @@ void main() {
       expect(find.text(arb['mePrivacyWidget'] as String), plus ? findsOneWidget : findsNothing);
     });
   }
+
+  // Wiring item 16 (#72 with #51): each Plus theme's accent and empty track
+  // are the app's own, light and dark, and the widget picks them by the
+  // snapshot's theme id (palettes.dart's names; "default" otherwise).
+  test("each theme's accent and track, light and dark, as the app's", () {
+    String hex(Color c) =>
+        '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+    String colour(String xml, String name) =>
+        RegExp('<color name="$name">(#[0-9A-F]{6})</color>').firstMatch(xml)![1]!;
+    final light = read('android/app/src/main/res/values/widget.xml');
+    final dark = read('android/app/src/main/res/values-night/widget.xml');
+    final widget = read('android/app/src/main/kotlin/com/burrowsoft/piggybow/widget/PiggybowWidget.kt');
+    for (final palette in [null, ...PlusPalette.values]) {
+      final suffix = palette == null ? '' : '_${palette.name}';
+      for (final (xml, brightness) in [(light, Brightness.light), (dark, Brightness.dark)]) {
+        final app = paletteColours(palette, brightness);
+        expect(colour(xml, 'widget_accent$suffix'), hex(app.accent), reason: '$palette $brightness');
+        expect(colour(xml, 'widget_track$suffix'), hex(app.rainbowTrack), reason: '$palette $brightness');
+      }
+      if (palette == null) continue;
+      final t = palette.name;
+      expect(read('android/app/src/main/res/drawable/widget_add_background_$t.xml'), contains('@color/widget_accent_$t"'));
+      for (var i = 1; i <= 5; i++) {
+        expect(read('android/app/src/main/res/drawable/widget_track_${t}_$i.xml'), contains('@color/widget_track_$t"'));
+      }
+      expect(widget, contains('"$t" -> R.drawable.widget_add_background_$t'));
+      expect(widget, contains('R.drawable.widget_track_${t}_1'));
+    }
+  });
 }
