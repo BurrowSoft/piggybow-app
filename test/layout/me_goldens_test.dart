@@ -63,6 +63,15 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// The open dialog's words: they scroll at the largest text sizes.
+  Finder dialogWords() {
+    final scrollables = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(Scrollable),
+    );
+    return scrollables.first;
+  }
+
   for (final c in layoutCases.where((c) => c.takesGolden)) {
     testWidgets('M1 Me, no plan ($c)', (tester) async {
       await open(tester, c);
@@ -152,9 +161,10 @@ void main() {
       await open(tester, c);
       await tester.tapId('me-delete');
       expect(find.text('Delete everything?'), findsOneWidget);
-      await expectLayoutGolden(
+      await expectLayoutGoldens(
         tester,
         c,
+        dialogWords(),
         screen: 'me',
         state: 'delete-all',
         stateId: 'M7',
@@ -193,9 +203,10 @@ void main() {
       }
       await tester.pumpAndSettle();
       expect(title, findsOneWidget);
-      await expectLayoutGolden(
+      await expectLayoutGoldens(
         tester,
         c,
+        dialogWords(),
         screen: 'me',
         state: 'delete-failed',
         stateId: 'M9',

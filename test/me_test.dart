@@ -63,9 +63,10 @@ void main() {
     WidgetTester tester, {
     Future<void> Function(TestApp)? seed,
     AppConfig config = const AppConfig(flavor: Flavor.staging),
+    double width = 360,
   }) async {
     tester.view.devicePixelRatio = 3;
-    tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+    tester.view.physicalSize = Size(width * 3, 1600 * 3);
     addTearDown(tester.view.reset);
     final app = TestApp(config: config);
     await tester.runAsync(app.openJournal);
@@ -311,6 +312,25 @@ void main() {
     expect(app.prefs.appearance, 'dark', reason: 'the prefs');
     expect(app.session.user!.id, id, reason: 'the account');
     expect(app.services.onboarded.value, isTrue);
+  });
+
+  testWidgets('a wide phone: every dialog opens without an error', (
+    tester,
+  ) async {
+    // Wider than 360 dp a dialog isn't at its narrowest, so it asks its
+    // title how wide it would be: WholeWordsText answers (a LayoutBuilder
+    // alone asserts in debug builds).
+    final app = await openMe(tester, width: 411);
+    await tester.tapId('me-plan');
+    await tester.tapId('me-plan-cancel');
+    await tester.tapId('me-delete');
+    expect(find.text('Delete everything?'), findsOneWidget);
+    // A journal that can't be wiped: "Not everything was erased".
+    await tester.runAsync(app.journal.close);
+    await tester.tapId('me-delete-confirm');
+    await waitFor(tester, find.text('Not everything was erased'));
+    expect(find.text('Not everything was erased'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Delete everything, cancelled: nothing changes', (tester) async {

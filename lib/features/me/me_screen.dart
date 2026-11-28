@@ -158,6 +158,8 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final sure = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        // At the largest text sizes its words outgrow a small screen.
+        scrollable: true,
         // Whole words at large text: a dialog is narrow.
         title: WholeWordsText(
           l10n.deleteAllTitle,
@@ -196,6 +198,8 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final again = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        // At the largest text sizes its words outgrow a small screen.
+        scrollable: true,
         title: WholeWordsText(
           l10n.deleteAllFailedTitle,
           style: Theme.of(context).textTheme.headlineSmall,
