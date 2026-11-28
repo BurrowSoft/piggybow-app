@@ -28,4 +28,15 @@ if mf flows/pb1/75b_quick_amounts_large_text.yaml; then
 else
   row QA-2 FAIL "flow 75b (font scale 2.0)"
 fi
-A shell settings put system font_scale 1.0
+A shell settings put system font_scale 1.0; sleep 2
+
+# Asked by PB UX & PM (not #57's own row): the lock screen's status bar on a
+# head with #36, as it appears and 2 s and 5 s after it settles
+if mf flows/pb1/78_lock_statusbar.yaml; then
+  sleep 2; snap 78-lock-2s
+  sleep 3; snap 78-lock-5s
+  echo "$(stamp) status-bar appearance: $(A shell dumpsys window | tr -d '\r' | grep -m3 -iE 'appearance|LIGHT_STATUS' | tr -s ' ' | tr '\n' ' ')"
+  row LS-1 INFO "lock screen shots 78-lock-0s, 78-lock-2s, 78-lock-5s (LOOK: all four status icons dark on the light page)"
+else
+  row LS-1 FAIL "flow 78 (the lock screen after a cold start)"
+fi

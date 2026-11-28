@@ -1,0 +1,51 @@
+# From anywhere in the app: Me → App lock (its own screen) → the App lock
+# switch → choose the test PIN 1357 and enter it again → back on App lock with
+# the switch on → its app bar arrow → Me, where the row reads "On".
+appId: ${APP_ID}
+---
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: me-lock
+- tapOn:
+    id: me-lock
+- extendedWaitUntil:
+    visible:
+      id: me-app-lock
+    timeout: 10000
+- tapOn:
+    id: me-app-lock
+- extendedWaitUntil:
+    visible:
+      id: pin-setup-screen
+    timeout: 10000
+- assertVisible: "Choose a 4.6 digit PIN"   # lockSetPin
+- runFlow:
+    file: pin.yaml
+    env: { D1: "1", D2: "3", D3: "5", D4: "7" }
+- extendedWaitUntil:                     # the same screen, second stage: lockConfirmPin
+    visible: "Enter it again"
+    timeout: 10000
+- runFlow:
+    file: pin.yaml
+    env: { D1: "1", D2: "3", D3: "5", D4: "7" }
+- extendedWaitUntil:                     # back on App lock
+    visible:
+      id: me-app-lock
+    timeout: 10000
+- assertVisible:
+    id: me-app-lock
+    selected: true                       # the switch is on
+- tapOn:                                 # App lock's app bar arrow → Me
+    text: "Back"
+    above:
+      id: me-app-lock
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: me-lock
+- assertVisible:
+    id: me-lock
+    text: ".*On.*"                       # meStateOn

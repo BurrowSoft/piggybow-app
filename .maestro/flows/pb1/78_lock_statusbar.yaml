@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+name: The lock screen's status bar - set a PIN, cold start to the lock screen, shoot it as it appears; the rows script shoots it again 2 s and 5 s later (a mid-tint frame or a real one)
+tags: [lockbar]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow: ../../subflows/set_lock_1357.yaml
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: lock-screen
+    timeout: 30000
+- takeScreenshot: 78-lock-0s
