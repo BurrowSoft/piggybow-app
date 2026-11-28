@@ -516,19 +516,24 @@ void main() {
       String? text;
       String? path;
       List<int>? bytes;
+      Rect? from;
+      const row = Rect.fromLTWH(0, 300, 360, 72);
       await tester.runAsync(
         () => exportJournal(
           app.services,
           cache: () async => cache,
-          share: (file) async {
+          origin: row,
+          share: (file, origin) async {
             name = file.name;
             path = file.path;
+            from = origin;
             bytes = await file.readAsBytes();
             text = utf8.decode(bytes!);
           },
         ),
       );
       expect(name, 'piggybow-2026-10-02.csv');
+      expect(from, row, reason: "the sheet points from the Export row (iPad)");
       // UTF-8 with a BOM (EF BB BF), so spreadsheets read Thai text right.
       expect(bytes!.take(3), [0xEF, 0xBB, 0xBF]);
       expect(text, contains('2026-10-01,saved,1200.50,THB'));
