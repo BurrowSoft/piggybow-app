@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "5d2f6de677b496dc7f899bda971356ce7bef8ee7",
+  "ref": "feat/noted-days",
+  "run_id": "46122334171",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -279,8 +279,8 @@
       "file": "home_delighted-end_dark_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig delighted (contract C4) (320 dp, text ×2, dark)",
-      "sha256": "298a291ff7872147a836987d1ee15d00c881400bf9585741b626ab0ec86d8e4e",
-      "bytes": 181452,
+      "sha256": "02011fb252edff9ce6f33b851c5a69ae20c2171d10d9b5168eeca1ec24745a7c",
+      "bytes": 170588,
       "width": 960,
       "height": 2340
     },
@@ -288,8 +288,8 @@
       "file": "home_delighted-end_light_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig delighted (contract C4) (320 dp, text ×2, light)",
-      "sha256": "ecdf1ad75e6f22979545b5b3bb1650dd6e9acefbda46a514026bf9a67493fec9",
-      "bytes": 181983,
+      "sha256": "e34b3f76da960bb0b534d3dc606d80711dc505977a95ed92013c1b7c1a73a604",
+      "bytes": 171877,
       "width": 960,
       "height": 2340
     },
@@ -351,8 +351,8 @@
       "file": "home_full-end_dark_320x2.png",
       "state": "H2",
       "test": "H2 Home full: a plan, the offer, a long goal, large amounts (320 dp, text ×2, dark)",
-      "sha256": "6ef84114f67e0842cc1fc54d5f511caf20eddd5425bc2f7fc47f9339732258d9",
-      "bytes": 159748,
+      "sha256": "fe764cf5ed9cb9552f93a8abd6f98c22b96218763018bcc40c6380b23e335f63",
+      "bytes": 173195,
       "width": 960,
       "height": 2340
     },
@@ -360,8 +360,8 @@
       "file": "home_full-end_light_320x2.png",
       "state": "H2",
       "test": "H2 Home full: a plan, the offer, a long goal, large amounts (320 dp, text ×2, light)",
-      "sha256": "e455dd24ad77fef1573ee5ea5f9d88171547d3beded1e5db37cd23b1854588f0",
-      "bytes": 161407,
+      "sha256": "eed988adc7b34be0dc218119a39fd509466ece70dce9b9f30e4ba2d1925543f5",
+      "bytes": 175350,
       "width": 960,
       "height": 2340
     },
@@ -525,6 +525,42 @@
       "sha256": "2ab26dc2922ca7af16458ecb275ac5313d020b3dc400c3379101dee826332276",
       "bytes": 162520,
       "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_week-noted_dark_320x2.png",
+      "state": "W1",
+      "test": "W1 the week card with the days noted (320 dp, text ×2, dark)",
+      "sha256": "2b49334ac2c062c9887b4ac760bec9a4c6876d6c3db7b5ee7340cfea95f14678",
+      "bytes": 184540,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_week-noted_dark_360x1.png",
+      "state": "W1",
+      "test": "W1 the week card with the days noted (360 dp, text ×1, dark)",
+      "sha256": "5d597b90d95974dedd4ba05843373ed473ba26ac0e2917ae959627817e6c6824",
+      "bytes": 178265,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "home_week-noted_light_320x2.png",
+      "state": "W1",
+      "test": "W1 the week card with the days noted (320 dp, text ×2, light)",
+      "sha256": "2283cef47d9827e42e9d047c03085c666791b7be9aa870e2cb6fd069e561be1f",
+      "bytes": 185747,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_week-noted_light_360x1.png",
+      "state": "W1",
+      "test": "W1 the week card with the days noted (360 dp, text ×1, light)",
+      "sha256": "224e318bb9e19a4993d08287ea399a62699fa358d6d9225df3bc61ad795b6f73",
+      "bytes": 181950,
+      "width": 1080,
       "height": 2340
     },
     {
