@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/data/models.dart' show ReminderTime;
+import 'package:piggybow/export/csv_export.dart' show csvBom;
 import 'package:piggybow/features/me/me_actions.dart';
 import 'package:piggybow/features/pig/pig_view.dart';
 import 'package:piggybow/journal/category.dart';
@@ -147,9 +148,28 @@ void main() {
     );
     final csv = (await tester.runAsync(() => journalCsv(app.services)))!;
     final lines = csv.split('\r\n');
-    expect(lines.first, endsWith(',goal,repeat'));
-    expect(lines, contains('2026-09-01,spent,12000.00,THB,home,,Rent,,monthly'));
-    expect(lines, contains('2026-09-05,spent,50.00,THB,food,,,,'));
-    expect(lines, contains('2026-10-01,spent,12000.00,THB,home,,Rent,,monthly'));
+    // The whole header, in item 20's order: category_name (A) after the
+    // category, the repeat (E) after the goal, the home columns (#74) last.
+    expect(
+      lines.first,
+      '${csvBom}date,type,amount,currency,category,category_name,feeling,'
+      'note,goal,repeat,home_amount,home_currency,rate',
+    );
+    expect(
+      lines,
+      contains(
+        '2026-09-01,spent,12000.00,THB,home,Home & bills,,Rent,,monthly,12000.00,THB,',
+      ),
+    );
+    expect(
+      lines,
+      contains('2026-09-05,spent,50.00,THB,food,Food & drinks,,,,,50.00,THB,'),
+    );
+    expect(
+      lines,
+      contains(
+        '2026-10-01,spent,12000.00,THB,home,Home & bills,,Rent,,monthly,12000.00,THB,',
+      ),
+    );
   });
 }
