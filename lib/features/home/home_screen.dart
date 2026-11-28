@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
 import '../../core/button_label.dart';
 import '../../core/button_pair.dart';
@@ -17,6 +18,7 @@ import '../../journal/entry.dart';
 import '../../journal/goal.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
+import '../../pig/monthly_letter.dart';
 import '../../pig/pig_mood.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
@@ -52,6 +54,7 @@ class _HomeData {
     required this.currency,
     required this.unfeltYesterday,
     required this.customs,
+    required this.letter,
   });
 
   final List<Entry> entries;
@@ -71,6 +74,10 @@ class _HomeData {
   final int? plan;
   final bool offerAnswered;
   final String currency;
+
+  /// The pig's letter about last month, in a month's first days; null when
+  /// there's none to show.
+  final MonthlyLetter? letter;
 }
 
 class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
@@ -149,6 +156,7 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
             .take(3)
             .toList()
         : const <Entry>[];
+    final currency = await store.currency() ?? 'USD';
     final data = _HomeData(
       entries: entries,
       goals: goals,
@@ -157,9 +165,18 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       picks: await store.picks(),
       plan: await store.planMinor(),
       offerAnswered: await store.reminderOfferAnswered(),
-      currency: await store.currency() ?? 'USD',
+      currency: currency,
       unfeltYesterday: unfelt,
       customs: {for (final c in await store.customCategories()) c.id: c},
+      letter: monthlyLetter(
+        today: localDay.today,
+        entries: entries,
+        goals: goals,
+        currency: currency,
+        zone: localDay.zone,
+        on: await store.lettersOn(),
+        dismissed: await store.letterDismissed(),
+      ),
     );
     // A goal just reached is celebrated once (plan §3.4); an ended goal
     // never is.
@@ -209,6 +226,17 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
                 children: [
                   _Pig(data: data),
+                  // Right under the pig's bubble: the pig hands it over.
+                  if (data.letter case final letter?) ...[
+                    const SizedBox(height: 16),
+                    _LetterCard(
+                      letter: letter,
+                      currency: data.currency,
+                      customs: data.customs,
+                      onThanks: () =>
+                          context.services.journal.dismissLetter(letter.key),
+                    ),
+                  ],
                   if (data.entries.isNotEmpty &&
                       !data.offerAnswered &&
                       context.session.accountState?.reminderOn != true) ...[
@@ -812,6 +840,94 @@ class _YesterdayCard extends StatelessWidget {
                   child: TextButton(
                     onPressed: onLater,
                     child: ButtonLabel(l10n.yesterdayFeelLater),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The pig's letter about last month, in a month's first days: the facts that
+/// apply as bullets, warmest first, the days always last; "Thanks!" puts it
+/// away for that month.
+class _LetterCard extends StatelessWidget {
+  const _LetterCard({
+    required this.letter,
+    required this.currency,
+    required this.customs,
+    required this.onThanks,
+  });
+
+  final MonthlyLetter letter;
+  final String currency;
+
+  /// Your own categories by id: the "worth it" one may be one of them.
+  final Map<String, CustomCategory> customs;
+  final VoidCallback onThanks;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final locale = context.session.device.localeName;
+    final month = DateFormat.MMMM(intlDateLocale(locale)).format(letter.month);
+    final body = theme.textTheme.bodyMedium;
+    final muted = body?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final goals = letter.goalsReached;
+    final facts = <(String, String)>[
+      if (goals.length == 1)
+        ('home-letter-goals', l10n.letterGoal(goals.single))
+      else if (goals.length > 1)
+        ('home-letter-goals', l10n.letterGoals(goals.length)),
+      if (letter.savedMinor > 0)
+        ('home-letter-saved', l10n.letterSaved(formatMoney(letter.savedMinor, currency, locale))),
+      if (letter.worthCategoryId case final id?)
+        ('home-letter-worth', l10n.letterWorth(categoryName(l10n, id, customs))),
+      ('home-letter-days', l10n.letterDays(letter.days)),
+    ];
+    return TestId.container(
+      'home-letter',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.letterTitle(month), style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              // The cards' body style (decision 57).
+              Text(l10n.letterHello(month), style: muted),
+              const SizedBox(height: 4),
+              for (final (id, fact) in facts)
+                TestId.container(
+                  id,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ExcludeSemantics(child: Text('•', style: body)),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(fact, style: body)),
+                      ],
+                    ),
+                  ),
+                ),
+              const SizedBox(height: 12),
+              Text(l10n.letterBye, style: muted),
+              const SizedBox(height: 8),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TestId(
+                  'home-letter-thanks',
+                  button: true,
+                  child: TextButton(
+                    onPressed: onThanks,
+                    child: ButtonLabel(l10n.letterThanks),
                   ),
                 ),
               ),

@@ -61,6 +61,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
   /// How many goals were reached (Reached goals shows from the first).
   int _reached = 0;
   bool _yesterdayFeel = true;
+  bool _letters = true;
   (String, String)? _version;
   AppServices? _services;
   AppLifecycleListener? _lifecycle;
@@ -107,6 +108,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final plan = await store.planMinor();
     final currency = await store.currency() ?? 'USD';
     final yesterdayFeel = await store.yesterdayFeelOn();
+    final letters = await store.lettersOn();
     final granted = await services.notifications.granted();
     final reached = (await store.reachedGoals()).length;
     if (!mounted) return;
@@ -115,6 +117,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
       _plan = plan;
       _currency = currency;
       _yesterdayFeel = yesterdayFeel;
+      _letters = letters;
       _granted = granted;
       _reached = reached;
     });
@@ -306,6 +309,16 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                       value: _yesterdayFeel,
                       onChanged: (on) =>
                           context.services.journal.setYesterdayFeelOn(on),
+                    ),
+                  ),
+                  // Home's monthly letter from the pig (on unless switched off).
+                  TestId(
+                    'me-letters',
+                    child: SwitchListTile(
+                      title: Text(l10n.meLetters),
+                      value: _letters,
+                      onChanged: (on) =>
+                          context.services.journal.setLettersOn(on),
                     ),
                   ),
                   _Section(l10n.meSecMoney),
