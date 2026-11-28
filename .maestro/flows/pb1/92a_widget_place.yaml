@@ -26,10 +26,14 @@ tags: [widget]
     text: "(?i)Search.*"
     optional: true
 - inputText: "Piggybow"
+- hideKeyboard
 - waitForAnimationToEnd:
     timeout: 3000
+# The app's entry, "Piggybow Staging" (the rows' builds are staging; prod's
+# label is "Piggybow"). A bare "Piggybow" hit the search box's own text in
+# dry run 1; index 0 is the entry's title line, its subtitle repeats it
 - tapOn:
-    text: "Piggybow"
+    text: "Piggybow Staging"
     index: 0
 - waitForAnimationToEnd:
     timeout: 3000
