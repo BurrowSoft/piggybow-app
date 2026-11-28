@@ -1,0 +1,52 @@
+# From Home: add one spend of ${AMOUNT} in category ${CAT} with the note
+# ${NOTE} (pasted, so any script works); back on Home after it.
+# env: AMOUNT, CAT, NOTE
+appId: ${APP_ID}
+---
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: ${AMOUNT}
+      EXPECT: ".*${AMOUNT}.*"
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-cat-${CAT}
+- tapOn:
+    id: add-cat-${CAT}
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-note
+- runFlow:
+    file: paste_into.yaml
+    env:
+      ID: add-note
+      TEXT: ${NOTE}
+      EXPECT: "(?s).*${NOTE}.*"
+- runFlow:
+    when:
+      visible:
+        text: "Back"
+        below:
+          id: add-note
+    commands:
+      - tapOn:
+          text: "Back"
+          below:
+            id: add-note
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000

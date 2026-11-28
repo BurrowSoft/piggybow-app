@@ -1,0 +1,80 @@
+appId: ${APP_ID}
+name: Timeline search (#66) - notes and categories, a Thai note by its first word, the keyboard's search key, no match, Back closes the search and stays on Timeline
+tags: [search]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/add_noted_spend.yaml
+    env: { AMOUNT: "3.50", CAT: "food", NOTE: "Coffee with Mai" }
+- runFlow:
+    file: ../../subflows/add_noted_spend.yaml
+    env: { AMOUNT: "12", CAT: "food", NOTE: "Lunch" }
+- runFlow:
+    file: ../../subflows/add_noted_spend.yaml
+    env: { AMOUNT: "4", CAT: "transport", NOTE: "ข้าวมันไก่ ร้านป้า" }
+- tapOn:
+    id: tab-timeline
+# A note: "coffee" finds "Coffee with Mai" only
+- tapOn:
+    id: tl-search
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: tl-search-field, TEXT: "coffee", EXPECT: "(?s).*coffee.*" }
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Coffee with Mai.*"
+- assertNotVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Lunch.*"
+# The keyboard's search key keeps the results
+- pressKey: Enter
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Coffee with Mai.*"
+- takeScreenshot: 84-coffee
+# A category: "transport" finds the Thai note's spend only
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env: { ID: tl-search-field, TEXT: "transport", EXPECT: "(?s).*transport.*" }
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*ข้าวมันไก่.*"
+- assertNotVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Coffee with Mai.*"
+# A Thai note by its first word
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env: { ID: tl-search-field, TEXT: "ข้าวมันไก่", EXPECT: "(?s).*ข้าวมันไก่.*" }
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*ข้าวมันไก่ ร้านป้า.*"
+- assertNotVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Lunch.*"
+- takeScreenshot: 84-thai
+# No match
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env: { ID: tl-search-field, TEXT: "zzz", EXPECT: "(?s).*zzz.*" }
+- assertVisible: ".*Nothing matches that.*"
+# Back with the field open: the search closes, still on Timeline, every row back
+- pressKey: Back
+- runFlow:
+    when:
+      visible:
+        id: tl-search-field
+    commands:
+      - pressKey: Back                            # the first Back only hid the keyboard
+- assertNotVisible:
+    id: tl-search-field
+- assertVisible:
+    id: tl-search
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Lunch.*"
+- assertVisible:
+    id: "tl-row-.*"
+    text: "(?s).*Coffee with Mai.*"
+- takeScreenshot: 84-closed

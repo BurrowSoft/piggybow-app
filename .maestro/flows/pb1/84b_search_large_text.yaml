@@ -1,0 +1,16 @@
+appId: ${APP_ID}
+name: Timeline search (#66) at large text - the empty field's hint at font scale 2.0, wrapping, for a look (after 84a)
+tags: [search]
+---
+- launchApp                                       # no clearState: 84a's entries
+- extendedWaitUntil:
+    visible:
+      id: tab-timeline
+    timeout: 30000
+- tapOn:
+    id: tab-timeline
+- tapOn:
+    id: tl-search
+- assertVisible:
+    id: tl-search-field
+- takeScreenshot: 84-hint-x2
