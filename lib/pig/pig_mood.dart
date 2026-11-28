@@ -212,3 +212,21 @@ String pigBubbleKey(PigState state, PigReaction? lastAdd) {
     PigReaction.save => 'pigAfterSave',
   };
 }
+
+/// Night on the phone: 22:00 to 05:59 by the clock in the phone's zone.
+bool isNight(int localHour) => localHour >= 22 || localHour < 6;
+
+/// The pig at night: sleepy, saying it's late (never a word about spending).
+const nightPig = PigState(PigMood.sleepy, 'homeNightLine');
+
+/// What Home shows at [night]: the night pig, unless something was just added
+/// ([lastAdd]: the reaction wins for that visit, mood and line as by day, a
+/// milestone after a save included) or a goal was reached in the last 24
+/// hours ([day] is pigDelightedGoal: its celebration is never replaced).
+PigState pigAtNight(
+  PigState day, {
+  required bool night,
+  required PigReaction? lastAdd,
+}) => night && lastAdd == null && day.lineKey != 'pigDelightedGoal'
+    ? nightPig
+    : day;

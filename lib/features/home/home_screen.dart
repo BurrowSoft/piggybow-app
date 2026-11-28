@@ -182,7 +182,7 @@ class _Pig extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final services = context.services;
-    final state = pigMood(
+    final day = pigMood(
       picks: data.picks,
       planMinor: data.plan,
       entries: [
@@ -208,7 +208,14 @@ class _Pig extends StatelessWidget {
       now: services.clock.nowUtc(),
       today: services.localDay.todayWire,
     );
-    final key = pigBubbleKey(state, services.lastAdd.value);
+    // 22:00 to 05:59 on the phone's clock, in its zone: the sleepy pig.
+    final lastAdd = services.lastAdd.value;
+    final state = pigAtNight(
+      day,
+      night: isNight(services.clock.nowIn(services.localDay.zone).hour),
+      lastAdd: lastAdd,
+    );
+    final key = pigBubbleKey(state, lastAdd);
     return Column(
       children: [
         // Its own node, read before the line: "Your pig looks calm." (R2).

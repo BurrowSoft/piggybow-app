@@ -146,6 +146,8 @@
   "pigSleepy1": "Zzz… Oh, hi! Good to see you.",
   "pigSleepy2": "Just resting. Add something and I'll wake right up.",
   "pigSleepy3": "Snoozing till your next note. No rush.",
+  "homeNightLine": "It's getting late. I'll be here tomorrow.",
+  "@homeNightLine": {"description": "Home's pig from 22:00 to 05:59 on the phone's clock (the sleepy pig). Never about spending."},
   "pigAfterSpend": "Noted. Thanks for writing it down.",
   "pigAfterWorth": "Worth it. Nice!",
   "pigAfterNotSure": "Noted. You can change how it felt anytime.",
