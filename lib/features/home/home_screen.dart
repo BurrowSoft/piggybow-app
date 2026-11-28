@@ -656,7 +656,7 @@ class _WeekCard extends StatelessWidget {
       ],
       planMinor: data.plan,
       locale: context.session.dateLocale,
-      categoryLabel: (id) => SpendCategory.fromId(id)?.label(l10n) ?? id,
+      categoryLabel: (id) => categoryName(l10n, id, data.customs),
     );
     String money(int minor) => formatMoney(minor, data.currency, locale);
     final ink = theme.textTheme.bodyLarge?.copyWith(
