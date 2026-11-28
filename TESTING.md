@@ -92,6 +92,25 @@ Flows: `--include-tags smoke`, from 443cb5a · Emulator run 46086267678
 | ⏳ the integrated app as a store build | | the first prod-release run on master (run 46088333530) |
 History: 443cb5a 🟢 → c203687 🟢 → 862e160 🟢 (carried, plain merges)
 
+### #29 Me: your pig, money, reminders, privacy & security, appearance, about — a47fc5f — 🟢 — 2026-11-28 02:11 UTC
+Build: staging debug, built in each job from the head named; installed = built every time · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Flows: `tests/pr-29` (bf1089b for the Me re-run) · Emulator runs 46095196738 (this head), 46090292844 and 46093235777 (9f9812f)
+| Run / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46094297015, this head) | 🟢 | `+1560: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| From 9f9812f to this head | 🟢 carried | only master's Summary change came in: the same `git patch-id --stable` as that PR's own (`49be17f7eced`), and this PR's own diff against master unchanged (`e458b3c88138`) |
+| `32_me_currency_lock` | 🟢 | the picker while nothing exists; "Currency is set" after the first entry; changeable again after Delete everything |
+| `33_delete_everything` | 🟢 | Cancel keeps everything; Delete returns to O1 with no entries, goal, plan or picks |
+| `34_remove_plan_unpicks` | 🟢 | Remove plan sets "Not set" and unpicks only the plan; as the only pick, the picker opens first: Back keeps the plan, Done with nothing picked shows "Pick at least one.", a new pick removes the plan |
+| `35_privacy_screen` | 🟢 | lines 1, 2, 4 and 5; no crash-report line without a DSN; no Help row; "Version 0.1.0 (1)" |
+| `36_me_appearance` | 🟢 | Same as device by default; Dark and Light apply at once and survive a relaunch |
+| `15_export_share_sheet` | 🟢 | the system share sheet with `piggybow-2026-11-28.csv` |
+| Onboarding, smoke and journal (run 46090292844) | 🟢 | onboarding into Home with the plan and Thai baht; every tab; the 4 journal flows |
+| Goal, pig and rainbow (run 46093235777) | 🟢 | every pig mood and rainbow fixture, the celebration, the read-only reached goal, End goal, lowering the target; the reminder offer's stacked buttons |
+| The launch | 🟢 | with the clear as its own step before the launch, 0 of 8 fresh launches needed the retry (5 of 12 before) |
+| Screenshots looked at | 🟢 | 67 across the three runs |
+History: 9f9812f 🟢 (two Me flows and one goal flow failed on the flows' own assumptions; fixed) → a47fc5f 🟢
+
 ### #28 Release builds ask for no network; the store workflow takes pasted secrets — 658ce78 — 🟢 (on-device ⏳) — 2026-11-27 23:28 UTC
 Build: no device for this row (CI logs + the merged release manifest printed in CI)
 | Check | Result | Notes |
@@ -196,7 +215,7 @@ Build: no device for this row (CI logs + a read of the workflow step)
 
 Merged as a merge commit onto 3edf475: the merged tree differs from master only by this PR's 2 files.
 
-### #18 The goal and its rainbow, the pig, and Home — 9629c9d — ❌ flows only, UX waiver; merged as 19f3818; on master 4 of 5 goal flows 🟢 (flow 20 ⏳) — 2026-11-28 00:56 UTC
+### #18 The goal and its rainbow, the pig, and Home — 9629c9d — ❌ flows only, UX waiver; merged as 19f3818; every goal flow 🟢 on master — 2026-11-28 02:20 UTC
 Build: staging debug, built in the job from 9629c9d · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
 Flows: `--include-tags journal,goal`, from `tests/pr-18` at dccb6b5 · Emulator run 46080853711
 | Flow / check | Result | Notes |
@@ -213,8 +232,8 @@ Flows: `--include-tags journal,goal`, from `tests/pr-18` at dccb6b5 · Emulator 
 | The merge commit 19f3818, CI read per test (run 46085227467) | 🟢 | `+1298: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean (the waiver's condition) |
 | On master 862e160 as the store's build (prod, release, R8; emulator run 46088333530, flows `tests/pr-18` @ d49d602) | 🟢 | installed = built; no INTERNET or ACCESS_NETWORK_STATE in the installed package; smoke, the 4 journal flows and 4 goal flows pass (start at target, reached once with the celebration and the read-only goal, lower target, End goal); 23 screenshots looked at |
 | On #29's head 9f9812f (master + Me; emulator run 46093235777) | 🟢 | the same goal flows pass again, with the pig's moods and the rainbow fixtures |
-| `20_goal_first_band` on master | ⏳ | twice my flow's fault, not the app: a bare `tapOn "Back"` hit the keyboard's own Back (fixed: anchored above the form), then `tab-home` was tapped on the goal's detail, which covers the tab bar (fixed: its Back arrow). The fixed flow (`tests/pr-29` @ a97d168) runs next |
-History: 9629c9d ❌ flows only (waived) → merged as 19f3818 (CI 🟢) → master 862e160 store build: 4 of 5 goal flows 🟢, flow 20 ⏳. The PR's earlier code was first exercised on a device in #24's run on d07b2e0 (see #24's row)
+| `20_goal_first_band` on a47fc5f (master; emulator run 46096767989, flows `tests/pr-29` @ a97d168) | 🟢 | 141 of 141 commands: the form's errors; a $25.00 save fills band 1 ("Rainbow 25% filled", "$75.00 to go"); Home Delighted with "Band 1 of 5 colored in!" over the after-save reaction; the goal card at 25 %. Its earlier ❌s were the flow's own: a bare `tapOn "Back"` hit the keyboard's Back, then a tab was tapped on the goal's detail, which covers the tab bar |
+History: 9629c9d ❌ flows only (waived) → merged as 19f3818 (CI 🟢) → master 862e160 store build: 4 of 5 goal flows 🟢 → a47fc5f: flow 20 🟢. The PR's earlier code was first exercised on a device in #24's run on d07b2e0 (see #24's row)
 
 ### #17 Maestro: dismiss another app's ANR dialog on the CI emulator — fe0ab6e — ⚪ (tests only, merged without a device row) — 2026-11-27 21:31 UTC
 | Check | Result | Notes |
