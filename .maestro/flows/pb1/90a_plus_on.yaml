@@ -175,7 +175,9 @@ tags: [plus]
 - takeScreenshot: 90-delete-plus
 - tapOn:
     id: me-delete-cancel
-- extendedWaitUntil:
+- extendedWaitUntil:                               # Me, still scrolled to Delete: nothing erased
     visible:
-      id: me-plus
+      id: me-delete
     timeout: 10000
+- assertNotVisible:
+    id: onb-start
