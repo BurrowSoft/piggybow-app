@@ -8,7 +8,5 @@ tags: [turns]
     file: ../../subflows/reveal.yaml
     env:
       ID: home-idea
-- assertVisible:
-    id: home-idea
-    text: "(?s).*${TIP}.*"
+- assertVisible: "(?s).*${TIP}.*"            # the idea text is a child of home-idea, not on it
 - takeScreenshot: 83-before-midnight

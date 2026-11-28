@@ -8,7 +8,5 @@ tags: [turns]
     visible:
       id: home-idea
     timeout: 20000
-- assertVisible:
-    id: home-idea
-    text: "(?s).*${TIP}.*"
+- assertVisible: "(?s).*${TIP}.*"            # the idea text is a child of home-idea, not on it
 - takeScreenshot: 83-after-resume

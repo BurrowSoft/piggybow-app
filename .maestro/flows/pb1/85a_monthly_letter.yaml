@@ -28,7 +28,7 @@ tags: [letter]
       ID: home-letter
 - assertVisible:
     id: home-letter
-    text: "(?s).*Your November.*"
+- assertVisible: "(?s).*Your November.*"       # the card is a container: its text is on a child
 - runFlow:
     file: ../../subflows/reveal.yaml
     env:

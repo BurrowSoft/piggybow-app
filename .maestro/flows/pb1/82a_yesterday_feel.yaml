@@ -27,7 +27,7 @@ tags: [yesterday]
       ID: home-yesterday
 - assertVisible:
     id: home-yesterday
-    text: "(?s).*How did yesterday feel\\?.*"
+- assertVisible: "(?s).*How did yesterday feel\\?.*"   # the card is a container: its text is on a child
 - runFlow:
     file: ../../subflows/reveal.yaml
     env:

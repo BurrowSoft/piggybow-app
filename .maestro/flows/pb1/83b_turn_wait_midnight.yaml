@@ -3,8 +3,6 @@ name: Home's turns (#62), part B - Home left open (no launch, no tap) across mid
 tags: [turns]
 ---
 - extendedWaitUntil:
-    visible:
-      id: home-idea
-      text: "(?s).*${TIP}.*"
+    visible: "(?s).*${TIP}.*"                # the idea text is a child of home-idea
     timeout: 300000
 - takeScreenshot: 83-after-midnight
