@@ -63,6 +63,12 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
   AppServices? _services;
   int? _tip;
 
+  /// Home reads again at the next local turn (Clock.turnHours) and when the
+  /// app comes back: what it shows depends on the phone's day and hour, not
+  /// only on the journal.
+  Timer? _turn;
+  AppLifecycleListener? _lifecycle;
+
   @override
   AppTab get tab => AppTab.home;
 
@@ -75,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       services.journal.addListener(_load);
       services.localDay.addListener(_load);
       services.lastAdd.addListener(_rebuild);
+      _lifecycle = AppLifecycleListener(onResume: _load);
       _load();
     });
   }
@@ -84,7 +91,18 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     _services?.journal.removeListener(_load);
     _services?.localDay.removeListener(_load);
     _services?.lastAdd.removeListener(_rebuild);
+    _lifecycle?.dispose();
+    _turn?.cancel();
     super.dispose();
+  }
+
+  /// One timer to the next turn of the day in the phone's zone, set again
+  /// after every read.
+  void _armTurn() {
+    final services = _services;
+    if (services == null || !mounted) return;
+    _turn?.cancel();
+    _turn = Timer(services.clock.untilNextTurn(services.localDay.zone), _load);
   }
 
   void _rebuild() {
@@ -119,6 +137,7 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     }
     if (!mounted) return;
     setState(() => _data = data);
+    _armTurn();
   }
 
   @override
