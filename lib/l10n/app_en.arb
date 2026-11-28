@@ -297,5 +297,12 @@
   "sumWorthLine": "{worth} worth it · {notSure} not sure · {notReally} not really",
   "@sumWorthLine": {"placeholders": {"worth": {"type": "int"}, "notSure": {"type": "int"}, "notReally": {"type": "int"}}},
   "sumEmptyWeek": "Nothing noted for this week.",
-  "sumEmptyMonth": "Nothing noted for this month."
+  "sumEmptyMonth": "Nothing noted for this month.",
+
+  "entryRepeat": "Add again today",
+  "@entryRepeat": {"description": "Adds a copy of an entry dated today: a Timeline row's long-press sheet and the edit sheet's menu."},
+  "entryRepeated": "Added again for today",
+  "@entryRepeated": {"description": "The snackbar after Add again today, with Undo."},
+  "undo": "Undo",
+  "@undo": {"description": "A snackbar action: takes back what was just added."}
 }

@@ -17,13 +17,14 @@ import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show PigReaction;
 import '../../session/session_scope.dart';
 import '../../theme/theme.dart';
+import 'add_again.dart';
 
 /// Opens the Add sheet on [start] (Spent unless said), or the Edit sheet for
 /// [editing], on the root navigator: full height over the tab bar, so no
 /// tab can be switched under a half-finished entry. True when something
-/// was saved or deleted; after an add, "Added" shows (and is read out) on
-/// the caller's own Scaffold, under its + (each tab has its own
-/// messenger).
+/// was saved, deleted or added again; after an add, "Added" shows (and is
+/// read out) on the caller's own Scaffold, under its + (each tab has its
+/// own messenger), and after Add again today, "Added again for today".
 Future<bool> showEntrySheet(
   BuildContext context, {
   EntryType start = EntryType.spent,
@@ -31,17 +32,30 @@ Future<bool> showEntrySheet(
 }) async {
   final l10n = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.maybeOf(context);
-  final saved = await showModalBottomSheet<bool>(
+  final services = context.services;
+  final result = await showModalBottomSheet<Object>(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
     builder: (_) => EntrySheet(start: start, editing: editing),
   );
-  if (saved == true && editing == null) {
+  // The edit sheet's menu: the entry as saved, added again today (any
+  // change not saved is left, as when the sheet is closed).
+  if (result is _AddAgain && editing != null) {
+    await addAgainAndSay(services, editing, messenger: messenger, l10n: l10n);
+    return true;
+  }
+  final saved = result == true;
+  if (saved && editing == null) {
     messenger?.showSnackBar(SnackBar(content: Text(l10n.addedSnack)));
   }
-  return saved == true;
+  return saved;
+}
+
+/// What the edit sheet answers when its menu's "Add again today" is chosen.
+class _AddAgain {
+  const _AddAgain();
 }
 
 /// Entry sheets up now: a reminder tapped while one is opens no other.
@@ -74,6 +88,9 @@ class _EntrySheetState extends State<EntrySheet> {
   DateTime? _date;
   DateTime? _today;
   String? _goalName;
+
+  /// An edited entry can be added again today (its menu offers it).
+  bool _canAddAgain = false;
 
   /// Add was pressed: missing fields now say so.
   bool _tried = false;
@@ -115,6 +132,7 @@ class _EntrySheetState extends State<EntrySheet> {
     setState(() {
       _currency = currency;
       _goalName = goal?.name;
+      _canAddAgain = e != null && canAddAgain(e, goalId == null ? null : goal);
       _today = today;
       _date = e?.date ?? today;
       if (e != null) {
@@ -342,6 +360,27 @@ class _EntrySheetState extends State<EntrySheet> {
                       ),
                     ),
                   ),
+                  // The entry's menu (as the goal's): Add again today, also
+                  // offered by a long-press on its Timeline row.
+                  if (_editing && _canAddAgain)
+                    TestId(
+                      'edit-more',
+                      button: true,
+                      child: PopupMenuButton<String>(
+                        enabled: !_busy,
+                        onSelected: (_) =>
+                            Navigator.of(context).pop(const _AddAgain()),
+                        itemBuilder: (_) => [
+                          PopupMenuItem(
+                            value: 'again',
+                            child: TestId(
+                              'edit-repeat',
+                              child: Text(l10n.entryRepeat),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),
