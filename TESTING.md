@@ -34,9 +34,20 @@ Rules for a row:
 
 <!-- rows start here -->
 
+### master: group D — the home-screen widget (#71, #72) — 093ca12f — ❌ (WD-1: the row's own count failed, not the app: the widget is placed and drawn in the shot; WD-1's re-run and WD-2 ⏳) — 2026-11-28 19:27 UTC
+Build: staging debug with Plus built in, `kind=plus-owned`, built in each job from the sha named: 093ca12f and 5124a80a; both jobs built the same APK, sha256 1b69b3bb…; installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, Pixel Launcher, zone UTC
+Rows: `tool/device-rows/group-d.sh`, first as a child of `group-d-po1.sh` (emulator run 46173528728 on 093ca12f, flows `tests/retro` @ 11594eb), then on its own (emulator run 46178559210 on 5124a80a, flows @ f73edee)
+| Row / check | Result | Notes |
+|---|---|---|
+| WD-1 on 093ca12f | ❌ | flow 92a passed: Pixel Launcher's picker lists Piggybow with its preview, "Today's spending and your goal" and "3 × 2". Then the row script's drag, and its count of bound widgets read 0 → 0. This version of the row took no shot after the drag. The run concluded failure on this row (group-d exit 1); its other children passed (PO-1, NB-1 to NB-3) |
+| WD-1 on 5124a80a (the same APK) | ❌ | the drag (`input draganddrop`), then a shot: **the widget is on the home screen, in the launcher's resize frame, drawn with the pig, "Spent today", "$12.00", "No goal yet" and its "+"** (looked at). The count still read 0 → 0, so the row's fallback ran 92a again: its long press at (50%, 45%) landed on the placed widget (the failure's shot shows the resize frame), so there was no "Widgets" to tap and the flow stopped |
+| The cause | | the row script, not the app: the count grepped `dumpsys appwidget` for `provider=ComponentInfo{` and read 0 with the widget on the screen. The row now counts any `provider=…ComponentInfo{<app id>/` line. A control stops the row if the dump doesn't name the app's provider at all, so an empty dump can't read as 0. The dump's lines naming the app are kept as evidence. Back closes the resize frame before flow 92b (`tests/retro` @ 802b0b3) |
+| ⏳ WD-1 re-run | | `group-d.sh` @ 802b0b3 on master 03bfe9b, `kind=plus-owned` (emulator run 46181692459, queued): placed, counted, its face read, a tap opens Piggybow |
+| ⏳ WD-2 the widget with the lock on | | flow 92c; not reached in either run |
+
 ### master: #96 Night ends at 04:00, "+ New goal" as a text button, no amount echo abroad — 093ca12f — 🟢 (retroactive; the night pig at 05:00, F-B1, closed) — 2026-11-28 18:28 UTC
 Build: staging debug with Plus built in, built in each job from the sha named: `kind=plus-owned` (093ca12f, the row's sha) and `kind=plus-rows` (4ed3184, #96's own landing); installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, zone UTC, the device clock set by root
-Rows: `tool/device-rows/fb1-night.sh`, run as a child of `group-d-po1.sh` (emulator run 46173528728, flows `tests/retro` @ 11594eb) and of `fb1-pa3.sh` (emulator run 46168828824 on 4ed3184, flows @ 785c7e2)
+Rows: `tool/device-rows/fb1-night.sh`, run as a child of `group-d-po1.sh` (emulator run 46173528728, flows `tests/retro` @ 11594eb; that run concluded failure on another child, group D's WD-1, above) and of `fb1-pa3.sh` (emulator run 46168828824 on 4ed3184, flows @ 785c7e2)
 | Row / check | Result | Notes |
 |---|---|---|
 | Master's push CI, read per test (run 46173400441, this sha) | 🟢 | `+2793: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; server tests (deno) 32 passed, 0 failed; the SQL asserts pass |
@@ -113,7 +124,7 @@ Rows: `tool/device-rows/group-a.sh` (emulator run 46152479393, flows `tests/retr
 | PA-3 the paywall at font scale 2.0 | 🟢 on 4ed3184 | not proven at 10a2bc9 (two tries there stopped in the flow before the paywall). Then on a later master, 4ed3184 (`kind=plus-rows`, emulator run 46168828824, `fb1-pa3.sh` → `group-a-x2.sh`): the yearly plan only, "Start your free week", Restore, the cancel line and the Privacy Policy link, whole at ×2; 3 shots looked at |
 | PA-4 the smoke and the journal, Plus enabled | 🟢 | flows 00 and 10 |
 | PO-1 Plus on (with nothing bought) | ❌ | flow 90a's last step: `Assertion 'id: me-plus is visible' failed` after Cancel, with Me still scrolled down to Delete everything: a fault in the flow (it now waits for `me-delete`). Every assertion about the app before that step passed: Me "On. Thanks for your support!" with Manage subscription; the paywall "You have Piggybow Plus", Manage, no plans; a second goal opens the goal form with no paywall (two goals on Home); "Coffee runs" made in Categories and offered in Add; **Delete everything says "Your Plus subscription keeps running until you cancel it in Google Play." with Manage subscription**, and Cancel erases nothing |
-| PO-1 re-run | 🟢 on 093ca12f | `group-a-owned.sh` with the fixed flow, on a later master, 093ca12f (`kind=plus-owned`, emulator run 46173528728, `group-d-po1.sh`): every step above, through Delete everything's Plus line and Cancel |
+| PO-1 re-run | 🟢 on 093ca12f | `group-a-owned.sh` with the fixed flow, on a later master, 093ca12f (`kind=plus-owned`, emulator run 46173528728, `group-d-po1.sh`): every step above, through Delete everything's Plus line and Cancel. That run concluded failure on another child, group D's WD-1 (its own entry) |
 | Patterns (#68, #69) | ⚪ device-free | the goldens above and the widget tests; Summary's teaser shows only once enough spends have a feeling |
 | ⏳ Plus bought for real | | Play Billing on a device with the store's product (the Plus probe), before Plus can ship |
 History: dry runs on #49 (Plus off, flows only) and an `adb root` flake (retried since, in #89)
