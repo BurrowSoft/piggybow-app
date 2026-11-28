@@ -1,0 +1,21 @@
+appId: ${APP_ID}
+name: The home-screen widget (#72, group D), part 2 - placed on the home screen, it shows the face for this build, and a tap on it opens Piggybow
+tags: [widget]
+# Run by group-d.sh after 92a and the script's drag.
+# env: EXPECT (a regex the widget must show), SHOT
+---
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible:
+      id: "com.burrowsoft.piggybow.staging:id/widget_root"
+    timeout: 15000
+- assertVisible: "${EXPECT}"
+- takeScreenshot: 92-placed
+- tapOn:
+    id: "com.burrowsoft.piggybow.staging:id/widget_root"
+- extendedWaitUntil:
+    visible:
+      id: "home-add|lock-screen"
+    timeout: 15000
+- takeScreenshot: ${SHOT}
