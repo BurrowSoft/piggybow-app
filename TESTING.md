@@ -32,6 +32,32 @@ Rules for a row:
 
 <!-- rows start here -->
 
+### #44 The pig's ears: one up, one flopped — 6bc7303 — 🟢 (themed icon ⏳, UX waiver) — 2026-11-28 05:53 UTC
+Build: staging debug, built in each job from 6bc7303; installed = built · Device: CI emulator, Android 14 (API 34), Pixel Launcher, 1080 × 2400, 420 dpi, UTC, en-US
+Rows: `tool/device-rows/pr44.sh` (emulator run 46111109015, flows `tests/pr-44` @ b051191), then `tool/device-rows/pr44b.sh` for the two rows left open (run 46112948061, flows `tests/pr-44` @ 9f596a0)
+| Row / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46110721146, this head) | 🟢 | `+1661: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| Goldens (render 46110158079 on af847b2, committed in b91f349) | 🟢 | 135 PNGs = manifest = committed, both ways, by sha256; the 24 pig PNGs that changed looked at; 0 PNG changes from b91f349 to 6bc7303 |
+| Home's pig after a fresh install | 🟢 | the ears drawn |
+| The splash at a cold start, light and dark | 🟢 | the eared pig, both ears whole, nothing clipped; 4 quick shots per theme, identical; the shadow shows in light only (by design) |
+| The launcher icon in the app drawer | 🟢 | the rainbow and the eared pig inside the circle, nothing clipped |
+| The reminder notification's small icon | 🟢 | the reminder set through Me for 5:49 AM and the Time row read back; posted by 05:50 UTC; the eared silhouette in the status bar and in the shade, nothing clipped |
+| ⏳ the themed launcher icon | | not switched on on the emulator; UX accepted the icon generator's approved preview (UX waiver on the PR) |
+History: the first run's reminder row ❌ was the test's own fault (the time picker's minute typed as 20 for 24, so the reminder was planned for the next day); flow 48 now selects each field and checks the Time row → 🟢, same head
+
+### #42 Your privacy: the phone's backup only when it's encrypted — 47ffdf9 — ⚪ (copy only, UX waiver) — 2026-11-28 04:39 UTC
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46108187307, this head) | 🟢 | `+1637: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| Tester row | ⚪ | UX waiver naming 47ffdf9 (issuecomment-7234178657): one privacy line's copy and its regenerated goldens; no device behaviour change |
+
+### #41 Seed leftovers: no /reset route, no translation-draft importer — 10752fd — ⚪ (cleanup, UX waiver) — 2026-11-28 06:07 UTC
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46114784824, this head) | 🟢 | `+1661: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| Tester row | ⚪ | UX waiver naming 10752fd (issuecomment-7235097006): an unused route constant and an unused tool script removed; no UI or device change |
+
 ### #39 The phone's own backup, encrypted only; the lock after a restore — 1575d09 — 🟢 (a real cloud backup ⏳) — 2026-11-28 04:22 UTC
 Build: staging debug, built in each job from 1575d09; installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US · AOSP's local backup transport
 Rows: `tool/device-rows/pr39b.sh` (emulator run 46105739991, flows `tests/pr-39` @ 7d2d860)
@@ -45,6 +71,17 @@ Rows: `tool/device-rows/pr39b.sh` (emulator run 46105739991, flows `tests/pr-39`
 | ⏳ a real cloud backup | | Google's transport on a real phone with a screen lock, and a restore on a new phone |
 | ⏳ the reminder after a restore without the notification permission | | the relaunch granted it (the test tool's default); covered by unit tests only |
 History: ce16ebb9 and 1575d09 runs 46101556335 / 46103938954 were not valid rows (the seed force-stopped the app; the encryption switch set only the transport's test flag), the test's own faults → 1575d09 🟢
+
+### #38 Store screenshots: the STORE1 and STORE2 fixtures, and the shots' helpers — 4de5b0c — 🟢 (carried from cde6ea8; the Play shots ⏳) — 2026-11-28 05:03 UTC
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46094308831, cde6ea8) | 🟢 | `+1502: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| The merge f2e7323 | 🟢 | its tree equals the plain merge of 663e497 and master 76ae303; against master only this PR's 6 files differ |
+| Out of store builds | 🟢 | the fixtures compile only in the staging flavour (`kLaunchFixtures = appFlavor == 'staging'`, used only inside `if (kLaunchFixtures)`) |
+| The tests, read by name | 🟢 | `play_png` (RGBA in, RGB out; alpha, see-through pixels, the wrong size, extra chunks, 16-bit and a bad CRC refused), `play_shots` (every adb call names an emulator; the display put back even on failure), the store fixtures (STORE1, STORE2; only into a blank journal) |
+| Carry to 4de5b0c (cde6ea8 merged with master 47ffdf9) | 🟢 | CI per test (run 46109939500): `+1653: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| ⏳ the six Play shots on a device | | `tool/device-rows/play.sh` on master after the system-bar PR lands; a dry run (46109693186) was looked at |
+History: cde6ea8 🟢 → 4de5b0c 🟢 (carried, plain merge)
 
 ### #37 Summary: Spent and Saved stack rather than shrink below 1x — 76ae303 — 🟢 (on-device ⏳) — 2026-11-28 01:36 UTC
 Build: no device for this row (CI logs + my own download of the golden render)
