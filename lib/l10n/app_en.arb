@@ -503,5 +503,12 @@
   "categoryIconTools": "Tools",
   "categoryIconCharity": "Charity",
   "categoryIconStar": "Other favorite",
-  "@categoryIconStar": {"description": "The star icon; a new category starts with it."}
+  "@categoryIconStar": {"description": "The star icon; a new category starts with it."},
+
+  "entryRepeat": "Add again today",
+  "@entryRepeat": {"description": "Adds a copy of an entry dated today: a Timeline row's long-press sheet and the edit sheet's menu."},
+  "entryRepeated": "Added again for today",
+  "@entryRepeated": {"description": "The snackbar after Add again today, with Undo."},
+  "undo": "Undo",
+  "@undo": {"description": "A snackbar action: takes back what was just added."}
 }

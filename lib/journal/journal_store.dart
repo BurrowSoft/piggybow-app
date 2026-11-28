@@ -184,7 +184,8 @@ class JournalStore extends ChangeNotifier {
 
   /// Adds a spend or a save. A save goes to [goalId] when it names an active
   /// goal (the Add sheet's choice with several goals), else to the goal a
-  /// save goes to by default ([activeGoal]), if any.
+  /// save goes to by default ([activeGoal]), if any; with [noGoal], to none
+  /// (a save added again that had none stays so).
   Future<Entry> addEntry({
     required EntryType type,
     required int amountMinor,
@@ -195,6 +196,7 @@ class JournalStore extends ChangeNotifier {
     Feeling? feeling,
     String note = '',
     String? goalId,
+    bool noGoal = false,
   }) async {
     final now = _clock.nowUtc();
     final spend = type == EntryType.spent;
@@ -208,7 +210,7 @@ class JournalStore extends ChangeNotifier {
       customCategory: spend ? customCategory : null,
       feeling: spend ? feeling : null,
       note: note.trim(),
-      goalId: spend ? null : await _saveGoal(goalId),
+      goalId: spend || noGoal ? null : await _saveGoal(goalId),
       localDate: localDate,
       createdAt: now,
       updatedAt: now,

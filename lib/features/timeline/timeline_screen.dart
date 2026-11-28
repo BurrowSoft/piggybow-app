@@ -13,12 +13,14 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
+import '../add/add_again.dart';
 import '../add/entry_sheet.dart';
 import '../../core/fit_text.dart';
 import '../shell/tab_top.dart';
 
 /// Every spend and save, newest day first, under day headers with that
-/// day's totals; All / Spent / Saved. A row opens its Edit sheet.
+/// day's totals; All / Spent / Saved. A row opens its Edit sheet; a
+/// long-press offers to add it again today.
 class TimelineScreen extends StatefulWidget {
   const TimelineScreen({super.key});
 
@@ -348,6 +350,10 @@ class _Row extends StatelessWidget {
       button: true,
       child: InkWell(
         onTap: () => showEntrySheet(context, editing: e),
+        // Add again today (a save only while its goal is still active).
+        onLongPress: canAddAgain(e, goal)
+            ? () => offerAddAgain(context, e)
+            : null,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 56),
           child: Padding(
