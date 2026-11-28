@@ -1,0 +1,21 @@
+appId: ${APP_ID}
+name: Gentle comparisons (#63) at large text - after flow 81 (its entries kept), this week's lines at font scale 2.0, wrapping at whole words, for a look
+tags: [compare]
+---
+- launchApp                                       # no clearState: flow 81's entries
+- extendedWaitUntil:
+    visible:
+      id: tab-summary
+    timeout: 30000
+- tapOn:
+    id: tab-summary
+- tapOn:
+    id: sum-week
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: sum-cat-food-compare
+- assertVisible:
+    id: sum-cat-food-compare
+    text: "(?s)About the same as\\s+this time\\s+last week"
+- takeScreenshot: 81-week-so-far-x2

@@ -1,0 +1,107 @@
+appId: ${APP_ID}
+name: Gentle comparisons on Summary (#63) - this week so far against the same days of last week; the previous week against the whole week before; no line for a new category; Month has none; saves ignored
+tags: [compare]
+# Run with zone=Asia/Bangkok and fake_now=2026-11-27T05:00:00Z: the app's
+# clock is frozen at Friday 27 November, 12:00 there. This week is Monday 23
+# to Sunday 29; "so far" compares Monday 23 - Friday 27 with Monday 16 -
+# Friday 20; the previous week (16-22) compares with 9-15 whole.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# This week
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "10", CAT: "food", DAY: "Wednesday, November 25, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "20", CAT: "transport", DAY: "Thursday, November 26, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "3", CAT: "fun", DAY: "Monday, November 23, 2026" }
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "5", CAT: "groceries" }        # today; new this week: no line
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-saved, AMOUNT: "100", CAT: "none", DAY: "Tuesday, November 24, 2026" }   # a save: never counts
+# Last week
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "10", CAT: "food", DAY: "Tuesday, November 17, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "30", CAT: "food", DAY: "Saturday, November 21, 2026" }   # after "this time last week"
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "10", CAT: "transport", DAY: "Monday, November 16, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "10", CAT: "fun", DAY: "Wednesday, November 18, 2026" }
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "7", CAT: "shopping", DAY: "Monday, November 16, 2026" }  # only last week
+# The week before last
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "10", CAT: "transport", DAY: "Tuesday, November 10, 2026" }
+# This week, so far
+- tapOn:
+    id: tab-summary
+- tapOn:
+    id: sum-week
+- assertVisible:
+    id: sum-period-label
+    text: ".*Nov 23.*Nov 29.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: sum-cat-food-compare
+- assertVisible:
+    id: sum-cat-food-compare
+    text: "About the same as this time last week"      # 10 vs 10; last Saturday's 30 not counted
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: sum-cat-transport-compare
+- assertVisible:
+    id: sum-cat-transport-compare
+    text: "A bit more than this time last week"         # 20 vs 10
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: sum-cat-fun-compare
+- assertVisible:
+    id: sum-cat-fun-compare
+    text: "A bit less than this time last week"         # 3 vs 10
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: sum-cat-groceries
+- assertNotVisible:
+    id: sum-cat-groceries-compare                       # new this week
+- assertNotVisible:
+    id: sum-cat-shopping                                # only last week: not mentioned
+- takeScreenshot: 81-week-so-far
+# The previous week, against the whole week before
+- tapOn:
+    id: sum-prev
+- assertVisible:
+    id: sum-period-label
+    text: ".*Nov 16.*Nov 22.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: sum-cat-transport-compare
+- assertVisible:
+    id: sum-cat-transport-compare
+    text: "About the same as last week"                 # 10 vs 10
+- assertNotVisible:
+    id: sum-cat-food-compare                            # new that week
+- assertNotVisible:
+    id: sum-cat-shopping-compare                        # new that week
+- takeScreenshot: 81-previous-week
+# Month: no lines at all
+- tapOn:
+    id: sum-month
+- assertNotVisible: "(?s).*last week.*"
+- takeScreenshot: 81-month
