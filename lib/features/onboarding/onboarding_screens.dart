@@ -16,6 +16,7 @@ import '../../settings_rules/settings_rules.dart';
 import '../../theme/theme.dart';
 import '../currency/currency_picker.dart';
 import '../goal/rainbow.dart';
+import '../me/backup_screens.dart' show restoreOffered;
 import '../pig/pig_view.dart';
 
 /// Whether onboarding is done, at start. It shows only over a blank journal:
@@ -31,7 +32,7 @@ Future<bool> onboardedAtStart(JournalStore journal) async {
 
 /// O1 Welcome (plan §3.1): the pig, happy, under a full rainbow; what the
 /// app is; that nothing leaves the phone; the currency, which can change
-/// here; and Get started.
+/// here; Get started; and "Moving from another phone?" (a backup file).
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -133,6 +134,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   child: Text(l10n.onbStart, textAlign: TextAlign.center),
                 ),
               ),
+              // A new phone can bring its journal before setting up (feature
+              // 21): a backup file from the old one.
+              if (restoreOffered(context)) ...[
+                const SizedBox(height: 8),
+                TestId(
+                  'onb-restore',
+                  button: true,
+                  child: TextButton(
+                    onPressed: () => context.push(OnboardingRoutes.restore),
+                    child: Text(l10n.onbMoving, textAlign: TextAlign.center),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

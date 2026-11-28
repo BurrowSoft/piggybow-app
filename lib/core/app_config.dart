@@ -22,6 +22,7 @@ class AppConfig {
     this.plusEnabled = false,
     this.plusFakeStore = false,
     this.plusRowsOwned = false,
+    this.backupFileEnabled = true,
     this.privacyUrl = '',
     this.supportUrl = '',
     this.termsUrl = '',
@@ -69,6 +70,11 @@ class AppConfig {
           flavor == Flavor.staging &&
           const bool.fromEnvironment('PLUS_FAKE_STORE') &&
           const bool.fromEnvironment('PLUS_ROWS_OWNED'),
+      // Never in a release build until the privacy policy and Help describe
+      // the backup file (UX): kReleaseMode is a compile-time true there.
+      backupFileEnabled:
+          !kReleaseMode &&
+          const bool.fromEnvironment('BACKUP_FILE', defaultValue: true),
       privacyUrl: const String.fromEnvironment('PRIVACY_URL'),
       supportUrl: const String.fromEnvironment('SUPPORT_URL'),
       termsUrl: const String.fromEnvironment('TERMS_URL'),
@@ -135,6 +141,12 @@ class AppConfig {
   /// tester's rows see Plus on with nothing bought. Debug builds of staging
   /// only, and only with PLUS_FAKE_STORE.
   final bool plusRowsOwned;
+
+  /// Feature 21, the backup file: Me's Back up and Restore, and O1's
+  /// "Moving from another phone?". Off in every release build until the
+  /// privacy policy and Help describe it; on in debug and profile builds
+  /// (BACKUP_FILE=false turns it off there too).
+  final bool backupFileEnabled;
 
   /// The website's privacy policy, support and terms of use pages, once
   /// each is live (PRIVACY_URL, SUPPORT_URL, TERMS_URL). Empty = no link

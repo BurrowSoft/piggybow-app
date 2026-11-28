@@ -4,8 +4,11 @@ import 'package:sembast/sembast_io.dart';
 import 'package:sembast/sembast_memory.dart';
 import 'package:uuid/uuid.dart';
 
+import '../backup/backup_snapshot.dart' show JournalSnapshot;
 import '../core/clock.dart';
 import '../goal/goal_progress.dart';
+import '../money/currency.dart' show supportedCurrencies;
+import '../money/money.dart' show maxAmountMinor;
 import '../money/rate.dart';
 import '../pig/pig_mood.dart' show HappyPick;
 import '../repeat/repeat.dart';
@@ -1048,6 +1051,231 @@ class JournalStore extends ChangeNotifier {
     });
     notifyListeners();
   }
+
+  // ------------------------------------------------------------- backups
+
+  /// The journal settings a backup carries (feature 21), by key, and every
+  /// `celebrated.<goal id>`. Every key this store writes is either here or in
+  /// [staysOnPhone] (a test reads this file to check), so whether a new
+  /// setting travels is a choice, never an accident.
+  static const travels = {
+    'currency',
+    'picks',
+    'plan_minor',
+    'onboarded',
+    'reminder_offer',
+    'hidden_categories',
+    // Me → Your pig's switches, and the month whose letter was put away
+    // (UX, 28 Nov): a restore in the same month doesn't show it again.
+    'yesterday_feel_off',
+    'letters_off',
+    'letter_dismissed',
+  };
+
+  static const _travelsPrefix = 'celebrated.';
+
+  /// Journal settings that never leave this phone: today's "Not now" on
+  /// Home's yesterday question, a one-day state (UX, 28 Nov).
+  static const staysOnPhone = {'yesterday_feel_hidden'};
+
+  /// The stores a backup carries. A new store is a choice too: the test that
+  /// classifies the settings checks every store this file opens.
+  static const backedUpStores = {'entries', 'goals', 'categories', 'settings'};
+
+  static bool travelsWith(String key) =>
+      travels.contains(key) || key.startsWith(_travelsPrefix);
+
+  /// Everything a backup carries of the journal, read in one transaction:
+  /// every entry, goal and category of your own as this build writes them,
+  /// and the settings that travel. A record [checkSnapshot] would refuse
+  /// (one an older build left unreadable, a spend in a category that isn't
+  /// there) stays out, so a backup made here always restores.
+  Future<JournalSnapshot> snapshot() => _db.transaction((txn) async {
+    final entries = await _entries.find(txn);
+    final goals = await _goals.find(txn);
+    final categories = {
+      for (final s in await _categories.find(txn))
+        s.key: ?_categoryRecord(s.key, s.value),
+    };
+    final settings = await _settings.find(txn);
+    return JournalSnapshot(
+      entries: {
+        for (final s in entries)
+          if (_entryRecord(s.key, s.value) case final m?
+              when _categoryKnown(m, categories))
+            s.key: m,
+      },
+      goals: {for (final s in goals) s.key: ?_goalRecord(s.key, s.value)},
+      categories: categories,
+      settings: {
+        for (final s in settings)
+          if (_settingFits(s.key, s.value)) s.key: _plain(s.value),
+      },
+    );
+  });
+
+  /// [snapshot] as this store would write it. A [FormatException] for
+  /// anything it never writes: an entry, goal or category of your own it
+  /// can't read or would refuse, a spend in a category of your own the
+  /// backup doesn't carry, two of your own with the same name, a second
+  /// active goal, a setting that doesn't travel or holds the wrong kind of
+  /// value.
+  static JournalSnapshot checkSnapshot(JournalSnapshot snapshot) {
+    final categories = <String, Map<String, Object?>>{};
+    final names = <String>{};
+    for (final MapEntry(:key, :value) in snapshot.categories.entries) {
+      final record =
+          _categoryRecord(key, value) ??
+          (throw FormatException('category $key'));
+      if (!names.add((record['name']! as String).toLowerCase())) {
+        throw FormatException('two categories named ${record['name']}');
+      }
+      categories[key] = record;
+    }
+    final entries = <String, Map<String, Object?>>{};
+    for (final MapEntry(:key, :value) in snapshot.entries.entries) {
+      final record =
+          _entryRecord(key, value) ?? (throw FormatException('entry $key'));
+      if (!_categoryKnown(record, categories)) {
+        throw FormatException('entry $key: no such category');
+      }
+      entries[key] = record;
+    }
+    final goals = <String, Map<String, Object?>>{};
+    var active = 0;
+    for (final MapEntry(:key, :value) in snapshot.goals.entries) {
+      final record =
+          _goalRecord(key, value) ?? (throw FormatException('goal $key'));
+      if (record['status'] == GoalStatus.active.id && ++active > 1) {
+        throw const FormatException('a second active goal');
+      }
+      goals[key] = record;
+    }
+    final settings = <String, Object?>{};
+    for (final MapEntry(:key, :value) in snapshot.settings.entries) {
+      if (!_settingFits(key, value)) throw FormatException('setting $key');
+      settings[key] = _plain(value);
+    }
+    return JournalSnapshot(
+      entries: entries,
+      goals: goals,
+      categories: categories,
+      settings: settings,
+    );
+  }
+
+  /// A category of your own as this store writes it ([putCustomCategory]'s
+  /// rules: your own id, a name trimmed, not empty, at most
+  /// [categoryNameMax] characters), or null.
+  static Map<String, Object?>? _categoryRecord(
+    String id,
+    Map<String, Object?> m,
+  ) {
+    final category = CustomCategory.fromMap(id, m);
+    if (category == null) return null;
+    final name = category.name.trim();
+    if (name.isEmpty || name.characters.length > categoryNameMax) return null;
+    return category.copyWith(name: name).toMap();
+  }
+
+  /// Whether an entry's category of your own, if it has one, is in
+  /// [categories] (a spend goes only to one that exists).
+  static bool _categoryKnown(
+    Map<String, Object?> entry,
+    Map<String, Map<String, Object?>> categories,
+  ) {
+    final id = entry['category'];
+    return !CustomCategory.isCustomId(id) || categories.containsKey(id);
+  }
+
+  /// The entry as this store writes it, or null for one it can't read, would
+  /// refuse, or can't show: a currency this build doesn't list (its money
+  /// can't be formatted) or an amount over [maxAmountMinor] (its edit sheet
+  /// can't open).
+  static Map<String, Object?>? _entryRecord(String id, Map<String, Object?> m) {
+    final entry = id.isEmpty ? null : Entry.fromMap(id, m);
+    if (entry == null ||
+        !supportedCurrencies.contains(entry.currency) ||
+        entry.amountMinor > maxAmountMinor) {
+      return null;
+    }
+    try {
+      _check(entry);
+    } on ArgumentError {
+      return null;
+    }
+    return entry.toMap();
+  }
+
+  /// The goal as this store writes it, or null for one it can't read or
+  /// can't show (a target or a start over [maxAmountMinor]).
+  static Map<String, Object?>? _goalRecord(String id, Map<String, Object?> m) {
+    final goal = id.isEmpty ? null : Goal.fromMap(id, m);
+    if (goal == null ||
+        goal.targetMinor > maxAmountMinor ||
+        goal.startMinor > maxAmountMinor) {
+      return null;
+    }
+    return goal.toMap();
+  }
+
+  /// Replaces the whole journal with [snapshot] (a restore): every entry,
+  /// goal and travelling setting goes, and the snapshot's take their place,
+  /// stamps and all, so a restored rainbow doesn't celebrate again. All of
+  /// it is checked first ([checkSnapshot]: nothing is touched on a
+  /// [FormatException]); the writing is one transaction, so a failure
+  /// halfway leaves the journal exactly as it was. Settings that stay on the
+  /// phone are kept.
+  Future<void> replaceWith(
+    JournalSnapshot snapshot, {
+    @visibleForTesting Future<void> Function()? midway,
+  }) async {
+    final checked = checkSnapshot(snapshot);
+    await _db.transaction((txn) async {
+      await _entries.delete(txn);
+      await _goals.delete(txn);
+      await _categories.delete(txn);
+      for (final s in await _settings.find(txn)) {
+        if (travelsWith(s.key)) await _settings.record(s.key).delete(txn);
+      }
+      await midway?.call();
+      for (final MapEntry(:key, :value) in checked.categories.entries) {
+        await _categories.record(key).put(txn, value);
+      }
+      for (final MapEntry(:key, :value) in checked.entries.entries) {
+        await _entries.record(key).put(txn, value);
+      }
+      for (final MapEntry(:key, :value) in checked.goals.entries) {
+        await _goals.record(key).put(txn, value);
+      }
+      for (final MapEntry(:key, :value) in checked.settings.entries) {
+        await _settings.record(key).put(txn, value);
+      }
+    });
+    notifyListeners();
+  }
+
+  static bool _settingFits(String key, Object? value) => switch (key) {
+    'currency' => supportedCurrencies.contains(value),
+    'picks' => value is List && value.every((p) => p is String),
+    'plan_minor' => value is int && value > 0 && value <= maxAmountMinor,
+    'onboarded' || 'reminder_offer' => value is bool,
+    'hidden_categories' =>
+      value is List && value.every((id) => SpendCategory.fromId(id) != null),
+    _ =>
+      key.startsWith(_travelsPrefix) &&
+          key.length > _travelsPrefix.length &&
+          value is bool,
+  };
+
+  /// [value] as plain JSON: the store hands out read-only lists and maps.
+  static Object? _plain(Object? value) => switch (value) {
+    final List<Object?> list => [for (final v in list) _plain(v)],
+    final Map<String, Object?> map => {
+      for (final MapEntry(:key, :value) in map.entries) key: _plain(value),
+    },
+    _ => value,
+  };
 
   Future<void> close() => _db.close();
 

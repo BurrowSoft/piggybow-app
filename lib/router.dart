@@ -6,6 +6,7 @@ import 'features/categories/categories_screen.dart';
 import 'features/categories/category_edit_screen.dart';
 import 'features/goal/goal_screens.dart';
 import 'features/home/home_screen.dart';
+import 'features/me/backup_screens.dart';
 import 'features/me/me_screen.dart';
 import 'features/me/reached_goals_screen.dart';
 import 'features/onboarding/onboarding_screens.dart';
@@ -48,6 +49,9 @@ abstract final class OnboardingRoutes {
   static const happy = '/onboarding/happy';
   static const goal = '/onboarding/goal';
 
+  /// "Moving from another phone?": restore a backup file before setting up.
+  static const restore = '/onboarding/restore';
+
   static bool contains(String location) =>
       location == welcome || location.startsWith('$welcome/');
 }
@@ -80,6 +84,10 @@ abstract final class MeRoutes {
   /// Money → Repeating entries, and one repeat's page.
   static const repeats = '/me/repeats';
   static String repeat(String id) => '/me/repeats/$id';
+
+  /// Your data: the backup file, made and restored (feature 21).
+  static const backup = '/me/backup';
+  static const restore = '/me/restore';
 }
 
 /// A category of your own, made or edited (Plus), over everything: the Add
@@ -183,6 +191,11 @@ GoRouter buildRouter({
               child: GoalEditScreen(onboarding: true),
             ),
           ),
+          GoRoute(
+            path: 'restore',
+            builder: (context, state) =>
+                const ScaffoldMessenger(child: RestoreScreen()),
+          ),
         ],
       ),
       GoRoute(
@@ -270,6 +283,14 @@ GoRouter buildRouter({
                                 RepeatScreen(repeatId: state.pathParameters['id']!),
                           ),
                         ],
+                      ),
+                      GoRoute(
+                        path: 'backup',
+                        builder: (context, state) => const BackupScreen(),
+                      ),
+                      GoRoute(
+                        path: 'restore',
+                        builder: (context, state) => const RestoreScreen(),
                       ),
                     ],
                     if (tab == AppTab.summary)

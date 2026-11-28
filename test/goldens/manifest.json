@@ -1,10 +1,82 @@
 {
-  "source_sha": "3d2a069588cb03c1906aa90774be103d688ae909",
-  "ref": "3d2a069588cb03c1906aa90774be103d688ae909",
-  "run_id": "46151694713",
+  "source_sha": "71f58f6bd41204ade934a15821cc941729832b72",
+  "ref": "71f58f6bd41204ade934a15821cc941729832b72",
+  "run_id": "46155616731",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
+    {
+      "file": "add-sheet_edit-locked_dark_320x2.png",
+      "state": "TG5",
+      "test": "TG5 a save the goal needs: Delete tapped, the sheet says why (320 dp, text ×2, dark)",
+      "sha256": "1ef351c9e9a81aec14f788ee7ed1967ab52c43028a161b7c274435480f5cdb70",
+      "bytes": 182862,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_edit-locked_light_320x2.png",
+      "state": "TG5",
+      "test": "TG5 a save the goal needs: Delete tapped, the sheet says why (320 dp, text ×2, light)",
+      "sha256": "0ed53140d3ab6d941b58dc97292b8863218c0bf4c4d4b1177c3945c8d59814c6",
+      "bytes": 182284,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_edit-lowered_dark_320x2.png",
+      "state": "TG6",
+      "test": "TG6 a save the goal needs: lowered below it, the amount says why (320 dp, text ×2, dark)",
+      "sha256": "0abc2e0b6de20ad23d276b2c83f1666bad479403373655c497e7255101fb7ffb",
+      "bytes": 173046,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_edit-lowered_light_320x2.png",
+      "state": "TG6",
+      "test": "TG6 a save the goal needs: lowered below it, the amount says why (320 dp, text ×2, light)",
+      "sha256": "b24ec8d3a57c54d17232ec0333b0b1ace63b9a137ffd407815ef40c7017d059f",
+      "bytes": 173198,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_quick-amounts_dark_320x2.png",
+      "state": "Q1",
+      "test": "the Add sheet with 3 quick amounts, 320 dp ×2, dark",
+      "sha256": "809c89abea086abf5abd8d5a68c6bf3649dc6a81eac39d941092fc864ba035fe",
+      "bytes": 163190,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_quick-amounts_dark_360x1.png",
+      "state": "Q1",
+      "test": "the Add sheet with 3 quick amounts, 360 dp ×1, dark",
+      "sha256": "65537bd72c27f48729241b2a2b68ae707bc06d42b272af97df91222c3b658356",
+      "bytes": 153693,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_quick-amounts_light_320x2.png",
+      "state": "Q1",
+      "test": "the Add sheet with 3 quick amounts, 320 dp ×2, light",
+      "sha256": "81f098569859054b2442cb40a86fc12043c84f25fadd512a38a99767f9203ace",
+      "bytes": 163841,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_quick-amounts_light_360x1.png",
+      "state": "Q1",
+      "test": "the Add sheet with 3 quick amounts, 360 dp ×1, light",
+      "sha256": "97709274f23acab7a3c5e09b423d97bcee07171748cfe36072c23af38200ebed",
+      "bytes": 155058,
+      "width": 1080,
+      "height": 2340
+    },
     {
       "file": "add-sheet_saved-goal-end_dark_320x2.png",
       "state": "A5",
@@ -132,6 +204,114 @@
       "height": 2340
     },
     {
+      "file": "backup_empty-end_dark_320x2.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (320 dp, text ×2, dark)",
+      "sha256": "70ce0c6530cdbbc8a504f844643733156460d97ed377a67e2ab039db9717d217",
+      "bytes": 167857,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty-end_light_320x2.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (320 dp, text ×2, light)",
+      "sha256": "59ef0deaab44b27a31459eb7234668072d9de33a8eea85b4e9e3793c618a87af",
+      "bytes": 168081,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty_dark_320x2.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (320 dp, text ×2, dark)",
+      "sha256": "ba652fcbc1684bee7e7f324327b700ae721e31fa68ee04c4d804eaafc1bcfb0c",
+      "bytes": 214905,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty_dark_360x1.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (360 dp, text ×1, dark)",
+      "sha256": "55093b7c2202d8b870724700c9e832662c1a9a78f9a86d600977a66853e304d4",
+      "bytes": 166617,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty_light_320x2.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (320 dp, text ×2, light)",
+      "sha256": "e228690209c359c8e53d7b68edfda0c4f560f7bbe97f51517513b808fa72fce7",
+      "bytes": 213704,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_empty_light_360x1.png",
+      "state": "BK1",
+      "test": "BK1 Back up to a file (360 dp, text ×1, light)",
+      "sha256": "622f857c47e181a0359730b6823543b6dfd7d940cdc4821adef393d979551c24",
+      "bytes": 166953,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short-end_dark_320x2.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (320 dp, text ×2, dark)",
+      "sha256": "75ce1ddc07d047bc9efa4bcf68cf0b835e199ea55f2e0858fed6557c09de8cd3",
+      "bytes": 177863,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short-end_light_320x2.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (320 dp, text ×2, light)",
+      "sha256": "e96217745c6bdf46973d1b6269ba9034f54ed9f2c7297e2e60422413c1e1256d",
+      "bytes": 177665,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short_dark_320x2.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (320 dp, text ×2, dark)",
+      "sha256": "29b491872ffc6ca2b29299ef32487a5999392e5e3862b8ba6af1de764b754aba",
+      "bytes": 212681,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short_dark_360x1.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (360 dp, text ×1, dark)",
+      "sha256": "3bcd6f7e58ab596e54ac8d85ae304194c6ffae7a692566145353319911fbf0e6",
+      "bytes": 174581,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short_light_320x2.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (320 dp, text ×2, light)",
+      "sha256": "3bc290d65c279a99c8c326fdd52b7c58732035f47627f7ac4851012824434faa",
+      "bytes": 211286,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "backup_too-short_light_360x1.png",
+      "state": "BK2",
+      "test": "BK2 Back up: too short (360 dp, text ×1, light)",
+      "sha256": "e758a5f4f9284fcc90b3411be6e6bbd96bfcafa9c675023829fb3901409cd5df",
+      "bytes": 174641,
+      "width": 1080,
+      "height": 2340
+    },
+    {
       "file": "categories_plus-end_dark_320x2.png",
       "state": "PC1",
       "test": "PC1 Categories with Plus (320 dp, text ×2, dark)",
@@ -225,8 +405,8 @@
       "file": "delete-dialog_confirm_dark_320x2.png",
       "state": "B1",
       "test": "A7 edit, on an older day; B1 the delete dialog (320 dp, text ×2, dark)",
-      "sha256": "8ceec56ea1b9c323101e8a65d3b95495cb296f45bcc7c2949fec963270a5ffc2",
-      "bytes": 145851,
+      "sha256": "2d203bff7e26baf9ee7dc950e30d30f32a68148fd6e371409b095707e86e1f7d",
+      "bytes": 146534,
       "width": 960,
       "height": 2340
     },
@@ -234,8 +414,26 @@
       "file": "delete-dialog_confirm_light_320x2.png",
       "state": "B1",
       "test": "A7 edit, on an older day; B1 the delete dialog (320 dp, text ×2, light)",
-      "sha256": "9944854128a2423be721741077eb3d900fb8171064882490f084edd5c9ab0a63",
-      "bytes": 148972,
+      "sha256": "9fc5826e3c251fd1e928d5f044085569664dc5d0cfb759ad9676e2fc7c3c55a9",
+      "bytes": 149753,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_menu_dark_320x2.png",
+      "state": "RG2",
+      "test": "RG2 the edit sheet's menu, open (320 dp, text ×2, dark)",
+      "sha256": "0cc92676c6c9e889fe4de868ae6e5a7b2e3a4eadcc13d0989657b4fe5e7a92fe",
+      "bytes": 156104,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_menu_light_320x2.png",
+      "state": "RG2",
+      "test": "RG2 the edit sheet's menu, open (320 dp, text ×2, light)",
+      "sha256": "c8467bff5e818ac611d6d258bb45197e67e671525360e78a73a79b47f6781483",
+      "bytes": 156373,
       "width": 960,
       "height": 2340
     },
@@ -243,8 +441,8 @@
       "file": "goal-create_empty_dark_320x2.png",
       "state": "G1",
       "test": "G1 the goal form with its errors (320 dp, text ×2, dark)",
-      "sha256": "a3e8947e08db7535ae7eb40370ef310301ae2bbe1afcda8f88eb7c302bce301e",
-      "bytes": 103153,
+      "sha256": "0b858d7d5b2c06e745557e88835d3e27c8bab7d09ecfc6c5af72302dc7edfdb1",
+      "bytes": 119588,
       "width": 960,
       "height": 2340
     },
@@ -252,8 +450,26 @@
       "file": "goal-create_empty_light_320x2.png",
       "state": "G1",
       "test": "G1 the goal form with its errors (320 dp, text ×2, light)",
-      "sha256": "8936018c6c1f1f3378795727552d8b387e891645890aa36e7b240d02c064b088",
-      "bytes": 103841,
+      "sha256": "3337c3dc57a940ee02203e138d688878c47d7b16f826616bbdd2b76e34b2292b",
+      "bytes": 120442,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-create_errors-end_dark_320x2.png",
+      "state": "G2",
+      "test": "G1 the goal form with its errors (320 dp, text ×2, dark)",
+      "sha256": "b4cef15b3bdf8ce6d16a85127224712a96ba69876a93f57da72becd39ca77cd0",
+      "bytes": 152634,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-create_errors-end_light_320x2.png",
+      "state": "G2",
+      "test": "G1 the goal form with its errors (320 dp, text ×2, light)",
+      "sha256": "5db65fb5451e0d311c6d61cf61fc3ab13dd9cc5a9a558499a7f8a4804c50f013",
+      "bytes": 153222,
       "width": 960,
       "height": 2340
     },
@@ -261,8 +477,8 @@
       "file": "goal-create_errors_dark_320x2.png",
       "state": "G2",
       "test": "G1 the goal form with its errors (320 dp, text ×2, dark)",
-      "sha256": "0ae53ad51c643409781eeed345db5b65e333373973485888e7f6ac11939f2882",
-      "bytes": 136414,
+      "sha256": "ff2842fd5b907357c433963ee040702acdaba6c3bd07e1fd318d29d3f5927d99",
+      "bytes": 142175,
       "width": 960,
       "height": 2340
     },
@@ -270,8 +486,26 @@
       "file": "goal-create_errors_light_320x2.png",
       "state": "G2",
       "test": "G1 the goal form with its errors (320 dp, text ×2, light)",
-      "sha256": "6e5138f0fe071b0316794ebccfc18ae8784b07f59aa1d2957c82b3cecd85e852",
-      "bytes": 136703,
+      "sha256": "36c378ba8275e482a18f87fcbe0d49a5c91af892c9c53526bef77ffc0245565f",
+      "bytes": 142518,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-create_filled-end_dark_320x2.png",
+      "state": "G3",
+      "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, dark)",
+      "sha256": "2487ab6d59d2c7393da63183033b7913808b283c8cea253e5fe53e62dd4f219f",
+      "bytes": 173292,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-create_filled-end_light_320x2.png",
+      "state": "G3",
+      "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, light)",
+      "sha256": "605280385b77ca52385e841bed15cc7796e770115cbde6f53d091cf9a393ba1e",
+      "bytes": 174583,
       "width": 960,
       "height": 2340
     },
@@ -279,8 +513,8 @@
       "file": "goal-create_filled_dark_320x2.png",
       "state": "G3",
       "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, dark)",
-      "sha256": "cea89cbb34d26f514020d4e71289a6c44cd20c466487f0bdaaa2ee7d35b412e1",
-      "bytes": 159459,
+      "sha256": "e825e75caaa45c0c1d9ec04a131c344c1daacbf10c16c256c72574a004da1d7d",
+      "bytes": 174326,
       "width": 960,
       "height": 2340
     },
@@ -288,8 +522,8 @@
       "file": "goal-create_filled_light_320x2.png",
       "state": "G3",
       "test": "G-filled the goal form filled: a 40-character name, the largest target and already saved (320 dp, text ×2, light)",
-      "sha256": "b8f1e4385f23c380e07976c94b13243e8e37a545a731ce5507fae1b41666b7c4",
-      "bytes": 160406,
+      "sha256": "ebf93e33c2c8be28ef9be6135a092d5f9c2621c1d123ee4d2d382b88cee89450",
+      "bytes": 175259,
       "width": 960,
       "height": 2340
     },
@@ -333,8 +567,8 @@
       "file": "goal-detail_32_dark_320x2.png",
       "state": "D2",
       "test": "G2 the goal detail with its saves (320 dp, text ×2, dark)",
-      "sha256": "5cabdc84c77ab067cb5205966fbb7d48cf8d0b4ceae58b8a85d2faf041bf5e85",
-      "bytes": 192869,
+      "sha256": "5992a65892acd9ec4313153e6f39668e2afa150bb75095ab33c8d60d3db9ef1a",
+      "bytes": 206792,
       "width": 960,
       "height": 2340
     },
@@ -342,17 +576,53 @@
       "file": "goal-detail_32_light_320x2.png",
       "state": "D2",
       "test": "G2 the goal detail with its saves (320 dp, text ×2, light)",
-      "sha256": "0a2366c200d63bdc14fa1a005dba2019940076dfefdbc13ea3c6df9d2325eacf",
-      "bytes": 186598,
+      "sha256": "e3c3f78bb22a94109778c7d16f82c32e8028705b92ed1c9adc35a071161b91e9",
+      "bytes": 200920,
       "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_pace_dark_320x2.png",
+      "state": "TD2",
+      "test": "TD2 the goal with its pace (320 dp, text ×2, dark)",
+      "sha256": "de1dadc4bf729b4512b43dd3ed88c02db2613f63585588d8e1ca8f54f88c91e2",
+      "bytes": 203295,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_pace_dark_360x1.png",
+      "state": "TD2",
+      "test": "TD2 the goal with its pace (360 dp, text ×1, dark)",
+      "sha256": "62c85d3c7037601809e46be75d7b619b47491a0cb5f9409ae78a5b3a26b5345b",
+      "bytes": 153471,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_pace_light_320x2.png",
+      "state": "TD2",
+      "test": "TD2 the goal with its pace (320 dp, text ×2, light)",
+      "sha256": "a9a0ec9c2858c1fc8576dcf8a0ead232c972cecd46cb4f9259148abe690d2a09",
+      "bytes": 198178,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_pace_light_360x1.png",
+      "state": "TD2",
+      "test": "TD2 the goal with its pace (360 dp, text ×1, light)",
+      "sha256": "a8d2e53f7d1f7a3d4a62f701aa7884a677ef3327ec77a05aff75de80a180f065",
+      "bytes": 147140,
+      "width": 1080,
       "height": 2340
     },
     {
       "file": "goal-detail_reached_dark_320x2.png",
       "state": "D3",
       "test": "G4 a reached goal's detail is read-only (320 dp, text ×2, dark)",
-      "sha256": "581f49edc53c2f44fcb1265ffd1eb1be03b0d71c35ef5b8011fdd22b86f72649",
-      "bytes": 141535,
+      "sha256": "eedd159d35ed333d3c66d11f9e45fb3fa2221b287e12ad9ce196cf3b53538ba7",
+      "bytes": 156028,
       "width": 960,
       "height": 2340
     },
@@ -360,9 +630,81 @@
       "file": "goal-detail_reached_light_320x2.png",
       "state": "D3",
       "test": "G4 a reached goal's detail is read-only (320 dp, text ×2, light)",
-      "sha256": "86a3a93b025eeade888c367c3833aa0903376f4b19211478ded4cd3f3b759c62",
-      "bytes": 133757,
+      "sha256": "ae16dd3ca411f9c2ce25e1562d4773c9036a5c0b3166cee12d27a2b97f1e7d75",
+      "bytes": 148363,
       "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_taken-out-end_dark_320x2.png",
+      "state": "TG2",
+      "test": "TG2 the goal: Take out, and a taken-out row (320 dp, text ×2, dark)",
+      "sha256": "c2e1611cf1d142e5cc4361406427f3f0a953dae5f30a764c4b9a419e7a7aa502",
+      "bytes": 176748,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_taken-out-end_light_320x2.png",
+      "state": "TG2",
+      "test": "TG2 the goal: Take out, and a taken-out row (320 dp, text ×2, light)",
+      "sha256": "eb2aa158f0d13dc3176cfddc1c5c62b3b57581729ba4db00d0c5e8d40ba3757d",
+      "bytes": 177516,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_taken-out_dark_320x2.png",
+      "state": "TG2",
+      "test": "TG2 the goal: Take out, and a taken-out row (320 dp, text ×2, dark)",
+      "sha256": "289f12a11c3011a98b301867eb2e14b954e4c97b05e74fe002f9b6e8b06aae42",
+      "bytes": 196320,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_taken-out_light_320x2.png",
+      "state": "TG2",
+      "test": "TG2 the goal: Take out, and a taken-out row (320 dp, text ×2, light)",
+      "sha256": "35d56db3f2f383890a06326691fd05a7de4a914e17fbfe5f4e04a9e00db19875",
+      "bytes": 190629,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_target_dark_320x2.png",
+      "state": "TD3",
+      "test": "TD3 the goal with its target date (320 dp, text ×2, dark)",
+      "sha256": "8b31cccff001c526e66bb3a45f798bb95ba7a3e156af1678594475784dedb057",
+      "bytes": 195402,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_target_dark_360x1.png",
+      "state": "TD3",
+      "test": "TD3 the goal with its target date (360 dp, text ×1, dark)",
+      "sha256": "324da62c9049d3745b713437e59e40885bc6523babd13a4ebe451f9fc1d39db0",
+      "bytes": 145699,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_target_light_320x2.png",
+      "state": "TD3",
+      "test": "TD3 the goal with its target date (320 dp, text ×2, light)",
+      "sha256": "bd29cadaee4897a8d60f2e815643b83d7aeaf0741067d7860d87c7b607e2f694",
+      "bytes": 190305,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-detail_target_light_360x1.png",
+      "state": "TD3",
+      "test": "TD3 the goal with its target date (360 dp, text ×1, light)",
+      "sha256": "fb42b9636ee7ae15389a5183a2690145bda5efc4b2d70178232d1fcc39034d07",
+      "bytes": 138331,
+      "width": 1080,
       "height": 2340
     },
     {
@@ -402,11 +744,65 @@
       "height": 2340
     },
     {
+      "file": "goal-edit_start-locked_dark_320x2.png",
+      "state": "TG7",
+      "test": "TG7 the goal's editor: Already saved below what was taken out beyond its saves (320 dp, text ×2, dark)",
+      "sha256": "f74439e4d043e0e6dce43d60c0e888500e39531fc5e49a961f4fce6979531d95",
+      "bytes": 172902,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_start-locked_light_320x2.png",
+      "state": "TG7",
+      "test": "TG7 the goal's editor: Already saved below what was taken out beyond its saves (320 dp, text ×2, light)",
+      "sha256": "a6e65fe779f1a5d7bc020edf1ff86c21323a46f9a39d767ab0b3d7d0f860c6c0",
+      "bytes": 172933,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_target-date_dark_320x2.png",
+      "state": "TD1",
+      "test": "TD1 the goal form with a target date (320 dp, text ×2, dark)",
+      "sha256": "e3bfde8dce8754be5219a7db4e8bb6a5132556a62dc079bc09bbcd3b2cf913e3",
+      "bytes": 143694,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_target-date_dark_360x1.png",
+      "state": "TD1",
+      "test": "TD1 the goal form with a target date (360 dp, text ×1, dark)",
+      "sha256": "403bafb696653fa861a35d377765f847da22c4b9060793fa98c21897ebe404e7",
+      "bytes": 91786,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_target-date_light_320x2.png",
+      "state": "TD1",
+      "test": "TD1 the goal form with a target date (320 dp, text ×2, light)",
+      "sha256": "81281cdb93977d1fcda60260274542f5a7bd2f54da916eb528631acdf55229f9",
+      "bytes": 144523,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "goal-edit_target-date_light_360x1.png",
+      "state": "TD1",
+      "test": "TD1 the goal form with a target date (360 dp, text ×1, light)",
+      "sha256": "e432b763a873ceb6ee4878bc599a569387241c594e5efd1b26a8bc1eff3ea972",
+      "bytes": 91907,
+      "width": 1080,
+      "height": 2340
+    },
+    {
       "file": "goal-end_dialog_dark_320x2.png",
       "state": "E1",
       "test": "G5 the End goal dialog (320 dp, text ×2, dark)",
-      "sha256": "42b489f8b8bd83cb4dc2aadad91ec03175ab8080d98d9e376f472b0ea46dd251",
-      "bytes": 154085,
+      "sha256": "234f1b154c3b6683cee86887fe68d6f485f51408ec02f2476fc069d39558cf13",
+      "bytes": 164710,
       "width": 960,
       "height": 2340
     },
@@ -414,8 +810,8 @@
       "file": "goal-end_dialog_light_320x2.png",
       "state": "E1",
       "test": "G5 the End goal dialog (320 dp, text ×2, light)",
-      "sha256": "96d1623134dab17fea32fce0eeb21824bf31b35eb7a9dfaf7bf49db852f63111",
-      "bytes": 154525,
+      "sha256": "40e42de207807985035feef6b318962e0c66091c6782e94454bf00244a19f4d5",
+      "bytes": 165763,
       "width": 960,
       "height": 2340
     },
@@ -1125,8 +1521,8 @@
       "file": "me_lock-after-restore_dark_320x2.png",
       "state": "M10",
       "test": "M10 the App lock row after a restore (320 dp, text ×2, dark)",
-      "sha256": "eedd30426587205bfe85cf04e27fc19e51f0f57d1b6246a4db5a1f355934a199",
-      "bytes": 198041,
+      "sha256": "c76c1ca819e5bbcf68f08677c12b101a76fd4ed7402f77992085272bdf2f3fc0",
+      "bytes": 158801,
       "width": 960,
       "height": 2340
     },
@@ -1134,8 +1530,8 @@
       "file": "me_lock-after-restore_light_320x2.png",
       "state": "M10",
       "test": "M10 the App lock row after a restore (320 dp, text ×2, light)",
-      "sha256": "7977aa8eaa55e4c0107fdb3207ddf1a9a5bd5676b0b29e24e5c77d3a3d1a1776",
-      "bytes": 198267,
+      "sha256": "aab7f826b42a8f3637123b0bd0b02d721c55823af5ffe9ac15d4b3c79d905c82",
+      "bytes": 158839,
       "width": 960,
       "height": 2340
     },
@@ -1179,8 +1575,8 @@
       "file": "me_notifications-off_dark_320x2.png",
       "state": "M3",
       "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, dark)",
-      "sha256": "f4f6becb97e13c283146e8157c33b2a6a5588b48885e6f8cdaf089032d481973",
-      "bytes": 184176,
+      "sha256": "e2779ab24571c7c85731ce4e36ebdde80fe0104dbc7ddb2b22a0035ddcdf2ad1",
+      "bytes": 203541,
       "width": 960,
       "height": 2340
     },
@@ -1188,8 +1584,8 @@
       "file": "me_notifications-off_light_320x2.png",
       "state": "M3",
       "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, light)",
-      "sha256": "f8b224787e2bbcbbc3ba0e20671af2377afb0152db8e2da4080ccffdf9d618b6",
-      "bytes": 184167,
+      "sha256": "148e5fdd20040ac95a2312a6af653a0aeb8413e85e8c61f67a717d287e82dc83",
+      "bytes": 204043,
       "width": 960,
       "height": 2340
     },
@@ -1626,6 +2022,204 @@
       "height": 2340
     },
     {
+      "file": "restore_choose_dark_320x2.png",
+      "state": "RS1",
+      "test": "RS1 Restore: choose a file (320 dp, text ×2, dark)",
+      "sha256": "bcaae12267d9aafe7449403c625ac78110188fb1c175e492e4ead8ac9f8dbfee",
+      "bytes": 122170,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_choose_dark_360x1.png",
+      "state": "RS1",
+      "test": "RS1 Restore: choose a file (360 dp, text ×1, dark)",
+      "sha256": "6b7eaf01ef30c43eb4a87dc6afbabde45ff48bcc6018fda392ba87fa9ee1188c",
+      "bytes": 82479,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_choose_light_320x2.png",
+      "state": "RS1",
+      "test": "RS1 Restore: choose a file (320 dp, text ×2, light)",
+      "sha256": "f57e52548837f9cfa2c23b387a9acfa7d4ba87352ecc5c8c59f6ea8b4693ddbd",
+      "bytes": 120457,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_choose_light_360x1.png",
+      "state": "RS1",
+      "test": "RS1 Restore: choose a file (360 dp, text ×1, light)",
+      "sha256": "b04eda9517605c173a00a5deba98fc521e05db6c7ca2a8286bcf0fa10bbce772",
+      "bytes": 82104,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_done_dark_320x2.png",
+      "state": "RS4",
+      "test": "RS4 Restore: done (320 dp, text ×2, dark)",
+      "sha256": "7b04c9e9490226c272fd2be5e682748267664a075e019b9a73dfe79f082fd15d",
+      "bytes": 101013,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_done_dark_360x1.png",
+      "state": "RS4",
+      "test": "RS4 Restore: done (360 dp, text ×1, dark)",
+      "sha256": "e7d520ea7801277128b987ceb3e389b1a1e38584e21230bffcbe6fffa26d3f7a",
+      "bytes": 73081,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_done_light_320x2.png",
+      "state": "RS4",
+      "test": "RS4 Restore: done (320 dp, text ×2, light)",
+      "sha256": "6fd2b516d50196666b5c8ee73bf887dec690a4b5aeb17161307fb4e25f58b919",
+      "bytes": 100805,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_done_light_360x1.png",
+      "state": "RS4",
+      "test": "RS4 Restore: done (360 dp, text ×1, light)",
+      "sha256": "8535a211d05974df44447686b841fc8b25e1392dcfe99fdbabb4b6bcca6d365c",
+      "bytes": 73183,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_replace_dark_320x2.png",
+      "state": "RS3",
+      "test": "RS3 Restore: Replace everything? (320 dp, text ×2, dark)",
+      "sha256": "1406439c6071f8d8a6052c686001dc57c519ce06bdb70ff10b166775ae774045",
+      "bytes": 205973,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_replace_dark_360x1.png",
+      "state": "RS3",
+      "test": "RS3 Restore: Replace everything? (360 dp, text ×1, dark)",
+      "sha256": "c1d890a03c5a2962527bfcbf5f255f082c701946dae079c06d0612c6eff8af42",
+      "bytes": 153085,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_replace_light_320x2.png",
+      "state": "RS3",
+      "test": "RS3 Restore: Replace everything? (320 dp, text ×2, light)",
+      "sha256": "f4f7d636c0eadc8cd23fb8d76d523c592a4d59819b0388115c10d9196a032f8c",
+      "bytes": 207648,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_replace_light_360x1.png",
+      "state": "RS3",
+      "test": "RS3 Restore: Replace everything? (360 dp, text ×1, light)",
+      "sha256": "a9e02c50e828278200d7ccb1b7780f6f0a268ed9ed8d625d78422e775888f324",
+      "bytes": 156992,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password-end_dark_320x2.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (320 dp, text ×2, dark)",
+      "sha256": "5e1aa6b5c2a1078717cdb63947c1a3d6207c545ec50c5066cf94a59e4fd6e98f",
+      "bytes": 200594,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password-end_light_320x2.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (320 dp, text ×2, light)",
+      "sha256": "058bdb3ef50224d2412de0ef106c01c3b396baf18430a3c84c572b6a8a1de6ba",
+      "bytes": 200072,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password_dark_320x2.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (320 dp, text ×2, dark)",
+      "sha256": "6f9d2fa3af820bade4e7175d02feac4ddabcf92ede665951e50b6f3dde1dbd00",
+      "bytes": 203175,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password_dark_360x1.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (360 dp, text ×1, dark)",
+      "sha256": "ece4dc7091acf4e22fc5f9f53323fcd17fd725531050e5924f4a8cb92153687c",
+      "bytes": 132394,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password_light_320x2.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (320 dp, text ×2, light)",
+      "sha256": "63bda52bc3ce0d8452a847fce49a3b28bb46552b94054152ce6e1e8014d9b37d",
+      "bytes": 202103,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "restore_wrong-password_light_360x1.png",
+      "state": "RS2",
+      "test": "RS2 Restore: a wrong password (360 dp, text ×1, light)",
+      "sha256": "b464fb374a6fd934eda288661aadc6fa3d712a1af476b724270c7384303ffe33",
+      "bytes": 132369,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_compare_dark_320x2.png",
+      "state": "SC1",
+      "test": "SC1 By category with this time last week (320 dp, text ×2, dark)",
+      "sha256": "6bc8c35de8b25515a6ca78125de93a515f540684300b8b13a688832668245401",
+      "bytes": 203680,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_compare_dark_360x1.png",
+      "state": "SC1",
+      "test": "SC1 By category with this time last week (360 dp, text ×1, dark)",
+      "sha256": "57bc0d4207a3e35c88feab8b810628c51a32ade7b8da3b0b666b3a13bee71bd9",
+      "bytes": 185442,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_compare_light_320x2.png",
+      "state": "SC1",
+      "test": "SC1 By category with this time last week (320 dp, text ×2, light)",
+      "sha256": "5dc47faa1307bf973fcbb961b99fd2fd1d94a146877203a5109a26704d406504",
+      "bytes": 202909,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_compare_light_360x1.png",
+      "state": "SC1",
+      "test": "SC1 By category with this time last week (360 dp, text ×1, light)",
+      "sha256": "b6e6f076482ba8b83af1ead3f2d56ef6e8058f4bd1129432ab5b56424afbff8a",
+      "bytes": 186362,
+      "width": 1080,
+      "height": 2340
+    },
+    {
       "file": "summary_empty-week_dark_360x1.png",
       "state": "SW0",
       "test": "an empty week (360 dp, text ×1, dark)",
@@ -1851,6 +2445,42 @@
       "height": 2340
     },
     {
+      "file": "summary_taken-out_dark_320x2.png",
+      "state": "TG4",
+      "test": "TG4 Summary: Taken out, its own line (320 dp, text ×2, dark)",
+      "sha256": "85087f3c02ac7ac86ace392f4c6d8780145e919d593e1dd7ab640a977eb20f87",
+      "bytes": 132923,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_taken-out_light_320x2.png",
+      "state": "TG4",
+      "test": "TG4 Summary: Taken out, its own line (320 dp, text ×2, light)",
+      "sha256": "bd62f0b6dc9c3ab0ec0ea1b3332d34737727eac1ea8b297fb454107989008bc1",
+      "bytes": 132634,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "take-out_too-much_dark_320x2.png",
+      "state": "TG1",
+      "test": "TG1 the take-out sheet: more than you've saved (320 dp, text ×2, dark)",
+      "sha256": "8d0bac501934053282aae3f9b1c0994a8e2023257351a38a201b0598b24dc79f",
+      "bytes": 125541,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "take-out_too-much_light_320x2.png",
+      "state": "TG1",
+      "test": "TG1 the take-out sheet: more than you've saved (320 dp, text ×2, light)",
+      "sha256": "51ca067dc3c9f2ac72a4524c7334101f63f6720724a4db5201eccd827ba3d386",
+      "bytes": 125556,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "theme-home_apricot_dark_360x1.png",
       "state": "TH2",
       "test": "Home in apricot, dark",
@@ -1926,8 +2556,8 @@
       "file": "theme-picker_plum_dark_360x1.png",
       "state": "TP1",
       "test": "Me → Theme, the picker, dark",
-      "sha256": "ba53de29c14d574df6c4eb8284005ee576ebaa5e5404bbbe85c1a1169f8d76a3",
-      "bytes": 152992,
+      "sha256": "e245cc9d8a09b8941780b710323e1ff7b93655fb81bfec5e9f6678ccacb6e912",
+      "bytes": 153389,
       "width": 1080,
       "height": 2340
     },
@@ -1935,8 +2565,8 @@
       "file": "theme-picker_plum_light_360x1.png",
       "state": "TP1",
       "test": "Me → Theme, the picker, light",
-      "sha256": "114c659e33bf6c6fc40932076a62e477c7fc1ba16df315d9823cbf1d67fe963a",
-      "bytes": 151879,
+      "sha256": "202fa2cdd16acb25632b5cfdf7598059e197297ff95e3a22a2115cacc72acce3",
+      "bytes": 152291,
       "width": 1080,
       "height": 2340
     },
@@ -2013,6 +2643,42 @@
       "height": 2340
     },
     {
+      "file": "timeline_add-again-sheet_dark_320x2.png",
+      "state": "RG1",
+      "test": "RG1 the long-press sheet (320 dp, text ×2, dark)",
+      "sha256": "013b45ed422cd224db95a01b42c4cbe4c8bb0515806f38839e604fe6b2cd6529",
+      "bytes": 122159,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_add-again-sheet_light_320x2.png",
+      "state": "RG1",
+      "test": "RG1 the long-press sheet (320 dp, text ×2, light)",
+      "sha256": "fae5fea3778e5ffc17a62059f08b6bab49a469af07530d53520ac334f9e91847",
+      "bytes": 125566,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_added-again_dark_320x2.png",
+      "state": "RG3",
+      "test": "RG3 Added again for today, with Undo (320 dp, text ×2, dark)",
+      "sha256": "1da5a984a1b548b3300dc276b4eeb454653ca033eda87e43bffbdddf185ea56c",
+      "bytes": 200449,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_added-again_light_320x2.png",
+      "state": "RG3",
+      "test": "RG3 Added again for today, with Undo (320 dp, text ×2, light)",
+      "sha256": "bbedde5784882cf33688bce96178a436c98e8b5271104ce1b5158dbfee4c0f4a",
+      "bytes": 201461,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "timeline_empty_dark_320x2.png",
       "state": "C1",
       "test": "C1 empty: the pig and the first-entry button (320 dp, text ×2, dark)",
@@ -2034,8 +2700,8 @@
       "file": "timeline_full-end_dark_320x2.png",
       "state": "C2",
       "test": "C2 three days with the stress data (320 dp, text ×2, dark)",
-      "sha256": "f27cf0f0a28314bd038dd6db100253bfca5643e10d5927adb3dfbc9fc547c100",
-      "bytes": 190967,
+      "sha256": "89fed74f6c4066ed0901f2e1f2b92479cdf4c6ec1f949a207983fe245a007ff0",
+      "bytes": 192491,
       "width": 960,
       "height": 2340
     },
@@ -2043,8 +2709,8 @@
       "file": "timeline_full-end_light_320x2.png",
       "state": "C2",
       "test": "C2 three days with the stress data (320 dp, text ×2, light)",
-      "sha256": "95f8c9901e1ac6a1fd8b0b0faa005cbeeb81abd06d851e2c3babde5e425c12f9",
-      "bytes": 191951,
+      "sha256": "f173063068e07ce199ab9bc124fad5945918be31005fb086db8e1f861c97a646",
+      "bytes": 193644,
       "width": 960,
       "height": 2340
     },
@@ -2052,8 +2718,8 @@
       "file": "timeline_full_dark_320x2.png",
       "state": "C2",
       "test": "C2 three days with the stress data (320 dp, text ×2, dark)",
-      "sha256": "96661403a27dec9f15e86dd03eca3a460ce7baca5919c49bdcf27277e14a9fba",
-      "bytes": 212459,
+      "sha256": "9ab0bf94fc899275fb9102de8d5a137bcf97045b1238d15cf42cd4082f95e91c",
+      "bytes": 214141,
       "width": 960,
       "height": 2340
     },
@@ -2061,8 +2727,80 @@
       "file": "timeline_full_light_320x2.png",
       "state": "C2",
       "test": "C2 three days with the stress data (320 dp, text ×2, light)",
-      "sha256": "456e6ce7f3eaf601734902c879efea1727321ea42a25ca8472b1a0e734b5710e",
-      "bytes": 213378,
+      "sha256": "f0f7cf1b824dd7db98d7fa3353a37b324f884501e28db9853366a0b8456bb4eb",
+      "bytes": 215144,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-closed_dark_320x2.png",
+      "state": "TS3",
+      "test": "TS3 the icon, before the search opens (320 dp, text ×2, dark)",
+      "sha256": "0d455336780908ab9f540ac08259091512a17c8bf3d50cbf99c52e041bfcf907",
+      "bytes": 193901,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-closed_light_320x2.png",
+      "state": "TS3",
+      "test": "TS3 the icon, before the search opens (320 dp, text ×2, light)",
+      "sha256": "1af2112f892b5af5b3975e86e46682468c168b8862d15ca670364d4e177e821c",
+      "bytes": 194695,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-coffee_dark_320x2.png",
+      "state": "TS1",
+      "test": "TS1 the field open on \"coffee\" (320 dp, text ×2, dark)",
+      "sha256": "580464195e6fece13c8eaa19749228a4abbbbc6b5aa27c3965cba62c9392637c",
+      "bytes": 128322,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-coffee_light_320x2.png",
+      "state": "TS1",
+      "test": "TS1 the field open on \"coffee\" (320 dp, text ×2, light)",
+      "sha256": "dc4e9f2001d4ac9907aa6cd10a42795cebd0c24c9d8587c64dc009db350e2415",
+      "bytes": 129084,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-no-match_dark_320x2.png",
+      "state": "TS2",
+      "test": "TS2 nothing matches (320 dp, text ×2, dark)",
+      "sha256": "b121e68fc2b666caebd0bb556815ab22cc2091d98cb24ecb4728360c4748d283",
+      "bytes": 86810,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_search-no-match_light_320x2.png",
+      "state": "TS2",
+      "test": "TS2 nothing matches (320 dp, text ×2, light)",
+      "sha256": "1d90c9b4a9c7564ceb67be0349f21033a25473d781658d652c9851ca0ae3ea8f",
+      "bytes": 87162,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_taken-out_dark_320x2.png",
+      "state": "TG3",
+      "test": "TG3 Timeline: the taken-out row (320 dp, text ×2, dark)",
+      "sha256": "b504c137706eb37288a0d1f842ce06add40964a30274a926a675399a4f458ca1",
+      "bytes": 168849,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_taken-out_light_320x2.png",
+      "state": "TG3",
+      "test": "TG3 Timeline: the taken-out row (320 dp, text ×2, light)",
+      "sha256": "2efe6d6d8351cca22704d80df528d370993c406e21681260573d10a3d5e5bf74",
+      "bytes": 169767,
       "width": 960,
       "height": 2340
     }

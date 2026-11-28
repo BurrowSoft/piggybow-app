@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/core/app_config.dart';
+import 'package:piggybow/features/plus/fake_plus_store.dart';
+import 'package:piggybow/features/plus/plus_entitlement.dart';
+import 'package:piggybow/features/plus/plus_store.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/quick_amounts.dart';
@@ -19,9 +23,11 @@ void main() {
     int amount, {
     EntryType type = EntryType.spent,
     SpendCategory? category = SpendCategory.food,
+    String? custom,
     String currency = 'USD',
   }) {
     final at = t0.add(Duration(minutes: minutes));
+    final spend = type == EntryType.spent;
     return Entry(
       id: 'e$minutes',
       type: type,
@@ -30,16 +36,20 @@ void main() {
       localDate: '2026-10-01',
       createdAt: at,
       updatedAt: at,
-      category: type == EntryType.spent ? category : null,
+      category: spend && custom == null ? category : null,
+      customCategory: spend ? custom : null,
     );
   }
 
-  List<int> quick(List<Entry> entries, {SpendCategory? category}) =>
-      quickAmounts(
-        entries,
-        category: category ?? SpendCategory.food,
-        currency: 'USD',
-      );
+  List<int> quick(
+    List<Entry> entries, {
+    SpendCategory? category,
+    String? custom,
+  }) => quickAmounts(
+    entries,
+    categoryId: custom ?? (category ?? SpendCategory.food).id,
+    currency: 'USD',
+  );
 
   group('the amounts', () {
     test('newest first, each amount once', () {
@@ -94,6 +104,18 @@ void main() {
     test('nothing yet: no chips', () {
       expect(quick(const []), isEmpty);
     });
+
+    test('your own category: its own spends, by its id (#49)', () {
+      final entries = [
+        entry(1, 350, custom: 'c:bubble'),
+        entry(2, 450),
+        entry(3, 600, custom: 'c:bubble'),
+        entry(4, 999, custom: 'c:other'),
+      ];
+      expect(quick(entries, custom: 'c:bubble'), [600, 350]);
+      expect(quick(entries, custom: 'c:other'), [999]);
+      expect(quick(entries), [450], reason: 'Food: its own only');
+    });
   });
 
   group('in the Add sheet', () {
@@ -128,6 +150,56 @@ void main() {
 
     Finder chipSays(int i, String text) =>
         find.descendant(of: byId('add-quick-$i'), matching: find.text(text));
+
+    testWidgets('your own category (#49, with Plus): its own chips', (
+      tester,
+    ) async {
+      tester.view.devicePixelRatio = 3;
+      tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+      addTearDown(tester.view.reset);
+      final store = FakePlusStore()
+        ..owns = const [PlusProof(token: 't1', productId: plusPlayProductId)];
+      final plus = PlusEntitlement(
+        store: store,
+        hint: MemoryPlusHint(),
+        clock: testClock,
+      );
+      final clock = MovableClock(t0);
+      final app = TestApp(
+        currency: 'USD',
+        clock: clock,
+        config: const AppConfig(flavor: Flavor.staging, plusEnabled: true),
+        plus: plus,
+      );
+      await tester.runAsync(app.openJournal);
+      await tester.runAsync(() async {
+        await app.journal.putCustomCategory(
+          CustomCategory(
+            id: 'c:bubble',
+            name: 'Bubble tea',
+            icon: CategoryIcon.drinks,
+            createdAt: t0,
+          ),
+        );
+        for (final (i, amount) in [350, 600].indexed) {
+          clock.now = t0.add(Duration(minutes: i));
+          await app.journal.addEntry(
+            type: EntryType.spent,
+            amountMinor: amount,
+            currency: 'USD',
+            localDate: '2026-10-01',
+            customCategory: 'c:bubble',
+          );
+        }
+      });
+      await tester.runAsync(plus.refresh);
+      await app.pump(tester);
+      await tester.tapId('home-add');
+      await tester.tapId('add-cat-custom-1');
+      expect(chipSays(0, r'$6.00'), findsOneWidget);
+      expect(chipSays(1, r'$3.50'), findsOneWidget);
+      expect(byId('add-quick-2'), findsNothing);
+    });
 
     testWidgets('a category with history: its last 3 different amounts, '
         'formatted in the journal currency', (tester) async {

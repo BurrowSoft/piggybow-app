@@ -23,6 +23,7 @@ import '../../theme/theme.dart';
 import '../currency/currency_picker.dart';
 import '../plus/plus_screen.dart';
 import '../shell/tab_top.dart';
+import 'backup_screens.dart' show backupOffered, restoreOffered;
 import 'delete_dialogs.dart';
 import 'me_actions.dart';
 import 'me_app_lock_section.dart';
@@ -43,8 +44,8 @@ String lockRowText(AppLocalizations l10n, String key) => switch (key) {
   _ => l10n.meStateOff,
 };
 
-/// Me (plan §3.8): your pig, money, reminders, privacy & security,
-/// appearance, about.
+/// Me (plan §3.8): your pig, money, reminders, your data (feature 21),
+/// privacy & security, appearance, about.
 class MeScreen extends StatefulWidget {
   const MeScreen({super.key});
 
@@ -392,6 +393,29 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                         ],
                       ),
                     ),
+                  // Your data (feature 21): a backup file to keep or move
+                  // with, its restore, and the spreadsheet export.
+                  _Section(l10n.meSecData),
+                  if (backupOffered(context))
+                    _Row(
+                      id: 'me-backup',
+                      title: l10n.meBackup,
+                      subtitle: l10n.meBackupHint,
+                      onTap: () => context.push(MeRoutes.backup),
+                    ),
+                  if (restoreOffered(context))
+                    _Row(
+                      id: 'me-restore',
+                      title: l10n.meRestore,
+                      subtitle: l10n.meRestoreHint,
+                      onTap: () => context.push(MeRoutes.restore),
+                    ),
+                  _Row(
+                    id: 'me-export',
+                    title: l10n.meExport,
+                    subtitle: l10n.meExportHint,
+                    onTap: () => exportJournal(services, l10n: l10n),
+                  ),
                   _Section(l10n.meSecPrivacy),
                   if (config.appLockEnabled && lock != null)
                     _Row(
@@ -409,12 +433,6 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                         context.push(MeRoutes.lock);
                       },
                     ),
-                  _Row(
-                    id: 'me-export',
-                    title: l10n.meExport,
-                    subtitle: l10n.meExportHint,
-                    onTap: () => exportJournal(services, l10n: l10n),
-                  ),
                   _Row(
                     id: 'me-delete',
                     title: l10n.meDeleteAll,
