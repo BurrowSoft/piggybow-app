@@ -1,7 +1,7 @@
 {
-  "source_sha": "dfa86c95eaf2f3538e15dbb992c4990aedd09d7b",
-  "ref": "dfa86c95eaf2f3538e15dbb992c4990aedd09d7b",
-  "run_id": "46120075225",
+  "source_sha": "b4916f41bd87bb84ac7c678a0117d69c2d9c2f74",
+  "ref": "b4916f41bd87bb84ac7c678a0117d69c2d9c2f74",
+  "run_id": "46149037492",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -1197,8 +1197,8 @@
       "file": "plus_offer-end_dark_320x2.png",
       "state": "PL1",
       "test": "PL1 the paywall, the offer (320 dp, text ×2, dark)",
-      "sha256": "805e027dc62687b4c0c13998b762a204bf03b09b5ffa03e898fd7b78524dff53",
-      "bytes": 180976,
+      "sha256": "64a2a2665785beb7515ecfc9a3ff707d48d77ee551418526e0a1f842eed003c6",
+      "bytes": 178940,
       "width": 960,
       "height": 2340
     },
@@ -1206,8 +1206,8 @@
       "file": "plus_offer-end_light_320x2.png",
       "state": "PL1",
       "test": "PL1 the paywall, the offer (320 dp, text ×2, light)",
-      "sha256": "ec128087cf92db2688a0118df55f40db6597388c93f739fba7af61b0e1a83f0e",
-      "bytes": 182552,
+      "sha256": "91fdcaf29d4dfa8d696cd074e1072932910b5c426047df82a282aba8ab8a0af4",
+      "bytes": 179902,
       "width": 960,
       "height": 2340
     },
@@ -1269,8 +1269,8 @@
       "file": "plus_pending_dark_320x2.png",
       "state": "PL2",
       "test": "PL2 a pending payment's note (320 dp, text ×2, dark)",
-      "sha256": "8c06995bb87ae6d6a7a25a4bf159c57ed779a3008ab251bc7a7a1cb3bdd9d381",
-      "bytes": 209312,
+      "sha256": "4f05794ec4302dc4abd4d5c9a0f1575178057dbf73fbe52b963b8004c2bbbc4c",
+      "bytes": 210995,
       "width": 960,
       "height": 2340
     },
@@ -1278,8 +1278,8 @@
       "file": "plus_pending_light_320x2.png",
       "state": "PL2",
       "test": "PL2 a pending payment's note (320 dp, text ×2, light)",
-      "sha256": "489afa3426cbc960d40b9f0ed0ddf66b7942cc80f4ce24ccb26cfc4af4c3d950",
-      "bytes": 210840,
+      "sha256": "ea3317e56c17185faf59b8e342ca4150e9eb6d79df1cbadeeb9214eee8b19145",
+      "bytes": 212426,
       "width": 960,
       "height": 2340
     },
