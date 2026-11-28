@@ -41,7 +41,11 @@ backup_round(){ # backup_round <label>
   local lab=$1 set
   if mf flows/pb1/46a_backup_seed.yaml; then row "$lab-seed" PASS "flow 46a (a spend, the reminder, a goal, the lock, one export)"; else row "$lab-seed" FAIL "flow 46a"; return 1; fi
   app_files > "$OUT/$lab-files-before.txt"; echo "files before: $(wc -l < "$OUT/$lab-files-before.txt")"; cat "$OUT/$lab-files-before.txt"
+  # A force-stopped package is skipped by the backup; 46a leaves the app running.
+  echo "stopped flag before the backup: $(A shell dumpsys package "$P" | tr -d '\r' | grep -m1 -oE 'stopped=(true|false)')"
   BK=$(A shell bmgr backupnow "$P" | tr -d '\r'); echo "$BK"
+  PK=$(echo "$BK" | grep -m1 "Package $P with result:" | sed 's/.*result: //')   # the app's own result, not the run's
+  echo "the app's backup result: ${PK:-none}"
   set=$(A shell bmgr list sets | tr -d '\r' | awk 'NF { print $1; exit }'); echo "restore set: ${set:-none}"
   A uninstall "$P" >/dev/null; echo "reinstall: $(A install "$APK" | tail -1)"   # auto-restore may run here
   if [ -n "$set" ]; then A shell bmgr restore "$set" "$P" | tr -d '\r'; fi
@@ -71,7 +75,8 @@ if ! A shell locksettings set-pin "$DEVPIN" >/dev/null 2>&1; then row R9e FAIL "
   A shell settings put secure "$LTP" fake_encryption_flag=true
   echo "transport parameters: $(A shell settings get secure "$LTP" | tr -d '\r')"
   if backup_round r9e; then
-    if echo "$BK" | grep -qi 'Success'; then row R9e-bmgr PASS "backupnow: Success"; else row R9e-bmgr FAIL "backupnow: $(echo "$BK" | tail -1)"; fi
+    R9E_PK=$PK
+    if [ "$PK" = Success ]; then row R9e-bmgr PASS "the app's backup result: Success"; else row R9e-bmgr FAIL "the app's backup result: ${PK:-none}"; fi
     if grep -q 'journal\.db' "$OUT/r9e-files-after.txt"; then row R9e-journal PASS "journal.db came back"; else row R9e-journal FAIL "no journal.db after the restore"; fi
     if grep -qi 'FlutterSecureStorage' "$OUT/r9e-files-after.txt"; then row R9e-pin FAIL "secure storage (the PIN) came back"; else row R9e-pin PASS "no secure-storage file after the restore"; fi
     if grep -qE 'piggybow-[0-9]{4}-[0-9]{2}-[0-9]{2}\.csv' "$OUT/r9e-files-after.txt"; then row R9e-export FAIL "an export file came back"; else row R9e-export PASS "no export file after the restore"; fi
@@ -83,3 +88,11 @@ if ! A shell locksettings set-pin "$DEVPIN" >/dev/null 2>&1; then row R9e FAIL "
 fi
 A shell settings delete secure "$LTP" >/dev/null 2>&1
 A shell locksettings clear --old "$DEVPIN" >/dev/null 2>&1
+
+# R9n is proof of the encryption rule only if R9e, the same app on the same
+# transport with encryption reported, did back up in this run.
+if [ "${R9E_PK:-}" = Success ]; then
+  row R9n-control PASS "R9e backed up with encryption, so R9n's refusal comes from the missing encryption"
+else
+  row R9n-control FAIL "R9e didn't back up either (${R9E_PK:-none}), so R9n proves nothing about encryption"
+fi

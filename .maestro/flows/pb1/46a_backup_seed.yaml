@@ -59,4 +59,6 @@ tags: [pb1, backup]
     id: me-lock
     text: ".*On.*"                                  # meStateOn
 - takeScreenshot: 46a-me-before-backup
-- stopApp
+# Leave it running in the background: never stopApp here. A force-stopped
+# package is skipped by the backup ("Backup is not allowed").
+- pressKey: Home
