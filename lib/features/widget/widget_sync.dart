@@ -141,7 +141,7 @@ class _WidgetSyncState extends State<WidgetSync> {
     super.dispose();
   }
 
-  /// One timer to the next turn of the day in the phone's zone (00:00, 06:00
+  /// One timer to the next turn of the day in the phone's zone (00:00, 04:00
   /// and 22:00, as Home's: #62), set again at each, so the widget turns with
   /// the day even while the app stays open.
   void _armTurn() {

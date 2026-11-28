@@ -400,7 +400,7 @@ class _Pig extends StatelessWidget {
       now: services.clock.nowUtc(),
       today: services.localDay.todayWire,
     );
-    // 22:00 to 05:59 on the phone's clock, in its zone: the sleepy pig.
+    // 22:00 to 03:59 on the phone's clock, in its zone: the sleepy pig.
     final lastAdd = services.lastAdd.value;
     final state = pigAtNight(
       day,

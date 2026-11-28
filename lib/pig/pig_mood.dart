@@ -230,9 +230,10 @@ String pigBubbleKey(PigState state, PigReaction? lastAdd) {
 /// a test holds the two together), so the pig turns on time even while Home
 /// stays open.
 const nightStartHour = 22;
-const nightEndHour = 6;
+const nightEndHour = 4;
 
-/// Night on the phone: 22:00 to 05:59 by the clock in the phone's zone.
+/// Night on the phone: 22:00 to 03:59 by the clock in the phone's zone.
+/// From 04:00 an early riser gets the day's pig, never "it's getting late".
 bool isNight(int localHour) =>
     localHour >= nightStartHour || localHour < nightEndHour;
 

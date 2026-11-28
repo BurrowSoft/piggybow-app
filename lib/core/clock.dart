@@ -50,8 +50,8 @@ class Clock {
   DateTime todayIn(String timeZone) => dateOnly(nowIn(timeZone));
 
   /// The local hours in [timeZone] at which what Home shows can change: the
-  /// day turns over at midnight, and the pig's night runs 22:00 to 06:00.
-  static const turnHours = [0, 6, 22];
+  /// day turns over at midnight, and the pig's night runs 22:00 to 04:00.
+  static const turnHours = [0, 4, 22];
 
   /// How long until the next of [hours] (wall-clock, in [timeZone]) after
   /// now: a real interval, so a daylight-saving change in between counts.
