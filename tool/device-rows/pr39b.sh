@@ -36,6 +36,10 @@ diag_round(){ # diag_round <label>
   if mf flows/pb1/46a_backup_seed.yaml; then row "$lab-seed" PASS "flow 46a"; else row "$lab-seed" FAIL "flow 46a"; return 1; fi
   echo "stopped flag: $(A shell dumpsys package "$P" | tr -d '\r' | grep -m1 -oE 'stopped=(true|false)')"
   echo "transport parameters: $(A shell settings get secure "$LTP" | tr -d '\r')"
+  # The local transport may read its parameters only when it's bound: switch away and back
+  A shell bmgr transport com.google.android.gms/.backup.BackupTransportService >/dev/null 2>&1
+  A shell bmgr transport com.android.localtransport/.LocalTransport
+  echo "dumpsys backup (transport lines):"; A shell dumpsys backup | tr -d '\r' | grep -iE 'transport|flag|encrypt|LocalTransport' | head -12
   A logcat -c
   BK=$(A shell bmgr backupnow "$P" | tr -d '\r'); echo "$BK"
   PK=$(echo "$BK" | grep -m1 "Package $P with result:" | sed 's/.*result: //')
