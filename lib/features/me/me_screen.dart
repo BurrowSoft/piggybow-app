@@ -24,6 +24,7 @@ import '../shell/tab_top.dart';
 import 'delete_dialogs.dart';
 import 'me_actions.dart';
 import 'me_app_lock_section.dart';
+import 'pig_name_dialog.dart';
 
 /// A pick's title, as O2 and Me's subtitle name it.
 String happyPickTitle(AppLocalizations l10n, HappyPick pick) => switch (pick) {
@@ -134,6 +135,15 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     );
   }
 
+  /// Me → Your pig → Name: kept as typed (trimmed, at most 20 characters);
+  /// emptied, the pig has no name.
+  Future<void> _editPigName() async {
+    final session = context.readSession;
+    final result = await editPigName(context, current: session.pigName);
+    if (result == null) return;
+    await session.setPigName(result.name);
+  }
+
   Future<void> _editPlan(String currency, String locale) async {
     final services = context.services;
     final picks = _picks ?? const {};
@@ -203,6 +213,12 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
                   _Section(l10n.meSecPig),
+                  _Row(
+                    id: 'me-pig-name',
+                    title: l10n.mePigName,
+                    subtitle: session.pigName ?? l10n.mePigNameNone,
+                    onTap: _editPigName,
+                  ),
                   _Row(
                     id: 'me-happy',
                     title: l10n.meHappy,

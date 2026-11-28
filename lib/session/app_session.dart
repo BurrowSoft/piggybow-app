@@ -15,6 +15,7 @@ import '../core/policy.dart';
 import '../data/models.dart';
 import '../data/plus.dart' show CancelForDelete;
 import '../data/repositories.dart';
+import '../pig/pig_name.dart';
 
 /// Onboarding and sign-in routes. Paths never carry user data (they end up
 /// in Sentry navigation breadcrumbs).
@@ -1120,6 +1121,15 @@ class AppSession extends ChangeNotifier {
 
   Future<void> setThemeMode(ThemeMode mode) async {
     await prefs.setAppearance(mode.name);
+    notifyListeners();
+  }
+
+  /// The pig's name (feature 1), or null: Me → Your pig → Name.
+  String? get pigName => normalizePigName(prefs.pigName);
+
+  /// [typed] as normalizePigName keeps it; nothing left clears the name.
+  Future<void> setPigName(String? typed) async {
+    await prefs.setPigName(normalizePigName(typed));
     notifyListeners();
   }
 
