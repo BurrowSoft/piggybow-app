@@ -43,13 +43,18 @@ tags: [pb1, backup]
     env:
       ID: me-lock
 - tapOn:
-    id: me-lock
+    id: me-lock                                     # opening the row dismisses the note
 - extendedWaitUntil:
     visible:
-      id: pin-setup-screen
+      id: me-app-lock                               # the App lock screen
     timeout: 10000
-- tapOn:
-    id: pin-setup-back                              # leave without a PIN
+- assertVisible:
+    id: me-app-lock
+    selected: false                                 # the lock really is off
+- tapOn:                                            # leave without a PIN, by its app bar arrow
+    text: "Back"
+    above:
+      id: me-app-lock
 - runFlow:
     file: ../../subflows/reveal.yaml
     env:
