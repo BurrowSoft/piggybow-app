@@ -1,0 +1,58 @@
+appId: ${APP_ID}
+name: The sleepy pig at night (#53) - at 23:00 a fresh Home shows the night line; a save shows its reaction, kept across a tab switch; hidden and reopened (no restart), the night line is back; MODE names the shots
+tags: [night]
+# Run with zone=Asia/Bangkok and fake_now=2026-11-28T16:00:00Z: the app's
+# clock is frozen at 23:00 there.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- assertVisible:
+    id: home-pig
+    text: "(?i).*sleepy.*"
+- assertVisible:
+    id: home-pig-line
+    text: ".*It's getting late\\. I'll be here tomorrow\\..*"
+- waitForAnimationToEnd
+- takeScreenshot: 74-night-home-${MODE}
+# A save at 23:00: the reaction wins for this visit
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-saved
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "5", EXPECT: ".*5.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-pig-line
+      text: ".*Into the rainbow it goes!.*"
+    timeout: 10000
+- takeScreenshot: 74-after-save-${MODE}
+# Still this visit after a tab switch
+- tapOn:
+    id: tab-timeline
+- tapOn:
+    id: tab-home
+- assertVisible:
+    id: home-pig-line
+    text: ".*Into the rainbow it goes!.*"
+# Hidden (Home button), then brought back without a restart: the night line
+- pressKey: Home
+- waitForAnimationToEnd
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: home-pig-line
+    timeout: 20000
+- assertVisible:
+    id: home-pig-line
+    text: ".*It's getting late\\. I'll be here tomorrow\\..*"
+- assertNotVisible: ".*Into the rainbow it goes!.*"
+- takeScreenshot: 74-night-again-${MODE}

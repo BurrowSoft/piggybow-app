@@ -1,0 +1,19 @@
+appId: ${APP_ID}
+name: The sleepy pig at night (#53) - C14 at 00:00 in Asia/Bangkok shows the night pig and line; C3 at 12:00 there shows its daytime mood and line as before
+tags: [night]
+# Run with zone=Asia/Bangkok: C14's now (2026-11-29T17:00Z) is 00:00 there
+# (night); C3's (2026-12-02T05:00Z) is 12:00 (day). Each fixture freezes the
+# app's clock at its own now.
+---
+- runFlow:
+    file: ../../subflows/home_fixture.yaml
+    env:
+      FIXTURE: "C14"
+      MOOD: "sleepy"
+      LINE: ".*It's getting late\\. I'll be here tomorrow\\..*"
+- runFlow:
+    file: ../../subflows/home_fixture.yaml
+    env:
+      FIXTURE: "C3"
+      MOOD: "happy"
+      LINE: ".*You put something aside this week.*"
