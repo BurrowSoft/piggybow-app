@@ -11,6 +11,7 @@ import '../../core/services.dart';
 import '../../journal/category.dart';
 import '../../journal/entry.dart';
 import '../../journal/journal_store.dart';
+import '../../journal/quick_amounts.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/currency.dart';
 import '../../money/money.dart';
@@ -71,6 +72,9 @@ class _EntrySheetState extends State<EntrySheet> {
 
   /// Null until the journal's currency and today are read.
   String? _currency;
+
+  /// The journal's entries, for the quick amounts (adding only).
+  List<Entry> _entries = const [];
   DateTime? _date;
   DateTime? _today;
   String? _goalName;
@@ -110,10 +114,13 @@ class _EntrySheetState extends State<EntrySheet> {
     final goal = goalId != null
         ? await store.goal(goalId)
         : await store.activeGoal();
+    // Adding: the quick amounts come from what was spent before.
+    final entries = e == null ? await store.entries() : const <Entry>[];
     if (!mounted) return;
     final today = services.localDay.today;
     setState(() {
       _currency = currency;
+      _entries = entries;
       _goalName = goal?.name;
       _today = today;
       _date = e?.date ?? today;
@@ -121,6 +128,18 @@ class _EntrySheetState extends State<EntrySheet> {
         _amount.text = inputAmount(e.amountMinor, currency, _locale);
       }
     });
+  }
+
+  /// A quick amount's tap: the amount field takes it (the caret at its end);
+  /// nothing is saved until Add.
+  void _useQuickAmount(int minor, String currency) {
+    final text = inputAmount(minor, currency, _locale);
+    setState(
+      () => _amount.value = TextEditingValue(
+        text: text,
+        selection: TextSelection.collapsed(offset: text.length),
+      ),
+    );
   }
 
   @override
@@ -439,6 +458,17 @@ class _EntrySheetState extends State<EntrySheet> {
                               ),
                             ),
                           ),
+                        if (spend && !_editing && _category != null)
+                          _QuickAmounts(
+                            amounts: quickAmounts(
+                              _entries,
+                              category: _category!,
+                              currency: currency,
+                            ),
+                            currency: currency,
+                            locale: _locale,
+                            onUse: (minor) => _useQuickAmount(minor, currency),
+                          ),
                         const SizedBox(height: 16),
                         if (spend) ...[
                           Text(
@@ -629,6 +659,55 @@ class _EntrySheetState extends State<EntrySheet> {
 
 /// The nine categories, three to a row; each row as tall as its tallest
 /// label (large text wraps, never cuts).
+/// Feature 3: the last different amounts spent in the picked category,
+/// newest first, as chips; a tap uses one ("Use $12.50").
+class _QuickAmounts extends StatelessWidget {
+  const _QuickAmounts({
+    required this.amounts,
+    required this.currency,
+    required this.locale,
+    required this.onUse,
+  });
+
+  final List<int> amounts;
+  final String currency;
+  final String locale;
+  final ValueChanged<int> onUse;
+
+  @override
+  Widget build(BuildContext context) {
+    if (amounts.isEmpty) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          for (final (i, minor) in amounts.indexed)
+            TestId(
+              'add-quick-$i',
+              button: true,
+              child: ActionChip(
+                label: Builder(
+                  builder: (context) {
+                    final text = formatMoney(minor, currency, locale);
+                    return Semantics(
+                      label: l10n.quickAmountUse(text),
+                      excludeSemantics: true,
+                      child: Text(text),
+                    );
+                  },
+                ),
+                onPressed: () => onUse(minor),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CategoryGrid extends StatelessWidget {
   const _CategoryGrid({required this.selected, required this.onPick});
 

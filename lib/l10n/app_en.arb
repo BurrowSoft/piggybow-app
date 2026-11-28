@@ -93,6 +93,11 @@
   "addAmountTooBig": "That amount is too large.",
   "addAmountPreview": "= {amount}",
   "@addAmountPreview": {"placeholders": {"amount": {"type": "String"}}},
+  "quickAmountUse": "Use {amount}",
+  "@quickAmountUse": {
+    "description": "A quick-amount chip under the Add sheet's amount, as read out: the amount, formatted (feature 3).",
+    "placeholders": { "amount": { "type": "String" } }
+  },
   "addCategoryLabel": "Category",
   "addCategoryError": "Pick a category.",
   "addNoteLabel": "Note (optional)",
