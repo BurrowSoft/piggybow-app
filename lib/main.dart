@@ -46,6 +46,8 @@ Future<void> main() async {
   unawaited(sweepExports().then((_) {}, onError: (Object _) {}));
   final prefsLoad = SharedLocalPrefs.load();
   final timeZoneLoad = device.timeZone();
+  // Android 7 can't draw dark navigation-bar icons: its bar stays dark.
+  final sdkLoad = readAndroidSdk();
   // Read before the first frame: a cold start with the lock on must never
   // render the app unlocked.
   final appLock = config.appLockEnabled
@@ -76,6 +78,7 @@ Future<void> main() async {
 
   StartupTrace.mark('prefs');
   final prefs = await prefsLoad;
+  navIconsCanBeDark = navIconsCanBeDarkOn(await sdkLoad);
   // v0.1 runs on the phone only: no account, no server.
   StartupTrace.mark('backend');
   final backend = await DeviceBackend.open(

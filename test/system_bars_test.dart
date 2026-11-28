@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/core/device.dart';
 import 'package:piggybow/core/system_bars.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
@@ -122,6 +123,78 @@ void main() {
       lessThan(source.indexOf('runApp(')),
       reason: 'before any runApp',
     );
+  });
+
+  group('Android 7 (no dark navigation icons)', () {
+    test('a light page keeps a black bar under the white icons', () {
+      final light = pageSystemBars(Brightness.light, darkNavIcons: false);
+      expect(light.systemNavigationBarColor, Colors.black);
+      expect(light.systemNavigationBarIconBrightness, Brightness.light);
+      // The status bar is as on every other phone.
+      expect(light.statusBarColor, Colors.transparent);
+      expect(light.statusBarIconBrightness, Brightness.dark);
+      // A dark page was already right: see-through, light icons.
+      final dark = pageSystemBars(Brightness.dark, darkNavIcons: false);
+      expect(dark.systemNavigationBarColor, Colors.transparent);
+      expect(dark.systemNavigationBarIconBrightness, Brightness.light);
+    });
+
+    test('which phones: Android 8 (SDK 26) and later draw dark icons', () {
+      expect(navIconsCanBeDarkOn(24), isFalse);
+      expect(navIconsCanBeDarkOn(25), isFalse);
+      expect(navIconsCanBeDarkOn(26), isTrue);
+      expect(navIconsCanBeDarkOn(36), isTrue);
+      expect(navIconsCanBeDarkOn(null), isTrue, reason: 'unknown: as before');
+    });
+
+    testWidgets('the SDK level: the phone\'s answer, else null', (
+      tester,
+    ) async {
+      const channel = MethodChannel(settingsChannel);
+      final messenger = tester.binding.defaultBinaryMessenger;
+      addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+      messenger.setMockMethodCallHandler(
+        channel,
+        (call) async => call.method == androidSdkMethod ? 25 : null,
+      );
+      expect(await readAndroidSdk(), 25);
+      messenger.setMockMethodCallHandler(
+        channel,
+        (call) async => throw PlatformException(code: 'nope'),
+      );
+      expect(await readAndroidSdk(), isNull, reason: 'a failed call');
+      messenger.setMockMethodCallHandler(channel, null);
+      expect(await readAndroidSdk(), isNull, reason: 'no handler (iOS)');
+    });
+
+    test('MainActivity answers it, under the same name', () {
+      final kotlin = File(
+        'android/app/src/main/kotlin/com/burrowsoft/piggybow/MainActivity.kt',
+      ).readAsStringSync();
+      expect(kotlin, contains('ANDROID_SDK = "$androidSdkMethod"'));
+      expect(kotlin, contains('result.success(Build.VERSION.SDK_INT)'));
+    });
+
+    test('main() sets it before the first frame', () {
+      final source = File('lib/main.dart').readAsStringSync();
+      final set = source.indexOf('navIconsCanBeDark = navIconsCanBeDarkOn(');
+      expect(set, greaterThan(-1));
+      expect(set, lessThan(source.indexOf('runApp(')));
+    });
+
+    testWidgets('Home on Android 7, light: the black bar', (tester) async {
+      navIconsCanBeDark = false;
+      addTearDown(() => navIconsCanBeDark = true);
+      await forgetTheLastStyle(tester);
+      final app = TestApp()..prefs.appearance = 'light';
+      await tester.runAsync(app.openJournal);
+      await app.pump(tester);
+      await tester.pumpAndSettle();
+      expect(byId('home-screen'), findsOneWidget);
+      final style = SystemChrome.latestStyle!;
+      expect(style.systemNavigationBarColor, Colors.black);
+      expect(style.systemNavigationBarIconBrightness, Brightness.light);
+    });
   });
 
   for (final appearance in ['light', 'dark']) {

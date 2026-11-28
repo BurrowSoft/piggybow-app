@@ -14,9 +14,18 @@ import 'package:flutter/services.dart';
 /// behind it, and these fields keep it see-through: no colour, no divider,
 /// and no grey scrim that Android would otherwise add behind three-button
 /// navigation. Pages keep their content above it (SafeArea, or the tab bar).
-SystemUiOverlayStyle pageSystemBars(Brightness brightness) {
+///
+/// [darkNavIcons]: whether the phone can draw dark navigation-bar icons.
+/// Android 7 can't (they are always white), so on a light page its bar stays
+/// black under them, as it was before edge to edge (Android 7 can't draw the
+/// app behind the bar either).
+SystemUiOverlayStyle pageSystemBars(
+  Brightness brightness, {
+  bool darkNavIcons = true,
+}) {
   final dark = brightness == Brightness.dark;
   final icons = dark ? Brightness.light : Brightness.dark;
+  final blackNavBar = !dark && !darkNavIcons;
   return SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     // Android: the icons' own brightness.
@@ -25,9 +34,9 @@ SystemUiOverlayStyle pageSystemBars(Brightness brightness) {
     statusBarBrightness: dark ? Brightness.dark : Brightness.light,
     // No grey scrim behind a see-through bar.
     systemStatusBarContrastEnforced: false,
-    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarColor: blackNavBar ? Colors.black : Colors.transparent,
     systemNavigationBarDividerColor: Colors.transparent,
-    systemNavigationBarIconBrightness: icons,
+    systemNavigationBarIconBrightness: blackNavBar ? Brightness.light : icons,
     systemNavigationBarContrastEnforced: false,
   );
 }
@@ -41,10 +50,22 @@ class PageSystemBars extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AnnotatedRegion<SystemUiOverlayStyle>(
-    value: pageSystemBars(Theme.of(context).brightness),
+    value: pageSystemBars(
+      Theme.of(context).brightness,
+      darkNavIcons: navIconsCanBeDark,
+    ),
     child: child,
   );
 }
+
+/// Whether this phone can draw dark navigation-bar icons; main() sets it once
+/// at start-up, before the first frame, from [navIconsCanBeDarkOn].
+bool navIconsCanBeDark = true;
+
+/// Android 8 (SDK 26) and later can; Android 7 can't. Anything unknown (no
+/// answer, iOS) counts as able, as before this check.
+bool navIconsCanBeDarkOn(int? androidSdk) =>
+    androidSdk == null || androidSdk >= 26;
 
 /// The app draws behind the status and navigation bars on every Android
 /// version, as Android 15+ already makes it (main() calls this before the

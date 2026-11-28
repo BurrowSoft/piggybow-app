@@ -66,10 +66,24 @@ abstract interface class NotificationPermission {
   Future<void> openSettings();
 }
 
-/// The channel MainActivity.kt answers on, and its one method (a test checks
-/// that both sides use these names).
+/// The channel MainActivity.kt answers on, and its methods (tests check that
+/// both sides use these names).
 const settingsChannel = 'com.burrowsoft.piggybow/settings';
 const openNotificationSettingsMethod = 'openNotificationSettings';
+const androidSdkMethod = 'androidSdk';
+
+/// The phone's Android version as its SDK level (26 = Android 8), read once at
+/// start-up; null where there is none to read (iOS, a test) or the call
+/// fails.
+Future<int?> readAndroidSdk() async {
+  try {
+    return await const MethodChannel(
+      settingsChannel,
+    ).invokeMethod<int>(androidSdkMethod);
+  } on Object {
+    return null;
+  }
+}
 
 class PlatformNotificationPermission implements NotificationPermission {
   const PlatformNotificationPermission();
