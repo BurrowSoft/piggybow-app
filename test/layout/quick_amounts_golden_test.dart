@@ -49,8 +49,11 @@ void main() {
         await app.pump(tester);
         await tester.tapId('home-add');
         await tester.tapId('add-cat-food');
-        // The keyboard down, the sheet at its top.
+        // The keyboard down, and the sheet back at its top (picking Food
+        // scrolled it): Spent/Saved, the amount, then the chips.
         FocusManager.instance.primaryFocus?.unfocus();
+        await tester.pumpAndSettle();
+        await Scrollable.ensureVisible(tester.element(byId('add-seg-spent')));
         await tester.pumpAndSettle();
         expect(byId('add-quick-2'), findsOneWidget);
         await expectGolden(
