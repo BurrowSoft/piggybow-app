@@ -35,4 +35,9 @@ begin
   ) then
     raise exception 'the pig-tips-forget-idle job can''t call tips_forget_idle';
   end if;
+  -- It runs, once, at the deploy: a number and no error (it deletes only
+  -- what the daily job would).
+  if public.tips_forget_idle((now() at time zone 'utc')::date) is null then
+    raise exception 'tips_forget_idle returned no count';
+  end if;
 end $$;

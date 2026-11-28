@@ -124,6 +124,19 @@ try {
       `${auth0.withIp} → ${auth1.withIp} (what the idle users' deletion takes away).`,
     `- Auth audit log rows in the database: ${auth0.audit} → ${auth1.audit} (${auditSaid}).`,
   );
+  // The daily jobs' runs so far, by status: counts only.
+  const runs = (await runSql(
+    ref,
+    token,
+    "select j.jobname, d.status, count(*) as runs from cron.job_run_details d " +
+      "join cron.job j using (jobid) where j.jobname in ('pig-tips-clean-up', 'pig-tips-forget-idle') " +
+      "group by j.jobname, d.status order by 1, 2",
+  )) as Array<Record<string, unknown>>;
+  retention.push(
+    `- The daily jobs' runs: ${
+      runs.map((r) => `${r.jobname} ${r.status} ${Number(r.runs)}`).join("; ") || "none yet"
+    }.`,
+  );
 
   for (const week of fixtures.weeks) {
     const res = await askTip(week.request);
