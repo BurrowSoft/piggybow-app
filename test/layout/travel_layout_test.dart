@@ -101,7 +101,12 @@ void main() {
       // The amount and its two lines, at the top.
       await sheetTop(tester);
       expectOneLine(tester, '= ${eur(1234)}', reason: 'MC1 as spent');
-      expectOneLine(tester, '= ${thb(48274)}', reason: 'MC1 at home');
+      // A sentence: it may wrap at large text (whole words: checkSheet).
+      expect(
+        find.text("That's ${thb(48274)} at this rate."),
+        findsOneWidget,
+        reason: 'MC1 at home',
+      );
       await reveal(tester, 'add-cat-food');
       await tester.tap(byId('add-cat-food'));
       await tester.pumpAndSettle();

@@ -570,23 +570,19 @@ class _EntrySheetState extends State<EntrySheet> {
                             ),
                           ),
                         // In another currency: the amount at home, as it
-                        // will be counted, once the rate is read.
+                        // will be counted, once the rate is read. A sentence
+                        // (UX), so it can't be read as a second sum; it
+                        // wraps at large text.
                         if (abroad && amountError == null && converted != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 2, left: 12),
                             child: TestId(
                               'add-converted',
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                alignment: AlignmentDirectional.centerStart,
-                                child: Text(
-                                  l10n.addConverted(
-                                    formatMoney(converted, home!, _locale),
-                                  ),
-                                  maxLines: 1,
-                                  softWrap: false,
-                                  style: muted,
+                              child: Text(
+                                l10n.travelHomeAmount(
+                                  formatMoney(converted, home!, _locale),
                                 ),
+                                style: muted,
                               ),
                             ),
                           ),

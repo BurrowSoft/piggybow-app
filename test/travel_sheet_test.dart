@@ -115,7 +115,9 @@ void main() {
   Future<List<Entry>> stored(WidgetTester tester, TestApp app) async =>
       (await tester.runAsync(app.journal.entries))!;
 
-  /// The amount's two lines, under the amount: as typed, and at home.
+  /// The lines under the amount: how it was read ([asTyped]), and, in
+  /// another currency, the amount at home ([atHome], formatted) in its
+  /// sentence.
   Future<void> expectLines(
     WidgetTester tester, {
     required String asTyped,
@@ -126,7 +128,10 @@ void main() {
     if (atHome == null) {
       expect(byId('add-converted'), findsNothing);
     } else {
-      expect(inSheet(find.text(atHome)), findsOneWidget);
+      expect(
+        inSheet(find.text("That's $atHome at this rate.")),
+        findsOneWidget,
+      );
     }
   }
 
@@ -175,7 +180,7 @@ void main() {
       await expectLines(
         tester,
         asTyped: '= ${eur(1234)}',
-        atHome: '= ${thb(48274)}',
+        atHome: thb(48274),
       );
       await tester.tapId('add-submit');
 
@@ -214,7 +219,7 @@ void main() {
       await expectLines(
         tester,
         asTyped: '= ${eur(1234)}',
-        atHome: '= ${thb(48274)}',
+        atHome: thb(48274),
       );
 
       await tapIn(tester, 'add-rate-flip');
@@ -224,7 +229,7 @@ void main() {
       await expectLines(
         tester,
         asTyped: '= ${eur(1234)}',
-        atHome: '= ${thb(48203)}',
+        atHome: thb(48203),
       );
 
       await tapIn(tester, 'add-rate-flip');
@@ -302,7 +307,7 @@ void main() {
       await expectLines(
         tester,
         asTyped: '= ${eur(1234, 'de_DE')}',
-        atHome: '= ${thb(48274, 'de_DE')}',
+        atHome: thb(48274, 'de_DE'),
       );
       await tapIn(tester, 'add-cat-food');
       await tester.tapId('add-submit');
@@ -324,14 +329,14 @@ void main() {
       await expectLines(
         tester,
         asTyped: '= ${eur(1234)}',
-        atHome: '= ${thb(48274)}',
+        atHome: thb(48274),
       );
 
       await enter(tester, 'add-amount', '20');
       await expectLines(
         tester,
         asTyped: '= ${eur(2000)}',
-        atHome: '= ${thb(78240)}',
+        atHome: thb(78240),
       );
       await tester.tapId('edit-save');
       var e = (await stored(tester, app)).single;
