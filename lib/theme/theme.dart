@@ -30,6 +30,7 @@ class PiggybowPalette extends ThemeExtension<PiggybowPalette> {
     required this.accent,
     required this.onAccent,
     required this.pillBackground,
+    required this.rainbowTrack,
     required this.logoAsset,
   });
 
@@ -42,6 +43,9 @@ class PiggybowPalette extends ThemeExtension<PiggybowPalette> {
   final Color accent;
   final Color onAccent;
   final Color pillBackground;
+
+  /// The rainbow's empty track: in dark, a dim tint of the theme's colour.
+  final Color rainbowTrack;
   final String logoAsset;
 
   static const light = PiggybowPalette(
@@ -51,6 +55,7 @@ class PiggybowPalette extends ThemeExtension<PiggybowPalette> {
     accent: PiggybowColors.deepRose,
     onAccent: PiggybowColors.cream,
     pillBackground: Color(0xFFF9EAEC),
+    rainbowTrack: Color(0xFFECE6F0),
     logoAsset: 'assets/brand/piggybow-logo-stacked-light.svg',
   );
 
@@ -61,6 +66,7 @@ class PiggybowPalette extends ThemeExtension<PiggybowPalette> {
     accent: PiggybowColors.roseDark,
     onAccent: PiggybowColors.ink,
     pillBackground: Color(0xFF382C43),
+    rainbowTrack: Color(0xFF3A3350),
     logoAsset: 'assets/brand/piggybow-logo-stacked-dark.svg',
   );
 
@@ -72,6 +78,7 @@ class PiggybowPalette extends ThemeExtension<PiggybowPalette> {
     Color? accent,
     Color? onAccent,
     Color? pillBackground,
+    Color? rainbowTrack,
     String? logoAsset,
   }) {
     return PiggybowPalette(
@@ -81,6 +88,7 @@ class PiggybowPalette extends ThemeExtension<PiggybowPalette> {
       accent: accent ?? this.accent,
       onAccent: onAccent ?? this.onAccent,
       pillBackground: pillBackground ?? this.pillBackground,
+      rainbowTrack: rainbowTrack ?? this.rainbowTrack,
       logoAsset: logoAsset ?? this.logoAsset,
     );
   }
@@ -95,6 +103,7 @@ class PiggybowPalette extends ThemeExtension<PiggybowPalette> {
       accent: Color.lerp(accent, other.accent, t)!,
       onAccent: Color.lerp(onAccent, other.onAccent, t)!,
       pillBackground: Color.lerp(pillBackground, other.pillBackground, t)!,
+      rainbowTrack: Color.lerp(rainbowTrack, other.rainbowTrack, t)!,
       logoAsset: t < 0.5 ? logoAsset : other.logoAsset,
     );
   }
@@ -152,7 +161,7 @@ ThemeData buildTheme(
 
   final seeded =
       ColorScheme.fromSeed(
-        seedColor: PiggybowColors.rose,
+        seedColor: paletteSeed(plusPalette),
         brightness: brightness,
       ).copyWith(
         primary: palette.accent,

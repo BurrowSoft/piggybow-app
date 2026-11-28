@@ -9,6 +9,7 @@ import 'features/reminder/reminder_sync.dart';
 import 'l10n/gen/app_localizations.dart';
 import 'session/app_session.dart';
 import 'session/session_scope.dart';
+import 'theme/palettes.dart';
 import 'theme/theme.dart';
 
 class PiggybowApp extends StatelessWidget {
@@ -37,7 +38,11 @@ class PiggybowApp extends StatelessWidget {
             session: session,
             services: services,
             child: ListenableBuilder(
-              listenable: session,
+              // Plus too: a theme shows only while Plus is active.
+              listenable: Listenable.merge([
+                session,
+                if (services.plus != null) services.plus!,
+              ]),
               builder: (context, _) => MaterialApp.router(
                 onGenerateTitle: (context) =>
                     AppLocalizations.of(context).appName,
@@ -46,12 +51,12 @@ class PiggybowApp extends StatelessWidget {
                 theme: buildTheme(
                   Brightness.light,
                   disableAnimations: config.disableAnimations,
-                  plusPalette: session.palette,
+                  plusPalette: _palette,
                 ),
                 darkTheme: buildTheme(
                   Brightness.dark,
                   disableAnimations: config.disableAnimations,
-                  plusPalette: session.palette,
+                  plusPalette: _palette,
                 ),
                 // The user's choice, else the device language if shipped,
                 // else English (v0.1 ships English only).
@@ -77,4 +82,12 @@ class PiggybowApp extends StatelessWidget {
       ),
     );
   }
+
+  /// Me → Theme's choice while Plus is active (the live entitlement, never
+  /// the stored choice alone); Strawberry otherwise, and in a build without
+  /// Plus.
+  PlusPalette? get _palette => appliedPalette(
+    session.chosenPalette,
+    plusActive: services.plus?.active ?? false,
+  );
 }

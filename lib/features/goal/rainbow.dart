@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../theme/theme.dart';
+
 /// The goal's rainbow (plan §3.5): five arcs, outer to inner, each 20 % of
 /// the goal. The outer arc fills first, sweeping from the left foot over the
 /// top to the right foot; an arc in progress is partly filled. A change of
@@ -24,15 +26,19 @@ class Rainbow extends StatelessWidget {
     Color(0xFF8CCFB0),
     Color(0xFF9B84D6),
   ];
-  static const trackLight = Color(0xFFECE6F0);
-  static const trackDark = Color(0xFF3A3350);
 
   /// The design's box (design/rainbow-*.svg): 240 × 132.
   static const aspectRatio = 240 / 132;
 
   @override
   Widget build(BuildContext context) {
+    // The empty track follows the theme (PiggybowPalette.rainbowTrack);
+    // outside Piggybow's theme (a bare test app), the default's.
     final dark = Theme.of(context).brightness == Brightness.dark;
+    final track =
+        (Theme.of(context).extension<PiggybowPalette>() ??
+                (dark ? PiggybowPalette.dark : PiggybowPalette.light))
+            .rainbowTrack;
     final still = MediaQuery.disableAnimationsOf(context);
     final fill = percent.clamp(0, 100) / 100;
     final drawing = AspectRatio(
@@ -44,7 +50,7 @@ class Rainbow extends StatelessWidget {
         builder: (context, value, _) => CustomPaint(
           painter: RainbowPainter(
             fill: value,
-            track: dark ? trackDark : trackLight,
+            track: track,
           ),
         ),
       ),
