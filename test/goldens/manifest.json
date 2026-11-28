@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "65ba7d3f5d897a2cd4ee5cb60d549b5ea52dd04f",
+  "ref": "65ba7d3f5d897a2cd4ee5cb60d549b5ea52dd04f",
+  "run_id": "46134683514",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -524,6 +524,24 @@
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, light)",
       "sha256": "2ab26dc2922ca7af16458ecb275ac5313d020b3dc400c3379101dee826332276",
       "bytes": 162520,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "journal-too-new_update_dark_320x2.png",
+      "state": "JN1",
+      "test": "JN1 a journal from a newer Piggybow: the update line (320 dp, text ×2, dark)",
+      "sha256": "21ad6d1fa355d9816cde38ef0e5b607ea88e915715ea0d0fc5bb9ed7d90b0e85",
+      "bytes": 55505,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "journal-too-new_update_light_320x2.png",
+      "state": "JN1",
+      "test": "JN1 a journal from a newer Piggybow: the update line (320 dp, text ×2, light)",
+      "sha256": "81753676b263f794256571b90ec104ca1706a52187727ee77104da80795549c2",
+      "bytes": 55857,
       "width": 960,
       "height": 2340
     },
