@@ -3,6 +3,8 @@
 @Tags(['golden'])
 library;
 
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/clock.dart';
@@ -144,6 +146,31 @@ void main() {
     }
   }
 
+  /// Spent and Saved are never shrunk below their size at 1× text to fit
+  /// (decision 58's backlog item): stacked full width instead. The total is
+  /// a FittedBox around its text, so its shrink is the box's width over the
+  /// text's own.
+  void expectTotalsWhole(WidgetTester tester, LayoutCase c, String state) {
+    for (final id in ['sum-spent', 'sum-saved']) {
+      final fitted = find.descendant(
+        of: byId(id),
+        matching: find.byType(FittedBox),
+      );
+      expect(fitted, findsOneWidget, reason: '$state: $id');
+      final box = tester.renderObject<RenderBox>(fitted);
+      final text = tester.renderObject<RenderBox>(
+        find.descendant(of: fitted, matching: find.byType(RichText)),
+      );
+      final shrink = math.min(1.0, box.size.width / text.size.width);
+      final shown = c.textScale * shrink;
+      expect(
+        shown,
+        greaterThanOrEqualTo(math.min(c.textScale, 1.0) - 0.001),
+        reason: '$state: $id shown at ${shown.toStringAsFixed(2)}×',
+      );
+    }
+  }
+
   /// The cases Summary's goldens are taken in (PB UX & PM's look): 360 dp at
   /// text ×1, light and dark, and 320 dp at ×2, light.
   bool summaryGolden(LayoutCase c) =>
@@ -178,6 +205,7 @@ void main() {
     testWidgets('S1 this week: every card ($c)', (tester) async {
       await open(tester, c, seed: s1);
       expect(byId('sum-plan-bar'), findsOneWidget);
+      expectTotalsWhole(tester, c, 'S1 week');
       await checkScrolled(tester, 'S1 week', [
         usd(11570),
         usd(5000),
@@ -191,6 +219,15 @@ void main() {
 
     testWidgets('nine categories at the largest amount ($c)', (tester) async {
       await open(tester, c, seed: nineAtMax);
+      expectTotalsWhole(tester, c, 'nine at max');
+      if (c.width == 320 && c.textScale == 2) {
+        // Too long for half the width at 1×: stacked, Spent above Saved.
+        expect(
+          tester.getRect(byId('sum-saved')).top,
+          greaterThan(tester.getRect(byId('sum-spent')).bottom),
+          reason: 'nine at max, 320 ×2: stacked',
+        );
+      }
       await checkScrolled(tester, 'nine at max', [
         usd(amountMax * SpendCategory.values.length),
         usd(amountMax),
@@ -215,6 +252,7 @@ void main() {
       await open(tester, c, seed: s1);
       await tester.tapId('sum-month');
       expect(find.text('December 2026'), findsOneWidget);
+      expectTotalsWhole(tester, c, 'S1 December');
       await checkScrolled(tester, 'S1 December', [
         usd(1570),
         usd(5000),
