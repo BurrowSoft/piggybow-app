@@ -21,6 +21,8 @@ Flows: `maestro test -e APP_ID=<id> <paths or --include-tags …>`
 History: <older sha7 ❌ reason> → <newer sha7 🟢>
 ```
 
+A run on master with no PR of its own (such as a smoke on the final master) takes `### master: <title>` in place of `### #<PR> <title>`; the other three fields stay.
+
 Rules for a row:
 - **Only what was observed.** Anything a debug build or an emulator can't prove is ⏳, with who checks it and on which build.
 - **A ❌ points at a flow step** ("step N: expected …, saw …") and at the failure's screenshot.
@@ -32,7 +34,7 @@ Rules for a row:
 
 <!-- rows start here -->
 
-### Master 31d7ae3: the store's build, the smoke before internal testing (6c) — 31d7ae3 — 🟢 (a store install on a real phone ⏳) — 2026-11-28 09:12 UTC
+### master: the store's build, the smoke before internal testing (6c) — 31d7ae3 — 🟢 (a store install on a real phone ⏳) — 2026-11-28 09:12 UTC
 Build: prod release (R8, the workflow's throwaway signing key), built in the job from 31d7ae3; installed = built (APK sha256 `f84aa078…`) · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, the real clock, en-US
 Rows: `tool/device-rows/smoke6c.sh` (emulator run 46127091775, flows `tests/smoke-6c` @ c95d54f); 12 of 12 rows
 | Row / check | Result | Notes |
