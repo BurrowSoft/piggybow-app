@@ -5,9 +5,10 @@ tags: [plus]
 - launchApp:
     appId: ${APP_ID}
     stopApp: false
+# 87b ends on Me (Home's Add button isn't there): wait for the tabs
 - extendedWaitUntil:
     visible:
-      id: home-add
+      id: tab-me
     timeout: 30000
 - tapOn:
     id: tab-me

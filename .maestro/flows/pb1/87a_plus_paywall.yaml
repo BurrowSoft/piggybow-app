@@ -68,14 +68,15 @@ tags: [plus]
     timeout: 10000
 - assertNotVisible:
     id: plus-on
+# The store's cancel line; Terms of Use and Privacy Policy show only once
+# TERMS_URL and PRIVACY_URL are set (empty in staging today), so they're left
+# to the shot
 - runFlow:
     file: ../../subflows/reveal.yaml
     env:
-      ID: plus-terms
+      ID: plus-cancel
 - assertVisible:
-    id: plus-terms
-- assertVisible:
-    id: plus-privacy
+    id: plus-cancel
 - assertVisible: ".*Cancel anytime in Google Play\\..*"
 - takeScreenshot: 87-paywall-end
 # Back closes it onto Me

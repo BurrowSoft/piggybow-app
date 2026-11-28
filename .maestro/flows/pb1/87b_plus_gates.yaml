@@ -55,7 +55,7 @@ tags: [plus]
     id: categories-transport-toggle
 - assertVisible:
     id: categories-transport
-- assertVisible: "Hidden"
+- assertVisible: "(?s)Transport\\s+Hidden"            # one merged row: the name, then "Hidden"
 - takeScreenshot: 87-categories-hidden
 # Your own category opens the paywall
 - runFlow:
@@ -100,7 +100,7 @@ tags: [plus]
       ID: categories-transport-toggle
 - tapOn:
     id: categories-transport-toggle
-- assertNotVisible: "Hidden"
+- assertNotVisible: "(?s)Transport\\s+Hidden"
 - back
 # A Plus theme opens the paywall and the theme stays
 - runFlow:
