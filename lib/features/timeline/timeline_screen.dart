@@ -245,11 +245,11 @@ class _SearchField extends StatelessWidget {
           style: context.inputText,
           onChanged: (_) => onChanged(),
           decoration: InputDecoration(
-            hintText: l10n.tlSearchHint,
             // Whole at large text: it wraps rather than being cut. Once
-            // something is typed the hint is gone, and the field is one
-            // line again (it grows back when emptied).
-            hintMaxLines: controller.text.isEmpty ? 3 : 1,
+            // something is typed it's gone (as a hint would be anyway), so
+            // the field is one line; emptied, it's back.
+            hintText: controller.text.isEmpty ? l10n.tlSearchHint : null,
+            hintMaxLines: 3,
             suffixIcon: TestId(
               'tl-search-close',
               button: true,
