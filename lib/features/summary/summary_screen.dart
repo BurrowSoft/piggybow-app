@@ -11,6 +11,7 @@ import '../../money/locale.dart';
 import '../../money/money.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
+import '../../summary/compare.dart';
 import '../../summary/summary.dart';
 import '../shell/segmented.dart';
 import '../shell/tab_top.dart';
@@ -19,7 +20,9 @@ import 'patterns_view.dart';
 /// The Summary tab (plan §3.7, decisions 29 and 52): a week or a month at a
 /// time, back as far as the oldest entry's period. Spent and saved, the plan
 /// bar (the current week only), spending by category, and how the spends
-/// felt. No comparison with another period: it would turn into a score.
+/// felt. In a week, each category says gently how it compares with the week
+/// before (feature 13), in words only: no number, arrow or colour, so it
+/// never turns into a score.
 class SummaryScreen extends StatefulWidget {
   const SummaryScreen({super.key});
 
@@ -144,6 +147,25 @@ class _SummaryScreenState extends State<SummaryScreen>
     final locale = context.session.device.localeName;
     String money(int minor) => formatMoney(minor, data.currency, locale);
     final plan = data.planMinor;
+    // Feature 13: weeks only. The current week says "this time last week".
+    final comparisons = week
+        ? compareCategories(
+            rows: s.categories,
+            entries: data.entries,
+            week: period,
+            today: today,
+          )
+        : const <String, Comparison>{};
+    final soFar = period.contains(today);
+    String? compared(String id) => switch ((comparisons[id], soFar)) {
+      (null, _) => null,
+      (Comparison.more, false) => l10n.sumCompareMore,
+      (Comparison.less, false) => l10n.sumCompareLess,
+      (Comparison.same, false) => l10n.sumCompareSame,
+      (Comparison.more, true) => l10n.sumCompareMoreSoFar,
+      (Comparison.less, true) => l10n.sumCompareLessSoFar,
+      (Comparison.same, true) => l10n.sumCompareSameSoFar,
+    };
 
     return ListView(
       primary: true,
@@ -206,6 +228,7 @@ class _SummaryScreenState extends State<SummaryScreen>
               label: (id) => categoryName(l10n, id, data.customs),
               money: money,
               percent: NumberFormat.percentPattern(intlNumberLocale(locale)),
+              compared: compared,
             ),
           ],
           if (s.showWorth) ...[
@@ -471,12 +494,17 @@ class _CategoryCard extends StatelessWidget {
     required this.label,
     required this.money,
     required this.percent,
+    required this.compared,
   });
 
   final List<CategoryRow> rows;
   final String Function(String id) label;
   final String Function(int minor) money;
   final NumberFormat percent;
+
+  /// The category against the week before, in words (feature 13); null: no
+  /// line.
+  final String? Function(String id) compared;
 
   @override
   Widget build(BuildContext context) {
@@ -523,6 +551,18 @@ class _CategoryCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
+                if (compared(row.id) case final line?) ...[
+                  const SizedBox(height: 4),
+                  TestId(
+                    'sum-cat-${row.id}-compare',
+                    child: WholeWordsText(
+                      line,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
