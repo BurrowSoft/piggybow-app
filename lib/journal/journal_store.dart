@@ -655,6 +655,7 @@ class JournalStore extends ChangeNotifier {
     'plan_minor',
     'onboarded',
     'reminder_offer',
+    'hidden_categories',
   };
 
   static const _travelsPrefix = 'celebrated.';
@@ -664,24 +665,33 @@ class JournalStore extends ChangeNotifier {
 
   /// The stores a backup carries. A new store is a choice too: the test that
   /// classifies the settings checks every store this file opens.
-  static const backedUpStores = {'entries', 'goals', 'settings'};
+  static const backedUpStores = {'entries', 'goals', 'categories', 'settings'};
 
   static bool travelsWith(String key) =>
       travels.contains(key) || key.startsWith(_travelsPrefix);
 
   /// Everything a backup carries of the journal, read in one transaction:
-  /// every entry and goal as this build writes them, and the settings that
-  /// travel. A record [checkSnapshot] would refuse (one an older build left
-  /// unreadable) stays out, so a backup made here always restores.
+  /// every entry, goal and category of your own as this build writes them,
+  /// and the settings that travel. A record [checkSnapshot] would refuse
+  /// (one an older build left unreadable, a spend in a category that isn't
+  /// there) stays out, so a backup made here always restores.
   Future<JournalSnapshot> snapshot() => _db.transaction((txn) async {
     final entries = await _entries.find(txn);
     final goals = await _goals.find(txn);
+    final categories = {
+      for (final s in await _categories.find(txn))
+        s.key: ?_categoryRecord(s.key, s.value),
+    };
     final settings = await _settings.find(txn);
     return JournalSnapshot(
       entries: {
-        for (final s in entries) s.key: ?_entryRecord(s.key, s.value),
+        for (final s in entries)
+          if (_entryRecord(s.key, s.value) case final m?
+              when _categoryKnown(m, categories))
+            s.key: m,
       },
       goals: {for (final s in goals) s.key: ?_goalRecord(s.key, s.value)},
+      categories: categories,
       settings: {
         for (final s in settings)
           if (_settingFits(s.key, s.value)) s.key: _plain(s.value),
@@ -690,14 +700,31 @@ class JournalStore extends ChangeNotifier {
   });
 
   /// [snapshot] as this store would write it. A [FormatException] for
-  /// anything it never writes: an entry or goal it can't read or would
-  /// refuse, a second active goal, a setting that doesn't travel or holds
-  /// the wrong kind of value.
+  /// anything it never writes: an entry, goal or category of your own it
+  /// can't read or would refuse, a spend in a category of your own the
+  /// backup doesn't carry, two of your own with the same name, a second
+  /// active goal, a setting that doesn't travel or holds the wrong kind of
+  /// value.
   static JournalSnapshot checkSnapshot(JournalSnapshot snapshot) {
+    final categories = <String, Map<String, Object?>>{};
+    final names = <String>{};
+    for (final MapEntry(:key, :value) in snapshot.categories.entries) {
+      final record =
+          _categoryRecord(key, value) ??
+          (throw FormatException('category $key'));
+      if (!names.add((record['name']! as String).toLowerCase())) {
+        throw FormatException('two categories named ${record['name']}');
+      }
+      categories[key] = record;
+    }
     final entries = <String, Map<String, Object?>>{};
     for (final MapEntry(:key, :value) in snapshot.entries.entries) {
-      entries[key] =
+      final record =
           _entryRecord(key, value) ?? (throw FormatException('entry $key'));
+      if (!_categoryKnown(record, categories)) {
+        throw FormatException('entry $key: no such category');
+      }
+      entries[key] = record;
     }
     final goals = <String, Map<String, Object?>>{};
     var active = 0;
@@ -714,7 +741,36 @@ class JournalStore extends ChangeNotifier {
       if (!_settingFits(key, value)) throw FormatException('setting $key');
       settings[key] = _plain(value);
     }
-    return JournalSnapshot(entries: entries, goals: goals, settings: settings);
+    return JournalSnapshot(
+      entries: entries,
+      goals: goals,
+      categories: categories,
+      settings: settings,
+    );
+  }
+
+  /// A category of your own as this store writes it ([putCustomCategory]'s
+  /// rules: your own id, a name trimmed, not empty, at most
+  /// [categoryNameMax] characters), or null.
+  static Map<String, Object?>? _categoryRecord(
+    String id,
+    Map<String, Object?> m,
+  ) {
+    final category = CustomCategory.fromMap(id, m);
+    if (category == null) return null;
+    final name = category.name.trim();
+    if (name.isEmpty || name.characters.length > categoryNameMax) return null;
+    return category.copyWith(name: name).toMap();
+  }
+
+  /// Whether an entry's category of your own, if it has one, is in
+  /// [categories] (a spend goes only to one that exists).
+  static bool _categoryKnown(
+    Map<String, Object?> entry,
+    Map<String, Map<String, Object?>> categories,
+  ) {
+    final id = entry['category'];
+    return !CustomCategory.isCustomId(id) || categories.containsKey(id);
   }
 
   /// The entry as this store writes it, or null for one it can't read, would
@@ -763,10 +819,14 @@ class JournalStore extends ChangeNotifier {
     await _db.transaction((txn) async {
       await _entries.delete(txn);
       await _goals.delete(txn);
+      await _categories.delete(txn);
       for (final s in await _settings.find(txn)) {
         if (travelsWith(s.key)) await _settings.record(s.key).delete(txn);
       }
       await midway?.call();
+      for (final MapEntry(:key, :value) in checked.categories.entries) {
+        await _categories.record(key).put(txn, value);
+      }
       for (final MapEntry(:key, :value) in checked.entries.entries) {
         await _entries.record(key).put(txn, value);
       }
@@ -785,6 +845,8 @@ class JournalStore extends ChangeNotifier {
     'picks' => value is List && value.every((p) => p is String),
     'plan_minor' => value is int && value > 0 && value <= maxAmountMinor,
     'onboarded' || 'reminder_offer' => value is bool,
+    'hidden_categories' =>
+      value is List && value.every((id) => SpendCategory.fromId(id) != null),
     _ =>
       key.startsWith(_travelsPrefix) &&
           key.length > _travelsPrefix.length &&

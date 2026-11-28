@@ -1,6 +1,7 @@
 // Feature 21, what a backup file carries: the plaintext that backup_file.dart
-// seals, schema 1. The person's journal (every entry and goal, and the
-// journal settings that travel) and the few settings that matter outside it:
+// seals, schema 1. The person's journal (every entry and goal, their own
+// categories, and the journal settings that travel) and the few settings
+// that matter outside it:
 // language, appearance, the chosen theme and the reminder's time.
 //
 // Never in it: the app lock (its PIN, settings and fail count in secure
@@ -31,6 +32,7 @@ class JournalSnapshot {
   const JournalSnapshot({
     required this.entries,
     required this.goals,
+    this.categories = const {},
     required this.settings,
   });
 
@@ -39,6 +41,9 @@ class JournalSnapshot {
 
   /// Every goal (active, reached and ended), by id, with its stamps.
   final Map<String, Map<String, Object?>> goals;
+
+  /// Your own categories (#49), hidden ones too, by id.
+  final Map<String, Map<String, Object?>> categories;
 
   /// The journal settings that travel (JournalStore.travelsWith).
   final Map<String, Object?> settings;
@@ -100,6 +105,7 @@ class BackupSnapshot {
     'journal': {
       'entries': journal.entries,
       'goals': journal.goals,
+      'categories': journal.categories,
       'settings': journal.settings,
     },
     'prefs': {
@@ -142,6 +148,10 @@ class BackupSnapshot {
       journal: JournalSnapshot(
         entries: _records(journal['entries']),
         goals: _records(journal['goals']),
+        // Your own categories: none when a file has no such part.
+        categories: journal.containsKey('categories')
+            ? _records(journal['categories'])
+            : const {},
         settings: _map(journal['settings']),
       ),
       prefs: PrefsSnapshot(

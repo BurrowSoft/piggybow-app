@@ -55,14 +55,24 @@ void main() {
   );
 
   /// A journal with everything a backup carries: spends (Thai, emoji and
-  /// longest notes, with and without a feeling), saves to the active goal
-  /// (a band stamped), a reached and an ended goal, and every setting.
+  /// longest notes, with and without a feeling, one in your own category),
+  /// saves to the active goal (a band stamped) and a take-out, a reached and
+  /// an ended goal, your own category, a hidden built-in, and every setting.
   Future<void> fill(JournalStore s) async {
     await s.setCurrency('THB');
     await s.setPicks({HappyPick.save, HappyPick.worth});
     await s.setPlanMinor(150000);
     await s.setOnboarded();
     await s.answerReminderOffer();
+    await s.setBuiltInHidden(SpendCategory.fun, true);
+    await s.putCustomCategory(
+      CustomCategory(
+        id: 'c:bubble',
+        name: 'Bubble tea',
+        icon: CategoryIcon.drinks,
+        createdAt: stamp,
+      ),
+    );
     await s.putGoal(goal('g-reached', GoalStatus.reached, reachedAt: stamp));
     await s.markCelebrated('g-reached');
     await s.putGoal(goal('g-ended', GoalStatus.ended));
@@ -81,8 +91,21 @@ void main() {
     await spend(999999999999, 'x' * maxNoteLength);
     await spend(1, '');
     await s.addEntry(
+      type: EntryType.spent,
+      amountMinor: 6500,
+      currency: 'THB',
+      localDate: '2026-11-27',
+      customCategory: 'c:bubble',
+    );
+    await s.addEntry(
       type: EntryType.saved,
       amountMinor: 25000,
+      currency: 'THB',
+      localDate: '2026-11-28',
+    );
+    await s.takeOut(
+      goalId: 'g-active',
+      amountMinor: 5000,
       currency: 'THB',
       localDate: '2026-11-28',
     );
@@ -118,8 +141,13 @@ void main() {
     test('brings the journal back exactly, through a sealed file', () async {
       await fill(store);
       final before = await store.snapshot();
-      expect(before.entries, hasLength(4));
+      expect(before.entries, hasLength(6));
       expect(before.goals, hasLength(3));
+      expect(before.categories.keys, ['c:bubble']);
+      expect(
+        before.entries.values.where((e) => e['type'] == 'withdraw'),
+        hasLength(1),
+      );
       expect(before.settings.keys.toSet(), {
         ...JournalStore.travels,
         'celebrated.g-reached',
@@ -178,6 +206,7 @@ void main() {
         return JournalSnapshot(
           entries: entries,
           goals: good.goals,
+          categories: good.categories,
           settings: good.settings,
         );
       }
@@ -191,6 +220,7 @@ void main() {
         return JournalSnapshot(
           entries: good.entries,
           goals: goals,
+          categories: good.categories,
           settings: good.settings,
         );
       }
@@ -198,10 +228,39 @@ void main() {
       JournalSnapshot withSetting(String key, Object? value) => JournalSnapshot(
         entries: good.entries,
         goals: good.goals,
+        categories: good.categories,
         settings: {...good.settings, key: value},
       );
 
+      final bubble = good.categories['c:bubble']!;
+      JournalSnapshot withCategories(
+        Map<String, Map<String, Object?>> categories,
+      ) => JournalSnapshot(
+        entries: good.entries,
+        goals: good.goals,
+        categories: categories,
+        settings: good.settings,
+      );
+
       final bad = <String, JournalSnapshot>{
+        // Your own categories (#49): as the store writes them, and a spend
+        // in one of them has it in the backup too.
+        'your own category under a built-in\'s id': withCategories({
+          ...good.categories,
+          'food': bubble,
+        }),
+        'two of your own with the same name': withCategories({
+          ...good.categories,
+          'c:twin': {...bubble, 'name': ' bubble TEA '},
+        }),
+        'your own category\'s name over the limit': withCategories({
+          'c:bubble': {...bubble, 'name': 'x' * (categoryNameMax + 1)},
+        }),
+        'a spend in your own category the backup doesn\'t carry':
+            withCategories(const {}),
+        'a hidden built-in that isn\'t one': withSetting('hidden_categories', [
+          'nope',
+        ]),
         'an amount of 0': withEntry((m) => m['amount_minor'] = 0),
         'a float amount': withEntry((m) => m['amount_minor'] = 45.5),
         'a spend with no category': withEntry((m) => m['category'] = null),
@@ -212,6 +271,7 @@ void main() {
         'an entry with no id': JournalSnapshot(
           entries: {'': good.entries.values.first},
           goals: good.goals,
+          categories: good.categories,
           settings: good.settings,
         ),
         'an unreadable goal': JournalSnapshot(
@@ -220,6 +280,7 @@ void main() {
             ...good.goals,
             'g-bad': {'name': 'Bike'},
           },
+          categories: good.categories,
           settings: good.settings,
         ),
         'a second active goal': JournalSnapshot(
@@ -228,6 +289,7 @@ void main() {
             ...good.goals,
             'g-two': goal('g-two', GoalStatus.active).toMap(),
           },
+          categories: good.categories,
           settings: good.settings,
         ),
         // Values this build can't show: a currency it doesn't list (money
