@@ -1,0 +1,27 @@
+appId: ${APP_ID}
+name: "#96 - \"+ New goal\" (home-new-goal) is a text button under the goal card - Plus builds only (a second goal is Plus's)"
+tags: [goal, plus]
+# Run by fb1-night.sh after 96b, only with a Plus kind (plus-owned, plus-rows):
+# builds without Plus have no "+ New goal" on Home.
+---
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env:
+      NAME: "Bike"
+      AMOUNT: "100"
+      START: "0"
+- back                                             # the goal screen sits over the tabs
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: home-new-goal }
+- assertVisible:
+    id: home-new-goal
+- takeScreenshot: 96-new-goal

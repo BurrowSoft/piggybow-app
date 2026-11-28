@@ -5,8 +5,10 @@
 #   NB-1 flow 96a: Home open from 03:57: the sleepy pig's night line before
 #        04:00, then the day's pig at 04:00 with no tap
 #   NB-2 flow 96b: a cold start at 05:00: the day's pig (F-B1 saw the night
-#        line there); the Add sheet in euros has no "= €12.34" echo; "+ New
-#        goal" under the goal card (looked at in the shots)
+#        line there); the Add sheet in euros has no "= €12.34" echo
+#   NB-3 flow 96c, Plus kinds only (plus-owned): "+ New goal" under the goal
+#        card (looked at in the shot); builds without Plus have no such button
+# Dispatch with kind=plus-owned so NB-3 runs; on debug it's an INFO row.
 . "$(dirname "$0")/lib.sh"
 guard_emulator
 
@@ -46,7 +48,18 @@ fi
 setclock "$D" 05:00:00
 A shell am force-stop "$APP_ID"
 if mf flows/pb1/96b_morning_cold.yaml; then
-  row NB-2 PASS "flow 96b: a cold start at 05:00 shows the day's pig; the Add sheet in euros has no '= €12.34' echo; '+ New goal' shows under the goal card"
+  row NB-2 PASS "flow 96b: a cold start at 05:00 shows the day's pig; the Add sheet in euros has no '= €12.34' echo"
 else
   row NB-2 FAIL "flow 96b"
 fi
+
+# "+ New goal" exists only in builds with Plus (a second goal is Plus's)
+case "$KIND" in
+  plus-owned|plus-rows)
+    if mf flows/pb1/96c_new_goal_button.yaml; then
+      row NB-3 PASS "flow 96c ($KIND): '+ New goal' shows under the goal card (the shot looked at for its place)"
+    else
+      row NB-3 FAIL "flow 96c ($KIND)"
+    fi ;;
+  *) row NB-3 INFO "flow 96c not run: kind $KIND has no Plus, so no '+ New goal' (dispatch with plus-owned)" ;;
+esac
