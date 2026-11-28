@@ -67,28 +67,30 @@ class CurrencyPickerScreen extends StatelessWidget {
       'currency-screen',
       child: Scaffold(
         appBar: AppBar(title: Text(l10n.currencyTitle)),
-        body: ListView(
-          padding: const EdgeInsets.only(bottom: 16),
-          children: [
-            for (final code in order)
-              TestId(
-                'currency-$code',
-                button: true,
-                selected: code == current,
-                child: ListTile(
-                  title: Text(
-                    l10n.currencyRow(
-                      l10n.currencyName(code),
-                      currencySymbolOf(code, locale),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.only(bottom: 16),
+            children: [
+              for (final code in order)
+                TestId(
+                  'currency-$code',
+                  button: true,
+                  selected: code == current,
+                  child: ListTile(
+                    title: Text(
+                      l10n.currencyRow(
+                        l10n.currencyName(code),
+                        currencySymbolOf(code, locale),
+                      ),
                     ),
+                    trailing: code == current
+                        ? Icon(Icons.check, color: theme.colorScheme.primary)
+                        : null,
+                    onTap: () => Navigator.of(context).pop(code),
                   ),
-                  trailing: code == current
-                      ? Icon(Icons.check, color: theme.colorScheme.primary)
-                      : null,
-                  onTap: () => Navigator.of(context).pop(code),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

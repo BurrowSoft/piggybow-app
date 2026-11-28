@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/app_config.dart';
 import 'core/services.dart';
+import 'core/system_bars.dart';
 import 'features/lock/lock_screen.dart';
 import 'features/reminder/reminder_sync.dart';
 import 'l10n/gen/app_localizations.dart';
@@ -60,11 +61,14 @@ class PiggybowApp extends StatelessWidget {
                 supportedLocales: AppLocalizations.supportedLocales,
                 localizationsDelegates: AppLocalizations.localizationsDelegates,
                 routerConfig: router,
-                // The lock screen and the app-switcher cover.
-                builder: (context, child) => LockGate(
-                  lock: services.appLock,
-                  session: session,
-                  child: child!,
+                // See-through status and navigation bars over every page (the
+                // lock screen too); the lock screen and the app-switcher cover.
+                builder: (context, child) => PageSystemBars(
+                  child: LockGate(
+                    lock: services.appLock,
+                    session: session,
+                    child: child!,
+                  ),
                 ),
               ),
             ),

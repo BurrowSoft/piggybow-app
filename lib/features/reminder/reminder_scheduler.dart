@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 import '../../reminder_rules/reminder_rules.dart';
+import '../../theme/theme.dart' show PiggybowColors;
 import 'reminder_plan.dart';
 
 /// The words on the notification: copy keys only, never anything the person
@@ -135,6 +136,8 @@ class PlatformReminderScheduler implements ReminderScheduler {
       copy.channelName,
       channelDescription: copy.channelDescription,
       icon: 'ic_notification',
+      // The shade tints the small icon and the app name with it: the app's berry.
+      color: PiggybowColors.deepRose,
       category: AndroidNotificationCategory.reminder,
       visibility: NotificationVisibility.public,
     ),
