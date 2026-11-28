@@ -1,0 +1,50 @@
+appId: ${APP_ID}
+name: Backup file (#87, P1 part 1) - a journal with one noted spend; Me → Back up to a file; the no-recovery line; the password twice; Back up opens the share sheet (the row script copies the file while it's open)
+tags: [backup]
+# Run by pr87.sh: staging debug, zone UTC. The CI emulator has no share
+# target that saves to Downloads, so the script copies the file from the
+# app's cache/export (run-as, a debug build) while the sheet is open.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/add_noted_spend.yaml
+    env: { AMOUNT: "12", CAT: "food", NOTE: "Coffee with Mai" }
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-backup
+- tapOn:
+    id: me-backup
+- extendedWaitUntil:
+    visible:
+      id: backup-screen
+    timeout: 10000
+- assertVisible:
+    id: backup-no-recovery
+- assertVisible: ".*Piggybow can't recover this password\\..*"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: backup-password
+      TEXT: "correct horse battery"
+      EXPECT: ".*"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: backup-again
+      TEXT: "correct horse battery"
+      EXPECT: ".*"
+- takeScreenshot: 91-backup-filled
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: backup-go
+- tapOn:
+    id: backup-go
+# The share sheet (another app's window) is up: the script takes over
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: 91-share-sheet

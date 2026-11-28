@@ -1,0 +1,27 @@
+appId: ${APP_ID}
+name: Backup file (#87, P5) - the share sheet dismissed - the backup screen stays, both passwords kept, no message
+tags: [backup]
+# Run by pr87.sh right after 91a, with the share sheet still open. The script
+# then checks cache/export is empty.
+---
+- back                                             # dismiss the share sheet
+- extendedWaitUntil:
+    visible:
+      id: backup-screen
+    timeout: 10000
+- assertNotVisible:
+    id: backup-error
+- tapOn:
+    id: backup-show
+- assertVisible:
+    id: backup-password
+    text: ".*correct horse battery.*"
+- assertVisible:
+    id: backup-again
+    text: ".*correct horse battery.*"
+- takeScreenshot: 91-backup-dismissed
+- back
+- extendedWaitUntil:
+    visible:
+      id: me-backup
+    timeout: 10000

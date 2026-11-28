@@ -1,0 +1,40 @@
+appId: ${APP_ID}
+name: Backup file (#87, P3, P3b, P3c) - Me → Restore from a file → ${FILE} → "This isn't a Piggybow backup file.", no crash; Piggybow still answers
+tags: [backup]
+# env: FILE (part of the picked file's name), SHOT
+# P3: 1 GB of zeros; P3b: 52 MB (just over the cap); P3c: 49 MB of random
+# bytes (read whole, then refused). The row script reads meminfo around it.
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: tab-me
+    timeout: 30000
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-restore
+- tapOn:
+    id: me-restore
+- extendedWaitUntil:
+    visible:
+      id: restore-screen
+    timeout: 10000
+- tapOn:
+    id: restore-choose
+- runFlow:
+    file: ../../subflows/pick_download.yaml
+    env: { FILE: "${FILE}" }
+- extendedWaitUntil:
+    visible:
+      id: restore-error
+    timeout: 60000
+- assertVisible: ".*This isn't a Piggybow backup file\\..*"
+- assertNotVisible: "(?i).*isn.t responding.*"
+- takeScreenshot: ${SHOT}
+# Ends on the restore screen: the script reads meminfo now and ~10 s later,
+# then goes Back itself

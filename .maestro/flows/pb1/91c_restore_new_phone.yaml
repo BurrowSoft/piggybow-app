@@ -1,0 +1,63 @@
+appId: ${APP_ID}
+name: Backup file (#87, P1 part 2) - Delete all my data, then on O1 "Moving from another phone?" → Choose a file → the backup → the password → Restore → "Your journal is back." → Done → the journal is back
+tags: [backup]
+# Run by pr87.sh after 91b, with the backup pushed to /sdcard/Download.
+# The script reads this flow's commands.json for the wait on restore-done:
+# Restore tapped to "Your journal is back." (an x86 emulator, not a phone).
+---
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-delete
+- tapOn:
+    id: me-delete
+- tapOn:
+    id: me-delete-confirm
+- extendedWaitUntil:
+    visible:
+      id: onb-start
+    timeout: 15000
+- assertVisible: ".*Moving from another phone\\?.*"
+- tapOn:
+    id: onb-restore
+- extendedWaitUntil:
+    visible:
+      id: restore-screen
+    timeout: 10000
+- tapOn:
+    id: restore-choose
+- runFlow:
+    file: ../../subflows/pick_download.yaml
+    env: { FILE: "piggybow-backup-" }
+- extendedWaitUntil:
+    visible:
+      id: restore-password
+    timeout: 15000
+- assertVisible:
+    id: restore-file
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: restore-password
+      TEXT: "correct horse battery"
+      EXPECT: ".*"
+- tapOn:
+    id: restore-go
+- extendedWaitUntil:
+    visible:
+      id: restore-done
+    timeout: 60000
+- assertVisible: ".*Your journal is back\\..*"
+- takeScreenshot: 91-restored
+- tapOn:
+    id: restore-finish
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 15000
+- tapOn:
+    id: tab-timeline
+- assertVisible: ".*Coffee with Mai.*"
+- takeScreenshot: 91-journal-back
