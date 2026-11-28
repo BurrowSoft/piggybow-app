@@ -1,0 +1,90 @@
+appId: ${APP_ID}
+name: PR 5b Forgot PIN with the phone's own screen lock - both bodies and three actions; Cancel stays locked; the phone's PIN lets you in to set a new Piggybow PIN; the old one stops working
+tags: [pb1, lock, devicelock]
+# Precondition: pr5.sh sets the CI emulator's screen lock to PIN 1111 first
+# (locksettings, CI emulator only), keeps the screen on, and clears the lock
+# in its EXIT trap. local_auth with biometricOnly: false: with no biometrics
+# enrolled, the system asks for the phone's PIN.
+# Copy: lockForgotTitle, lockForgotBodyDevice, lockForgotBodyErase,
+# lockForgotUseDevice (filled), lockForgotErase (secondary text button), Cancel
+# (decision 71).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow: ../../subflows/set_lock_1357.yaml
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: lock-screen
+    timeout: 20000
+- tapOn:
+    id: lock-forgot
+- assertVisible: "Forgot your PIN\\?"
+- assertVisible: "Use your phone.s own screen lock to get in, then choose a new PIN\\."
+- assertVisible: "If that.s not possible, the only way back in is to erase Piggybow.s data on this phone and start over\\."
+- assertNotVisible: ".*Your phone has no screen lock.*"        # lockForgotBodyEraseOnly is for phones without one
+- assertVisible: "Use phone screen lock"
+- assertVisible: "Erase and start over"
+- assertVisible: "Cancel"
+- takeScreenshot: 44-forgot-with-device-lock                   # LOOK: Use phone screen lock filled, Erase a text button
+# Cancel: the dialog closes, still locked
+- tapOn:
+    id: lock-forgot-cancel
+- assertNotVisible: "Forgot your PIN\\?"
+- assertVisible:
+    id: lock-screen
+# The phone's own screen lock
+- tapOn:
+    id: lock-forgot
+- tapOn:
+    id: lock-forgot-device                                     # "Use phone screen lock"
+- extendedWaitUntil:                                           # the system's credential screen (system UI)
+    visible: ".*PIN.*"
+    timeout: 15000
+- takeScreenshot: 44-system-pin-prompt
+- inputText: "1111"
+- pressKey: Enter
+# A new Piggybow PIN: 2468, entered twice
+- extendedWaitUntil:
+    visible: "Choose a 4.6 digit PIN"        # lockSetPin, inside the lock screen
+    timeout: 15000
+- runFlow:
+    file: ../../subflows/pin.yaml
+    env: { D1: "2", D2: "4", D3: "6", D4: "8" }
+- extendedWaitUntil:
+    visible: "Enter it again"                # lockConfirmPin
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/pin.yaml
+    env: { D1: "2", D2: "4", D3: "6", D4: "8" }
+- extendedWaitUntil:
+    visible:
+      id: "home-pig|tab-me"
+    timeout: 10000
+# The old PIN no longer works; the new one does
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: lock-screen
+    timeout: 20000
+- runFlow:
+    file: ../../subflows/pin.yaml
+    env: { D1: "1", D2: "3", D3: "5", D4: "7" }
+- assertVisible:
+    id: pin-error
+- extendedWaitUntil:
+    visible:
+      id: pin-key-2
+      enabled: true
+    timeout: 45000                                             # the wrong-PIN wait (AppLock.firstWait, 30 s)
+- runFlow:
+    file: ../../subflows/pin.yaml
+    env: { D1: "2", D2: "4", D3: "6", D4: "8" }
+- extendedWaitUntil:
+    visible:
+      id: "home-pig|tab-me"
+    timeout: 10000
+- assertNotVisible:
+    id: lock-screen

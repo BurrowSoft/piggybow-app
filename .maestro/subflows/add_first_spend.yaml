@@ -1,0 +1,23 @@
+# From Home: add one spend (5, Food & drinks) through the Add button.
+appId: ${APP_ID}
+---
+- tapOn:
+    id: home-add
+- runFlow:
+    file: paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "5"
+      EXPECT: ".*5.*"
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit

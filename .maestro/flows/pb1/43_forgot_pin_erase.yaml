@@ -1,0 +1,77 @@
+appId: ${APP_ID}
+name: PR 5b Forgot PIN on a phone without a screen lock - only the erase path; its second confirm uses lockEraseBody (no Export first); Cancel keeps everything; erase returns to O1 with the lock off
+tags: [pb1, lock]
+# Precondition (pr5.sh checks it): the CI emulator has no screen lock set.
+# Copy: the plan's lockForgot* table and decision 71. The erase confirm shares
+# Me's Delete everything dialog (one dialogs file): deleteAllTitle,
+# lockEraseBody, deleteAllConfirm. Buttons are tapped by their text so the
+# flow doesn't depend on which ids 5b gives the shared dialog.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow: ../../subflows/add_first_spend.yaml      # data that the erase must remove
+- runFlow: ../../subflows/set_lock_1357.yaml
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: lock-screen
+    timeout: 20000
+# No Help link on the lock screen (decision 19): covered by #35's widget tests; there is no id to check here.
+- tapOn:
+    id: lock-forgot
+# The dialog without a phone screen lock: lockForgotTitle + lockForgotBodyEraseOnly, erase only
+- assertVisible: "Forgot your PIN\\?"
+- assertVisible: "Your phone has no screen lock, so the only way back in is to erase Piggybow.s data on this phone and start over\\."
+- assertNotVisible: ".*Use your phone.s own screen lock.*"     # lockForgotBodyDevice
+- assertNotVisible: "Use phone screen lock"                    # lockForgotUseDevice
+- assertNotVisible:
+    id: lock-forgot-device                         # #35's id for "Use phone screen lock"
+- assertVisible: "Erase and start over"
+- takeScreenshot: 43-forgot-erase-only
+# The second confirm: deleteAllTitle + lockEraseBody + deleteAllConfirm; no "Export first"
+- tapOn:
+    id: lock-forgot-erase                                      # "Erase and start over"; the Forgot dialog closes first
+- assertVisible: "Delete everything\\?"
+- assertVisible: "This erases all your entries, goals and settings from Piggybow on this phone\\. It can.t be undone\\."
+- assertNotVisible: ".*Export first.*"                         # impossible while locked
+- takeScreenshot: 43-erase-confirm
+# Cancel keeps everything: still locked, and the PIN still works
+- tapOn: "Cancel"
+- assertVisible:
+    id: lock-screen
+- assertNotVisible: "Delete everything\\?"
+# Now erase for real
+- tapOn:
+    id: lock-forgot
+- tapOn:
+    id: lock-forgot-erase
+- tapOn: "Delete everything"                                   # deleteAllConfirm (full match: not the title's "?")
+- extendedWaitUntil:
+    visible:
+      id: onb-start                                            # O1: a blank journal
+    timeout: 15000
+- assertNotVisible: "Not everything was erased"                # deleteAllFailedTitle
+- takeScreenshot: 43-o1-after-erase
+# The lock went with the data: no lock after a relaunch, the journal empty, Me says Off
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "onb-start|home-pig|tab-me"
+    timeout: 20000
+- assertNotVisible:
+    id: lock-screen
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-timeline
+- assertVisible: "Nothing here yet"                            # the spend is gone
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-lock
+- assertVisible:
+    id: me-lock
+    text: ".*Off.*"                                            # meStateOff

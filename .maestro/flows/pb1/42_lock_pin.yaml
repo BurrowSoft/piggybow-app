@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+name: PR 5 app lock - set a PIN; a cold start asks; a wrong PIN shows the error; the right one opens Home
+tags: [pb1, lock]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow: ../../subflows/set_lock_1357.yaml
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: lock-screen
+    timeout: 20000
+# No Help link on the lock screen (decision 19): covered by #35's widget tests; there is no id to check here.
+- takeScreenshot: lock-screen
+- runFlow:
+    file: ../../subflows/pin.yaml
+    env: { D1: "2", D2: "4", D3: "6", D4: "8" }
+- assertVisible:
+    id: pin-error
+# A wrong PIN may start the wait (AppLock.firstWait = 30 s): wait until the pad works again
+- extendedWaitUntil:
+    visible:
+      id: pin-key-1
+      enabled: true
+    timeout: 45000
+- runFlow:
+    file: ../../subflows/pin.yaml
+    env: { D1: "1", D2: "3", D3: "5", D4: "7" }
+- extendedWaitUntil:
+    visible:
+      id: "home-pig|tab-me"
+    timeout: 10000
+- assertNotVisible:
+    id: lock-screen
