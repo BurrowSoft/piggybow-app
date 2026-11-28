@@ -10,13 +10,17 @@ tips-mock). Python's standard library only.
 The app's side (S1, as PB Mobile Dev gave it):
   POST /auth/v1/signup                      anonymous sign-in → a session
   POST /auth/v1/token?grant_type=refresh_token
-  POST /functions/v1/pig-tip                the contract's body → 200 {"tip"}
+  POST /functions/v1/pig-tip                the contract's body → 200 {"tip","sig"}
+                                            (headers x-tip-model, x-tip-usage)
                                             or 204 (no tip today); 401 without
                                             a live token; 400 on a bad body
-  POST /functions/v1/pig-tip/report         {"tip","reason","model"} → 204
+  POST /functions/v1/pig-tip/report         {"tip","reason","model","sig"} → 204
+                                            when tip, model and sig are the
+                                            ones served; else 400
   POST /functions/v1/pig-tip/forget         deletes the anonymous user → 204
 The rows script's side (from the runner only, 127.0.0.1):
-  POST /__mock/mode?m=tip|timeout|cap|none|error   how pig-tip answers next
+  POST /__mock/mode?m=tip|nosig|timeout|cap|none|error|503   pig-tip's next answers
+  POST /__mock/report?m=ok|cap                                report's answers
   GET  /__mock/log                                  every request so far, JSON lines
   POST /__mock/reset                                forget everything
 
@@ -39,7 +43,8 @@ LOG = sys.argv[2]
 CONTRACT = json.load(open(sys.argv[3], encoding="utf-8"))
 
 LOCK = threading.Lock()
-STATE = {"mode": "tip", "tokens": {}, "refresh": {}, "users": set(), "count": 0}
+STATE = {"mode": "tip", "report_mode": "ok", "tokens": {}, "refresh": {},
+         "users": set(), "count": 0, "served": {}}  # served: tip text → sig
 TIPS = [
     "Try one no-spend day before the weekend.",
     "Look back at what felt worth it this week, and plan one more of those.",
@@ -165,9 +170,13 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/__mock/mode" and local:
             STATE["mode"] = (q.get("m") or ["tip"])[0]
             return self.reply(204)
+        if u.path == "/__mock/report" and local:
+            STATE["report_mode"] = (q.get("m") or ["ok"])[0]
+            return self.reply(204)
         if u.path == "/__mock/reset" and local:
             with LOCK:
-                STATE.update(tokens={}, refresh={}, users=set(), count=0, mode="tip")
+                STATE.update(tokens={}, refresh={}, users=set(), count=0, mode="tip",
+                             report_mode="ok", served={})
             open(LOG, "w").close()
             return self.reply(204)
         has_key = bool(self.headers.get("apikey"))
@@ -197,7 +206,8 @@ class Handler(BaseHTTPRequestHandler):
                 log({"path": u.path, "id": sub, "code": 400, "INVALID": probs, "body": body})
                 return self.reply(400, {"code": "invalid_value"})
             mode = STATE["mode"]
-            entry = {"path": u.path, "apikey": has_key, "id": sub, "mode": mode, "body": body}
+            entry = {"path": u.path, "apikey": has_key, "id": sub, "mode": mode,
+                     "region": self.headers.get("x-region"), "body": body}
             if mode == "timeout":
                 log({**entry, "code": "held 20 s"})
                 time.sleep(20)
@@ -208,19 +218,34 @@ class Handler(BaseHTTPRequestHandler):
             if mode == "error":
                 log({**entry, "code": 500})
                 return self.reply(500, {"code": "error"})
+            if mode == "503":
+                log({**entry, "code": 503})
+                return self.reply(503, {"code": "unavailable"})
             if mode == "none":
                 log({**entry, "code": 204})
                 return self.reply(204)
             with LOCK:
                 tip = TIPS[STATE["count"] % len(TIPS)]
                 STATE["count"] += 1
-            log({**entry, "code": 200, "tip": tip})
-            return self.reply(200, {"tip": tip},
-                              {"x-tip-model": MODEL, "x-tip-usage": "in=120;out=18"})
+                sig = f"mock-sig-{STATE['count']}"
+                STATE["served"][tip] = sig
+            headers = {"x-tip-model": MODEL, "x-tip-usage": "in=120;out=18"}
+            if mode == "nosig":  # a 200 without a usable sig: the app's own tip
+                log({**entry, "code": 200, "tip": tip, "sig": None})
+                return self.reply(200, {"tip": tip}, headers)
+            log({**entry, "code": 200, "tip": tip, "sig": sig})
+            return self.reply(200, {"tip": tip, "sig": sig}, headers)
         if u.path == "/functions/v1/pig-tip/report":
-            ok = (sub and isinstance(body, dict) and set(body) == {"tip", "reason", "model"}
+            with LOCK:
+                served = dict(STATE["served"])
+            ok = (sub and isinstance(body, dict)
+                  and set(body) == {"tip", "reason", "model", "sig"}
                   and isinstance(body["tip"], str) and 1 <= len(body["tip"]) <= 400
-                  and body["reason"] in REASONS)
+                  and body["reason"] in REASONS and body["model"] == MODEL
+                  and served.get(body["tip"]) == body["sig"])
+            if ok and STATE["report_mode"] == "cap":
+                log({"path": u.path, "id": sub, "code": 429, "report": body})
+                return self.reply(429, {"code": "cap"})
             log({"path": u.path, "id": sub, "code": 204 if ok else 400, "report": body})
             return self.reply(204) if ok else self.reply(400, {"code": "invalid_value"})
         if u.path == "/functions/v1/pig-tip/forget":
