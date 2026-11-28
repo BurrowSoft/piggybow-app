@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../core/clock.dart';
+import '../money/rate.dart';
 import 'category.dart';
 
 /// Spent, saved, or taken out of a goal's savings (`type`).
@@ -39,6 +40,11 @@ enum Feeling {
 /// One spend or save, as stored on the phone. Money is an integer number of
 /// minor units ([amountMinor], e.g. satang or cents) with its ISO 4217
 /// [currency]; never a double anywhere.
+///
+/// In another currency than the journal's (a trip, feature 19), it also
+/// keeps the [rate] typed and [convertedMinor], its amount in the home
+/// currency, converted once when it was saved. Every total counts
+/// [homeMinor].
 @immutable
 class Entry {
   const Entry({
@@ -56,7 +62,9 @@ class Entry {
     this.goalId,
     this.repeatId,
     this.auto = false,
-  });
+    this.rate,
+    this.convertedMinor,
+  }) : assert((rate == null) == (convertedMinor == null));
 
   /// A uuid, made on the phone (for an entry a repeat added, its repeat and
   /// day: see repeatEntryId).
@@ -95,6 +103,16 @@ class Entry {
   /// reminder's "added today" and the questions about a day leave it out).
   final bool auto;
 
+  /// In another currency: the rate typed. Null in the home currency.
+  final Rate? rate;
+
+  /// In another currency: the amount in the home currency's minor units,
+  /// frozen when it was saved. Null in the home currency.
+  final int? convertedMinor;
+
+  /// The amount in the journal's home currency: what every total counts.
+  int get homeMinor => convertedMinor ?? amountMinor;
+
   /// The day the person picked, `YYYY-MM-DD`: never derived from a time.
   final String localDate;
 
@@ -121,6 +139,9 @@ class Entry {
     'updated_at': updatedAt.toUtc().toIso8601String(),
     'repeat_id': repeatId,
     'auto': auto,
+    // Only in another currency, so a home-currency record is as before.
+    if (rate != null) 'rate': rate!.toMap(),
+    if (convertedMinor != null) 'home_minor': convertedMinor,
   };
 
   /// Null for a record this build can't read (never a half-read entry).
@@ -131,6 +152,15 @@ class Entry {
       final localDate = m['local_date'] as String;
       if (type == null || amount is! int || amount <= 0) return null;
       if (parseWireDate(localDate) == null) return null;
+      // Both or neither: a rate without its amount, or the reverse, is never
+      // read as a guess.
+      final storedRate = m['rate'];
+      final converted = m['home_minor'];
+      if ((storedRate == null) != (converted == null)) return null;
+      final rate = Rate.fromMap(storedRate);
+      if (storedRate != null && (rate == null || converted is! int || converted <= 0)) {
+        return null;
+      }
       return Entry(
         id: id,
         type: type,
@@ -152,6 +182,8 @@ class Entry {
         // Older entries have neither: no repeat, written by the person.
         repeatId: m['repeat_id'] as String?,
         auto: m['auto'] == true,
+        rate: rate,
+        convertedMinor: converted as int?,
       );
     } on Object {
       return null;
@@ -173,11 +205,15 @@ class Entry {
     bool clearGoal = false,
     String? localDate,
     DateTime? updatedAt,
+    String? currency,
+    Rate? rate,
+    int? convertedMinor,
+    bool clearRate = false,
   }) => Entry(
     id: id,
     type: type ?? this.type,
     amountMinor: amountMinor ?? this.amountMinor,
-    currency: currency,
+    currency: currency ?? this.currency,
     category: clearCategory || customCategory != null
         ? null
         : (category ?? this.category),
@@ -192,6 +228,8 @@ class Entry {
     updatedAt: updatedAt ?? this.updatedAt,
     repeatId: repeatId,
     auto: auto,
+    rate: clearRate ? null : (rate ?? this.rate),
+    convertedMinor: clearRate ? null : (convertedMinor ?? this.convertedMinor),
   );
 
   @override
@@ -210,7 +248,9 @@ class Entry {
       other.createdAt == createdAt &&
       other.updatedAt == updatedAt &&
       other.repeatId == repeatId &&
-      other.auto == auto;
+      other.auto == auto &&
+      other.rate == rate &&
+      other.convertedMinor == convertedMinor;
 
   @override
   int get hashCode => Object.hash(
@@ -228,5 +268,7 @@ class Entry {
     updatedAt,
     repeatId,
     auto,
+    rate,
+    convertedMinor,
   );
 }

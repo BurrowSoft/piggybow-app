@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 
 import '../core/clock.dart';
 import '../goal/goal_progress.dart';
+import '../money/rate.dart';
 import '../pig/pig_mood.dart' show HappyPick;
 import '../repeat/repeat.dart';
 import '../repeat/schedule.dart';
@@ -27,22 +28,39 @@ class JournalStore extends ChangeNotifier {
   /// files/): the phone's backup rules name it (decision 72).
   static const fileName = 'journal.db';
 
+  /// The journal's format. 2 since entries in another currency (feature 19):
+  /// a journal of a later format, written by a newer Piggybow, is refused
+  /// ([JournalTooNew]), never half-read.
+  static const format = 2;
+
   /// The journal file in the app's private support folder.
   static Future<JournalStore> open({required Clock clock}) async {
     final dir = await getApplicationSupportDirectory();
     final db = await databaseFactoryIo.openDatabase('${dir.path}/$fileName');
+    await _checkFormat(db);
     return JournalStore._(db, clock: clock);
   }
 
-  /// A fresh, empty journal in memory (tests).
+  /// An empty journal in memory (tests); [factory] opens the same one again.
   static Future<JournalStore> inMemory({
     required Clock clock,
     String Function()? newId,
-  }) async => JournalStore._(
-    await newDatabaseFactoryMemory().openDatabase('journal.db'),
-    clock: clock,
-    newId: newId,
-  );
+    DatabaseFactory? factory,
+  }) async {
+    final db = await (factory ?? newDatabaseFactoryMemory()).openDatabase('journal.db');
+    await _checkFormat(db);
+    return JournalStore._(db, clock: clock, newId: newId);
+  }
+
+  /// Refuses a newer format; marks an older (or a new) journal with this one.
+  static Future<void> _checkFormat(Database db) async {
+    final stored = await _settings.record('format').get(db);
+    if (stored is int && stored > format) {
+      await db.close();
+      throw JournalTooNew(stored);
+    }
+    if (stored != format) await _settings.record('format').put(db, format);
+  }
 
   final Database _db;
   final Clock _clock;
@@ -240,6 +258,11 @@ class JournalStore extends ChangeNotifier {
   /// the journal adds the next ones on their days (catchUpRepeats). [today]
   /// is then the phone's date (LocalDay): a repeat never adds a day before
   /// the one it was made on, even after a first entry dated earlier.
+  ///
+  /// In another currency than the journal's, it needs the [rate] typed: the
+  /// amount is converted once, into the home currency, and that rate is kept
+  /// as the last one for [currency] (feature 19). A repeat stays in the
+  /// journal's currency for now (its later entries are made without a rate).
   Future<Entry> addEntry({
     required EntryType type,
     required int amountMinor,
@@ -253,6 +276,7 @@ class JournalStore extends ChangeNotifier {
     bool noGoal = false,
     RepeatSchedule? repeat,
     String? today,
+    Rate? rate,
   }) async {
     // Out of a goal, within what it has: takeOut.
     if (type == EntryType.withdraw) {
@@ -262,6 +286,10 @@ class JournalStore extends ChangeNotifier {
     final spend = type == EntryType.spent;
     if (spend && customCategory != null) await _checkCustom(customCategory);
     final repeatId = repeat == null ? null : _newId();
+    final converted = await _converted(amountMinor, currency, rate);
+    if (repeat != null && converted != null) {
+      throw ArgumentError.value(currency, 'currency', "a repeat stays in the journal's currency");
+    }
     final entry = Entry(
       id: _newId(),
       type: type,
@@ -276,6 +304,8 @@ class JournalStore extends ChangeNotifier {
       createdAt: now,
       updatedAt: now,
       repeatId: repeatId,
+      rate: converted == null ? null : rate,
+      convertedMinor: converted,
     );
     _check(entry);
     if (repeat == null) {
@@ -304,6 +334,7 @@ class JournalStore extends ChangeNotifier {
         await _entries.record(entry.id).put(txn, entry.toMap());
       });
     }
+    if (entry.rate != null) await _keepRate(currency, entry.rate!);
     await _advance(entry.goalId);
     notifyListeners();
     return entry;
@@ -315,9 +346,14 @@ class JournalStore extends ChangeNotifier {
   /// only to an active one. A withdrawal stays one, out of the same goal,
   /// and at most what that goal has (its own amount counted back); nothing
   /// becomes one. A save can't go lower than [saveFloor], nor leave its goal
-  /// while it has one ([LockedByTakeOut]). Its id, currency, creation time,
-  /// repeat and "added by a repeat" never change: an edit is for this entry
-  /// only, never its repeat.
+  /// while it has one ([LockedByTakeOut]). Its id, creation time, repeat and
+  /// "added by a repeat" never change: an edit is for this entry only, never
+  /// its repeat.
+  ///
+  /// Its currency may: in another currency than the journal's it needs a
+  /// rate, and its amount is converted again (that entry only); back in the
+  /// journal's currency it keeps no rate. Floors and limits compare home
+  /// amounts.
   Future<Entry> updateEntry(Entry changed) async {
     final old = await entry(changed.id);
     if (old == null) throw StateError('no entry ${changed.id}');
@@ -325,11 +361,14 @@ class JournalStore extends ChangeNotifier {
     if (withdraw != (changed.type == EntryType.withdraw)) {
       throw ArgumentError.value(changed.type, 'type', 'a withdrawal stays one');
     }
+    final converted = await _converted(changed.amountMinor, changed.currency, changed.rate);
+    // Floors and limits are in the home currency.
+    final changedHome = converted ?? changed.amountMinor;
     if (withdraw) {
       await _checkTakeOut(
         old.goalId!,
-        changed.amountMinor,
-        countedBack: old.amountMinor,
+        changedHome,
+        countedBack: old.homeMinor,
       );
     }
     // Money was taken out of this save's goal: it keeps at least that much.
@@ -337,7 +376,7 @@ class JournalStore extends ChangeNotifier {
     if (floor > 0) {
       final staysThere =
           changed.type == EntryType.saved && changed.goalId == old.goalId;
-      if (!staysThere || changed.amountMinor < floor) {
+      if (!staysThere || changedHome < floor) {
         throw LockedByTakeOut(old.goalId!);
       }
     }
@@ -354,7 +393,7 @@ class JournalStore extends ChangeNotifier {
       id: old.id,
       type: changed.type,
       amountMinor: changed.amountMinor,
-      currency: old.currency,
+      currency: changed.currency,
       category: spend && custom == null ? changed.category : null,
       customCategory: custom,
       feeling: spend ? changed.feeling : null,
@@ -365,13 +404,58 @@ class JournalStore extends ChangeNotifier {
       updatedAt: _clock.nowUtc(),
       repeatId: old.repeatId,
       auto: old.auto,
+      rate: converted == null ? null : changed.rate,
+      convertedMinor: converted,
     );
     _check(updated);
     await _entries.record(updated.id).put(_db, updated.toMap());
+    if (updated.rate != null) await _keepRate(updated.currency, updated.rate!);
     await _advance(old.goalId);
     if (updated.goalId != old.goalId) await _advance(updated.goalId);
     notifyListeners();
     return updated;
+  }
+
+  /// [amountMinor] of [currency] in the journal's home currency, or null when
+  /// [currency] is the home one (a rate is then refused). Another currency
+  /// needs a [rate], and a result from 1 minor unit to the 12-digit cap.
+  Future<int?> _converted(int amountMinor, String currency, Rate? rate) async {
+    final home = await this.currency();
+    if (home == null || currency == home) {
+      if (rate != null) {
+        throw ArgumentError.value(rate, 'rate', 'only for another currency than the journal\'s');
+      }
+      return null;
+    }
+    if (rate == null) {
+      throw ArgumentError.value(currency, 'currency', 'another currency needs a rate');
+    }
+    if (amountMinor <= 0) throw ArgumentError.value(amountMinor, 'amountMinor');
+    final converted = toHomeMinor(
+      amountMinor: amountMinor,
+      currency: currency,
+      home: home,
+      rate: rate,
+    );
+    if (converted == null) {
+      throw ArgumentError.value(amountMinor, 'amountMinor', 'out of range in $home');
+    }
+    return converted;
+  }
+
+  /// The last rate typed for [currency] (to fill in the next one), if any.
+  Future<Rate?> lastRate(String currency) async {
+    final rates = await _settings.record('rates').get(_db);
+    return rates is Map ? Rate.fromMap(rates[currency]) : null;
+  }
+
+  Future<void> _keepRate(String currency, Rate rate) async {
+    final record = _settings.record('rates');
+    final rates = await record.get(_db);
+    await record.put(_db, {
+      if (rates is Map) ...rates.cast<String, Object?>(),
+      currency: rate.toMap(),
+    });
   }
 
   /// Deletes an entry; never a save its goal needs, because money was taken
@@ -523,7 +607,8 @@ class JournalStore extends ChangeNotifier {
   /// it, less what was taken out of it. It never goes below 0: a withdrawal
   /// is at most what the goal has, and nothing that makes up for one can be
   /// lowered or removed ([saveFloor], [startFloor]); the 0 here is only a
-  /// safety net for a journal from elsewhere.
+  /// safety net for a journal from elsewhere. A save in another currency
+  /// counts at its home amount.
   Future<int> goalProgress(Goal goal) async {
     final sum = await _rawProgress(goal);
     return sum < 0 ? 0 : sum;
@@ -533,7 +618,7 @@ class JournalStore extends ChangeNotifier {
   Future<int> _rawProgress(Goal goal) async {
     var sum = goal.startMinor;
     for (final e in await goalSaves(goal.id)) {
-      sum += e.type == EntryType.withdraw ? -e.amountMinor : e.amountMinor;
+      sum += e.type == EntryType.withdraw ? -e.homeMinor : e.homeMinor;
     }
     return sum;
   }
@@ -546,7 +631,7 @@ class JournalStore extends ChangeNotifier {
     if (save.type != EntryType.saved || goalId == null) return 0;
     final g = await goal(goalId);
     if (g == null) return 0;
-    final without = await _rawProgress(g) - save.amountMinor;
+    final without = await _rawProgress(g) - save.homeMinor;
     return without >= 0 ? 0 : -without;
   }
 
@@ -958,6 +1043,8 @@ class JournalStore extends ChangeNotifier {
       await _categories.delete(txn);
       await _repeats.delete(txn);
       await _settings.delete(txn);
+      // Still this format: an emptied journal isn't an older one.
+      await _settings.record('format').put(txn, format);
     });
     notifyListeners();
   }
@@ -1015,4 +1102,16 @@ class LockedByTakeOut implements Exception {
 
   @override
   String toString() => 'LockedByTakeOut($goalId)';
+}
+
+/// The journal was written by a newer Piggybow, in a later
+/// [JournalStore.format]: the app asks for an update instead of opening it.
+class JournalTooNew implements Exception {
+  const JournalTooNew(this.format);
+
+  /// The journal's own format.
+  final int format;
+
+  @override
+  String toString() => 'JournalTooNew($format)';
 }

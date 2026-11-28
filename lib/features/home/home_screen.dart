@@ -331,7 +331,8 @@ class _Pig extends StatelessWidget {
         for (final e in data.entries)
           MoodEntry(
             type: e.type.id,
-            amountMinor: e.amountMinor,
+            // In the home currency (an amount in another one, converted).
+            amountMinor: e.homeMinor,
             feeling: e.feeling?.id,
             localDate: e.localDate,
             createdAt: e.createdAt,

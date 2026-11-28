@@ -51,7 +51,8 @@ class SummaryEntry {
   SummaryEntry.of(Entry e)
     : this(
         type: e.type.id,
-        amountMinor: e.amountMinor,
+        // In the home currency (an amount in another one, converted).
+        amountMinor: e.homeMinor,
         category: e.categoryId,
         feeling: e.feeling?.id,
         localDate: e.localDate,

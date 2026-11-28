@@ -578,7 +578,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                                       ].join(' · '),
                                       // In ink, never red; a minus.
                                       amount:
-                                          '$minusSign${money(e.amountMinor)}',
+                                          '$minusSign${money(e.homeMinor)}',
                                       accent: false,
                                     )
                                   : _SaveRow(
@@ -591,7 +591,9 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                                         e.date,
                                         today: context.services.localDay.today,
                                       ),
-                                      amount: '+${money(e.amountMinor)}',
+                                      // In the home currency (a save in another one,
+                                      // converted).
+                                      amount: '+${money(e.homeMinor)}',
                                     ),
                             ),
                           ),

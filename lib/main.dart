@@ -25,6 +25,7 @@ import 'features/plus/iap_plus_store.dart';
 import 'features/plus/plus_entitlement.dart';
 import 'features/plus/rows_plus_store.dart';
 import 'features/reminder/reminder_scheduler.dart';
+import 'features/start/journal_too_new_app.dart';
 import 'fixtures/launch_fixture.dart';
 import 'journal/journal_store.dart';
 import 'l10n/gen/app_localizations.dart';
@@ -74,7 +75,15 @@ Future<void> main() async {
   }
   // FAKE_NOW pins the time in staging test builds (ignored in prod).
   final clock = fixture?.clock ?? Clock(fixed: config.fakeNow);
-  final journalLoad = JournalStore.open(clock: clock);
+  // A journal written by a newer Piggybow, in a later format, is never
+  // opened (null): the app asks for an update instead. Handled from the
+  // start, so it never surfaces as an uncaught error while the rest loads.
+  final journalLoad = JournalStore.open(clock: clock).then<JournalStore?>(
+    (journal) => journal,
+    onError: (Object error, StackTrace stack) => error is JournalTooNew
+        ? null
+        : Error.throwWithStackTrace(error, stack),
+  );
   // "Today" follows the phone's own time zone, read now and on every resume.
   final localDay = LocalDay(clock: clock, device: device);
   final dayLoad = localDay.refresh();
@@ -114,6 +123,12 @@ Future<void> main() async {
   StartupTrace.mark('journal');
   await dayLoad;
   final journal = await journalLoad;
+  if (journal == null) {
+    runApp(
+      JournalTooNewApp(locale: session.locale, themeMode: session.themeMode),
+    );
+    return;
+  }
   if (fixture != null) {
     // Nothing is written unless the fixture's today is the phone's and the
     // journal is blank.

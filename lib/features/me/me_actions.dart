@@ -10,6 +10,7 @@ import '../../data/device_backend.dart';
 import '../../export/csv_export.dart';
 import '../../journal/category.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../../money/rate.dart';
 import '../../session/app_session.dart';
 
 /// The folders in the app's own cache that hold export files: ours, and the
@@ -42,6 +43,7 @@ Future<String> journalCsv(
     for (final r in await store.repeats()) r.id: r.schedule.kind.id,
   };
   final entries = await store.entries();
+  final home = await store.currency() ?? 'USD';
   return buildCsv([
     for (final e in entries.reversed)
       CsvRow(
@@ -58,6 +60,9 @@ Future<String> journalCsv(
         note: e.note,
         goalName: e.goalId == null ? null : goals[e.goalId],
         repeat: e.repeatId == null ? null : repeats[e.repeatId],
+        homeMinor: e.homeMinor,
+        homeCurrency: home,
+        rateText: e.rate == null ? '' : rateText(e.rate!, currency: e.currency, home: home),
       ),
   ]);
 }
