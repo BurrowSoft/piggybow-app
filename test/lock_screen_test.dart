@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/journal/entry.dart';
@@ -25,6 +28,21 @@ void main() {
       firstRun: MemoryFirstRunMarker(),
       iterations: 50,
     );
+  });
+
+  // Delete everything sweeps the export cache: a real folder where the app
+  // asks for its temporary directory (as in me_test).
+  const pathProvider = MethodChannel('plugins.flutter.io/path_provider');
+  late Directory temp;
+  setUp(() {
+    temp = Directory.systemTemp.createTempSync('pb_lock');
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(pathProvider, (call) async => temp.path);
+  });
+  tearDown(() {
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(pathProvider, null);
+    temp.deleteSync(recursive: true);
   });
 
   /// Frames with real time between them: the wipe sweeps the cache with real
