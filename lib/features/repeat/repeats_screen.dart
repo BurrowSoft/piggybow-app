@@ -325,6 +325,8 @@ class _RepeatScreenState extends State<RepeatScreen> {
                     'repeat-amount',
                     child: TextField(
                       controller: _amount,
+                      // Keyboard learning off, as on every field (#75).
+                      enableIMEPersonalizedLearning: false,
                       keyboardType: TextInputType.numberWithOptions(
                         decimal: minorDigitsOf(r.currency) > 0,
                       ),
@@ -356,6 +358,8 @@ class _RepeatScreenState extends State<RepeatScreen> {
                     'repeat-note',
                     child: TextField(
                       controller: _note,
+                      // Keyboard learning off, as on every field (#75).
+                      enableIMEPersonalizedLearning: false,
                       maxLength: maxNoteLength,
                       minLines: 1,
                       maxLines: 3,
