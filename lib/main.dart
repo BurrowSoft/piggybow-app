@@ -15,6 +15,7 @@ import 'core/local_prefs.dart';
 import 'core/sentry_setup.dart';
 import 'core/services.dart';
 import 'core/startup_trace.dart';
+import 'core/system_bars.dart';
 import 'data/device_backend.dart';
 import 'features/me/me_actions.dart';
 import 'features/onboarding/onboarding_screens.dart';
@@ -29,6 +30,9 @@ import 'session/app_session.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Behind the system bars on every Android version (Android 15+ already
+  // draws the app there): no black strip under the gesture handle.
+  unawaited(enableEdgeToEdge());
   final config = AppConfig.fromEnvironment();
   const device = PlatformDeviceContext();
 
