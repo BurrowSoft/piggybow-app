@@ -24,6 +24,17 @@ tags: [reminder-soon]
 - runFlow: ../../subflows/to_home.yaml
 - tapOn:
     id: tab-me
+# The time row shows only while the reminder is on: turn it on first
+# (notifications were allowed at launch, so no prompt)
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-reminder
+- tapOn:
+    id: me-reminder
+- assertVisible:
+    id: me-reminder
+    checked: true
 - runFlow:
     file: ../../subflows/reveal.yaml
     env:
