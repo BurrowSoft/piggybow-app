@@ -88,6 +88,12 @@ if [ "$installed" != "$built" ]; then
   echo "STOP: the installed APK ($installed) isn't the one built ($built)"; exit 8
 fi
 echo "installed = built ($installed)"
+# What the installed app asks for, for the rows (a release build has no
+# network permission). Read whole, then searched, as above.
+pkg=$(A shell dumpsys package "$APP_ID" | tr -d '\r')
+grep -A30 "requested permissions" <<< "$pkg" > "$OUT/permissions.txt" \
+  || echo "no requested permissions" > "$OUT/permissions.txt"
+echo "== $APP_ID: requested permissions"; cat "$OUT/permissions.txt"
 maestro --device "$SERIAL" test -e APP_ID="$APP_ID" --include-tags "$TAGS" \
   --test-output-dir "$OUT/maestro" --format junit --output "$OUT/maestro-junit.xml" \
   "$FLOWS"

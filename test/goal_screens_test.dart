@@ -60,6 +60,30 @@ void main() {
     },
   );
 
+  testWidgets('the name: up to 3 lines, Enter is Done, a break a space', (
+    tester,
+  ) async {
+    // Decision 61: seen whole like the note, but one line of text, since
+    // it shows in one-line places ("Reached: …", the title bar).
+    final app = await openHome(tester);
+    await tester.tapId('goal-create');
+    await settle(tester, byId('goal-submit'));
+    await tester.enterId('goal-name', 'Bike\nand helmet');
+    final field = tester.widget<TextField>(
+      find.descendant(of: byId('goal-name'), matching: find.byType(TextField)),
+    );
+    expect(field.minLines, 1);
+    expect(field.maxLines, 3);
+    expect(field.keyboardType, TextInputType.text);
+    expect(field.textInputAction, TextInputAction.done);
+    expect(field.controller!.text, 'Bike and helmet');
+    await tester.enterId('goal-amount', '1000');
+    await tester.tapId('goal-submit');
+    await settle(tester, byId('goal-card'));
+    final goal = (await tester.runAsync(app.journal.activeGoal))!;
+    expect(goal.name, 'Bike and helmet');
+  });
+
   testWidgets(
     'detail: the rainbow read out, what is left, Add savings, then End goal',
     (tester) async {

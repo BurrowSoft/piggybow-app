@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/journal/category.dart';
@@ -17,6 +19,18 @@ void main() {
   // Tests run on Friday 2 October 2026, 08:30 in Bangkok (helpers.dart);
   // this week is Monday 28 September to today.
   String money(int minor) => formatMoney(minor, 'THB', 'en_US');
+  double luminance(Color c) {
+    double ch(double v) => v <= 0.03928
+        ? v / 12.92
+        : math.pow((v + 0.055) / 1.055, 2.4).toDouble();
+    return 0.2126 * ch(c.r) + 0.7152 * ch(c.g) + 0.0722 * ch(c.b);
+  }
+
+  double contrast(Color a, Color b) {
+    final la = luminance(a), lb = luminance(b);
+    return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+  }
+
   final t = DateTime.utc(2026, 9, 20);
   Goal bike({int target = 100000}) => Goal(
     id: 'g1',
@@ -217,6 +231,39 @@ void main() {
     await tester.tapId('home-idea-another');
     expect(find.text(tipText(l10n, nextTip(tip))), findsOneWidget);
   });
+
+  for (final appearance in ['light', 'dark']) {
+    testWidgets(
+      "today's idea in the cards' body style, 4.5:1 on its card ($appearance)",
+      (tester) async {
+        final l10n = await AppLocalizations.delegate.load(const Locale('en'));
+        tallPhone(tester);
+        final app = TestApp()..prefs.appearance = appearance;
+        await tester.runAsync(app.openJournal);
+        await app.pump(tester);
+        await settle(tester, byId('home-idea'));
+        final tip = find.text(tipText(l10n, tipForDay(DateTime(2026, 10, 2))));
+        final style = tester.widget<Text>(tip).style;
+        // The same as the goal card's body (decision 57).
+        expect(
+          style,
+          tester.widget<Text>(find.text(l10n.goalCardEmptyBody)).style,
+        );
+        final theme = Theme.of(tester.element(tip));
+        expect(style!.fontSize, theme.textTheme.bodyMedium!.fontSize);
+        expect(style.color, theme.colorScheme.onSurfaceVariant);
+        final card = tester.widget<Material>(
+          find
+              .descendant(
+                of: find.ancestor(of: tip, matching: find.byType(Card)),
+                matching: find.byType(Material),
+              )
+              .first,
+        );
+        expect(contrast(style.color!, card.color!), greaterThanOrEqualTo(4.5));
+      },
+    );
+  }
 
   testWidgets('a goal reached is celebrated once', (tester) async {
     tallPhone(tester);

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/button_label.dart';
 import '../../core/day_label.dart';
 import '../../core/fit_text.dart';
+import '../../core/line_breaks.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../goal/goal_progress.dart';
@@ -200,6 +202,14 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                       controller: _name,
                       autofocus: !editing && !onboarding,
                       textCapitalization: TextCapitalization.sentences,
+                      // Up to 3 lines, so a long name is seen whole, but one
+                      // line of text: it shows in one-line places (decision
+                      // 61). Enter is Done; a pasted break becomes a space.
+                      minLines: 1,
+                      maxLines: 3,
+                      keyboardType: TextInputType.text,
+                      textInputAction: TextInputAction.done,
+                      inputFormatters: const [LineBreaksAsSpaces()],
                       maxLength: goalNameMax,
                       style: context.inputText,
                       onChanged: (_) => setState(() {}),
@@ -256,13 +266,12 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                     button: true,
                     child: FilledButton(
                       onPressed: _busy ? null : _submit,
-                      child: Text(
+                      child: ButtonLabel(
                         onboarding
                             ? l10n.onbGoalStart
                             : editing
                             ? l10n.goalSave
                             : l10n.goalCreate,
-                        textAlign: TextAlign.center,
                       ),
                     ),
                   ),
@@ -273,10 +282,7 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                       button: true,
                       child: TextButton(
                         onPressed: _busy ? null : _later,
-                        child: Text(
-                          l10n.onbGoalLater,
-                          textAlign: TextAlign.center,
-                        ),
+                        child: ButtonLabel(l10n.onbGoalLater),
                       ),
                     ),
                   ],
@@ -351,7 +357,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
             button: true,
             child: TextButton(
               onPressed: () => Navigator.pop(dialog, false),
-              child: Text(l10n.cancel),
+              child: ButtonLabel(l10n.cancel),
             ),
           ),
           TestId(
@@ -359,7 +365,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
             button: true,
             child: TextButton(
               onPressed: () => Navigator.pop(dialog, true),
-              child: Text(l10n.goalEndConfirm),
+              child: ButtonLabel(l10n.goalEndConfirm),
             ),
           ),
         ],
@@ -647,7 +653,7 @@ class _GoalDoneScreenState extends State<GoalDoneScreen> {
                       child: FilledButton(
                         onPressed: () =>
                             context.pushReplacement(GoalRoutes.create),
-                        child: Text(l10n.goalDoneNew),
+                        child: ButtonLabel(l10n.goalDoneNew),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -656,7 +662,7 @@ class _GoalDoneScreenState extends State<GoalDoneScreen> {
                       button: true,
                       child: TextButton(
                         onPressed: () => context.pop(),
-                        child: Text(l10n.goalDoneClose),
+                        child: ButtonLabel(l10n.goalDoneClose),
                       ),
                     ),
                   ],

@@ -53,7 +53,7 @@ void main() {
       r'[[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]',
       r'[[ "$FLOWS_REF" =~ ^[A-Za-z0-9._/-]{1,100}$ && "$FLOWS_REF" != *..* ]]',
       r'[[ "$TAGS" =~ ^[a-z0-9_-]+(,[a-z0-9_-]+)*$ ]]',
-      r'[[ "$KIND" =~ ^(debug|reminder-now|release)$ ]]',
+      r'[[ "$KIND" =~ ^(debug|reminder-now|release|prod-release)$ ]]',
       r'[[ -z "$ROWS" || "$ROWS" =~ ^[a-z0-9_-]{1,40}$ ]]',
       r'[[ "$ZONE" =~ ^[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}$ ]]',
     ]) {
@@ -111,6 +111,9 @@ steps:
       'jar',
       'so',
       'zip',
+      'jks',
+      'p12',
+      'keystore',
     ]) {
       expect(
         wf.substring(guard, upload),
@@ -128,6 +131,60 @@ steps:
       ),
     );
     expect(step, contains('retention-days: 3\n'));
+  });
+
+  // The store's build on the emulator (decision 64): the prod flavour in
+  // release with R8 and env/prod.json, signed with a key made in the job and
+  // deleted after the build, never the upload key; the flows drive the
+  // store's package; no fixed clock.
+  test('prod-release: the store build, with a throwaway key', () {
+    expect(
+      wf,
+      contains('options: [debug, reminder-now, release, prod-release]'),
+    );
+    expect(wf, contains(r'[[ "$KIND" != prod-release || -z "$FAKE_NOW" ]]'));
+    expect(
+      wf,
+      contains(
+        'if [ "\$KIND" = prod-release ]; then APP_ID=com.burrowsoft.piggybow; '
+        'else APP_ID=com.burrowsoft.piggybow.staging; fi',
+      ),
+    );
+    expect(wf, contains(r'APP_ID: ${{ steps.in.outputs.app_id }}'));
+    final build = wf.substring(
+      wf.indexOf('- name: Build the APK under test'),
+      wf.indexOf('- name: Maestro'),
+    );
+    final trap = build.indexOf(
+      r'''trap 'rm -f "$RUNNER_TEMP/throwaway.jks"' EXIT''',
+    );
+    final keytool = build.indexOf('keytool -genkeypair');
+    expect(trap, greaterThan(0));
+    expect(keytool, greaterThan(trap));
+    expect(build, contains(r'pass=$(openssl rand -hex 16)'));
+    // The throwaway password is masked before anything could print it.
+    final mask = build.indexOf(r'echo "::add-mask::$pass"');
+    expect(mask, greaterThan(build.indexOf(r'pass=$(openssl rand -hex 16)')));
+    expect(keytool, greaterThan(mask));
+    expect(build, contains('-dname "CN=Piggybow CI throwaway"'));
+    expect(wf, isNot(contains('Piggybow Upload')));
+    expect(build, contains(r'cp env/prod.json "$RUNNER_TEMP/defines.json"'));
+    final prodBuild = build.indexOf(
+      r'flutter build apk --release --flavor prod --dart-define-from-file="$RUNNER_TEMP/defines.json"',
+    );
+    expect(prodBuild, greaterThan(keytool));
+    expect(
+      build.indexOf(r'rm -f "$RUNNER_TEMP/throwaway.jks"', prodBuild),
+      greaterThan(prodBuild),
+    );
+    expect(build, contains('built=app-prod-release.apk'));
+    // The installed app's permissions go into the evidence, for the rows.
+    final installed = run.indexOf(r'echo "installed = built ($installed)"');
+    final perms = run.indexOf(
+      r'grep -A30 "requested permissions" <<< "$pkg" > "$OUT/permissions.txt"',
+    );
+    expect(perms, greaterThan(installed));
+    expect(run.indexOf('maestro --device'), greaterThan(perms));
   });
 
   test('no env value is printed', () {
