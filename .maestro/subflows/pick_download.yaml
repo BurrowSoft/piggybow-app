@@ -1,27 +1,31 @@
-# In Android's file picker (DocumentsUI), opened by the app: go to Downloads,
+# In Android's file picker (DocumentsUI), opened by the app: go to Downloads
+# (only if it isn't already showing: the picker reopens where it was left),
 # switch to the list view, and pick the file whose name STARTS with ${FILE}.
-# The match is anchored on purpose: a grid card's preview button reads
-# "Preview the file <name>", and an unanchored match taps the preview instead
-# of picking (#87's first run). Names can be cut short with "…", so ${FILE} is
-# a short prefix. The row script pushes the file to /sdcard/Download and asks
-# the media scanner for it first.
+# - Anchored match: a grid card's preview button reads "Preview the file
+#   <name>", and an unanchored match taps the preview (#87 run 1).
+# - The roots drawer only when needed, and its "Downloads" root by its id:
+#   the toolbar title also reads "Downloads", and tapping it leaves the drawer
+#   open over the files (#87 run 2).
+# - Names can be cut short with "…", so ${FILE} is a short prefix.
+# The row script pushes the file to /sdcard/Download and asks the media
+# scanner for it first.
 # env: FILE (the start of the file's name, regex-safe)
 appId: ${APP_ID}
 ---
 - waitForAnimationToEnd:
     timeout: 3000
-# The roots drawer, unless the picker already shows Downloads
-- tapOn:
-    text: "Show roots"
-    optional: true
-- tapOn:
-    text: "Downloads"
-    index: 0
-    optional: true
-- waitForAnimationToEnd:
-    timeout: 3000
-# The list view shows each file as a row with its name (the menu then offers
-# "Grid view" instead)
+- runFlow:
+    when:
+      notVisible: "Files in Downloads"
+    commands:
+      - tapOn: "Show roots"
+      - tapOn:
+          id: "android:id/title"
+          text: "Downloads"
+      - waitForAnimationToEnd:
+          timeout: 3000
+# The list view shows each file as a row with its name (once switched, the
+# menu offers "Grid view" instead, and the picker remembers it)
 - tapOn:
     text: "List view"
     optional: true
