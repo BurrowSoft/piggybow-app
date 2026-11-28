@@ -1,7 +1,7 @@
 {
-  "source_sha": "324e58bbd82eae8a78fbd7c66cf751ff986f4df3",
-  "ref": "324e58bbd82eae8a78fbd7c66cf751ff986f4df3",
-  "run_id": "46088504223",
+  "source_sha": "08d4aaa9d3284d2b3ea14258e2930087b4243453",
+  "ref": "08d4aaa9d3284d2b3ea14258e2930087b4243453",
+  "run_id": "46094045595",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -936,8 +936,8 @@
       "file": "summary_nine-at-max-end_dark_360x1.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (360 dp, text ×1, dark)",
-      "sha256": "bb7688d26b576532a0257bf8e2f607bf7e6c7efaaf706aae6c530c476c02f650",
-      "bytes": 216258,
+      "sha256": "e1104be1ab78a37ff2f4178b574f31392ae3a86e7e648e48506567b19dc48ca7",
+      "bytes": 215866,
       "width": 1080,
       "height": 2340
     },
@@ -954,8 +954,8 @@
       "file": "summary_nine-at-max-end_light_360x1.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (360 dp, text ×1, light)",
-      "sha256": "2f0cb418aa4a1df51e925f2e81a19785bf5d51aa3eccda93174688c15b4f1e4f",
-      "bytes": 216761,
+      "sha256": "8331eec56d9f5a63d211e6d08e723856c2b1ae5671c5a9e3eb006ce2422aff79",
+      "bytes": 216397,
       "width": 1080,
       "height": 2340
     },
@@ -963,8 +963,8 @@
       "file": "summary_nine-at-max_dark_360x1.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (360 dp, text ×1, dark)",
-      "sha256": "c092250f870d82eece8ffc4fa25a6d8d65257904026af5e5bfbd72ca38212f0c",
-      "bytes": 218778,
+      "sha256": "e499ad5a410b90ba8fc3a71523c08285a13c953ebdfe28e2c665168331a15d93",
+      "bytes": 193909,
       "width": 1080,
       "height": 2340
     },
@@ -972,8 +972,8 @@
       "file": "summary_nine-at-max_light_320x2.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (320 dp, text ×2, light)",
-      "sha256": "423ec4795de8a232c92a74f2411f3896142c9ede256ec73355bfc517a2d93077",
-      "bytes": 200152,
+      "sha256": "31ccdb0fe9a21d255eed003b085c2f65ba24603b15b757162548f9c893ed50a3",
+      "bytes": 182473,
       "width": 960,
       "height": 2340
     },
@@ -981,8 +981,8 @@
       "file": "summary_nine-at-max_light_360x1.png",
       "state": "SW9",
       "test": "nine categories at the largest amount (360 dp, text ×1, light)",
-      "sha256": "b5cbdf7513c4e367bf50f8f21b64c04d621a1298118cc63309530493a8deae0f",
-      "bytes": 217964,
+      "sha256": "cb2b46348b82062db77bd45e1d9400f11a860abf672d1ba4d377af6762a058fc",
+      "bytes": 193612,
       "width": 1080,
       "height": 2340
     },
