@@ -1,0 +1,9 @@
+appId: ${APP_ID}
+name: Lock status bar (#65), part B - after pr65.sh's cold start (no launch here), the lock screen as it appears; MODE names the shot
+tags: [lockbar]
+---
+- extendedWaitUntil:
+    visible:
+      id: lock-screen
+    timeout: 60000
+- takeScreenshot: 80-lock-cold-${MODE}

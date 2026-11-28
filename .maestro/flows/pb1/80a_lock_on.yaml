@@ -1,0 +1,7 @@
+appId: ${APP_ID}
+name: Lock status bar (#65), part A - a fresh install with the app lock on (PIN 1357), left on Me; pr65.sh then cold-starts it
+tags: [lockbar]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow: ../../subflows/set_lock_1357.yaml

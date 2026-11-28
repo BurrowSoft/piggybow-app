@@ -1,0 +1,24 @@
+appId: ${APP_ID}
+name: Lock status bar (#65), part C - unlock with 1357, background the app (Home button), bring it back without a restart; the cover or the lock as it shows; MODE names the shots
+tags: [lockbar]
+---
+- runFlow:
+    file: ../../subflows/pin.yaml
+    env: { D1: "1", D2: "3", D3: "5", D4: "7" }
+- extendedWaitUntil:
+    visible:
+      id: "tab-home|home-add|tab-me"
+    timeout: 15000
+- pressKey: Home
+- waitForAnimationToEnd
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: "lock-screen|lock-cover"
+    timeout: 20000
+- takeScreenshot: 80-lock-resume-${MODE}
+- extendedWaitUntil:
+    visible:
+      id: lock-screen
+    timeout: 20000
