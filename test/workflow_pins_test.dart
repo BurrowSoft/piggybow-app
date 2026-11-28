@@ -54,6 +54,20 @@ void main() {
     }
   });
 
+  test('every workflow reads only, and no checkout keeps its credentials', () {
+    final readOnly = RegExp(r'^permissions:\n  contents: read\n', multiLine: true);
+    for (final w in workflows.entries) {
+      final yaml = w.value.replaceAll('\r\n', '\n');
+      expect(readOnly.hasMatch(yaml), isTrue, reason: '${w.key}: read only');
+      // No job pushes; the release job holds the upload key.
+      expect(
+        'persist-credentials: false'.allMatches(yaml).length,
+        'uses: actions/checkout@'.allMatches(yaml).length,
+        reason: '${w.key}: each checkout',
+      );
+    }
+  });
+
   test(
     'the rule refuses a tag, a branch, a short sha and a missing release',
     () {

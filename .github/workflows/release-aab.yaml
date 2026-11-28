@@ -22,6 +22,10 @@ on:
         description: versionName, as in pubspec.yaml before the +
         required: true
 
+# Read-only: the build needs the code; the upload key comes from secrets.
+permissions:
+  contents: read
+
 jobs:
   aab:
     name: signed prod AAB
@@ -41,6 +45,8 @@ jobs:
             /usr/local/lib/node_modules /opt/hostedtoolcache/CodeQL
           df -h /
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # Typed twice on purpose: the inputs must equal pubspec's version.
       - name: The version is pubspec.yaml's
         env:
