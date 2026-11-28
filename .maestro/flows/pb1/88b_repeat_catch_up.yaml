@@ -1,0 +1,36 @@
+appId: ${APP_ID}
+name: Repeats (group E) - 8 days later, a cold start adds the week's $12 spend; Home says "Added from your repeats" until OK; Timeline marks it as added by the repeat
+tags: [repeat]
+# Run by groupE.sh after 88a, the app stopped and the device clock moved 8
+# days ahead by root.
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-repeats
+- assertVisible:
+    id: home-repeats
+- assertVisible: ".*Added from your repeats.*"
+- takeScreenshot: 88-catch-up
+- tapOn:
+    id: home-repeats-ok
+- assertNotVisible:
+    id: home-repeats
+# Timeline: today's entry, added by the repeat
+- tapOn:
+    id: tab-timeline
+- assertVisible: ".*\\$12\\.00.*"
+- tapOn:                                           # the newest row: the one the repeat added
+    id: "tl-row-.*"
+- assertVisible:
+    id: edit-repeat
+- assertVisible: "(?s).*Added by your repeat: Every week on .*"
+- takeScreenshot: 88-added-by-repeat
+- back

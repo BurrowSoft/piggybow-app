@@ -1,0 +1,73 @@
+appId: ${APP_ID}
+name: Repeats (group E) - change the repeat's amount (from the next one) and stop it; Me's list is empty again and the added entries stay
+tags: [repeat]
+# Run by groupE.sh after 88b (its entries kept).
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-repeats
+- tapOn:
+    id: me-repeats
+- extendedWaitUntil:
+    visible:
+      id: me-repeats-screen
+    timeout: 10000
+- tapOn:
+    id: "repeat-row-.*"
+- extendedWaitUntil:
+    visible:
+      id: repeat-screen
+    timeout: 10000
+- assertVisible:
+    id: repeat-changes
+- assertVisible: ".*Changes apply from the next one\\. Entries already added stay as they are\\..*"
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env:
+      ID: repeat-amount
+      TEXT: "15"
+      EXPECT: ".*15.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: repeat-save
+- tapOn:
+    id: repeat-save
+- extendedWaitUntil:
+    visible:
+      id: me-repeats-screen
+    timeout: 10000
+- assertVisible: ".*\\$15\\.00.*"
+# Stop it
+- tapOn:
+    id: "repeat-row-.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: repeat-stop
+- tapOn:
+    id: repeat-stop
+- assertVisible: ".*Entries it already added stay in your journal\\..*"
+- tapOn:
+    id: repeat-stop-confirm
+- extendedWaitUntil:
+    visible:
+      id: me-repeats-empty
+    timeout: 10000
+- assertVisible: ".*None yet\\. Turn on Repeat when you add a spend or a save\\..*"
+- takeScreenshot: 88-repeats-empty
+# The two $12 entries stay
+- back
+- tapOn:
+    id: tab-timeline
+- assertVisible: ".*\\$12\\.00.*"

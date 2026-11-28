@@ -1,0 +1,69 @@
+appId: ${APP_ID}
+name: Repeats (group E) - a $12 Food spend added with Repeat every week; Me → Repeating entries lists it
+tags: [repeat]
+# Run by groupE.sh: zone UTC, the real clock (the script moves it by root
+# between 88a and 88b). No fake_now: a frozen app clock would never reach the
+# next repeat.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "12"
+      EXPECT: ".*12.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-repeat
+- assertVisible:
+    id: add-repeat
+    text: "(?s).*Doesn't repeat.*"
+- tapOn:
+    id: add-repeat
+- tapOn:
+    id: repeat-choice-weekly
+- assertVisible:
+    id: add-repeat
+    text: "(?s).*Every week on .*"
+- takeScreenshot: 88-add-repeat
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# Me → Repeating entries
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-repeats
+- tapOn:
+    id: me-repeats
+- extendedWaitUntil:
+    visible:
+      id: me-repeats-screen
+    timeout: 10000
+- assertVisible:
+    id: "repeat-row-.*"
+- assertVisible: "(?s).*Every week on .*"
+- assertNotVisible:
+    id: me-repeats-empty
+- takeScreenshot: 88-repeats-list
