@@ -14,5 +14,5 @@ tags: [lockbar]
     id: me-theme-${THEME}
 - assertVisible:
     id: me-theme-${THEME}
-    selected: true
+    checked: true                        # the theme options report checked (flow 36)
 - runFlow: ../../subflows/set_lock_1357.yaml
