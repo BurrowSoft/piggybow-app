@@ -116,6 +116,14 @@ void main() {
     expect(find.text('Free for 7 days, then £19.99 a year'), findsOneWidget);
     expect(find.text('£19.99 a year'), findsNothing);
     expect(byId('plus-plan-yearly-price'), findsNothing);
+    // How it renews, under the price (Apple 3.1.2).
+    expect(
+      find.descendant(
+        of: byId('plus-plan-yearly-renews'),
+        matching: find.text('Renews every year until you cancel.'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Start yearly'), findsNothing);
     expect(find.text('Start your free week'), findsOneWidget);
     expect(find.text('Cancel anytime in Google Play.'), findsOneWidget);
@@ -131,6 +139,7 @@ void main() {
     await open(tester, store: FakePlusStore(trialOffered: false), location: '/plus');
     expect(find.text('£19.99 a year'), findsOneWidget);
     expect(byId('plus-plan-yearly-trial'), findsNothing);
+    expect(find.text('Renews every year until you cancel.'), findsOneWidget);
     expect(find.text('Start yearly'), findsOneWidget);
     expect(find.text('Start your free week'), findsNothing);
   });

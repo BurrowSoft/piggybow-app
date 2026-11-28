@@ -527,6 +527,8 @@
   "@plusPriceYearly": {"description": "price is the store's own formatted price.", "placeholders": {"price": {"type": "String"}}},
   "plusTrialYearly": "Free for 7 days, then {price} a year",
   "@plusTrialYearly": {"description": "Only when the store offers a 1-week free offer on this plan; another length needs new strings first.", "placeholders": {"price": {"type": "String"}}},
+  "plusRenewsYearly": "Renews every year until you cancel.",
+  "@plusRenewsYearly": {"description": "The paywall's plan card, under the price (or the free week's line): the yearly subscription renews each year until it's cancelled in the store. Required near the price (Apple 3.1.2); never promise more than the store does."},
   "plusStartYearly": "Start yearly",
   "@plusStartYearly": {"description": "Opens the store's purchase sheet."},
   "plusStartTrial": "Start your free week",

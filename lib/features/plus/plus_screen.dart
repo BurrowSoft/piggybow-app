@@ -272,12 +272,13 @@ class _PlanCard extends StatelessWidget {
     final price = wholePrice(plan.price);
     // Yearly only (decision 85): a plan of another period needs its own
     // strings first.
-    final (id, name, trialLine, priceLine, startLabel) = switch (plan.period) {
+    final (id, name, trialLine, priceLine, renewsLine, startLabel) = switch (plan.period) {
       PlusPeriod.year => (
         'plus-plan-yearly',
         l10n.plusPlanYearly,
         l10n.plusTrialYearly(price),
         l10n.plusPriceYearly(price),
+        l10n.plusRenewsYearly,
         l10n.plusStartYearly,
       ),
     };
@@ -313,6 +314,18 @@ class _PlanCard extends StatelessWidget {
                     style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface),
                   ),
                 ),
+              // How it renews, right under the price (Apple 3.1.2, the
+              // Terms' §5), with or without the free week.
+              const SizedBox(height: 4),
+              TestId.container(
+                '$id-renews',
+                child: WholeWordsText(
+                  renewsLine,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
               const SizedBox(height: 12),
               TestId(
                 '$id-start',
