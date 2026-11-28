@@ -109,7 +109,7 @@ Flows: `tests/pr-29` (bf1089b for the Me re-run) · Emulator runs 46095196738 (t
 | Goal, pig and rainbow (run 46093235777) | 🟢 | every pig mood and rainbow fixture, the celebration, the read-only reached goal, End goal, lowering the target; the reminder offer's stacked buttons |
 | The launch | 🟢 | with the clear as its own step before the launch, 0 of 8 fresh launches needed the retry (5 of 12 before) |
 | Screenshots looked at | 🟢 | 67 across the three runs |
-History: 9f9812f 🟢 (two Me flows and one goal flow failed on the flows' own assumptions; fixed) → a47fc5f 🟢
+History: 9f9812f ❌ (two Me flows and one goal flow failed on the flows' own assumptions; fixed) → a47fc5f 🟢
 
 ### #28 Release builds ask for no network; the store workflow takes pasted secrets — 658ce78 — 🟢 (on-device ⏳) — 2026-11-27 23:28 UTC
 Build: no device for this row (CI logs + the merged release manifest printed in CI)
