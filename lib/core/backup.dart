@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter/services.dart';
 
 import 'device.dart' show settingsChannel;

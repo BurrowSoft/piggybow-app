@@ -3,12 +3,15 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/core/backup.dart';
 import 'package:piggybow/core/clock.dart';
 import 'package:piggybow/core/device.dart';
 import 'package:piggybow/core/local_prefs.dart';
 import 'package:piggybow/journal/journal_store.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'app_lock_test.dart' show FakeBiometrics;
 import 'helpers.dart';
 
 /// On an iPhone the journal is never in a backup (decision 72, I-1(b)): its
@@ -184,6 +187,60 @@ void main() {
       tester.expectScreen('onb-welcome');
       expect(app.prefs.welcomeSeen, isFalse);
     });
+
+    testWidgets(
+      'a same-iPhone restore brings the PIN back too (ThisDeviceOnly): with no '
+      'journal, the lock is off and the first-run screens open',
+      (tester) async {
+        // The restored prefs, in the real store: the lock's first-run
+        // marker among them.
+        SharedPreferences.setMockInitialValues({
+          'app_lock.installed': true,
+          'device.welcome_seen': true,
+          'device.account_on_device': true,
+        });
+        // The keychain, as a restore to the same iPhone brings it back.
+        final keychain = MemorySecretStore();
+        final before = AppLock(
+          store: keychain,
+          biometrics: FakeBiometrics(),
+          firstRun: const PrefsFirstRunMarker(),
+          iterations: 50,
+        );
+        await tester.runAsync(() => before.setPin('2468'));
+        expect(before.enabled, isTrue);
+
+        // main.dart's order: the prefs, forgotten with no journal; then the
+        // lock loads.
+        final prefs = (await tester.runAsync(SharedLocalPrefs.load))!;
+        await tester.runAsync(
+          () => forgetPrefsWithoutJournal(
+            journalMissing: true,
+            prefs: prefs,
+            platform: TargetPlatform.iOS,
+          ),
+        );
+        final lock = AppLock(
+          store: keychain,
+          biometrics: FakeBiometrics(),
+          firstRun: const PrefsFirstRunMarker(),
+          iterations: 50,
+        );
+        await tester.runAsync(lock.load);
+        expect(
+          lock.enabled,
+          isFalse,
+          reason: 'its first-run marker went with the prefs: the old PIN is cleared',
+        );
+
+        final app = TestApp(onboarded: false, appLock: lock);
+        await tester.runAsync(app.openJournal);
+        await app.pump(tester);
+        await tester.pumpAndSettle();
+        tester.expectScreen('onb-welcome');
+        expect(byId('lock-screen'), findsNothing);
+      },
+    );
   });
 
   test(
