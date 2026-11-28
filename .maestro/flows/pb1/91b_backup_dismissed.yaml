@@ -11,14 +11,19 @@ tags: [backup]
     timeout: 10000
 - assertNotVisible:
     id: backup-error
-# Both passwords kept: 21 dots each ("correct horse battery"). The eye
-# (backup-show) has no node of its own in the hierarchy, so the length is read
+# Both passwords kept: 21 dots each ("correct horse battery"), read by text:
+# the dots sit on the field's node before #104 and on a child after it (the
+# id becomes a container), so two matches (index 0 and 1) mean both fields
 - assertVisible:
     id: backup-password
-    text: "•{21}"
 - assertVisible:
     id: backup-again
+- assertVisible:
     text: "•{21}"
+    index: 0
+- assertVisible:
+    text: "•{21}"
+    index: 1
 - takeScreenshot: 91-backup-dismissed
 - back
 - extendedWaitUntil:

@@ -15,6 +15,12 @@
 #        "This isn't a Piggybow backup file.", no crash; meminfo around each
 #   BK-6 (P6)  one byte changed in a copy: the wrong-password line
 #   BK-7 (P4)  the app's cache after all of it: nothing from the picks
+#   BK-8 (#104, the header check) a PNG, a CSV and an empty file renamed
+#        .piggybow: each "This isn't a Piggybow backup file.", no crash
+#   BK-9 (#104, F-87-1) the password's eye is its own labelled node and toggles
+# The app's files are read with run-as on a debug build, and as root on a
+# release one (run.sh roots adbd on google_apis images; run-as is refused
+# for a release build).
 . "$(dirname "$0")/lib.sh"
 guard_emulator
 
@@ -23,7 +29,7 @@ mkdir -p "$WORK"
 DL=/sdcard/Download
 
 cleanup(){
-  A shell rm -f "$DL/big-video.mp4" "$DL/over-cap.bin" "$DL/under-cap.bin" >/dev/null 2>&1
+  A shell rm -f "$DL/big-video.mp4" "$DL/over-cap.bin" "$DL/under-cap.bin" "$DL/not-png.piggybow" "$DL/not-csv.piggybow" "$DL/empty-file.piggybow" >/dev/null 2>&1
   echo "$(stamp) END: $PASSES pass, $FAILS fail"
   rows_exit
 }
@@ -36,14 +42,22 @@ heap(){ # heap <label>: the app's memory, from meminfo (App Summary + TOTAL)
   echo "$(stamp) meminfo $1: $(A shell dumpsys meminfo "$APP_ID" | tr -d '\r' | grep -E 'TOTAL PSS|Java Heap|Native Heap|^ *TOTAL ' | tr -s ' ' | tr '\n' ' ')"
 }
 alive(){ [ -n "$(A shell pidof "$APP_ID" | tr -d '\r')" ]; }
+jheap(){ A shell dumpsys meminfo "$APP_ID" | tr -d '\r' | awk '/Java Heap:/ { print $3; exit }'; }
+if [ "$(A shell id -u | tr -d '\r')" = 0 ]; then
+  appsh(){ A shell "cd /data/data/$APP_ID && $*"; }
+  appcat(){ A exec-out cat "/data/data/$APP_ID/$1"; }
+else
+  appsh(){ A shell run-as "$APP_ID" "$@"; }
+  appcat(){ A exec-out run-as "$APP_ID" cat "$1"; }
+fi
 
 install_verify || exit $?
 
 # BK-1: Back up, the share sheet open
 if mf flows/pb1/91a_backup_share.yaml; then
-  NAME=$(A shell run-as "$APP_ID" ls cache/export 2>/dev/null | tr -d '\r' | grep -E '^piggybow-backup-[0-9]{4}-[0-9]{2}-[0-9]{2}\.piggybow$' | head -1 || true)
+  NAME=$(appsh ls cache/export 2>/dev/null | tr -d '\r' | grep -E '^piggybow-backup-[0-9]{4}-[0-9]{2}-[0-9]{2}\.piggybow$' | head -1 || true)
   if [ -n "$NAME" ]; then
-    A exec-out run-as "$APP_ID" cat "cache/export/$NAME" > "$WORK/$NAME"
+    appcat "cache/export/$NAME" > "$WORK/$NAME"
     A push "$WORK/$NAME" "$DL/$NAME" >/dev/null && scan "$NAME"
     row BK-1 PASS "flow 91a: Back up opened the share sheet with $NAME ($(wc -c < "$WORK/$NAME") bytes, sha256 $(sha256sum < "$WORK/$NAME" | cut -c1-12)…), copied to Downloads for the restore rows"
   else
@@ -55,7 +69,7 @@ fi
 
 # BK-5: the sheet dismissed
 if mf flows/pb1/91b_backup_dismissed.yaml; then
-  left=$(A shell run-as "$APP_ID" ls cache/export 2>/dev/null | tr -d '\r' | grep -c . || true)
+  left=$(appsh ls cache/export 2>/dev/null | tr -d '\r' | grep -c . || true)
   if [ "${left:-0}" = 0 ]; then
     row BK-5 PASS "flow 91b: dismissed, the screen stays with both passwords, no message; cache/export empty after"
   else
@@ -88,9 +102,10 @@ A shell dd if=/dev/urandom of="$DL/under-cap.bin" bs=1048576 count=49 2>/dev/nul
 ok=0
 for item in "big-video:P3 1 GB of zeros" "over-cap:P3b 52 MB of zeros" "under-cap:P3c 49 MB of random bytes"; do
   f=${item%%:*}; what=${item#*:}
-  heap "before the pick, $f"
+  heap "before the pick, $f"; jb=$(jheap)
   if MF_NAME=91e-$f mf flows/pb1/91e_restore_not_backup.yaml -e FILE="$f" -e SHOT="91-not-backup-$f"; then
-    heap "at the 'isn't a backup' line, $f"
+    heap "at the 'isn't a backup' line, $f"; ja=$(jheap)
+    echo "$(stamp) INFO $f: Java heap PSS ${jb:-?} → ${ja:-?} KB at the refusal (with #104's header check: flat)"
     sleep 10
     heap "10 s later, $f"
     if alive; then
@@ -108,6 +123,27 @@ if [ "$ok" = 3 ]; then
   row BK-4 PASS "flow 91e ×3: 1 GB, 52 MB and 49 MB (random) each 'This isn't a Piggybow backup file.', no crash or ANR; meminfo before and after each in the log"
 else
   row BK-4 FAIL "flow 91e: $ok of 3 refused cleanly"
+fi
+
+# BK-8 (#104, the header check): files that aren't backups by their content
+printf '\x89PNG\r\n\x1a\n' > "$WORK/not-png.piggybow"; head -c 1024 /dev/urandom >> "$WORK/not-png.piggybow"
+printf 'date,type,amount\n2026-11-28,spent,12.00\n' > "$WORK/not-csv.piggybow"
+: > "$WORK/empty-file.piggybow"
+for f in not-png not-csv empty-file; do A push "$WORK/$f.piggybow" "$DL/$f.piggybow" >/dev/null && scan "$f.piggybow"; done
+ok=0
+for f in not-png not-csv empty-file; do
+  if MF_NAME=91e-$f mf flows/pb1/91e_restore_not_backup.yaml -e FILE="$f" -e SHOT="91-not-backup-$f" && alive; then
+    ok=$((ok+1)); echo "$(stamp) INFO BK-8 $f: refused as not a backup, the app alive"
+  else
+    echo "$(stamp) INFO BK-8 $f: FAILED"
+  fi
+  A shell input keyevent 4 >/dev/null   # Back, off the restore screen
+  sleep 2
+done
+if [ "$ok" = 3 ]; then
+  row BK-8 PASS "flow 91e ×3: a PNG, a CSV and an empty file, each renamed .piggybow: 'This isn't a Piggybow backup file.', no crash"
+else
+  row BK-8 FAIL "flow 91e: $ok of 3 non-backup files refused cleanly"
 fi
 
 # BK-6: one byte changed
@@ -129,10 +165,17 @@ else
 fi
 
 # BK-7: the cache after it all
-LS=$(A shell run-as "$APP_ID" ls -R cache 2>/dev/null | tr -d '\r')
+LS=$(appsh ls -R cache 2>/dev/null | tr -d '\r')
 echo "$(stamp) cache listing:"; printf '%s\n' "$LS" | sed 's/^/    /'
 if printf '%s\n' "$LS" | grep -qE 'big-video|over-cap|under-cap|tampered|piggybow-backup|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}'; then
   row BK-7 FAIL "the cache holds something from the picks (listing above)"
 else
   row BK-7 PASS "the cache holds nothing from the picks: no copies, no random-id folder (listing above)"
+fi
+
+# BK-9 (#104, F-87-1): the password's eye, its own node (fails before #104)
+if mf flows/pb1/91f_backup_eye.yaml; then
+  row BK-9 PASS "flow 91f: 'Show password' is its own node; a tap shows the typed password and 'Hide password', a second tap hides it"
+else
+  row BK-9 FAIL "flow 91f: the eye isn't its own labelled node, or doesn't toggle (F-87-1)"
 fi

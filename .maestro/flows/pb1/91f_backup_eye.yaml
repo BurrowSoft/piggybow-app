@@ -1,0 +1,47 @@
+appId: ${APP_ID}
+name: Backup file (F-87-1, #104) - the password's eye is its own node - "Show password" shows the typed password, then "Hide password" hides it again
+tags: [backup, a11y]
+# Run by pr87.sh (BK-9). Before #104 the eye has no node of its own, so this
+# fails at the first assert: F-87-1, open.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: me-backup }
+- tapOn:
+    id: me-backup
+- extendedWaitUntil:
+    visible:
+      id: backup-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: backup-password, TEXT: "correct horse battery", EXPECT: ".*" }
+- hideKeyboard
+# Its own node, labelled
+- assertVisible:
+    id: backup-show
+    text: "(?s).*Show password.*"
+- assertNotVisible: ".*correct horse battery.*"
+- tapOn:
+    id: backup-show
+- assertVisible: ".*correct horse battery.*"
+- assertVisible:
+    id: backup-show
+    text: "(?s).*Hide password.*"
+- takeScreenshot: 91-eye-shown
+- tapOn:
+    id: backup-show
+- assertNotVisible: ".*correct horse battery.*"
+- assertVisible:
+    id: backup-show
+    text: "(?s).*Show password.*"
+- takeScreenshot: 91-eye-hidden
+- back
+- extendedWaitUntil:
+    visible:
+      id: tab-me
+    timeout: 10000
