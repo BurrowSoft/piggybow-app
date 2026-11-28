@@ -181,8 +181,10 @@ class JournalStore extends ChangeNotifier {
   /// Saves an edit. Spent ↔ Saved is allowed: a spend drops its goal, a save
   /// drops its category and feeling and goes to the active goal if it had
   /// none. A withdrawal stays one, out of the same goal, and at most what
-  /// that goal has (its own amount counted back); nothing becomes one. Its
-  /// id, currency and creation time never change.
+  /// that goal has (its own amount counted back); nothing becomes one. A
+  /// save can't go lower than [saveFloor], nor leave its goal while it has
+  /// one ([LockedByTakeOut]). Its id, currency and creation time never
+  /// change.
   Future<Entry> updateEntry(Entry changed) async {
     final old = await entry(changed.id);
     if (old == null) throw StateError('no entry ${changed.id}');
@@ -196,6 +198,15 @@ class JournalStore extends ChangeNotifier {
         changed.amountMinor,
         countedBack: old.amountMinor,
       );
+    }
+    // Money was taken out of this save's goal: it keeps at least that much.
+    final floor = await saveFloor(old);
+    if (floor > 0) {
+      final staysThere =
+          changed.type == EntryType.saved && changed.goalId == old.goalId;
+      if (!staysThere || changed.amountMinor < floor) {
+        throw LockedByTakeOut(old.goalId!);
+      }
     }
     final spend = changed.type == EntryType.spent;
     var goalId = spend ? null : (withdraw ? old.goalId : changed.goalId);
@@ -223,8 +234,13 @@ class JournalStore extends ChangeNotifier {
     return updated;
   }
 
+  /// Deletes an entry; never a save its goal needs, because money was taken
+  /// out of it ([LockedByTakeOut]).
   Future<void> deleteEntry(String id) async {
     final old = await entry(id);
+    if (old != null && await saveFloor(old) > 0) {
+      throw LockedByTakeOut(old.goalId!);
+    }
     await _entries.record(id).delete(_db);
     await _advance(old?.goalId);
     notifyListeners();
@@ -265,6 +281,13 @@ class JournalStore extends ChangeNotifier {
         throw StateError('goal ${active.id} is already active');
       }
     }
+    // What was already saved can't go below what was taken out of it.
+    final old = await this.goal(goal.id);
+    if (old != null &&
+        goal.startMinor < old.startMinor &&
+        goal.startMinor < await startFloor(old)) {
+      throw LockedByTakeOut(goal.id);
+    }
     await _goals.record(goal.id).put(_db, goal.toMap());
     await _advance(goal.id);
     notifyListeners();
@@ -287,14 +310,41 @@ class JournalStore extends ChangeNotifier {
   ];
 
   /// A goal's progress: what was already saved, plus every save that names
-  /// it, less what was taken out of it. Never below 0 (a save edited or
-  /// deleted after a withdrawal can't make it negative).
+  /// it, less what was taken out of it. It never goes below 0: a withdrawal
+  /// is at most what the goal has, and nothing that makes up for one can be
+  /// lowered or removed ([saveFloor], [startFloor]); the 0 here is only a
+  /// safety net for a journal from elsewhere.
   Future<int> goalProgress(Goal goal) async {
+    final sum = await _rawProgress(goal);
+    return sum < 0 ? 0 : sum;
+  }
+
+  /// [goalProgress] before its safety net.
+  Future<int> _rawProgress(Goal goal) async {
     var sum = goal.startMinor;
     for (final e in await goalSaves(goal.id)) {
       sum += e.type == EntryType.withdraw ? -e.amountMinor : e.amountMinor;
     }
-    return sum < 0 ? 0 : sum;
+    return sum;
+  }
+
+  /// The least [save] can be changed to while it stays in its goal, which
+  /// can't go below 0 once money was taken out of it: 0 when it could go
+  /// entirely (be deleted, moved, made a spend). 0 for anything else.
+  Future<int> saveFloor(Entry save) async {
+    final goalId = save.goalId;
+    if (save.type != EntryType.saved || goalId == null) return 0;
+    final g = await goal(goalId);
+    if (g == null) return 0;
+    final without = await _rawProgress(g) - save.amountMinor;
+    return without >= 0 ? 0 : -without;
+  }
+
+  /// The least [goal]'s "already saved" can be changed to, for the same
+  /// reason: 0 when nothing was taken out of it beyond its saves.
+  Future<int> startFloor(Goal goal) async {
+    final without = await _rawProgress(goal) - goal.startMinor;
+    return without >= 0 ? 0 : -without;
   }
 
   /// Takes [amountMinor] out of [goalId]'s savings on [localDate]: at most
@@ -423,4 +473,17 @@ class JournalStore extends ChangeNotifier {
       throw ArgumentError('the note is over $maxNoteLength characters');
     }
   }
+}
+
+/// Refused: a save, or a goal's "already saved", can't be lowered or taken
+/// out of its goal below what was taken out of it (the goal would hold less
+/// than nothing). The screens say which goal: change or remove that
+/// withdrawal first.
+class LockedByTakeOut implements Exception {
+  const LockedByTakeOut(this.goalId);
+
+  final String goalId;
+
+  @override
+  String toString() => 'LockedByTakeOut($goalId)';
 }

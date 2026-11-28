@@ -10,6 +10,7 @@ import '../../core/services.dart';
 import '../../goal/goal_progress.dart';
 import '../../journal/entry.dart';
 import '../../journal/goal.dart';
+import '../../journal/journal_store.dart' show LockedByTakeOut;
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show PigMood;
@@ -50,6 +51,10 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
   bool _tried = false;
   bool _busy = false;
 
+  /// The least "Already saved" can be: what was taken out of the goal beyond
+  /// its saves (0 when nothing was).
+  int _startFloor = 0;
+
   String get _locale => context.readSession.device.localeName;
 
   @override
@@ -63,10 +68,12 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
     final currency = await store.currency() ?? 'USD';
     final id = widget.goalId;
     final goal = id == null ? null : await store.goal(id);
+    final floor = goal == null ? 0 : await store.startFloor(goal);
     if (!mounted) return;
     setState(() {
       _currency = currency;
       _goal = goal;
+      _startFloor = floor;
       if (goal != null) {
         _name.text = goal.name;
         _target.text = inputAmount(goal.targetMinor, currency, _locale);
@@ -105,12 +112,17 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
   }
 
   String? _startError(AppLocalizations l10n) {
-    if (_start.text.trim().isEmpty) return null;
-    return switch (parseAmount(
-      _start.text,
-      _currency!,
-      allowZero: true,
-    ).problem) {
+    final empty = _start.text.trim().isEmpty;
+    final parsed = empty
+        ? null
+        : parseAmount(_start.text, _currency!, allowZero: true);
+    // Not below what was taken out of the goal beyond its saves.
+    final start = empty ? 0 : parsed!.minor;
+    if (start != null && start < _startFloor) {
+      return l10n.goalStartLockedByTakeOut;
+    }
+    if (parsed == null) return null;
+    return switch (parsed.problem) {
       null => null,
       AmountProblem.tooBig => l10n.addAmountTooBig,
       _ => l10n.addAmountError,
@@ -150,7 +162,19 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
             startMinor: start,
             updatedAt: now,
           );
-    await services.journal.putGoal(goal);
+    try {
+      await services.journal.putGoal(goal);
+    } on LockedByTakeOut {
+      // Taken out meanwhile: read the floor again; the field says so.
+      final floor = await services.journal.startFloor(old!);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _startFloor = floor;
+        });
+      }
+      return;
+    }
     if (widget.onboarding) {
       await _finishOnboarding(services);
     } else if (mounted) {
@@ -258,7 +282,7 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                             child: Text(l10n.goalStartLabel),
                           ),
                           errorText: _startError(l10n),
-                          errorMaxLines: 3,
+                          errorMaxLines: 6,
                         ),
                       ),
                     ),

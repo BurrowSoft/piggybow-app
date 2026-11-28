@@ -194,4 +194,112 @@ void main() {
     expect(goal.status, GoalStatus.reached);
     expect(await progress(tester, app), 12000);
   });
+
+  const lockedLine = 'Some of this money was taken out of Bike. Change or remove that first.';
+
+  /// Bike: 300 saved (entry-1), 200 of it taken out; the save, opened from
+  /// Timeline, is the one the goal needs: it keeps at least 200.
+  Future<TestApp> openLockedSave(WidgetTester tester) async {
+    final app = await open(
+      tester,
+      seed: (app) async {
+        await app.journal.putGoal(bike());
+        await saved(app, 30000);
+        await app.journal.takeOut(
+          goalId: 'goal-1',
+          amountMinor: 20000,
+          currency: 'THB',
+          localDate: '2026-10-02',
+        );
+      },
+    );
+    await tester.tapId('tab-timeline');
+    await tester.tapId('tl-row-entry-1');
+    await settle(tester, find.text('300.00'));
+    final field = tester.widget<TextField>(
+      find.descendant(of: byId('add-amount'), matching: find.byType(TextField)),
+    );
+    expect(field.controller!.text, '300.00', reason: 'the save, loaded');
+    expect(find.text(lockedLine), findsNothing);
+    return app;
+  }
+
+  Future<Entry?> theSave(WidgetTester tester, TestApp app) =>
+      tester.runAsync<Entry?>(() => app.journal.entry('entry-1'));
+
+  testWidgets("a save the goal needs can't be deleted: the sheet says why at "
+      'once, and asks nothing', (tester) async {
+    final app = await openLockedSave(tester);
+    await tester.tapId('edit-delete');
+    expect(byId('delete-confirm'), findsNothing);
+    expect(find.text(lockedLine), findsOneWidget);
+    expect(byId('edit-save'), findsOneWidget);
+    expect(await theSave(tester, app), isNotNull);
+    expect(await progress(tester, app), 10000);
+  });
+
+  testWidgets('a save the goal needs goes no lower than that: 150 is said at '
+      'once and not saved; 200 is fine', (tester) async {
+    final app = await openLockedSave(tester);
+    await tester.enterId('add-amount', '150');
+    expect(find.text(lockedLine), findsOneWidget);
+    await tester.tapId('edit-save');
+    expect(byId('edit-save'), findsOneWidget);
+    expect((await theSave(tester, app))!.amountMinor, 30000);
+    await tester.enterId('add-amount', '200');
+    expect(find.text(lockedLine), findsNothing);
+    await tester.tapId('edit-save');
+    expect(byId('edit-save'), findsNothing);
+    expect((await theSave(tester, app))!.amountMinor, 20000);
+    expect(await progress(tester, app), 0);
+  });
+
+  testWidgets("a save the goal needs can't become a spend: the sheet says why", (tester) async {
+    final app = await openLockedSave(tester);
+    await tester.tapId('add-seg-spent');
+    await tester.tapId('add-cat-food');
+    await tester.tapId('edit-save');
+    expect(find.text(lockedLine), findsOneWidget);
+    expect(byId('edit-save'), findsOneWidget);
+    final s = (await theSave(tester, app))!;
+    expect((s.type, s.goalId, s.amountMinor), (EntryType.saved, 'goal-1', 30000));
+  });
+
+  testWidgets("the goal's Already saved goes no lower than what was taken out "
+      'beyond its saves: the field says why', (tester) async {
+    final app = await open(
+      tester,
+      location: GoalRoutes.edit('goal-1'),
+      seed: (app) async {
+        await app.journal.putGoal(
+          Goal(id: 'goal-1', name: 'Bike', targetMinor: 100000, startMinor: 10000, createdAt: t, updatedAt: t),
+        );
+        await saved(app, 3000);
+        // 100 + 30 saved, 120 taken out: Already saved can go down to 90.
+        await app.journal.takeOut(
+          goalId: 'goal-1',
+          amountMinor: 12000,
+          currency: 'THB',
+          localDate: '2026-10-02',
+        );
+      },
+    );
+    Future<int> start() async => (await tester.runAsync(() => app.journal.goal('goal-1')))!.startMinor;
+    const line = 'Some of this money was taken out of this goal. Change or remove that first.';
+    await settle(tester, byId('goal-start'));
+    expect(find.text(line), findsNothing);
+    await tester.enterId('goal-start', '');
+    expect(find.text(line), findsOneWidget, reason: 'empty is 0');
+    await tester.enterId('goal-start', '80');
+    expect(find.text(line), findsOneWidget);
+    await tester.tapId('goal-submit');
+    expect(byId('goal-submit'), findsOneWidget);
+    expect(await start(), 10000);
+    await tester.enterId('goal-start', '90');
+    expect(find.text(line), findsNothing);
+    await tester.tapId('goal-submit');
+    expect(byId('goal-submit'), findsNothing);
+    expect(await start(), 9000);
+    expect(await progress(tester, app), 0);
+  });
 }

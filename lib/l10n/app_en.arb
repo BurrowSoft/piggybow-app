@@ -312,5 +312,9 @@
   "tlTakenOutOf": "Taken out of {goalName}",
   "@tlTakenOutOf": {"description": "A Timeline row: money taken out of a goal's savings.", "placeholders": {"goalName": {"type": "String"}}},
   "goalTakenOutRow": "Taken out",
-  "@goalTakenOutRow": {"description": "A row in a goal's own list (under Saves): money taken out of it."}
+  "@goalTakenOutRow": {"description": "A row in a goal's own list (under Saves): money taken out of it."},
+  "saveLockedByTakeOut": "Some of this money was taken out of {goalName}. Change or remove that first.",
+  "@saveLockedByTakeOut": {"description": "A save can't be deleted, lowered, moved or made a spend below what was taken out of its goal.", "placeholders": {"goalName": {"type": "String"}}},
+  "goalStartLockedByTakeOut": "Some of this money was taken out of this goal. Change or remove that first.",
+  "@goalStartLockedByTakeOut": {"description": "The goal editor's Already saved can't go below what was taken out of the goal."}
 }

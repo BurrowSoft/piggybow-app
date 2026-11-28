@@ -155,7 +155,8 @@ DateTime? _at(Object? iso) =>
 /// stamps; so that the goal card agrees with them too, an active goal with
 /// stamped bands and no amounts of its own comes first, the case's saves go
 /// to it, and its target puts them in its highest stamped band (with no
-/// saves, what's already saved does).
+/// saves, what's already saved does). A withdrawal comes out of the goal it
+/// names, so it's written once the goals are there.
 Future<void> _writeCase(
   JournalStore store,
   FixtureClock clock,
@@ -179,13 +180,15 @@ Future<void> _writeCase(
             _highestBand(g) > 0,
       )
       .firstOrNull;
+  // Each goal's id, by its name in the case.
+  final ids = <String, String>{};
   clock.now = _at(c['now'])!;
   if (shown != null) {
     final saved = entries
         .where((e) => e['type'] == 'saved')
         .fold<int>(0, (sum, e) => sum + (e['amount_minor'] as int));
     final band = _highestBand(shown);
-    await _putGoal(
+    ids[shown['name'] as String] = await _putGoal(
       store,
       clock,
       shown,
@@ -194,6 +197,7 @@ Future<void> _writeCase(
     );
   }
   for (final e in entries) {
+    if (e['type'] == EntryType.withdraw.id) continue;
     clock.now = _at(e['created_at'])!;
     await store.addEntry(
       type: EntryType.fromId(e['type'])!,
@@ -207,7 +211,7 @@ Future<void> _writeCase(
   clock.now = _at(c['now'])!;
   for (final g in goals) {
     if (identical(g, shown)) continue;
-    await _putGoal(
+    ids[g['name'] as String] = await _putGoal(
       store,
       clock,
       g,
@@ -215,6 +219,21 @@ Future<void> _writeCase(
       startMinor: g['start_minor'] as int? ?? 0,
     );
   }
+  for (final e in entries) {
+    if (e['type'] != EntryType.withdraw.id) continue;
+    final goalId = ids[e['goal']];
+    if (goalId == null) {
+      throw StateError('${c['id']}: no goal "${e['goal']}" to take out of');
+    }
+    clock.now = _at(e['created_at'])!;
+    await store.takeOut(
+      goalId: goalId,
+      amountMinor: e['amount_minor'] as int,
+      currency: currency,
+      localDate: e['local_date'] as String,
+    );
+  }
+  clock.now = _at(c['now'])!;
 }
 
 /// The highest band a contract goal has stamped (1 to 5), or 0.
@@ -226,8 +245,8 @@ int _highestBand(Map<String, dynamic> g) {
   return 0;
 }
 
-/// A contract goal, with its stamps as the case gives them.
-Future<void> _putGoal(
+/// A contract goal, with its stamps as the case gives them; its id.
+Future<String> _putGoal(
   JournalStore store,
   FixtureClock clock,
   Map<String, dynamic> g, {
@@ -250,6 +269,7 @@ Future<void> _putGoal(
     ),
   );
   if (reachedAt != null) await store.markCelebrated(id);
+  return id;
 }
 
 /// The rainbow fixtures: "Bike", 1,000.00, with one save of [savedMinor]

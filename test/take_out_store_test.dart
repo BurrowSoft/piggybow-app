@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/journal/journal_store.dart';
@@ -7,9 +8,9 @@ import 'helpers.dart';
 
 /// Taking money out of savings (feature 5), in the store: a withdrawal is
 /// its own type, out of one goal, at most what that goal has; the goal's
-/// progress is its saves less its withdrawals (never below 0); a reached
-/// goal stays reached, a stamped band stays stamped; deleting one gives it
-/// back.
+/// progress is its saves less its withdrawals, and a save or a start the
+/// goal needs to stay at 0 or more is locked; a reached goal stays reached,
+/// a stamped band stays stamped; deleting a withdrawal gives it back.
 void main() {
   late JournalStore store;
   late MovableClock clock;
@@ -113,14 +114,75 @@ void main() {
     expect(await progress(), 5000);
   });
 
-  test('the progress never goes below 0, even if a save is deleted after a '
-      'withdrawal', () async {
+  test("a save the goal needs can't be deleted; a later save shows at once", () async {
     await store.putGoal(bike());
     final s = await save(1000);
     await takeOut(1000);
+    expect(await store.saveFloor(s), 1000);
+    await expectLater(store.deleteEntry(s.id), throwsA(isA<LockedByTakeOut>()));
+    expect(await store.entry(s.id), isNotNull);
+    expect(await progress(), 0);
+    await save(500);
+    expect(await progress(), 500);
+  });
+
+  test('a save can be lowered only down to what the goal needs: after 600 of '
+      '1000 taken out, 700 is fine, 300 is not', () async {
+    await store.putGoal(bike());
+    final s = await save(1000);
+    await takeOut(600);
+    expect(await store.saveFloor(s), 600);
+    await expectLater(
+      store.updateEntry(s.copyWith(amountMinor: 300)),
+      throwsA(isA<LockedByTakeOut>().having((e) => e.goalId, 'goalId', 'g1')),
+    );
+    final lowered = await store.updateEntry(s.copyWith(amountMinor: 700));
+    expect(lowered.amountMinor, 700);
+    expect(await progress(), 100);
+    // Raised, it frees itself again.
+    await store.updateEntry(lowered.copyWith(amountMinor: 5000));
+    expect(await store.saveFloor((await store.entry(s.id))!), 0);
+  });
+
+  test("a save the goal needs can't leave it: not made a spend, not moved", () async {
+    await store.putGoal(bike());
+    final s = await save(1000);
+    await takeOut(400);
+    await expectLater(
+      store.updateEntry(s.copyWith(type: EntryType.spent, category: SpendCategory.food)),
+      throwsA(isA<LockedByTakeOut>()),
+    );
+    await expectLater(
+      store.updateEntry(s.copyWith(goalId: 'g2')),
+      throwsA(isA<LockedByTakeOut>()),
+    );
+    expect((await store.entry(s.id))!.goalId, 'g1');
+  });
+
+  test('with nothing taken out, saves go freely', () async {
+    await store.putGoal(bike());
+    final s = await save(1000);
+    expect(await store.saveFloor(s), 0);
     await store.deleteEntry(s.id);
     expect(await progress(), 0);
-    expect(await store.takeOutLimit('g1'), 0);
+  });
+
+  test("the goal's Already saved can't go below what was taken out beyond its "
+      'saves', () async {
+    await store.putGoal(bike(start: 1000));
+    await save(300);
+    await takeOut(1200);
+    // 1000 + 300 - 1200: the start can go down to 900, no lower.
+    expect(await store.startFloor(await g1()), 900);
+    await expectLater(
+      store.putGoal((await g1()).copyWith(startMinor: 800)),
+      throwsA(isA<LockedByTakeOut>()),
+    );
+    await store.putGoal((await g1()).copyWith(startMinor: 900));
+    expect(await progress(), 0);
+    // Other edits stay free.
+    await store.putGoal((await g1()).copyWith(name: 'Red bike'));
+    expect((await g1()).name, 'Red bike');
   });
 
   test("a reached goal stays reached, and a band stays stamped; the goal's "
