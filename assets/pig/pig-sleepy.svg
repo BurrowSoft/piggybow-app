@@ -12,6 +12,6 @@
   <ellipse cx="93" cy="130" rx="3" ry="4.5" fill="#C46A87"/>
   <ellipse cx="107" cy="130" rx="3" ry="4.5" fill="#C46A87"/>
   <path d="M95.8 152 Q100 155 104.2 152" stroke="#2B2438" stroke-width="3.5" stroke-linecap="round" fill="none"/>
-  <path d="M152 52 H166 L152 68 H166" stroke="#9B84D6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  <path d="M172 32 H182 L172 43 H182" stroke="#9B84D6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M152 38 H166 L152 54 H166" stroke="#9B84D6" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M172 18 H182 L172 29 H182" stroke="#9B84D6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>
