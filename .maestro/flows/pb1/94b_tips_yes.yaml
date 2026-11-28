@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+name: Pig tips (A3, TI-1 and TI-6) - "Yes, turn on tips" turns the switch on; Home's Today's idea is the written tip, with "Written by AI" and Report
+tags: [tips]
+# Run by group-tips.sh after 94a (on Me), the mock answering a tip.
+---
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: me-pig-tips }
+- tapOn:
+    id: me-pig-tips
+- extendedWaitUntil:
+    visible:
+      id: tips-sheet-yes
+    timeout: 10000
+- tapOn:
+    id: tips-sheet-yes
+- extendedWaitUntil:
+    notVisible:
+      id: tips-sheet
+    timeout: 20000
+- assertVisible: ".*On: one idea a day from your pig's AI.*"
+- tapOn:
+    id: tab-home
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: home-idea }
+- extendedWaitUntil:
+    visible:
+      id: home-idea-ai
+    timeout: 20000
+- assertVisible: ".*Written by AI.*"
+- assertVisible:
+    id: home-idea-report
+- assertVisible: ".*${TIP}.*"
+- takeScreenshot: 94-written-tip

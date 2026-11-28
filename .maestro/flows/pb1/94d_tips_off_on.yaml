@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+name: Pig tips (A3, TI-2) - Me's switch off at once ("Pig tips are off. Your pig will share its built-in tips."); on again asks again and turns on
+tags: [tips]
+# Run by group-tips.sh; the script reads the mock: off calls forget; on calls
+# signup (a new id) and, the day's attempt being used, no tip call.
+---
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: me-pig-tips }
+- tapOn:
+    id: me-pig-tips
+- assertVisible: ".*Pig tips are off\\. Your pig will share its built-in tips\\..*"
+- assertVisible: ".*Off: your pig's built-in tips.*"
+- tapOn:
+    id: me-pig-tips
+- extendedWaitUntil:
+    visible:
+      id: tips-sheet-yes
+    timeout: 10000
+- tapOn:
+    id: tips-sheet-yes
+- extendedWaitUntil:
+    notVisible:
+      id: tips-sheet
+    timeout: 20000
+- assertVisible: ".*On: one idea a day from your pig's AI.*"

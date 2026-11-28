@@ -1,0 +1,24 @@
+appId: ${APP_ID}
+name: Pig tips (A3, TI-3) - a cold start on a new day with the mock answering ${MODE} - Today's idea is the built-in tip (no "Written by AI"), with nothing left loading
+tags: [tips]
+# Run by group-tips.sh once per mode, the device clock a day further each
+# time (root). env: MODE (for the name), WAIT (ms: how long to give the call)
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: true
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: home-idea }
+- waitForAnimationToEnd:
+    timeout: ${WAIT}
+- assertVisible:
+    id: home-idea
+- assertNotVisible:
+    id: home-idea-ai
+- assertNotVisible: "(?i).*loading.*"
+- takeScreenshot: 94-static-${MODE}

@@ -1,0 +1,48 @@
+appId: ${APP_ID}
+name: Pig tips (A3, TI-1 and TI-6) - Home starts with the built-in tip; Your privacy names the tips line; Me's switch asks first ("Not now" leaves it off), then "Yes, turn on tips" brings a written tip with "Written by AI" and Report
+tags: [tips]
+# Run by group-tips.sh with kind=tips-mock (AI tips on, TIPS_TEST_URL → the
+# mock on the runner). The script reads the mock's log between the steps.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# The built-in tip: no label, no Report
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: home-idea }
+- assertVisible:
+    id: home-idea
+- assertNotVisible:
+    id: home-idea-ai
+- assertNotVisible:
+    id: home-idea-report
+# Your privacy names pig tips
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: me-privacy }
+- tapOn:
+    id: me-privacy
+- assertVisible: ".*Pig tips, if you turn them on, send a short summary in numbers \\(never your notes or amounts\\).*"
+- back
+# The switch: off, and it asks before anything leaves
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: me-pig-tips }
+- assertVisible: ".*Off: your pig's built-in tips.*"
+- tapOn:
+    id: me-pig-tips
+- extendedWaitUntil:
+    visible:
+      id: tips-sheet
+    timeout: 10000
+- assertVisible: ".*Want your pig to write you tips\\?.*"
+- takeScreenshot: 94-consent
+- tapOn:
+    id: tips-sheet-not-now
+- extendedWaitUntil:
+    notVisible:
+      id: tips-sheet
+    timeout: 10000
+- assertVisible: ".*Off: your pig's built-in tips.*"

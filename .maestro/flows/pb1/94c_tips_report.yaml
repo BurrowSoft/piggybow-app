@@ -1,0 +1,40 @@
+appId: ${APP_ID}
+name: Pig tips (A3, TI-4 and TI-7) - Report → "What's wrong with this tip?" → Not helpful → thanks; the built-in tip replaces the written one for the day, also after a restart
+tags: [tips]
+# Run by group-tips.sh after 94b (on Home, a written tip shown).
+---
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: home-idea-report }
+- tapOn:
+    id: home-idea-report
+- extendedWaitUntil:
+    visible:
+      id: tip-report-sheet
+    timeout: 10000
+- assertVisible: ".*What's wrong with this tip\\?.*"
+- takeScreenshot: 94-report-sheet
+- tapOn:
+    id: tip-report-unhelpful
+- assertVisible: ".*Thanks\\. We'll use this to make tips better\\..*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: home-idea }
+- assertNotVisible:
+    id: home-idea-ai
+# A restart the same day: still the built-in tip, no new call (the script
+# reads the mock's log)
+- stopApp: ${APP_ID}
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: home-idea }
+- assertNotVisible:
+    id: home-idea-ai
+- takeScreenshot: 94-after-report
