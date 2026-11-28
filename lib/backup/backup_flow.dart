@@ -46,9 +46,14 @@ class BackupHooks {
     this.cache = getTemporaryDirectory,
   });
 
-  /// What the screens use; a test sets its own and puts this back.
+  static BackupHooks _current = const BackupHooks();
+
+  /// What the screens use.
+  static BackupHooks get current => _current;
+
+  /// A test's own; it puts the default back after.
   @visibleForTesting
-  static BackupHooks current = const BackupHooks();
+  static set current(BackupHooks hooks) => _current = hooks;
 
   final Future<String> Function(Object? data, String password) seal;
   final Future<Object?> Function(String file, String password) open;
