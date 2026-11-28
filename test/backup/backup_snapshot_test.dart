@@ -65,6 +65,10 @@ void main() {
     await s.setOnboarded();
     await s.answerReminderOffer();
     await s.setBuiltInHidden(SpendCategory.fun, true);
+    // Me → Your pig's switches, and a letter put away (UX, 28 Nov).
+    await s.setYesterdayFeelOn(false);
+    await s.setLettersOn(false);
+    await s.dismissLetter('2026-10');
     await s.putCustomCategory(
       CustomCategory(
         id: 'c:bubble',
@@ -315,6 +319,11 @@ void main() {
         'picks that aren\'t names': withSetting('picks', [1, 2]),
         'a celebration with no goal': withSetting('celebrated.', true),
         'a celebration that isn\'t a flag': withSetting('celebrated.g', 'yes'),
+        'a pig switch that isn\'t a flag': withSetting('letters_off', 'yes'),
+        'a letter month that isn\'t one': withSetting(
+          'letter_dismissed',
+          '2026-13',
+        ),
       };
       for (final MapEntry(key: what, value: snapshot) in bad.entries) {
         await expectLater(

@@ -1276,6 +1276,10 @@ class JournalStore extends ChangeNotifier {
     'picks' => value is List && value.every((p) => p is String),
     'plan_minor' => value is int && value > 0 && value <= maxAmountMinor,
     'onboarded' || 'reminder_offer' => value is bool,
+    // Me → Your pig's switches (kept as "off"), and the month (YYYY-MM)
+    // whose letter was put away.
+    'yesterday_feel_off' || 'letters_off' => value is bool,
+    'letter_dismissed' => value is String && _wireMonth.hasMatch(value),
     'hidden_categories' =>
       value is List && value.every((id) => SpendCategory.fromId(id) != null),
     _ =>
@@ -1283,6 +1287,8 @@ class JournalStore extends ChangeNotifier {
           key.length > _travelsPrefix.length &&
           value is bool,
   };
+
+  static final _wireMonth = RegExp(r'^\d{4}-(0[1-9]|1[0-2])$');
 
   /// [value] as plain JSON: the store hands out read-only lists and maps.
   static Object? _plain(Object? value) => switch (value) {
