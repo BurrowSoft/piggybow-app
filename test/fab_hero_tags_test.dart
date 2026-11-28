@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/router.dart';
 
@@ -17,16 +18,24 @@ void main() {
   testWidgets("Home's and Timeline's Add buttons don't share a hero tag", (tester) async {
     final app = TestApp();
     await tester.runAsync(app.openJournal);
-    await tester.runAsync(
-      () => app.journal.putGoal(
+    await tester.runAsync(() async {
+      await app.journal.putGoal(
         Goal(id: 'g1', name: 'Bike', targetMinor: 1000, createdAt: t, updatedAt: t),
-      ),
-    );
+      );
+      // An entry: Timeline shows its Add button only when it lists something.
+      await app.journal.addEntry(
+        type: EntryType.saved,
+        amountMinor: 500,
+        currency: 'THB',
+        localDate: '2026-10-01',
+      );
+    });
     await app.pump(tester);
 
     // Both tabs, so both Add buttons are built.
     await tester.tapId('tab-timeline');
     tester.expectScreen('timeline-screen');
+    expect(byId('tl-add'), findsOneWidget, reason: "Timeline's Add button is there");
     await tester.tapId('tab-home');
     tester.expectScreen('home-screen');
 
