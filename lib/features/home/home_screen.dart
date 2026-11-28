@@ -19,6 +19,7 @@ import '../../money/money.dart';
 import '../../pig/pig_mood.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
+import '../../summary/noted_days.dart';
 import '../../summary/summary.dart';
 import '../../theme/theme.dart';
 import '../../tips/tips.dart';
@@ -559,8 +560,8 @@ class _GoalCard extends StatelessWidget {
   }
 }
 
-/// This week (Monday to today): spent, saved, the plan bar, and the spends
-/// that felt worth it.
+/// This week (Monday to today): spent, saved, the plan bar, the spends that
+/// felt worth it, and from 2 days on, how many days had an entry (feature 6).
 class _WeekCard extends StatelessWidget {
   const _WeekCard({required this.data});
 
@@ -572,8 +573,9 @@ class _WeekCard extends StatelessWidget {
     final theme = Theme.of(context);
     final locale = context.session.device.localeName;
     final today = context.services.localDay.todayWire;
+    final period = periodContaining(PeriodKind.week, today);
     final week = summarize(
-      period: periodContaining(PeriodKind.week, today),
+      period: period,
       today: today,
       entries: [
         for (final e in data.entries)
@@ -594,6 +596,10 @@ class _WeekCard extends StatelessWidget {
       color: theme.colorScheme.onSurface,
     );
     final percent = week.planPercent;
+    final noted = notedDays([for (final e in data.entries) e.localDate], period);
+    final muted = theme.textTheme.bodyMedium?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     return TestId.container(
       'home-week',
       child: Card(
@@ -614,22 +620,19 @@ class _WeekCard extends StatelessWidget {
               ),
               if (percent != null && data.plan != null) ...[
                 const SizedBox(height: 12),
-                Text(
-                  l10n.weekPlan(money(data.plan!)),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
+                Text(l10n.weekPlan(money(data.plan!)), style: muted),
                 const SizedBox(height: 6),
                 PlanBar(percent: percent),
               ],
               if (week.worth > 0) ...[
                 const SizedBox(height: 12),
-                Text(
-                  l10n.weekWorth(week.worth),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                Text(l10n.weekWorth(week.worth), style: muted),
+              ],
+              if (noted >= notedDaysMin) ...[
+                const SizedBox(height: 12),
+                TestId(
+                  'home-week-noted',
+                  child: Text(l10n.weekNotedDays(noted), style: muted),
                 ),
               ],
             ],
