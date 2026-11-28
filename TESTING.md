@@ -34,7 +34,35 @@ Rules for a row:
 
 <!-- rows start here -->
 
-### master: pig tips, the app's side (#93 the client, #94 the screens) — deba760c — 🟢 (one finding, F-TI-1: a second tip call after off → on the same day, fixed in #95 and checked after it lands; other languages ⏳) — 2026-11-28 16:53 UTC
+### master: #96 Night ends at 04:00, "+ New goal" as a text button, no amount echo abroad — 093ca12f — 🟢 (retroactive; the night pig at 05:00, F-B1, closed) — 2026-11-28 18:28 UTC
+Build: staging debug with Plus built in, built in each job from the sha named: `kind=plus-owned` (093ca12f, the row's sha) and `kind=plus-rows` (4ed3184, #96's own landing); installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, zone UTC, the device clock set by root
+Rows: `tool/device-rows/fb1-night.sh`, run as a child of `group-d-po1.sh` (emulator run 46173528728, flows `tests/retro` @ 11594eb) and of `fb1-pa3.sh` (emulator run 46168828824 on 4ed3184, flows @ 785c7e2)
+| Row / check | Result | Notes |
+|---|---|---|
+| Master's push CI, read per test (run 46173400441, this sha) | 🟢 | `+2793: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; server tests (deno) 32 passed, 0 failed; the SQL asserts pass |
+| #96's own landing, 4ed3184: push CI read per test (run 46168710983) | 🟢 | `+2787: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; deno 32/0; the SQL asserts pass |
+| The commits since deba760c | 🟢 | 12, every one authored and committed by the noreply identity |
+| NB-1 Home open across 04:00 | 🟢 | flow 96a: a fresh journal with one spend, hidden and reopened, at 03:56: the sleepy pig's "It's getting late. I'll be here tomorrow."; at 04:00:02 the day's pig, with no tap |
+| NB-2 a cold start at 05:00 | 🟢 | flow 96b: the day's pig ("Small steps count, even tiny ones."), where F-B1 had the night line; on 4ed3184 and on 093ca12f |
+| NB-2 the Add sheet in euros | 🟢 | €12.34 typed with the EUR chip: no "= €12.34" echo under the amount; looked at |
+| NB-3 "+ New goal" | 🟢 | flow 96c: a text button at the right, under the goal card (builds with Plus only: a second goal is Plus's); on 4ed3184 (plus-rows) and on 093ca12f (plus-owned); looked at |
+History: NB-1 ❌ on 4ed3184 (run 46168828824): right after the flow's own spend, Home showed the pig's reaction ("Noted. Thanks for writing it down.") in place of the night line. The flow now hides and reopens Home first, as #53's rows do; a fault in the flow, not the app
+
+### #95 Pig tips in the release build: INTERNET for them only, behind their texts — 093ca12f — 🟢 (R1: the store build sends nothing, shown with a positive control; the Plus probe as data; real Play Billing and its hosts ⏳) — 2026-11-28 17:58 UTC
+Build: the store's flavour and build (`kind=prod-release`: release + R8, no crash-report DSN, a throwaway signing key made in the job, so the APK's sha differs from job to job), built in the job from 093ca12f, APK sha256 fbf5794e…; installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Rows: `tool/device-rows/r1-net.sh` (emulator run 46172236564, flows `tests/retro` @ 11594eb): 2 pass, 0 fail. The app's own bytes are read with `ci/tool/emulator/net_bytes.sh` (that uid's netstats lines only). Each reading has a positive control: the device's shell fetches a small file from the runner just before it, and the run stops, never reading as zero, if the dump is empty, the fetch didn't arrive, the shell's uid shows no bytes, or its bytes didn't grow
+| Row / check | Result | Notes |
+|---|---|---|
+| CI on this head, read per test (run 46168835731) | 🟢 | `+2793: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; deno 32/0; the SQL asserts pass |
+| R1-1 a session on the store build | 🟢 | flow 95a: a cold start; a spend and a save; Timeline, Summary, Me; an export to the share sheet ("Sharing 1 file: piggybow-2026-11-28.csv") and back; to the background and back; looked at. Me has no Back up, Restore or Pig tips rows, as a store build should |
+| R1-2 the bytes | 🟢 | the app (uid 10192): rx 0 tx 0 after the install, before the first launch; rx 0 tx 0 after the session and a minute's wait |
+| R1-2 the control, the same readings | 🟢 | before: netstats entries 52; the shell's uid 0 (shared with root daemons), just after its fetch, rx 410 tx 1365. After: entries 91; rx 820 tx 3614. Both fetches arrived (HTTP 200, 20 bytes) |
+| The Plus probe, on fa9c6a6c (the head before the merge with master) | ⚪ data | emulator run 46168735175, `kind=plus-probe` on a Play Store image: the app stayed up 120 s after Play Billing started, 0 crashes; its permissions are exactly the store build's (INTERNET, no ACCESS_NETWORK_STATE); Play Billing's logging couldn't schedule its upload without that permission (3 warnings, no upload attempted); billing didn't connect (no account on the image); the uid's bytes 0 before and after (read before the control existed) |
+| ⏳ real Play Billing | | a billing session with the store's product on a phone, and the hosts it talks to, before any Plus release |
+| ⏳ pig tips switched on in a store build | | the texts and the switch-on are their own PR; tips are off here |
+History: R1 first passed on this head without a control (run 46169651800, rx 0 tx 0 both times, but an empty dump would read the same) → the control was added and R1 run again (run 46172236564)
+
+### master: pig tips, the app's side (#93 the client, #94 the screens) — deba760c — 🟢 (one finding, F-TI-1: a second tip call after off → on the same day, fixed in #95, 🟢 on master 7d2806d; other languages ⏳) — 2026-11-28 16:53 UTC
 Build: staging debug with pig tips on, their server pointed at a mock on the runner (`kind=tips-mock`), built in the job from deba760c, APK sha256 1fa4dc48…; installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US; root moves the device clock for the following days
 Rows: `tool/device-rows/group-tips.sh` (emulator run 46166682735, flows `tests/retro` @ 1a06c8f): 5 pass, 1 INFO (TI-7b), 0 fail. The mock (`tool/device-rows/tips_mock.py`) checks every tip request against the contract (`pig-tip-request.json`) and logs every request (`tips-mock.jsonl` in the evidence)
 | Row / check | Result | Notes |
@@ -47,7 +75,8 @@ Rows: `tool/device-rows/group-tips.sh` (emulator run 46166682735, flows `tests/r
 | What a tip request carries | 🟢 | every body: language, weekday, category shares, feelings, saves, active goals, picks; no notes, no amounts |
 | TI-4 Report | 🟢 | flow 94c: Report → Not helpful → thanks; one report with the tip, model and sig that were served; the built-in tip after it, also after a restart, with no new tip call |
 | TI-2 off and on | 🟢 | flow 94d: off at once (forget accepted); on asks again and signs up a new id |
-| TI-7b one written tip a day, whatever the toggles | ❌ seen | after off → on the same day, the new id made a second tip call (1 → 2): F-TI-1, fixed in #95; this row becomes a pass/fail check once #95 lands |
+| TI-7b one written tip a day, whatever the toggles | ❌ seen | after off → on the same day, the new id made a second tip call (1 → 2): F-TI-1, fixed in #95 |
+| TI-7b again, after #95, on master 7d2806d | 🟢 | emulator run 46176331902 (flows `tests/retro` @ a22ab66, a pass/fail row now): off → on the same day made no new tip call (1 → 1); TI-1a, TI-1b, TI-4, TI-2 and TI-3's six days pass again (6 pass, 0 fail) |
 | TI-3 no tip from the server's side | 🟢 | flow 94e on six days: a timeout, 429, 503, 204, a 200 without sig, a 200 without x-tip-model → the built-in tip, nothing left loading, exactly one tip call each day; the session refreshed each day |
 | ⏳ TI-5 other languages | | pig tips are in English only for now |
 | ⏳ the real tips server | | a build with tips on against the real server, on a phone, with the release that turns tips on |
@@ -70,7 +99,7 @@ Rows: `tool/device-rows/group-b.sh` (emulator run 46155006260, flows `tests/retr
 | The C3 fixture's letter | ⚪ by design | the fixture freezes its own clock at 2 Dec, so its Home shows November's letter |
 History: each PR's own rows ran earlier on its head with fake_now (in its PR's comments); this is the first run of all six on master, in one build
 
-### master: groups A and A′ — the Plus line (yearly only), the Help and privacy links, themes, Patterns — 10a2bc9 — 🟢 (retroactive, on master after the landing; Plus is off in release builds; PO-1's run ❌ at the flow's own last check, its re-run ⏳; PA-3 ⏳) — 2026-11-28 14:30 UTC
+### master: groups A and A′ — the Plus line (yearly only), the Help and privacy links, themes, Patterns — 10a2bc9 — 🟢 (retroactive, on master after the landing; Plus is off in release builds; PO-1's run ❌ at the flow's own last check, its re-run 🟢 on master 093ca12f; PA-3 🟢 on master 4ed3184) — 2026-11-28 14:30 UTC
 Build: staging debug, built in each job from 10a2bc9: `kind=plus-rows` (Plus enabled, the rows' fake store: Plus stays off) and `kind=plus-owned` (the same, reporting one active yearly purchase with nothing bought); installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
 Rows: `tool/device-rows/group-a.sh` (emulator run 46152479393, flows `tests/retro` @ ecda764): 4 pass, 1 fail (PA-3); `group-a-owned.sh` (run 46153951980, flows @ 2f0e48a): 0 pass, 1 fail (PO-1)
 | Row / check | Result | Notes |
@@ -81,10 +110,10 @@ Rows: `tool/device-rows/group-a.sh` (emulator run 46152479393, flows `tests/retr
 | PA-1 the paywall (Plus off) | 🟢 | Me's Plus row opens it: "Everything you have now stays free", three benefits, **one plan, yearly** ("Free for 7 days, then … a year"; no monthly plan), Restore, the store's cancel line, the Privacy Policy link; Start and Restore buy nothing; Back closes it |
 | PA-2 the gates (Plus off) | 🟢 | a second goal and Add category each open the paywall and change nothing; hiding a built-in category is free (gone from Add, shown again) |
 | PA-5 the themes' gate (Plus off) | 🟢 | Me → Theme: Strawberry, Plum, Apricot, Blueberry; Plum opens the paywall; the theme stays |
-| ⏳ PA-3 the paywall at font scale 2.0 | | on the device with the next Plus run (two tries here stopped in the flow before the paywall); the yearly-only paywall at ×2 is in the goldens (320 × 2: offer, offer-end, pending), looked at |
+| PA-3 the paywall at font scale 2.0 | 🟢 on 4ed3184 | not proven at 10a2bc9 (two tries there stopped in the flow before the paywall). Then on a later master, 4ed3184 (`kind=plus-rows`, emulator run 46168828824, `fb1-pa3.sh` → `group-a-x2.sh`): the yearly plan only, "Start your free week", Restore, the cancel line and the Privacy Policy link, whole at ×2; 3 shots looked at |
 | PA-4 the smoke and the journal, Plus enabled | 🟢 | flows 00 and 10 |
 | PO-1 Plus on (with nothing bought) | ❌ | flow 90a's last step: `Assertion 'id: me-plus is visible' failed` after Cancel, with Me still scrolled down to Delete everything: a fault in the flow (it now waits for `me-delete`). Every assertion about the app before that step passed: Me "On. Thanks for your support!" with Manage subscription; the paywall "You have Piggybow Plus", Manage, no plans; a second goal opens the goal form with no paywall (two goals on Home); "Coffee runs" made in Categories and offered in Add; **Delete everything says "Your Plus subscription keeps running until you cancel it in Google Play." with Manage subscription**, and Cancel erases nothing |
-| ⏳ PO-1 re-run | | `group-a-owned.sh` with the fixed flow, on the next `plus-owned` run on master |
+| PO-1 re-run | 🟢 on 093ca12f | `group-a-owned.sh` with the fixed flow, on a later master, 093ca12f (`kind=plus-owned`, emulator run 46173528728, `group-d-po1.sh`): every step above, through Delete everything's Plus line and Cancel |
 | Patterns (#68, #69) | ⚪ device-free | the goldens above and the widget tests; Summary's teaser shows only once enough spends have a feeling |
 | ⏳ Plus bought for real | | Play Billing on a device with the store's product (the Plus probe), before Plus can ship |
 History: dry runs on #49 (Plus off, flows only) and an `adb root` flake (retried since, in #89)
