@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "aaa3cbcb39ee05bd9ea237e000373b85e9db2570",
+  "ref": "feat/gentle-comparisons",
+  "run_id": "46124047835",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -1012,6 +1012,42 @@
       "bytes": 52392,
       "width": 960,
       "height": 960
+    },
+    {
+      "file": "summary_compare_dark_320x2.png",
+      "state": "SC1",
+      "test": "SC1 By category with this time last week (320 dp, text ×2, dark)",
+      "sha256": "6bc8c35de8b25515a6ca78125de93a515f540684300b8b13a688832668245401",
+      "bytes": 203680,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_compare_dark_360x1.png",
+      "state": "SC1",
+      "test": "SC1 By category with this time last week (360 dp, text ×1, dark)",
+      "sha256": "57bc0d4207a3e35c88feab8b810628c51a32ade7b8da3b0b666b3a13bee71bd9",
+      "bytes": 185442,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_compare_light_320x2.png",
+      "state": "SC1",
+      "test": "SC1 By category with this time last week (320 dp, text ×2, light)",
+      "sha256": "5dc47faa1307bf973fcbb961b99fd2fd1d94a146877203a5109a26704d406504",
+      "bytes": 202909,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_compare_light_360x1.png",
+      "state": "SC1",
+      "test": "SC1 By category with this time last week (360 dp, text ×1, light)",
+      "sha256": "b6e6f076482ba8b83af1ead3f2d56ef6e8058f4bd1129432ab5b56424afbff8a",
+      "bytes": 186362,
+      "width": 1080,
+      "height": 2340
     },
     {
       "file": "summary_empty-week_dark_360x1.png",
