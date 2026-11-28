@@ -4,7 +4,7 @@ import 'dart:io' show File;
 import 'package:flutter_test/flutter_test.dart';
 
 /// The mood contract's case ids (test/contracts/pig_mood_cases.json) read as
-/// C<number> or C<number><letter>. Down the file the numbers increase and
+/// `C<number>` or `C<number><letter>`. Down the file the numbers increase and
 /// never repeat, and a number's lettered variants run a, b, c… in order
 /// (C22a, C22b). Gaps are allowed: a branch can reserve its numbers before it
 /// lands. Two branches giving the same number to different cases fail here,
