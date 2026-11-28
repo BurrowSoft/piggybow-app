@@ -48,4 +48,5 @@ tags: [play]
 - assertVisible:
     id: add-feel-worth
     checked: true
+- runFlow: ../../subflows/dismiss_system_anr.yaml   # never a launcher dialog in a store shot
 - takeScreenshot: play-02-add

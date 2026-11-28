@@ -12,4 +12,5 @@ tags: [play]
 - assertVisible: ".*Mon, Nov 16.*"
 - assertVisible: ".*\\+\\$60\\.00.*"
 - waitForAnimationToEnd
+- runFlow: ../../subflows/dismiss_system_anr.yaml   # never a launcher dialog in a store shot
 - takeScreenshot: play-05-timeline

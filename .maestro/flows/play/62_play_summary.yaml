@@ -19,4 +19,5 @@ tags: [play]
     id: sum-saved
     text: ".*\\$60\\.00.*"
 - waitForAnimationToEnd
+- runFlow: ../../subflows/dismiss_system_anr.yaml   # never a launcher dialog in a store shot
 - takeScreenshot: play-03-summary

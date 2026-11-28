@@ -3,6 +3,8 @@
 # case's now. The clear runs as its own step before the launch. The fixtures
 # mark the reminder offer answered, so Home opens on the pig, the goal, the
 # week and the tip (flow 60 asserts the offer is absent).
+# Changing the emulator's display size can hang the launcher: another app's
+# ANR dialog is closed (two rounds, as in fresh_launch); Piggybow's own never.
 # env: CASE
 appId: ${APP_ID}
 ---
@@ -20,8 +22,18 @@ appId: ${APP_ID}
             route: "/fixture/${CASE}"
       - extendedWaitUntil:
           visible:
-            id: "home-pig|fixture-error"
+            id: "home-pig|fixture-error|android:id/aerr_wait"
           timeout: 120000
+- runFlow: dismiss_system_anr.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home-pig|fixture-error|android:id/aerr_wait"
+    timeout: 60000
+- runFlow: dismiss_system_anr.yaml
+- extendedWaitUntil:
+    visible:
+      id: "home-pig|fixture-error"
+    timeout: 60000
 - assertNotVisible:
     id: fixture-error
 - waitForAnimationToEnd
