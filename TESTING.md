@@ -32,6 +32,36 @@ Rules for a row:
 
 <!-- rows start here -->
 
+### Master 31d7ae3: the store's build, the smoke before internal testing (6c) — 31d7ae3 — 🟢 (a store install on a real phone ⏳) — 2026-11-28 09:12 UTC
+Build: prod release (R8, the workflow's throwaway signing key), built in the job from 31d7ae3; installed = built (APK sha256 `f84aa078…`) · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, the real clock, en-US
+Rows: `tool/device-rows/smoke6c.sh` (emulator run 46127091775, flows `tests/smoke-6c` @ c95d54f); 12 of 12 rows
+| Row / check | Result | Notes |
+|---|---|---|
+| Master's push CI, read per test (run 46126344816, this sha) | 🟢 | `+1720: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; all four jobs green |
+| The installed package | 🟢 | `com.burrowsoft.piggybow`, versionName 0.1.0; not debuggable; no INTERNET and no ACCESS_NETWORK_STATE requested |
+| `00` smoke | 🟢 | every tab; alive after 60 s |
+| The journal: `10`, `11`, `13`, `14` | 🟢 | add, edit, delete; a save with no goal; a double tap on Add; Timeline's filters |
+| `30` onboarding | 🟢 | O1 to O3, the currency, the plan, Maybe later |
+| `21` a goal reached once | 🟢 | the celebration |
+| `42` the app lock | 🟢 | a PIN set; a cold start asks; a wrong PIN, then the right one. The lock screen's status bar: the clock, Wi-Fi, signal and battery all dark on the cream page |
+| `48` the reminder | 🟢 | set through Me for 9:06 AM, posted by 09:08:15 UTC; `color=0xffa8456a` |
+| ⏳ the store's build on a real phone (owner) | | the internal-testing install from Play |
+History: 817805b 🟢 (run 46122239068, 12 of 12 rows; push CI 46122088415 `+1715`, 0 failed, 0 skipped; its shots showed the lock screen's Wi-Fi and signal icons white while the clock and battery were dark, fixed by #65) → 31d7ae3 🟢
+
+### #65 Lock: dark status-bar icons from the first frame, on its own style — 31d7ae3 — 🟢 (Piggybow's own theme against the phone's mode ⏳) — 2026-11-28 08:32 UTC
+Build: staging debug, built in the job from 31d7ae3; installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US · light mode, then night mode; the app on its default (System) theme
+Rows: `tool/device-rows/pr65.sh` (emulator run 46125280256, flows `tests/pr-65` @ 6f25a6c); 14 frames looked at, with the window's appearance from `dumpsys window`
+| Row / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46124822999, this head) | 🟢 | `+1720: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| LB1 light: a cold start with the lock on | 🟢 | three quick frames of the splash, the lock as it appears, and 3 s later: in all five the clock, Wi-Fi, signal and battery are dark; `LIGHT_STATUS_BARS` over the whole window at the lock and at +3 s |
+| LB2 light: unlock, background, come back | 🟢 | the cover, the lock and 3 s later: all four icons dark; the same appearance |
+| LB1 night: a cold start with the lock on | 🟢 | the splash on the dark background, the lock and 3 s later: all four icons white; no `LIGHT_STATUS_BARS` |
+| LB2 night: unlock, background, come back | 🟢 | the lock and 3 s later: all four icons white |
+| Before this PR | ❌ seen | the prod-release smoke on 817805b (run 46122239068): the lock's Wi-Fi and signal white while the clock and battery were dark; no frame on this head shows that mix |
+| ⏳ Piggybow's own theme against the phone's mode | | Piggybow Light on a dark phone and Piggybow Dark on a light phone: the tester, a CI-emulator run on 31d7ae3 (`pr65b`); this PR covers the default System theme |
+History: 31d7ae3 🟢 (landed as is, fast-forward)
+
 ### #52 Home and Timeline: each Add button has its own hero tag — dfd4452 — ⚪ (debug-only, UX waiver) — 2026-11-28 07:34 UTC
 | Check | Result | Notes |
 |---|---|---|
