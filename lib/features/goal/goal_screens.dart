@@ -282,10 +282,7 @@ class _GoalEditScreenState extends State<GoalEditScreen> {
                       button: true,
                       child: TextButton(
                         onPressed: _busy ? null : _later,
-                        child: Text(
-                          l10n.onbGoalLater,
-                          textAlign: TextAlign.center,
-                        ),
+                        child: ButtonLabel(l10n.onbGoalLater),
                       ),
                     ),
                   ],
