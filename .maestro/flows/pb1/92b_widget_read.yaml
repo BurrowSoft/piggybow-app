@@ -8,12 +8,12 @@ tags: [widget]
     timeout: 3000
 - extendedWaitUntil:
     visible:
-      id: "com.burrowsoft.piggybow.staging:id/widget_root"
+      id: ".*:id/widget_root"
     timeout: 15000
 - assertVisible: "${EXPECT}"
 - takeScreenshot: 92-placed
 - tapOn:
-    id: "com.burrowsoft.piggybow.staging:id/widget_root"
+    id: ".*:id/widget_root"
 - extendedWaitUntil:
     visible:
       id: "home-add|lock-screen"

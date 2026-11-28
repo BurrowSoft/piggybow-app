@@ -10,11 +10,11 @@ tags: [widget, risk]
     timeout: 3000
 - extendedWaitUntil:
     visible:
-      id: "com.burrowsoft.piggybow.staging:id/widget_root"
+      id: ".*:id/widget_root"
     timeout: 15000
 # Locked face: no amount, no goal name
 - assertVisible:
-    id: "com.burrowsoft.piggybow.staging:id/widget_label"
+    id: ".*:id/widget_label"
     text: "Tap to open"
 - assertNotVisible: ".*\\$12\\.00.*"
 - takeScreenshot: 92-widget-locked
@@ -22,17 +22,17 @@ tags: [widget, risk]
 - runFlow:
     when:
       visible:
-        id: "com.burrowsoft.piggybow.staging:id/widget_add"
+        id: ".*:id/widget_add"
     commands:
       - tapOn:
-          id: "com.burrowsoft.piggybow.staging:id/widget_add"
+          id: ".*:id/widget_add"
 - runFlow:
     when:
       notVisible:
-        id: "com.burrowsoft.piggybow.staging:id/widget_add"
+        id: ".*:id/widget_add"
     commands:
       - tapOn:
-          id: "com.burrowsoft.piggybow.staging:id/widget_root"
+          id: ".*:id/widget_root"
 - extendedWaitUntil:
     visible:
       id: lock-screen
