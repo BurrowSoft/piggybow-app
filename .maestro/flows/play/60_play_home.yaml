@@ -1,0 +1,16 @@
+appId: ${APP_ID}
+name: Play shot 1 - Home (STORE1) - the pig Happy, Trip to Japan at 32 percent, this week, today's idea
+tags: [play]
+---
+- runFlow:
+    file: ../../subflows/store_launch.yaml
+    env: { CASE: "STORE1" }
+- assertVisible:
+    id: home-pig
+    text: "(?i).*happy.*"
+- assertVisible: ".*You put something aside this week\\. Lovely!.*"
+- assertVisible: ".*Trip to Japan.*"
+- assertVisible: ".*\\$480\\.00.*"
+- assertNotVisible:
+    id: home-reminder-yes
+- takeScreenshot: play-01-home

@@ -1,0 +1,36 @@
+appId: ${APP_ID}
+name: Play shot 4 - the goal reached (STORE2) - one 50.00 save completes Trip to Japan; the celebration
+tags: [play]
+---
+- runFlow:
+    file: ../../subflows/store_launch.yaml
+    env: { CASE: "STORE2" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: goal-card }
+- tapOn:
+    id: goal-card
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: goal-add-savings }
+- tapOn:
+    id: goal-add-savings
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "50", EXPECT: ".*50.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-submit }
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: goal-done-screen
+    timeout: 15000
+- assertVisible: ".*Trip to Japan: \\$1,500\\.00 saved\\. Every bit of it was you\\..*"
+- waitForAnimationToEnd
+- takeScreenshot: play-04-goal-reached

@@ -1,0 +1,51 @@
+appId: ${APP_ID}
+name: Play shot 2 - the Add sheet filled (STORE1) - Spent 18.50, Food and drinks, Worth it, a note, Today
+tags: [play]
+---
+- runFlow:
+    file: ../../subflows/store_launch.yaml
+    env: { CASE: "STORE1" }
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-amount, TEXT: "18.50", EXPECT: ".*18\\.50.*" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-cat-food }
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-feel-worth }
+- tapOn:
+    id: add-feel-worth
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-note }
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env: { ID: add-note, TEXT: "Dinner with friends", EXPECT: ".*Dinner with friends.*" }
+# Hide the keyboard by its own Back in the navigation bar (only there while the
+# keyboard is up; below the note), never the sheet's close or a system Back.
+- runFlow:
+    when:
+      visible:
+        text: "Back"
+        below:
+          id: add-note
+    commands:
+      - tapOn:
+          text: "Back"
+          below:
+            id: add-note
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env: { ID: add-amount }
+- assertVisible: ".*= \\$18\\.50.*"
+- assertVisible:
+    id: add-feel-worth
+    checked: true
+- takeScreenshot: play-02-add

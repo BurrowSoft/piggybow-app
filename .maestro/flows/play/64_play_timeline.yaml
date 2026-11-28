@@ -1,0 +1,15 @@
+appId: ${APP_ID}
+name: Play shot 5 - Timeline, All (STORE1) - Today, Yesterday and Mon Nov 16 with their day totals
+tags: [play]
+---
+- runFlow:
+    file: ../../subflows/store_launch.yaml
+    env: { CASE: "STORE1" }
+- tapOn:
+    id: tab-timeline
+- assertVisible: "Today"
+- assertVisible: "Yesterday"
+- assertVisible: ".*Mon, Nov 16.*"
+- assertVisible: ".*\\+\\$60\\.00.*"
+- waitForAnimationToEnd
+- takeScreenshot: play-05-timeline

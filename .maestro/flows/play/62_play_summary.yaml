@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+name: Play shot 3 - Summary, this week (STORE1) - Nov 16 to Nov 22, the totals, the plan bar, five categories, the worth line
+tags: [play]
+---
+- runFlow:
+    file: ../../subflows/store_launch.yaml
+    env: { CASE: "STORE1" }
+- tapOn:
+    id: tab-summary
+- tapOn:
+    id: sum-week
+- assertVisible:
+    id: sum-period-label
+    text: ".*Nov 16.*Nov 22.*"
+- assertVisible:
+    id: sum-spent
+    text: ".*\\$162\\.90.*"
+- assertVisible:
+    id: sum-saved
+    text: ".*\\$60\\.00.*"
+- waitForAnimationToEnd
+- takeScreenshot: play-03-summary

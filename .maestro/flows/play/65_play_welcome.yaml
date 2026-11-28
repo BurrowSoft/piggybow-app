@@ -1,0 +1,20 @@
+appId: ${APP_ID}
+name: Play shot 6 - Welcome (O1), a fresh install with no fixture - the pig under the rainbow, Meet your money pig, US dollar
+tags: [play]
+---
+- stopApp
+- clearState
+- waitForAnimationToEnd:
+    timeout: 2000
+- launchApp:
+    permissions:
+      notifications: deny
+- extendedWaitUntil:
+    visible:
+      id: onb-welcome
+    timeout: 120000
+- assertVisible: "Meet your money pig"
+- assertVisible: ".*No bank login and no account\\. Your entries stay with you\\..*"
+- assertVisible: ".*Amounts in US dollar.*"
+- waitForAnimationToEnd
+- takeScreenshot: play-06-welcome
