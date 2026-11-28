@@ -7,6 +7,7 @@ import 'package:piggybow/features/plus/plus_store.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
+import 'package:piggybow/money/rate.dart';
 
 import 'helpers.dart';
 
@@ -228,6 +229,30 @@ void main() {
     final copy = (await entries(tester, app)).firstWhere((e) => e.id != 'entry-1');
     expect((copy.category, copy.customCategory, copy.amountMinor, copy.note),
         (null, bubbleTea.id, 6500, 'Brown sugar'));
+    expect(copy.localDate, '2026-10-02');
+  });
+
+  // Wiring item 19 (#56 with #74): without its rate, the store would refuse
+  // the copy (another currency needs one).
+  testWidgets('a spend in another currency goes again in it, at its own rate', (tester) async {
+    final eur = parseRate('39.12', RateDirection.toHome, mark: '.').rate!;
+    final app = await open(
+      tester,
+      seed: (app) => app.journal.addEntry(
+        type: EntryType.spent,
+        amountMinor: 1234,
+        currency: 'EUR',
+        localDate: '2026-09-28',
+        category: SpendCategory.food,
+        note: 'Crepes',
+        rate: eur,
+      ),
+    );
+    await longPress(tester, 'tl-row-entry-1');
+    await tester.tapId('tl-repeat');
+    final copy = (await entries(tester, app)).firstWhere((e) => e.id != 'entry-1');
+    expect((copy.amountMinor, copy.currency, copy.rate, copy.convertedMinor, copy.note),
+        (1234, 'EUR', eur, 48274, 'Crepes'));
     expect(copy.localDate, '2026-10-02');
   });
 

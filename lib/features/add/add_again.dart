@@ -19,10 +19,11 @@ bool canAddAgain(Entry entry, Goal? goal, {required bool plus}) => switch (entry
 };
 
 /// [entry] again, dated today: the same type, amount, category (built-in or
-/// your own) and note. The feeling is asked fresh (none yet). A save goes to
-/// its own goal, still active, named outright (with two or more goals, not
-/// the one a new save goes to by default); a save that had none stays with
-/// none (never moved into a goal).
+/// your own) and note. In another currency, it's in that currency again, at
+/// its own rate (feature 19). The feeling is asked fresh (none yet). A save
+/// goes to its own goal, still active, named outright (with two or more
+/// goals, not the one a new save goes to by default); a save that had none
+/// stays with none (never moved into a goal).
 Future<Entry> addAgainToday(AppServices services, Entry entry) =>
     services.journal.addEntry(
       type: entry.type,
@@ -34,6 +35,7 @@ Future<Entry> addAgainToday(AppServices services, Entry entry) =>
       note: entry.note,
       goalId: entry.type == EntryType.saved ? entry.goalId : null,
       noGoal: entry.type == EntryType.saved && entry.goalId == null,
+      rate: entry.rate,
     );
 
 /// Adds [entry] again and says so on [messenger] ("Added again for today",
