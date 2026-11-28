@@ -314,6 +314,9 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pump();
       expect(byId('lock-cover'), findsNothing);
+      // Home reads again on resume (#62): that read finishes before the
+      // test ends, so no store timer outlives it.
+      await tester.pumpAndSettle();
     });
   }
 
