@@ -30,7 +30,13 @@ void main() {
         config: const AppConfig(flavor: Flavor.staging, plusEnabled: true),
       )..prefs.appearance = c.appearance;
       await app.pump(tester, location: MeRoutes.privacy);
-      await tester.revealId('me-privacy-screen');
+      // The last line: at text ×2 it's further down the (lazy) list.
+      await tester.scrollUntilVisible(
+        find.text(line),
+        200,
+        scrollable: listIn('me-privacy-screen'),
+      );
+      await tester.pumpAndSettle();
       expect(find.text(line), findsOneWidget);
       await expectSoundLayout(tester, reason: 'WG1');
       if (c.takesGolden) {
