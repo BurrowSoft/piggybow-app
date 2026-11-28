@@ -1,7 +1,7 @@
 {
-  "source_sha": "71f58f6bd41204ade934a15821cc941729832b72",
-  "ref": "71f58f6bd41204ade934a15821cc941729832b72",
-  "run_id": "46155616731",
+  "source_sha": "6ba95859959ee49bbda045b154a1a9a8c95199aa",
+  "ref": "6ba95859959ee49bbda045b154a1a9a8c95199aa",
+  "run_id": "46159510177",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -9,8 +9,8 @@
       "file": "add-sheet_edit-locked_dark_320x2.png",
       "state": "TG5",
       "test": "TG5 a save the goal needs: Delete tapped, the sheet says why (320 dp, text ×2, dark)",
-      "sha256": "1ef351c9e9a81aec14f788ee7ed1967ab52c43028a161b7c274435480f5cdb70",
-      "bytes": 182862,
+      "sha256": "d1c05f74f4e6bdbe3ea86fc115762b3bf6ec350dc500a618d3d04bdd1ad29bf1",
+      "bytes": 185059,
       "width": 960,
       "height": 2340
     },
@@ -18,8 +18,8 @@
       "file": "add-sheet_edit-locked_light_320x2.png",
       "state": "TG5",
       "test": "TG5 a save the goal needs: Delete tapped, the sheet says why (320 dp, text ×2, light)",
-      "sha256": "0ed53140d3ab6d941b58dc97292b8863218c0bf4c4d4b1177c3945c8d59814c6",
-      "bytes": 182284,
+      "sha256": "a138db0ded4c57b01b654e12742b08f10fa6a739987edfd0f0af8937780bdf78",
+      "bytes": 184462,
       "width": 960,
       "height": 2340
     },
@@ -27,8 +27,8 @@
       "file": "add-sheet_edit-lowered_dark_320x2.png",
       "state": "TG6",
       "test": "TG6 a save the goal needs: lowered below it, the amount says why (320 dp, text ×2, dark)",
-      "sha256": "0abc2e0b6de20ad23d276b2c83f1666bad479403373655c497e7255101fb7ffb",
-      "bytes": 173046,
+      "sha256": "4868413150310ab5349921298ac221fe220a2a7d5aa1a00362c5102c501b8dd2",
+      "bytes": 167722,
       "width": 960,
       "height": 2340
     },
@@ -36,8 +36,8 @@
       "file": "add-sheet_edit-lowered_light_320x2.png",
       "state": "TG6",
       "test": "TG6 a save the goal needs: lowered below it, the amount says why (320 dp, text ×2, light)",
-      "sha256": "b24ec8d3a57c54d17232ec0333b0b1ace63b9a137ffd407815ef40c7017d059f",
-      "bytes": 173198,
+      "sha256": "2fd7d8665bb44055aaf5053369c96e8157868e5e59a26ab4971ad78fedf2b1fb",
+      "bytes": 167566,
       "width": 960,
       "height": 2340
     },
@@ -45,8 +45,8 @@
       "file": "add-sheet_quick-amounts_dark_320x2.png",
       "state": "Q1",
       "test": "the Add sheet with 3 quick amounts, 320 dp ×2, dark",
-      "sha256": "809c89abea086abf5abd8d5a68c6bf3649dc6a81eac39d941092fc864ba035fe",
-      "bytes": 163190,
+      "sha256": "e84db8f8828e554674b6d6973c8cf030a9f185a7eed7a8d9b7ef4fb7a95f8408",
+      "bytes": 152354,
       "width": 960,
       "height": 2340
     },
@@ -54,8 +54,8 @@
       "file": "add-sheet_quick-amounts_dark_360x1.png",
       "state": "Q1",
       "test": "the Add sheet with 3 quick amounts, 360 dp ×1, dark",
-      "sha256": "65537bd72c27f48729241b2a2b68ae707bc06d42b272af97df91222c3b658356",
-      "bytes": 153693,
+      "sha256": "b5f5dc7e44e539f6ca73575a5f18bb76a2a6d3569493844889b405208dd0f658",
+      "bytes": 153049,
       "width": 1080,
       "height": 2340
     },
@@ -63,8 +63,8 @@
       "file": "add-sheet_quick-amounts_light_320x2.png",
       "state": "Q1",
       "test": "the Add sheet with 3 quick amounts, 320 dp ×2, light",
-      "sha256": "81f098569859054b2442cb40a86fc12043c84f25fadd512a38a99767f9203ace",
-      "bytes": 163841,
+      "sha256": "69c7acd1c1f8f696c1d3c036cf5eea6298c8b8c8a6cf51d50f0f108dcc61c73f",
+      "bytes": 153066,
       "width": 960,
       "height": 2340
     },
@@ -72,17 +72,71 @@
       "file": "add-sheet_quick-amounts_light_360x1.png",
       "state": "Q1",
       "test": "the Add sheet with 3 quick amounts, 360 dp ×1, light",
-      "sha256": "97709274f23acab7a3c5e09b423d97bcee07171748cfe36072c23af38200ebed",
-      "bytes": 155058,
+      "sha256": "5298c17a141a31c452c24586414d744f7e933b66c21bfb2d3b5023bfb227132a",
+      "bytes": 154463,
       "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat-choices_dark_320x2.png",
+      "state": "RP2",
+      "test": "RP2 the Repeat choices on a month end (320 dp, text ×2, dark)",
+      "sha256": "8c316c9eefaceebbcbe7d6eaa64a38004203c100fb8370fbb319916b488d17e4",
+      "bytes": 148222,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat-choices_light_320x2.png",
+      "state": "RP2",
+      "test": "RP2 the Repeat choices on a month end (320 dp, text ×2, light)",
+      "sha256": "da37c14790c8988d7a07dd2b8c46f15c66fae08835f0f3b810abff38be2a602f",
+      "bytes": 151163,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat-end_dark_320x2.png",
+      "state": "RP1",
+      "test": "RP1 the Add sheet: rent every month on day 30, and the hint (320 dp, text ×2, dark)",
+      "sha256": "4d11effb491e1df2fa4a1914cc38cc6040d098641d8a988827fdcfef72896d01",
+      "bytes": 148483,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat-end_light_320x2.png",
+      "state": "RP1",
+      "test": "RP1 the Add sheet: rent every month on day 30, and the hint (320 dp, text ×2, light)",
+      "sha256": "b72f3ecc9ba3f2cabed01e1feb5bead72662c87561e676e0dfef894beac25f6f",
+      "bytes": 149304,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat_dark_320x2.png",
+      "state": "RP1",
+      "test": "RP1 the Add sheet: rent every month on day 30, and the hint (320 dp, text ×2, dark)",
+      "sha256": "94e23e2979743a5f518dc5423e26ec78abeafcecdecb53ffdd7d3d8627d175cc",
+      "bytes": 167597,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_repeat_light_320x2.png",
+      "state": "RP1",
+      "test": "RP1 the Add sheet: rent every month on day 30, and the hint (320 dp, text ×2, light)",
+      "sha256": "495faa0a68bc685564e7c60d5719bc0a6b1bd1d48bb67b1bc7b877541bd9b6cf",
+      "bytes": 168030,
+      "width": 960,
       "height": 2340
     },
     {
       "file": "add-sheet_saved-goal-end_dark_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, dark)",
-      "sha256": "9ca386c41d64bd4cf31c011d4d41d85d9750378910e5cdae2f961ab24228b3c3",
-      "bytes": 159954,
+      "sha256": "4418ed7312bb239439dc0f6e45fcf8a50744ef732a3ee93059723ec93a23c129",
+      "bytes": 152850,
       "width": 960,
       "height": 2340
     },
@@ -90,8 +144,8 @@
       "file": "add-sheet_saved-goal-end_light_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, light)",
-      "sha256": "da8bb0db269e5f77556414ec9065803112c741777c60df57fd5c687e77a9239d",
-      "bytes": 161288,
+      "sha256": "c06e86acde4cb752c38ebcb25fb9d9bd08d801afae6dd1d198c62440984a4a86",
+      "bytes": 153751,
       "width": 960,
       "height": 2340
     },
@@ -99,8 +153,8 @@
       "file": "add-sheet_saved-goal_dark_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, dark)",
-      "sha256": "e466c67f3195384af1d132372ebb148ac2ae99fa9c99be9c07db3fbe62584d65",
-      "bytes": 172109,
+      "sha256": "c73c2960191101917d4136dcdf0027416f8ca3d7805c010b50840550e177d01f",
+      "bytes": 175403,
       "width": 960,
       "height": 2340
     },
@@ -108,8 +162,8 @@
       "file": "add-sheet_saved-goal_light_320x2.png",
       "state": "A5",
       "test": "A5 a save, to a goal with a 40-character name (320 dp, text ×2, light)",
-      "sha256": "1578b189542966f2a17dcb8e033bdaa6b3d2da2ce7184fe61142cee922d4ac5f",
-      "bytes": 173164,
+      "sha256": "c8b3e017052bb0127f650aba047eb629b3d51bf169eebeb8cf98e145819f97e5",
+      "bytes": 176610,
       "width": 960,
       "height": 2340
     },
@@ -117,8 +171,8 @@
       "file": "add-sheet_spent-full-end_dark_320x2.png",
       "state": "A2",
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, dark)",
-      "sha256": "ef37aadd98b114ce4a741ac672ea9c8823873f004e036e180390636ce5b158eb",
-      "bytes": 145896,
+      "sha256": "0f397faa370fc9fda4e45d67c406c21ab406bfa4fbb1be9739c7c04e50aa2d41",
+      "bytes": 141719,
       "width": 960,
       "height": 2340
     },
@@ -126,8 +180,8 @@
       "file": "add-sheet_spent-full-end_light_320x2.png",
       "state": "A2",
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, light)",
-      "sha256": "c381cbad3238d347a5e1e3a33e43fa0dec299cb2af778afa098d1b0a7a763dbb",
-      "bytes": 146151,
+      "sha256": "a39c200e4e96c1f740403f29f1908ac2270ef222456e3c85b2c883a82c29a712",
+      "bytes": 142024,
       "width": 960,
       "height": 2340
     },
@@ -135,8 +189,8 @@
       "file": "add-sheet_spent-full_dark_320x2.png",
       "state": "A2",
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, dark)",
-      "sha256": "8df43f64d4e7482085e0f40f5b83dbd71cca6777e046d3f2063c63af50e727e5",
-      "bytes": 191318,
+      "sha256": "64c8ceee27c4af345671f52165ee8e946128231f69b16fbafef785de4e732971",
+      "bytes": 189120,
       "width": 960,
       "height": 2340
     },
@@ -144,8 +198,62 @@
       "file": "add-sheet_spent-full_light_320x2.png",
       "state": "A2",
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, light)",
-      "sha256": "11c1fcbf356cfb25c65740cb4db1ca75b55819ac36a9da79293f5cee8cad24a7",
-      "bytes": 191588,
+      "sha256": "734cc942a3cead39041f05dc0b6e4e5989134aa4ce2823f937e81cb79b2341e7",
+      "bytes": 189617,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel-end_dark_320x2.png",
+      "state": "MC1",
+      "test": "MC1 a spend in euros: its rate and the amount at home (320 dp, text ×2, dark)",
+      "sha256": "2b0bddc0920694414a64b0bd7920eca6aafa11cbc641b87bd2be343c96b3ea4f",
+      "bytes": 155392,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel-end_light_320x2.png",
+      "state": "MC1",
+      "test": "MC1 a spend in euros: its rate and the amount at home (320 dp, text ×2, light)",
+      "sha256": "5d92506cdd6899b2fe58b3b2fb490d96c5505db4f193dabe7f1e3731bd1cf6b7",
+      "bytes": 156761,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel-rate-error_dark_320x2.png",
+      "state": "MC2",
+      "test": "MC2 a rate with a grouping mark: its line at once (320 dp, text ×2, dark)",
+      "sha256": "7f735968098f6c8e6ccb9314d55e43625325f33e6225f26fc25e12bf3ed00f04",
+      "bytes": 172964,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel-rate-error_light_320x2.png",
+      "state": "MC2",
+      "test": "MC2 a rate with a grouping mark: its line at once (320 dp, text ×2, light)",
+      "sha256": "36ef893df993c5fee96841f62c4b3a1c04c252e7664533159027fdcd86984933",
+      "bytes": 173071,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel_dark_320x2.png",
+      "state": "MC1",
+      "test": "MC1 a spend in euros: its rate and the amount at home (320 dp, text ×2, dark)",
+      "sha256": "909ea6c2e1c70309cf41d029b76014bdc52d34d4e8168f7e8502213c04ae0f4c",
+      "bytes": 143528,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add-sheet_travel_light_320x2.png",
+      "state": "MC1",
+      "test": "MC1 a spend in euros: its rate and the amount at home (320 dp, text ×2, light)",
+      "sha256": "23821cd11e8d5f71cdf5cee3656ff33276854a38e3b0bda11d917d3c3d348f64",
+      "bytes": 144153,
       "width": 960,
       "height": 2340
     },
@@ -189,8 +297,8 @@
       "file": "add_save-toward_dark_320x2.png",
       "state": "PG2",
       "test": "PG2 the Add sheet: Save toward (320 dp, text ×2, dark)",
-      "sha256": "24f8f83621987391562c67057fd2514974f637818396ae97f2723eccb5ccab95",
-      "bytes": 115922,
+      "sha256": "31abc4302aa293e58ffa4b5f8ee2578c1a7306c056fe3c8ef025ec83ef32f5f5",
+      "bytes": 129981,
       "width": 960,
       "height": 2340
     },
@@ -198,8 +306,8 @@
       "file": "add_save-toward_light_320x2.png",
       "state": "PG2",
       "test": "PG2 the Add sheet: Save toward (320 dp, text ×2, light)",
-      "sha256": "09d98b00b39167d47dbb91bf8466e2a2398b2cd9e991b7368b3ed13f2e54c303",
-      "bytes": 116702,
+      "sha256": "c226e39827cb0dbf338d41cb2a060cc5bd3a2c1db6043e644c569556405883f3",
+      "bytes": 130877,
       "width": 960,
       "height": 2340
     },
@@ -423,8 +531,8 @@
       "file": "edit-sheet_menu_dark_320x2.png",
       "state": "RG2",
       "test": "RG2 the edit sheet's menu, open (320 dp, text ×2, dark)",
-      "sha256": "0cc92676c6c9e889fe4de868ae6e5a7b2e3a4eadcc13d0989657b4fe5e7a92fe",
-      "bytes": 156104,
+      "sha256": "e0d10043fa9c972859544346d2d0ef0159e2d9b6e71858d70e43ea8bdda9ae2a",
+      "bytes": 143144,
       "width": 960,
       "height": 2340
     },
@@ -432,8 +540,44 @@
       "file": "edit-sheet_menu_light_320x2.png",
       "state": "RG2",
       "test": "RG2 the edit sheet's menu, open (320 dp, text ×2, light)",
-      "sha256": "c8467bff5e818ac611d6d258bb45197e67e671525360e78a73a79b47f6781483",
-      "bytes": 156373,
+      "sha256": "76a68bcf08930808549108abf0a02429fbf9e09c63838f098e2165aab70cb31a",
+      "bytes": 143610,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_repeat-end_dark_320x2.png",
+      "state": "RP9",
+      "test": "RP9 the edit sheet of an entry a repeat added (320 dp, text ×2, dark)",
+      "sha256": "67db229cad2f3f86ab1a1a761bee36c0546749bec6101a81233cd3334e7878b2",
+      "bytes": 152863,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_repeat-end_light_320x2.png",
+      "state": "RP9",
+      "test": "RP9 the edit sheet of an entry a repeat added (320 dp, text ×2, light)",
+      "sha256": "05aeae7dcbd957dac21cb5ccb569ed07bff3a7b23c6c21ffa96bcacd36a2972c",
+      "bytes": 153759,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_repeat_dark_320x2.png",
+      "state": "RP9",
+      "test": "RP9 the edit sheet of an entry a repeat added (320 dp, text ×2, dark)",
+      "sha256": "1d8be1688aab7ff9e70ef978086c78b552e8eb61bdc850ba075067bc29379c89",
+      "bytes": 152536,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "edit-sheet_repeat_light_320x2.png",
+      "state": "RP9",
+      "test": "RP9 the edit sheet of an entry a repeat added (320 dp, text ×2, light)",
+      "sha256": "964b141b4eed13e59547d91eb7807be13ce3bbd21b672b83e25ab0783a9ca912",
+      "bytes": 152561,
       "width": 960,
       "height": 2340
     },
@@ -1140,6 +1284,60 @@
       "height": 2340
     },
     {
+      "file": "home_repeats-card_dark_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, dark)",
+      "sha256": "d31fe8210c0d631725a007709f8cd9d2f034146dd2b89b84a5c14006a59562a9",
+      "bytes": 37485,
+      "width": 288,
+      "height": 569
+    },
+    {
+      "file": "home_repeats-card_light_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, light)",
+      "sha256": "5fddaf81eee5bad594d82e2c7264a62a3716fe45e2adab55e2c50b511885c27e",
+      "bytes": 38030,
+      "width": 288,
+      "height": 569
+    },
+    {
+      "file": "home_repeats-end_dark_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, dark)",
+      "sha256": "9c156223a304676f5a6e973222e6990c92f400e846a4d668b55167e9e7ea3e96",
+      "bytes": 173968,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_repeats-end_light_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, light)",
+      "sha256": "396198d081f8601d79614fb2b6e84389cb4d2d47c7b152cccde4bb7a40810b76",
+      "bytes": 175118,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_repeats_dark_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, dark)",
+      "sha256": "0b179193243a234009ada3fab5d15af2d343f41f94f54bec7b927e8c3c272e13",
+      "bytes": 160647,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_repeats_light_320x2.png",
+      "state": "RP7",
+      "test": "RP7 Home: what repeats added, 3 and \"and 1 more\" (320 dp, text ×2, light)",
+      "sha256": "608181050fc2a47b561f63f1f62729dc00dd02068df48d8abfdd3073a2ae236a",
+      "bytes": 160570,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "home_sleepy-end_dark_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, dark)",
@@ -1262,6 +1460,24 @@
       "test": "H12 Home asks how yesterday felt (320 dp, text ×2, light)",
       "sha256": "179af916e3286d2d6289458f630f79c60eee2339ef235bae1dd250d0dc59a0a4",
       "bytes": 164842,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "journal-too-new_update_dark_320x2.png",
+      "state": "JN1",
+      "test": "JN1 a journal from a newer Piggybow: the update line (320 dp, text ×2, dark)",
+      "sha256": "21ad6d1fa355d9816cde38ef0e5b607ea88e915715ea0d0fc5bb9ed7d90b0e85",
+      "bytes": 55505,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "journal-too-new_update_light_320x2.png",
+      "state": "JN1",
+      "test": "JN1 a journal from a newer Piggybow: the update line (320 dp, text ×2, light)",
+      "sha256": "81753676b263f794256571b90ec104ca1706a52187727ee77104da80795549c2",
+      "bytes": 55857,
       "width": 960,
       "height": 2340
     },
@@ -1424,6 +1640,78 @@
       "test": "M8 Your privacy, no Sentry DSN, the policy's link (320 dp, text ×2, light)",
       "sha256": "7f53820a8ac6d70f078d56794856f56ee16845289ef2dd873a46233ae76df3dd",
       "bytes": 220169,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_widget-line-end_dark_320x2.png",
+      "state": "WG1",
+      "test": "WG1 Your privacy with Plus: the widget's line (320 dp, text ×2, dark)",
+      "sha256": "1772eb87c8bcea05b052474f9e38f4175cf7d413e7c6260250c1c00cee3fd193",
+      "bytes": 207247,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_widget-line-end_light_320x2.png",
+      "state": "WG1",
+      "test": "WG1 Your privacy with Plus: the widget's line (320 dp, text ×2, light)",
+      "sha256": "a0bc4afd83084968de58425011e2fbc2522eaea36a09ebafeb43c53f08c3dd94",
+      "bytes": 208167,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_widget-line_dark_320x2.png",
+      "state": "WG1",
+      "test": "WG1 Your privacy with Plus: the widget's line (320 dp, text ×2, dark)",
+      "sha256": "c1626b89620c2d07acddcf066ba044b58ec5ccfd353c30d866a6b986bf250b54",
+      "bytes": 219407,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_widget-line_light_320x2.png",
+      "state": "WG1",
+      "test": "WG1 Your privacy with Plus: the widget's line (320 dp, text ×2, light)",
+      "sha256": "7f53820a8ac6d70f078d56794856f56ee16845289ef2dd873a46233ae76df3dd",
+      "bytes": 220169,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-repeats_empty_dark_320x2.png",
+      "state": "RP4",
+      "test": "RP4 Me → Repeating entries: none yet (320 dp, text ×2, dark)",
+      "sha256": "985d4e608c9d6e3aeb234dd7267c8585121f43347dcb6669689a38e5efa4563d",
+      "bytes": 107210,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-repeats_empty_light_320x2.png",
+      "state": "RP4",
+      "test": "RP4 Me → Repeating entries: none yet (320 dp, text ×2, light)",
+      "sha256": "cc2313369a816035e1996d4da10ec46fdd111305b3de4917ae32ddd54f4fe9cf",
+      "bytes": 107415,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-repeats_list_dark_320x2.png",
+      "state": "RP3",
+      "test": "RP3 Me → Repeating entries: a monthly one and a weekly one (320 dp, text ×2, dark)",
+      "sha256": "7fde72895505f724c21ec32379768a33407f67d86884d30ca7088fd4c669f83e",
+      "bytes": 134276,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-repeats_list_light_320x2.png",
+      "state": "RP3",
+      "test": "RP3 Me → Repeating entries: a monthly one and a weekly one (320 dp, text ×2, light)",
+      "sha256": "e66a96f5dc250119e3b22af14d4840d856f5f40fbd5ad3aa356d4c3a8f56f226",
+      "bytes": 134539,
       "width": 960,
       "height": 2340
     },
@@ -1593,8 +1881,8 @@
       "file": "me_pig-name_dark_360x1.png",
       "state": "PN2",
       "test": "Me → Your pig → Name, the dialog, dark",
-      "sha256": "5d44ad758ed01cdd1c815cdb0352bc9d9d0def1a9d7f594d8c5487ee35655c44",
-      "bytes": 160024,
+      "sha256": "ed49974dfd8c5e906f02d39b76254f1e9757a2a49cdb6516164e35c096b0af92",
+      "bytes": 156979,
       "width": 1080,
       "height": 2340
     },
@@ -1602,8 +1890,8 @@
       "file": "me_pig-name_light_360x1.png",
       "state": "PN2",
       "test": "Me → Your pig → Name, the dialog, light",
-      "sha256": "65c5b1e425bd508c6a4bc74342502298aac81c67adec74b393948948daa587b6",
-      "bytes": 164483,
+      "sha256": "1d59ac75127056b122bc5f9653bd7ae5e43105f0dcbc799af19dcb84af08968a",
+      "bytes": 160706,
       "width": 1080,
       "height": 2340
     },
@@ -1611,8 +1899,8 @@
       "file": "me_plan-dialog-empty_dark_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
-      "sha256": "f53100408cc3039a25f73cc39e24252bfd0ce76b6b00241610b7c486ffa4631d",
-      "bytes": 163171,
+      "sha256": "270c2e2e5c65fea6f46b750a993d32ac0bddb20391010df22b7a8edc0b831432",
+      "bytes": 167299,
       "width": 960,
       "height": 2340
     },
@@ -1620,8 +1908,8 @@
       "file": "me_plan-dialog-empty_light_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
-      "sha256": "493f8ec17b707a0e358c9ecfc268ed864c6122c727cd600942c547051cd529a1",
-      "bytes": 165218,
+      "sha256": "83eac84eaadf695e40f07b178adc87901110de52e9ee14ccc26b3fdd16e92c0a",
+      "bytes": 169343,
       "width": 960,
       "height": 2340
     },
@@ -1629,8 +1917,8 @@
       "file": "me_plan-dialog-set_dark_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
-      "sha256": "4d19eafeafd3eeeae63a7d152d7a0372789a36921c94169094cc2c03ad8f9713",
-      "bytes": 176639,
+      "sha256": "92fb6b110120fe7c4f69a033e3ea4eb83a4b0db903165636acabee33107b304a",
+      "bytes": 177493,
       "width": 960,
       "height": 2340
     },
@@ -1638,8 +1926,8 @@
       "file": "me_plan-dialog-set_light_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
-      "sha256": "c336e7253aaf7f2ff3c2a8a5e9c7febf9abee18a52abfd0886afcc035fee71ab",
-      "bytes": 178703,
+      "sha256": "bf30a4774965f55cfcbe7856e5c3ccc823e4bc9c71cf4b89783513eb0e1724ad",
+      "bytes": 179620,
       "width": 960,
       "height": 2340
     },
@@ -1683,8 +1971,8 @@
       "file": "me_reached-row_dark_320x2.png",
       "state": "PG3",
       "test": "PG3 Me's Reached goals row (320 dp, text ×2, dark)",
-      "sha256": "701d46dfc9f5362d456509d87ab82fc277a246a15136da1df0eedbdf872aee7f",
-      "bytes": 178616,
+      "sha256": "1b4a648c0a47890c5d0fa7a87e6d1c9de23af3aaba2642f8f0c471d9f0b47373",
+      "bytes": 183058,
       "width": 960,
       "height": 2340
     },
@@ -1692,8 +1980,8 @@
       "file": "me_reached-row_light_320x2.png",
       "state": "PG3",
       "test": "PG3 Me's Reached goals row (320 dp, text ×2, light)",
-      "sha256": "87bcee9df6215bb783d2fd481174057ee83dcaa82934983904281ff71a1aeba7",
-      "bytes": 178834,
+      "sha256": "b2558e1d5d0efafee79b2f3ef1560e1df220e3fe916482495b9875805c0c96bb",
+      "bytes": 183272,
       "width": 960,
       "height": 2340
     },
@@ -2018,6 +2306,60 @@
       "test": "PG4 the Reached goals list (320 dp, text ×2, light)",
       "sha256": "12c1848211b0b3df0db642a00ee3fe672bb1c5fe2901be696cc83fa7cd4c5d20",
       "bytes": 114450,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_page-end_dark_320x2.png",
+      "state": "RP5",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, dark)",
+      "sha256": "b939792a1bf84d0e24f22772eac8a53aacfaff0bb43b6ac907e48b6162972c28",
+      "bytes": 167705,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_page-end_light_320x2.png",
+      "state": "RP5",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, light)",
+      "sha256": "3cbc40c872ad4ac1bce0edf63a3eb4d77147d8eb1992a982b31c0df047dc468d",
+      "bytes": 168615,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_page_dark_320x2.png",
+      "state": "RP5",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, dark)",
+      "sha256": "b516ab8f5fd1822734024635ee25d4d763f003649bb4b7c607d18ef6090710ac",
+      "bytes": 170024,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_page_light_320x2.png",
+      "state": "RP5",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, light)",
+      "sha256": "7647e2564971b609d311fe8881eb72422eebdef13644ff24cfd7a879dbb8069f",
+      "bytes": 169718,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_stop_dark_320x2.png",
+      "state": "RP6",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, dark)",
+      "sha256": "b25db0bc57b2a07f41e0f61d13bd82845261b45c5be31460c3056167e91290ed",
+      "bytes": 154938,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "repeat_stop_light_320x2.png",
+      "state": "RP6",
+      "test": "RP5 a repeat's page, and RP6 its stop dialog (320 dp, text ×2, light)",
+      "sha256": "eca7c456c764a552b4118ca5d1c2b9e6834d129abf15ee073fb8f0335040e094",
+      "bytes": 157358,
       "width": 960,
       "height": 2340
     },
@@ -2733,6 +3075,24 @@
       "height": 2340
     },
     {
+      "file": "timeline_repeat-mark_dark_320x2.png",
+      "state": "RP8",
+      "test": "RP8 Timeline: a repeat's entries marked (320 dp, text ×2, dark)",
+      "sha256": "7b17c9112fe782b9cd86c14ef73703483d7857fd45f079dff5301e90c2d66a68",
+      "bytes": 168445,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_repeat-mark_light_320x2.png",
+      "state": "RP8",
+      "test": "RP8 Timeline: a repeat's entries marked (320 dp, text ×2, light)",
+      "sha256": "d5157eae3bf916cf1cb64ff8f98f7cb670382b9fb83010a6768f7a7a1d85ffed",
+      "bytes": 169896,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "timeline_search-closed_dark_320x2.png",
       "state": "TS3",
       "test": "TS3 the icon, before the search opens (320 dp, text ×2, dark)",
@@ -2801,6 +3161,24 @@
       "test": "TG3 Timeline: the taken-out row (320 dp, text ×2, light)",
       "sha256": "2efe6d6d8351cca22704d80df528d370993c406e21681260573d10a3d5e5bf74",
       "bytes": 169767,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_travel_dark_320x2.png",
+      "state": "MC3",
+      "test": "MC3 Timeline: a spend in euros, both amounts (320 dp, text ×2, dark)",
+      "sha256": "e6d5623d58888e0b2886a577cbb26866ce67e0f174bdd29d32880428f5acf3ab",
+      "bytes": 173597,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "timeline_travel_light_320x2.png",
+      "state": "MC3",
+      "test": "MC3 Timeline: a spend in euros, both amounts (320 dp, text ×2, light)",
+      "sha256": "4cdd48ec31ff3f3b95940b0f3d006438456e0dec0495deaa01043c792b6972ec",
+      "bytes": 175077,
       "width": 960,
       "height": 2340
     }
