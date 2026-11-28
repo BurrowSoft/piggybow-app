@@ -253,12 +253,14 @@ void main() {
       await tester.tapId('repeat-row-entry-1');
       await waitFor(tester, byId('repeat-amount'));
       expect(textIn('repeat-schedule', 'Every month on day 1'), findsOneWidget);
+      // The amount first: the page's list is lazy, and its top goes once the
+      // note below is scrolled to (the typed amount stays, in the page).
+      await tester.enterId('repeat-amount', '13000');
       await tester.revealId('repeat-changes');
       expect(
         textIn('repeat-changes', 'Changes apply from the next one. Entries already added stay as they are.'),
         findsOneWidget,
       );
-      await tester.enterId('repeat-amount', '13000');
       await tester.tapId('repeat-save');
       await waitFor(tester, byId('repeat-row-entry-1'));
       expect((await tester.runAsync(app.journal.repeats))!.single.amountMinor, 1300000);
