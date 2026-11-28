@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/app_config.dart';
+import 'package:piggybow/core/policy.dart';
 import 'package:piggybow/tips/tips_endpoint.dart';
 
 /// The tester's mock tips server, fenced like the launch fixtures: a
@@ -19,12 +21,42 @@ void main() {
     );
   });
 
-  test('pig tips never in a release build yet, whatever the env file says', () {
+  // The texts gate: a release build offers pig tips only once their texts
+  // are final (the consent sheet's AI and 18+ versions), whatever its env
+  // file says; prod's env turns them on only with those texts and its key.
+  test('pig tips in a release build only once their texts are final', () {
     expect(
       read('lib/core/app_config.dart'),
-      contains("aiTipsEnabled: const bool.fromEnvironment('AI_TIPS_ENABLED') && !kReleaseMode,"),
+      contains(
+        "aiTipsEnabled: const bool.fromEnvironment('AI_TIPS_ENABLED') && "
+        '(!kReleaseMode || PolicyVersions.aiTextsFinal),',
+      ),
     );
     expect("fromEnvironment('AI_TIPS_ENABLED')".allMatches(read('lib/core/app_config.dart')), hasLength(1));
+    expect(read('lib/core/policy.dart'), contains("static const aiTextsFinal = ai != '' && age18 != '';"));
+    expect(PolicyVersions.aiTextsFinal, PolicyVersions.ai.isNotEmpty && PolicyVersions.age18.isNotEmpty);
+    final prod = jsonDecode(read('env/prod.json')) as Map<String, dynamic>;
+    if (prod['AI_TIPS_ENABLED'] == 'true') {
+      expect(PolicyVersions.aiTextsFinal, isTrue, reason: 'the texts first');
+      expect('${prod['TIPS_ANON_KEY']}', startsWith('sb_publishable_'), reason: "prod's publishable key");
+    }
+  });
+
+  // One source for the consent versions: the sheet records the ones the
+  // release gate waits for, never a version of its own, and it's the only
+  // place tips are turned on.
+  test('the consent sheet records PolicyVersions.ai and .age18, with no version literal', () {
+    final sheet = read('lib/features/tips/tips_ui.dart');
+    expect(sheet, contains('aiVersion: PolicyVersions.ai,'));
+    expect(sheet, contains('age18Version: PolicyVersions.age18,'));
+    expect(RegExp(r'''['"](ai|age18)[-_]''').hasMatch(sheet), isFalse, reason: 'a version literal');
+    expect(RegExp(r'''Version: ['"]''').hasMatch(sheet), isFalse, reason: 'a version literal');
+    final turnsOn = [
+      for (final f in Directory('lib').listSync(recursive: true).whereType<File>())
+        if (f.path.endsWith('.dart') && f.readAsStringSync().contains('.turnOn('))
+          f.path.replaceAll('\\', '/'),
+    ];
+    expect(turnsOn, ['lib/features/tips/tips_ui.dart']);
   });
 
   test('TIPS_TEST_URL is read once in the app, inside if (kTipsTestHook)', () {

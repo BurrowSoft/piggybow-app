@@ -217,8 +217,9 @@ jobs:
         # A dependency report needs little heap; android/gradle.properties'
         # -Xmx8G is more than the runner has.
         run: ./gradlew --no-daemon verifyNoTrackingDeps -Dorg.gradle.jvmargs=-Xmx2g
-      # A release build sends nothing (src/release/AndroidManifest.xml removes
-      # the network permissions): its merged manifest asks for exactly
+      # A release build reaches the network for pig tips only
+      # (src/release/AndroidManifest.xml keeps INTERNET for them and removes
+      # ACCESS_NETWORK_STATE): its merged manifest asks for exactly
       # android/expected-permissions.txt, the list the Play upload is checked
       # against. The staging release has the same manifest; a prod task needs
       # the upload key, which only the Release AAB workflow has.

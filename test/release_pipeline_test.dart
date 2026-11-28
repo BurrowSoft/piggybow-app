@@ -164,13 +164,14 @@ void main() {
       workflow,
       contains('diff <(sort android/expected-permissions.txt) permissions.txt'),
     );
-    // v0.1's release: only what the reminder (notifications, boot) and the
+    // The release: only what the reminder (notifications, boot) and the
     // app lock (biometrics; USE_FINGERPRINT is androidx.biometric's fallback
     // below API 28) need, exactly these, sorted; plus the Plus plumbing's
-    // BILLING. No network at all (src/release removes INTERNET and billing's
-    // ACCESS_NETWORK_STATE: release_no_network_test). No microphone,
-    // camera, health or location.
+    // BILLING; plus INTERNET, for pig tips only (src/release removes
+    // billing's ACCESS_NETWORK_STATE: release_no_network_test). No
+    // microphone, camera, health or location.
     expect(expected, [
+      'android.permission.INTERNET',
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.RECEIVE_BOOT_COMPLETED',
       'android.permission.USE_BIOMETRIC',

@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # The Plus probe (decision 79), on the CI emulator only: run.sh calls it for
 # kind plus-probe. Does the app stay up once Play Billing starts, with the
-# store build's permissions (no INTERNET, no ACCESS_NETWORK_STATE)? Play
+# store build's permissions (INTERNET for pig tips, no ACCESS_NETWORK_STATE)? Play
 # Billing's logging library schedules its uploads with JobScheduler and a
 # network constraint, which Android 14 may refuse without
 # ACCESS_NETWORK_STATE (a SecurityException), and it uploads from the app's
 # own process. The probe installs the app, starts it (Plus starts Play
-# Billing at launch), waits, then says whether the app is still up and what
-# was logged.
+# Billing at launch), waits, then says whether the app is still up, what was
+# logged, and how many bytes the app's own uid received and sent meanwhile
+# (net_bytes.sh: data, not a pass or fail).
 #
 # env: APK (a staging profile build with PLUS_ENABLED and the release
 #      manifest overlay), APP_DIR (the app's checkout), OUT (the evidence
@@ -56,6 +57,11 @@ fi
 store=$(A shell pm path com.android.vending | tr -d '\r' || true)
 if [ -z "$store" ]; then echo "STOP: no Play Store app on this image"; exit 7; fi
 
+# The app's own network use before it starts, for the bytes Play Billing sends.
+NET="$(dirname "$0")/net_bytes.sh"
+net_before=$(bash "$NET" "$SERIAL" "$APP_ID" "$OUT/probe-netstats-before.txt")
+echo "before: $net_before"
+
 A logcat -c
 A shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1 > /dev/null
 echo "started $APP_ID; watching for $WAIT s"
@@ -72,11 +78,13 @@ crashes=$(grep -A3 'FATAL EXCEPTION' "$RUNNER_TEMP/logcat.txt" | grep -cF "Proce
 rm -f "$RUNNER_TEMP/logcat.txt"
 jobs=$(A shell dumpsys jobscheduler | tr -d '\r')
 grep -A6 -F "$APP_ID" <<< "$jobs" > "$OUT/probe-jobs.txt" || echo "no job of $APP_ID" > "$OUT/probe-jobs.txt"
+net_after=$(bash "$NET" "$SERIAL" "$APP_ID" "$OUT/probe-netstats-after.txt")
 
 security=$(grep -c 'SecurityException' "$OUT/probe-logcat.txt" || true)
 billing=$(grep -cE 'BillingClient|BillingLogger' "$OUT/probe-logcat.txt" || true)
 echo "app up: ${pid:-no} | crashes: $crashes | SecurityException lines: $security | Play Billing lines: $billing"
 echo "== $APP_ID's jobs"; cat "$OUT/probe-jobs.txt"
+echo "== $APP_ID's network: before $net_before | after $net_after"
 if [ -z "$pid" ] || [ "$crashes" != 0 ]; then
   echo "PROBE: the app did not stay up"; exit 1
 fi

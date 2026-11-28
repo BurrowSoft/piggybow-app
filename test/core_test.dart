@@ -82,10 +82,15 @@ void main() {
       expect(text, isNot(contains('sb_secret_')), reason: flavor);
       expect(text, isNot(contains('service_role')), reason: flavor);
       expect(text, isNot(contains('sentry.io')), reason: flavor);
-      // Pig tips: off in every env file until the release that ships them
-      // (the emulator's tips-mock kind turns them on in its debug build),
-      // and only their own project.
-      expect(e['AI_TIPS_ENABLED'], 'false', reason: flavor);
+      // Pig tips: off in dev's and staging's env files (the emulator's
+      // tips-mock kind turns them on in its debug build); on in prod's only
+      // with their texts and its key (tips_hook_test), and only their own
+      // project.
+      expect(
+        e['AI_TIPS_ENABLED'],
+        flavor == 'prod' ? anyOf('false', 'true') : 'false',
+        reason: flavor,
+      );
       final url = e['TIPS_URL'] as String;
       final key = e['TIPS_ANON_KEY'] as String;
       expect(url, tipsUrls[flavor], reason: flavor);

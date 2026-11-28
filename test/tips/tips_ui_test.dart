@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:piggybow/core/policy.dart';
 import 'package:piggybow/features/tips/tips_ui.dart';
 import 'package:piggybow/l10n/gen/app_localizations.dart';
 import 'package:piggybow/router.dart';
@@ -103,8 +104,8 @@ void main() {
       expect(byId('tips-sheet'), findsNothing);
       expect(tips.on.value, isTrue);
       expect(tips.consents, [
-        'ai $tipsConsentAi',
-        'age18 $tipsConsentAge',
+        'ai ${PolicyVersions.ai}',
+        'age18 ${PolicyVersions.age18}',
       ]);
       expect(switchOn(tester), isTrue);
       expect(
