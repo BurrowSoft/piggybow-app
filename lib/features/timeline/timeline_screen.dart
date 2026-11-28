@@ -13,15 +13,18 @@ import '../../l10n/gen/app_localizations.dart';
 import '../../money/money.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
+import '../../theme/theme.dart';
 import '../add/add_again.dart';
 import '../add/entry_sheet.dart';
 import '../goal/take_out_sheet.dart';
 import '../../core/fit_text.dart';
 import '../shell/tab_top.dart';
+import 'timeline_search.dart';
 
 /// Every spend and save, newest day first, under day headers with that
-/// day's totals; All / Spent / Saved. A row opens its Edit sheet; a
-/// long-press offers to add it again today.
+/// day's totals; All / Spent / Saved, and a search of the notes and names
+/// (feature 15). A row opens its Edit sheet; a long-press offers to add it
+/// again today.
 class TimelineScreen extends StatefulWidget {
   const TimelineScreen({super.key});
 
@@ -40,6 +43,11 @@ class _TimelineScreenState extends State<TimelineScreen>
   /// Your own categories by id (Plus): a spend in one shows its name and icon.
   Map<String, CustomCategory> _customs = const {};
   AppServices? _services;
+
+  /// The search field is open. It stays open, with what's typed, through
+  /// sheets and tab switches; nothing of it is ever stored.
+  bool _searching = false;
+  final _query = TextEditingController();
 
   @override
   AppTab get tab => AppTab.timeline;
@@ -60,6 +68,7 @@ class _TimelineScreenState extends State<TimelineScreen>
   void dispose() {
     _services?.journal.removeListener(_load);
     _services?.localDay.removeListener(_load);
+    _query.dispose();
     super.dispose();
   }
 
@@ -77,25 +86,78 @@ class _TimelineScreenState extends State<TimelineScreen>
       _entries = entries;
       _goals = goals;
       _customs = customs;
+      // Nothing left to search: the field goes with the last entry.
+      if (entries.isEmpty) _endSearch();
     });
   }
+
+  /// ✕ or back: what was typed is cleared, and the field closes.
+  void _endSearch() {
+    _searching = false;
+    _query.clear();
+  }
+
+  /// What a search looks in: the note, and the name the row shows (a
+  /// spend's category; a save's goal).
+  List<String> _searchTexts(Entry e, AppLocalizations l10n) => [
+    e.note,
+    if (e.type == EntryType.spent)
+      e.category!.label(l10n)
+    else if (_goals[e.goalId] case final goal?)
+      goal.name,
+  ];
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final all = _entries;
+    final words = _searching ? searchWords(_query.text) : const <String>[];
     final shown = all == null
         ? null
         : [
             for (final e in all)
-              if (_filter == _Filter.all ||
-                  (_filter == _Filter.spent) == (e.type == EntryType.spent))
+              if ((_filter == _Filter.all ||
+                      (_filter == _Filter.spent) ==
+                          (e.type == EntryType.spent)) &&
+                  matchesSearch(words, _searchTexts(e, l10n)))
                 e,
           ];
-    return TestId.container(
-      'timeline-screen',
-      child: Scaffold(
-        appBar: AppBar(title: AppBarTitle(l10n.tlTitle)),
+    return PopScope(
+      // Back with the search open clears and closes it, on Timeline.
+      canPop: !_searching,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _searching) setState(_endSearch);
+      },
+      child: TestId.container(
+        'timeline-screen',
+        child: _scaffold(context, l10n, all, shown, words),
+      ),
+    );
+  }
+
+  Widget _scaffold(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<Entry>? all,
+    List<Entry>? shown,
+    List<String> words,
+  ) => Scaffold(
+        appBar: AppBar(
+          title: AppBarTitle(l10n.tlTitle),
+          actions: [
+            // Nothing to search on the empty Timeline; none while it's open.
+            if (all != null && all.isNotEmpty && !_searching)
+              TestId(
+                'tl-search',
+                button: true,
+                child: IconButton(
+                  tooltip: l10n.tlSearch,
+                  onPressed: () => setState(() => _searching = true),
+                  icon: const Icon(Icons.search),
+                ),
+              ),
+          ],
+        ),
         floatingActionButton: all == null || all.isEmpty
             ? null
             : TestId(
@@ -115,6 +177,12 @@ class _TimelineScreenState extends State<TimelineScreen>
             ? const _Empty()
             : Column(
                 children: [
+                  if (_searching)
+                    _SearchField(
+                      controller: _query,
+                      onChanged: () => setState(() {}),
+                      onClose: () => setState(_endSearch),
+                    ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: SegmentedButton<_Filter>(
@@ -148,14 +216,89 @@ class _TimelineScreenState extends State<TimelineScreen>
                     ),
                   ),
                   Expanded(
-                    child: _Days(
-                      entries: shown!,
-                      goals: _goals,
-                      customs: _customs,
-                    ),
+                    // A search that finds nothing says so; a filter alone
+                    // that leaves nothing stays as it was.
+                    child: shown!.isEmpty && words.isNotEmpty
+                        ? const _NoMatch()
+                        : _Days(entries: shown, goals: _goals, customs: _customs),
                   ),
                 ],
               ),
+      );
+}
+
+/// The search field, full width under the app bar (feature 15): what's
+/// typed filters the list at once; ✕ clears it and closes the field.
+class _SearchField extends StatelessWidget {
+  const _SearchField({
+    required this.controller,
+    required this.onChanged,
+    required this.onClose,
+  });
+
+  final TextEditingController controller;
+  final VoidCallback onChanged;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 4, 8),
+      child: TestId(
+        'tl-search-field',
+        child: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.search,
+          style: context.inputText,
+          onChanged: (_) => onChanged(),
+          decoration: InputDecoration(
+            // Whole at large text: it wraps rather than being cut. Once
+            // something is typed it's gone (as a hint would be anyway), so
+            // the field is one line; emptied, it's back.
+            hintText: controller.text.isEmpty ? l10n.tlSearchHint : null,
+            hintMaxLines: 3,
+            suffixIcon: TestId(
+              'tl-search-close',
+              button: true,
+              child: IconButton(
+                tooltip: l10n.tlSearchClose,
+                onPressed: onClose,
+                icon: const Icon(Icons.close),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A search that matches nothing: said plainly where the list would be, and
+/// read out.
+class _NoMatch extends StatelessWidget {
+  const _NoMatch();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Align(
+      alignment: AlignmentDirectional.topStart,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        child: TestId(
+          'tl-no-match',
+          child: Semantics(
+            liveRegion: true,
+            child: Text(
+              AppLocalizations.of(context).tlNoMatch,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
