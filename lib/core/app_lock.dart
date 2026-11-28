@@ -34,20 +34,29 @@ abstract interface class SecretStore {
 class KeystoreSecretStore implements SecretStore {
   const KeystoreSecretStore();
 
-  static const _storage = FlutterSecureStorage();
+  /// On iOS, this iPhone's keychain only (decision 21): a restore to
+  /// another phone arrives with no PIN, so the lock is off, never locked
+  /// out. Android's keystore never leaves the phone, and the backup rules
+  /// leave the plugin's files out (decision 72).
+  @visibleForTesting
+  static const storage = FlutterSecureStorage(
+    iOptions: IOSOptions(
+      accessibility: KeychainAccessibility.unlocked_this_device,
+    ),
+  );
 
   @override
-  Future<String?> read(String key) => _storage.read(key: key);
+  Future<String?> read(String key) => storage.read(key: key);
 
   @override
   Future<void> write(String key, String value) =>
-      _storage.write(key: key, value: value);
+      storage.write(key: key, value: value);
 
   @override
-  Future<void> delete(String key) => _storage.delete(key: key);
+  Future<void> delete(String key) => storage.delete(key: key);
 
   @override
-  Future<void> deleteAll() => _storage.deleteAll();
+  Future<void> deleteAll() => storage.deleteAll();
 }
 
 class MemorySecretStore implements SecretStore {
