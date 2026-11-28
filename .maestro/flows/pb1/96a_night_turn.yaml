@@ -1,7 +1,7 @@
 appId: ${APP_ID}
 name: F-B1 (#96) - Home open across 04:00 - just before, the sleepy pig says the night line; at 04:00 Home turns to the day's pig with no tap
 tags: [night]
-# Run by fb1-night.sh: zone UTC, the device clock set by root to 03:57:00, so
+# Run by fb1-night.sh: zone UTC, the device clock set by root to 03:56:00, so
 # the setup ends before 03:59 and the turn comes while Home is open.
 ---
 - runFlow: ../../subflows/fresh_launch.yaml
@@ -9,6 +9,14 @@ tags: [night]
 - runFlow:
     file: ../../subflows/add_spend.yaml
     env: { AMOUNT: "12", CAT: "food" }
+# Right after an entry Home shows the pig's reaction ("Noted. …"); the mood's
+# own line (the night one here) comes back after a hide and reopen (#53's NP2)
+- pressKey: Home
+- waitForAnimationToEnd:
+    timeout: 3000
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
 - extendedWaitUntil:
     visible:
       id: home-pig-line

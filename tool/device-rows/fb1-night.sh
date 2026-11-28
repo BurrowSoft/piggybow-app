@@ -2,7 +2,7 @@
 # F-B1's fix (#96): night is 22:00 to 03:59 on the phone's clock, and Home
 # turns at 04:00 while it's open. Staging debug, no fake_now, zone UTC; the
 # device clock set by root (the group-b.sh method).
-#   NB-1 flow 96a: Home open from 03:57: the sleepy pig's night line before
+#   NB-1 flow 96a: Home open from 03:56: the sleepy pig's night line before
 #        04:00, then the day's pig at 04:00 with no tap
 #   NB-2 flow 96b: a cold start at 05:00: the day's pig (F-B1 saw the night
 #        line there); the Add sheet in euros has no "= €12.34" echo
@@ -38,10 +38,10 @@ trap cleanup EXIT
 
 install_verify || exit $?
 D=2026-11-28
-setclock "$D" 03:57:00
+setclock "$D" 03:56:00
 A shell am force-stop "$APP_ID"
 if mf flows/pb1/96a_night_turn.yaml; then
-  row NB-1 PASS "flow 96a: Home open from 03:57: the night line before 04:00, the day's pig at 04:00 with no tap (turn seen by $(A shell date -u +%H:%M:%S | tr -d '\r') UTC)"
+  row NB-1 PASS "flow 96a: Home open from 03:56: the night line before 04:00, the day's pig at 04:00 with no tap (turn seen by $(A shell date -u +%H:%M:%S | tr -d '\r') UTC)"
 else
   row NB-1 FAIL "flow 96a (device clock now $(A shell date -u +%H:%M:%S | tr -d '\r') UTC)"
 fi
