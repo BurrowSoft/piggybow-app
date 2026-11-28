@@ -1,7 +1,7 @@
 {
-  "source_sha": "e7ca7d4c916a84d4715ec36bf0c7c3fc78e1436e",
-  "ref": "e7ca7d4c916a84d4715ec36bf0c7c3fc78e1436e",
-  "run_id": "46117915493",
+  "source_sha": "e705779de77d9f5903b917b2815e9cf8daac8437",
+  "ref": "feat/patterns-ui",
+  "run_id": "46128171402",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -924,6 +924,78 @@
       "height": 2340
     },
     {
+      "file": "patterns_not-yet_dark_320x2.png",
+      "state": "PS2",
+      "test": "PS2 Patterns: not enough yet (320 dp, text ×2, dark)",
+      "sha256": "1b2f916f7c7aa28d8d9ee188feea7fa2d2d53ab7b88845506ddb68cfc0fbc9f1",
+      "bytes": 199859,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "patterns_not-yet_dark_360x1.png",
+      "state": "PS2",
+      "test": "PS2 Patterns: not enough yet (360 dp, text ×1, dark)",
+      "sha256": "106633e82f2ee7bd45b4d5b4cf984c8dc6672fbe3ecf2aab3f40b48f062e4aee",
+      "bytes": 103755,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "patterns_not-yet_light_320x2.png",
+      "state": "PS2",
+      "test": "PS2 Patterns: not enough yet (320 dp, text ×2, light)",
+      "sha256": "9d751dfd968e91d318cc64bddbd0fb2e5b0dc49e62cf90db84f1353600baaac9",
+      "bytes": 199171,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "patterns_not-yet_light_360x1.png",
+      "state": "PS2",
+      "test": "PS2 Patterns: not enough yet (360 dp, text ×1, light)",
+      "sha256": "b32ed542634bed79a225b6dde7adf12f0b024543520811671f06212de717208a",
+      "bytes": 105409,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "patterns_three_dark_320x2.png",
+      "state": "PS1",
+      "test": "PS1 Patterns: three patterns (320 dp, text ×2, dark)",
+      "sha256": "514e5e0d56bcb02b8f464e8d26af6444c41cd338c6929b34bad6476e0191a67b",
+      "bytes": 188147,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "patterns_three_dark_360x1.png",
+      "state": "PS1",
+      "test": "PS1 Patterns: three patterns (360 dp, text ×1, dark)",
+      "sha256": "0fde15c7bc5a11fd4384a4fffe375710082b598db87c06bec0633a900f02a6ff",
+      "bytes": 146226,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "patterns_three_light_320x2.png",
+      "state": "PS1",
+      "test": "PS1 Patterns: three patterns (320 dp, text ×2, light)",
+      "sha256": "0a504d0d67240e7e1e302d97ab274f3a56b00862a0e0a105940601960742d8e7",
+      "bytes": 188950,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "patterns_three_light_360x1.png",
+      "state": "PS1",
+      "test": "PS1 Patterns: three patterns (360 dp, text ×1, light)",
+      "sha256": "4d7146fc4f2289ddc29d7544f01e268da90bcc7ed5f2f79f3e9ee31e903cf496",
+      "bytes": 148245,
+      "width": 1080,
+      "height": 2340
+    },
+    {
       "file": "pig_calm_dark_200x1.png",
       "state": "P2",
       "test": "the pig, calm (dark)",
@@ -1235,6 +1307,78 @@
       "test": "nine categories at the largest amount (360 dp, text ×1, light)",
       "sha256": "cb2b46348b82062db77bd45e1d9400f11a860abf672d1ba4d377af6762a058fc",
       "bytes": 193612,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns-teaser_dark_320x2.png",
+      "state": "PC2",
+      "test": "PC2 Summary: the Patterns teaser without Plus (320 dp, text ×2, dark)",
+      "sha256": "d3f8a3cd76bb48f9dee4d4acb4482d09f149d90b1de8fd4628739dd82baf800a",
+      "bytes": 202215,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns-teaser_dark_360x1.png",
+      "state": "PC2",
+      "test": "PC2 Summary: the Patterns teaser without Plus (360 dp, text ×1, dark)",
+      "sha256": "8ede9a237d5100d2d19f408211bbe5bc8f6ed125445a1a43374ddc41fa74c4e9",
+      "bytes": 205891,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns-teaser_light_320x2.png",
+      "state": "PC2",
+      "test": "PC2 Summary: the Patterns teaser without Plus (320 dp, text ×2, light)",
+      "sha256": "c11fda02ab2cd2909bfc2835c939d2de483b0de332f62ee361d380723225ebf8",
+      "bytes": 204002,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns-teaser_light_360x1.png",
+      "state": "PC2",
+      "test": "PC2 Summary: the Patterns teaser without Plus (360 dp, text ×1, light)",
+      "sha256": "699ba9c07f86afee709b26e05cc7b91c2fcf87e527f67cc8eaadcf56983ac879",
+      "bytes": 208673,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns_dark_320x2.png",
+      "state": "PC1",
+      "test": "PC1 Summary: the Patterns card with Plus (320 dp, text ×2, dark)",
+      "sha256": "271daa5d03cc5ded81d5d97937f61ddcd8518b481a75fadb29f87feb8ebd951e",
+      "bytes": 176056,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns_dark_360x1.png",
+      "state": "PC1",
+      "test": "PC1 Summary: the Patterns card with Plus (360 dp, text ×1, dark)",
+      "sha256": "4edad57575b346de8351e05794323f2725e26ba7b7195d8eeb51bb13835a61ef",
+      "bytes": 179341,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns_light_320x2.png",
+      "state": "PC1",
+      "test": "PC1 Summary: the Patterns card with Plus (320 dp, text ×2, light)",
+      "sha256": "070146949e95b2598c635e920641496f0f536a9b38709248f3c121d1995032b2",
+      "bytes": 177445,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns_light_360x1.png",
+      "state": "PC1",
+      "test": "PC1 Summary: the Patterns card with Plus (360 dp, text ×1, light)",
+      "sha256": "4a0c133491f54fa95ee4b8b8c3949b0c5e000ff40894b8b35c820872318bf69b",
+      "bytes": 181334,
       "width": 1080,
       "height": 2340
     },
