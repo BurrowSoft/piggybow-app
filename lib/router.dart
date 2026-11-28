@@ -9,6 +9,7 @@ import 'features/onboarding/onboarding_screens.dart';
 import 'features/plus/plus_screen.dart';
 import 'features/shell/home_shell.dart';
 import 'features/start/start_screen.dart';
+import 'features/summary/patterns_view.dart';
 import 'features/summary/summary_screen.dart';
 import 'features/timeline/timeline_screen.dart';
 import 'session/app_session.dart';
@@ -64,6 +65,12 @@ abstract final class MeRoutes {
   static const removePlan = '/me/remove-plan';
   static const lock = '/me/lock';
   static const privacy = '/me/privacy';
+}
+
+/// Summary's pages, inside the Summary tab.
+abstract final class SummaryRoutes {
+  /// Plus's Patterns (feature 20): how spends felt over 8 weeks.
+  static const patterns = '/summary/patterns';
 }
 
 /// The goal screens, over the tabs (they belong to Home).
@@ -197,6 +204,11 @@ GoRouter buildRouter({
                         builder: (context, state) => const PrivacyScreen(),
                       ),
                     ],
+                    if (tab == AppTab.summary)
+                      GoRoute(
+                        path: 'patterns',
+                        builder: (context, state) => const PatternsScreen(),
+                      ),
                     if (tab == AppTab.home) ...[
                       over('goal/new', (_) => const GoalEditScreen()),
                       over(
