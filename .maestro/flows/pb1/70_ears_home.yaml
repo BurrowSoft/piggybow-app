@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+name: Ears - Home's pig after a fresh install, for a look at the ears (calm, first day)
+tags: [ears]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 10000
+- waitForAnimationToEnd
+- runFlow: ../../subflows/dismiss_system_anr.yaml
+- takeScreenshot: 70-home-pig
+- pressKey: Home
