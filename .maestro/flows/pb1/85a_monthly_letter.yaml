@@ -33,15 +33,16 @@ tags: [letter]
     file: ../../subflows/reveal.yaml
     env:
       ID: home-letter-days
+# Each line is a TestId container: its id, then its text on its own
 - assertVisible:
     id: home-letter-saved
-    text: "(?s).*You saved \\$100\\.00\\..*"
+- assertVisible: "(?s).*You saved \\$100\\.00\\..*"
 - assertVisible:
     id: home-letter-worth
-    text: "(?s).*What felt most worth it: Food & drinks\\..*"
+- assertVisible: "(?s).*What felt most worth it: Food & drinks\\..*"
 - assertVisible:
     id: home-letter-days
-    text: "(?s).*You noted something on 3 days\\..*"
+- assertVisible: "(?s).*You noted something on 3 days\\..*"
 - assertNotVisible:
     id: home-letter-goals                         # no goal reached in November
 - takeScreenshot: 85-letter
