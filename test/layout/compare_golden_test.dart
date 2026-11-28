@@ -11,7 +11,7 @@ import '../helpers/fonts.dart';
 import 'layout_matrix.dart';
 
 /// Feature 13, gentle comparisons: Summary's week, By category in the middle
-/// of the screen, with "About the same as", "A bit more than" and "A bit less
+/// of the screen (at its top at ×2), with "About the same as", "A bit more than" and "A bit less
 /// than this time last week" under three categories and nothing under a new
 /// one (SC1). 360 dp at text ×1 and 320 dp at ×2, light and dark.
 void main() {
@@ -66,9 +66,11 @@ void main() {
         200,
         scrollable: list,
       );
+      // At ×2 the card is taller than the screen: its top at the top, so
+      // each row shows from its category's name down.
       await Scrollable.ensureVisible(
         tester.element(byId('sum-by-category')),
-        alignment: 0.5,
+        alignment: c.textScale > 1 ? 0 : 0.5,
       );
       await tester.pumpAndSettle();
       await expectSoundLayout(tester, reason: 'SC1');
