@@ -34,6 +34,41 @@ Rules for a row:
 
 <!-- rows start here -->
 
+### master: group B — Home's turns, the pig's name, the night pig, days noted, yesterday, the monthly letter — c6940f6 — 🟢 (retroactive, on master after the landing; one finding, F-B1) — 2026-11-28 15:06 UTC
+Build: staging debug, built in the job from c6940f6, **no fake_now**: before each PR's rows, root sets the device's zone and clock to the moment those rows were written for, and each PR's rows script runs unchanged; installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, en-US
+Rows: `tool/device-rows/group-b.sh` (emulator run 46155006260, flows `tests/retro` @ 523fe1f): 15 pass, 1 INFO, 0 fail
+| Row / check | Result | Notes |
+|---|---|---|
+| The commits since 10a2bc9 | 🟢 | 30, every one authored and committed by the noreply identity |
+| Goldens at c6940f6 (render 46151694713 on 3d2a069) | 🟢 | my own download: 229 PNGs = manifest = committed, both ways, by sha256; against 10a2bc9: 185 identical, 24 changed (Home's end and the themed Homes with the noted line; Me with the pig's name and the yesterday and letter switches), 20 new (the letter, the night pig, the named pig, days noted, yesterday), all looked at, light and dark |
+| #55 the pig's name (UTC, 28 Nov 12:00) | 🟢 | PN-light, PN-dark: named on Me and Home; Cancel keeps it; empty removes it; 24 pasted → 20 kept; kept after a relaunch |
+| #59 days noted (Bangkok, Wed 25 Nov 12:00) | 🟢 | DN-1, DN-2: one day no line; 2 days; a save counts; last Sunday doesn't; ×2 wraps |
+| #53 the night pig (Bangkok, 28 Nov 23:00) | 🟢 | NP1 (C14 sleepy with the night line; C3 happy with its day line), NP2 light and dark (a save's reaction across a tab switch; the night line after hide and reopen) |
+| #64 yesterday (UTC, 28 Nov 05:00) | 🟢 | YF-1 to YF-3: three rows at most, answers set the feelings, the fourth comes in; ×2; Me's switch; Not now for the day, also after a relaunch |
+| #67 the monthly letter (UTC, 2 Dec 05:00) | 🟢 | ML-1 to ML-3: none without last month; "Your November" with its three lines; ×2; Thanks! puts it away for the month |
+| #62 Home's turns (UTC, the clock moved by root) | 🟢 | TU-1: Home open across midnight reads the new day's idea with no tap; TU-2: back from the background days later, same process, the new day's idea; TU-3 INFO: 06:00 and 22:00 left to test/home_turns_test.dart |
+| Finding F-B1 (the night pig at 05:00) | ❌ seen | sets at 05:00 local show the sleepy pig saying "It's getting late. I'll be here tomorrow." (night is 22:00 to 05:59): logged as a finding, a narrower window to follow |
+| The C3 fixture's letter | ⚪ by design | the fixture freezes its own clock at 2 Dec, so its Home shows November's letter |
+History: each PR's own rows ran earlier on its head with fake_now (in its PR's comments); this is the first run of all six on master, in one build
+
+### master: groups A and A′ — the Plus line (yearly only), the Help and privacy links, themes, Patterns — 10a2bc9 — 🟢 (retroactive, on master after the landing; Plus is off in release builds) — 2026-11-28 14:30 UTC
+Build: staging debug, built in each job from 10a2bc9: `kind=plus-rows` (Plus enabled, the rows' fake store: Plus stays off) and `kind=plus-owned` (the same, reporting one active yearly purchase with nothing bought); installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Rows: `tool/device-rows/group-a.sh` (emulator run 46152479393, flows `tests/retro` @ ecda764), `group-a-owned.sh` (run 46153951980, flows @ 2f0e48a)
+| Row / check | Result | Notes |
+|---|---|---|
+| Master's push CI, read per test (run 46152426300, this sha) | 🟢 | `+2023: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; all four jobs green |
+| The commits since 31d7ae3 | 🟢 | 89, every one authored and committed by the noreply identity |
+| Goldens at 10a2bc9 (render 46150795750 on 5195356) | 🟢 | my own download: 209 PNGs = manifest = committed, both ways, by sha256; against 6287372: 171 identical, 4 changed (Delete everything with Plus: the dialog the same, Me's list behind it longer), 34 new (Patterns, the four themes on Home, the picker, the swatches), all looked at, light and dark |
+| PA-1 the paywall (Plus off) | 🟢 | Me's Plus row opens it: "Everything you have now stays free", three benefits, **one plan, yearly** ("Free for 7 days, then … a year"; no monthly plan), Restore, the store's cancel line, the Privacy Policy link; Start and Restore buy nothing; Back closes it |
+| PA-2 the gates (Plus off) | 🟢 | a second goal and Add category each open the paywall and change nothing; hiding a built-in category is free (gone from Add, shown again) |
+| PA-5 the themes' gate (Plus off) | 🟢 | Me → Theme: Strawberry, Plum, Apricot, Blueberry; Plum opens the paywall; the theme stays |
+| ⏳ PA-3 the paywall at font scale 2.0 | | on the device with the next Plus run (two tries here stopped in the flow before the paywall); the yearly-only paywall at ×2 is in the goldens (320 × 2: offer, offer-end, pending), looked at |
+| PA-4 the smoke and the journal, Plus enabled | 🟢 | flows 00 and 10 |
+| PO-1 Plus on (with nothing bought) | 🟢 | Me "On. Thanks for your support!" with Manage subscription; the paywall "You have Piggybow Plus", Manage, no plans; a second goal opens the goal form with no paywall (two goals on Home); "Coffee runs" made in Categories and offered in Add; **Delete everything says "Your Plus subscription keeps running until you cancel it in Google Play." with Manage subscription**, and Cancel erases nothing. Every assertion about the app passed; the flow's own last wait (Me's top row after Cancel, with Me still scrolled to Delete) failed: fixed in the flow, proven next time |
+| Patterns (#68, #69) | ⚪ device-free | the goldens above and the widget tests; Summary's teaser shows only once enough spends have a feeling |
+| ⏳ Plus bought for real | | Play Billing on a device with the store's product (the Plus probe), before Plus can ship |
+History: dry runs on #49 (Plus off, flows only) and an `adb root` flake (retried since, in #89)
+
 ### master: the store's build, the smoke before internal testing (6c) — 31d7ae3 — 🟢 (a store install on a real phone ⏳) — 2026-11-28 09:12 UTC
 Build: prod release (R8, the workflow's throwaway signing key), built in the job from 31d7ae3; installed = built (APK sha256 `f84aa078…`) · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, the real clock, en-US
 Rows: `tool/device-rows/smoke6c.sh` (emulator run 46127091775, flows `tests/smoke-6c` @ c95d54f); 12 of 12 rows
