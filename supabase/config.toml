@@ -1,0 +1,9 @@
+# The Supabase CLI's settings for this repo. Only what the pig tips server
+# needs; deploys name the project with --project-ref, so nothing here points
+# at a project.
+project_id = "piggybow"
+
+[functions.pig-tip]
+# Supabase checks the caller's JWT before the function runs; the function
+# then serves anonymous users only.
+verify_jwt = true

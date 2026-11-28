@@ -1,0 +1,204 @@
+// The staging run: one tip per made-up week
+// (supabase/fixtures/tips-run.json) from piggybow-staging's pig-tip, with
+// the model chosen for this run. Fixtures only, never anyone's data.
+//
+// 1. Notes tip_settings, then sets the run's model, switches tips on, lifts
+//    the per-person limit and names no region (Management API, the scoped
+//    token).
+// 2. Signs in one anonymous user (the anon key).
+// 3. Asks for a tip per week: the status, the tip or why there's none, the
+//    model that answered and its tokens.
+// 4. Reports one tip as given (kept), and with one character changed
+//    (refused: its signature doesn't match).
+// 5. Checks the region guard: a region the function can't be in, then the
+//    one it ran in, pinned with x-region.
+// 6. Whatever happened: tip_settings back as they were, and the run's user
+//    forgotten.
+// 7. Prints a table for the job's log, with an estimated cost, the reports'
+//    two answers and the guard's.
+//
+//   SUPABASE_DEPLOY_TOKEN=… PROJECT_REF=… ANON_KEY=… MODEL=… deno run \
+//     --allow-net --allow-read=supabase/fixtures \
+//     --allow-env=SUPABASE_DEPLOY_TOKEN,PROJECT_REF,ANON_KEY,MODEL \
+//     supabase/scripts/tips-run.ts
+
+import fixtures from "../fixtures/tips-run.json" with { type: "json" };
+import { runSql } from "./sql.ts";
+
+/** $ per million tokens, input and output (list prices; Haiku's for
+ * prompts up to 100K tokens). */
+const PRICES: Record<string, [number, number]> = {
+  "claude-haiku-5-5": [0.1, 0.5],
+  "claude-sonnet-5-5": [2, 10],
+};
+const MODELS = Object.keys(PRICES);
+
+const token = Deno.env.get("SUPABASE_DEPLOY_TOKEN") ?? "";
+const ref = Deno.env.get("PROJECT_REF") ?? "";
+const anon = Deno.env.get("ANON_KEY") ?? "";
+const model = Deno.env.get("MODEL") ?? "";
+if (!token || !ref || !anon || !MODELS.includes(model)) {
+  console.error(`SUPABASE_DEPLOY_TOKEN, PROJECT_REF, ANON_KEY and MODEL (${MODELS.join(" or ")}) are needed`);
+  Deno.exit(2);
+}
+const base = `https://${ref}.supabase.co`;
+
+type Row = { week: string; status: number; text: string; sig: string; model: string; inp: number; out: number };
+
+const before = (await runSql(
+  ref,
+  token,
+  "select enabled, model, per_person_daily, region from public.tip_settings where id = 1",
+)) as Array<Record<string, unknown>>;
+const was = before[0] ?? {};
+const wasModel = MODELS.includes(String(was.model)) ? String(was.model) : "claude-sonnet-5-5";
+const wasEnabled = was.enabled === true;
+const wasPerPerson = Number.isInteger(was.per_person_daily) ? Number(was.per_person_daily) : 1;
+/** A region name as the settings allow it: only these go into the SQL. */
+const REGION = /^[a-z0-9-]{1,40}$/;
+const wasRegion = typeof was.region === "string" && REGION.test(was.region) ? `'${was.region}'` : "null";
+
+// MODEL is one of two fixed names (checked above), so it's safe in the SQL.
+// No region named while the weeks run: the runner's calls land anywhere.
+await runSql(
+  ref,
+  token,
+  `update public.tip_settings set model = '${model}', enabled = true, region = null, ` +
+    `per_person_daily = ${fixtures.weeks.length + 5}, updated_at = now() where id = 1`,
+);
+
+const rows: Row[] = [];
+const guard: string[] = [];
+const reports: string[] = [];
+let access = "";
+const askTip = (request: unknown, extra: Record<string, string> = {}) =>
+  fetch(`${base}/functions/v1/pig-tip`, {
+    method: "POST",
+    headers: {
+      apikey: anon,
+      Authorization: `Bearer ${access}`,
+      "Content-Type": "application/json",
+      ...extra,
+    },
+    body: JSON.stringify(request),
+  });
+try {
+  const signup = await fetch(`${base}/auth/v1/signup`, {
+    method: "POST",
+    headers: { apikey: anon, "Content-Type": "application/json" },
+    body: "{}",
+  });
+  if (!signup.ok) throw new Error(`anonymous sign-in: HTTP ${signup.status}`);
+  access = String((await signup.json()).access_token ?? "");
+  if (!access) throw new Error("anonymous sign-in: no access token");
+
+  for (const week of fixtures.weeks) {
+    const res = await askTip(week.request);
+    const usage = Object.fromEntries(
+      (res.headers.get("x-tip-usage") ?? "")
+        .split(";")
+        .map((part) => part.split("="))
+        .filter((kv) => kv.length === 2)
+        .map(([k, v]) => [k, Number(v)]),
+    );
+    let text: string;
+    let sig = "";
+    if (res.status === 200) {
+      const body = await res.json();
+      text = String(body.tip ?? "");
+      sig = String(body.sig ?? "");
+    } else {
+      await res.body?.cancel();
+      text = `(no tip: ${res.headers.get("x-tip-why") ?? res.status})`;
+    }
+    rows.push({
+      week: week.name,
+      status: res.status,
+      text,
+      sig,
+      model: res.headers.get("x-tip-model") ?? "",
+      inp: usage.in ?? 0,
+      out: usage.out ?? 0,
+    });
+  }
+
+  // Reports, end to end: a tip as given, with its signature, is kept (204);
+  // the same tip with one character changed is refused (400). The kept one
+  // is the model's words for a made-up week, gone after 90 days.
+  const shown = rows.find((r) => r.status === 200 && r.sig);
+  if (shown) {
+    const send = async (tip: string) => {
+      const res = await fetch(`${base}/functions/v1/pig-tip/report`, {
+        method: "POST",
+        headers: { apikey: anon, Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ tip, reason: "other", model: shown.model, sig: shown.sig }),
+      });
+      await res.body?.cancel();
+      return res.status;
+    };
+    const changed = shown.text.endsWith(".") ? `${shown.text.slice(0, -1)}!` : `${shown.text}.`;
+    reports.push(`- Its own tip, as given: ${await send(shown.text)} (204 expected).`);
+    reports.push(`- One character changed: ${await send(changed)} (400 expected).`);
+  }
+
+  // The region guard, end to end. A region the function can't be in gets no
+  // tip, and the 204 says where it ran; pinned there with x-region, a tip
+  // goes on as usual.
+  await runSql(ref, token, "update public.tip_settings set region = 'nowhere-0' where id = 1");
+  const away = await askTip(fixtures.weeks[0].request);
+  await away.body?.cancel();
+  const ranIn = away.headers.get("x-tip-region") ?? "";
+  guard.push(
+    `- A region it can't be in: ${away.status}, why ${away.headers.get("x-tip-why") ?? "none"}; ` +
+      `it ran in ${ranIn || "?"} (the platform's x-sb-edge-region: ` +
+      `${away.headers.get("x-sb-edge-region") ?? "?"}).`,
+  );
+  if (REGION.test(ranIn) && ranIn !== "unknown") {
+    await runSql(ref, token, `update public.tip_settings set region = '${ranIn}' where id = 1`);
+    const home = await askTip(fixtures.weeks[0].request, { "x-region": ranIn });
+    await home.body?.cancel();
+    guard.push(
+      `- Its own region, pinned with x-region: ${home.status}, why ` +
+        `${home.headers.get("x-tip-why") ?? "none"} (ran in ${home.headers.get("x-sb-edge-region") ?? "?"}).`,
+    );
+  }
+} finally {
+  // Back as it was, whatever happened above.
+  await runSql(
+    ref,
+    token,
+    `update public.tip_settings set model = '${wasModel}', enabled = ${wasEnabled}, ` +
+      `per_person_daily = ${wasPerPerson}, region = ${wasRegion}, updated_at = now() where id = 1`,
+  );
+  if (access) {
+    const forget = await fetch(`${base}/functions/v1/pig-tip/forget`, {
+      method: "POST",
+      headers: { apikey: anon, Authorization: `Bearer ${access}` },
+    });
+    await forget.body?.cancel();
+  }
+}
+
+const cell = (s: string) => s.replaceAll("|", "\\|").replaceAll("\n", " ");
+let cost = 0;
+for (const r of rows) {
+  const [pin, pout] = PRICES[r.model] ?? PRICES[model];
+  cost += (r.inp * pin + r.out * pout) / 1_000_000;
+}
+const tips = rows.filter((r) => r.status === 200).length;
+console.log(`# Pig tips staging run: ${model}\n`);
+console.log("| # | Week | Status | Tip | Model | In | Out |");
+console.log("|---|---|---|---|---|---|---|");
+rows.forEach((r, i) => {
+  console.log(`| ${i + 1} | ${cell(r.week)} | ${r.status} | ${cell(r.text)} | ${r.model} | ${r.inp} | ${r.out} |`);
+});
+console.log(
+  `\n${tips} tips out of ${rows.length}. Tokens: ${rows.reduce((s, r) => s + r.inp, 0)} in, ` +
+    `${rows.reduce((s, r) => s + r.out, 0)} out. Estimated cost at list prices: $${cost.toFixed(4)}.`,
+);
+console.log(`\nReports:\n${reports.join("\n") || "- no tip to report"}`);
+console.log(`\nThe region guard:\n${guard.join("\n") || "- not reached"}`);
+console.log(
+  `\ntip_settings put back: model ${wasModel}, enabled ${wasEnabled}, per person ${wasPerPerson}, ` +
+    `region ${wasRegion}.`,
+);

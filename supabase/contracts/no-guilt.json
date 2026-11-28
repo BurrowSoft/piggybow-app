@@ -1,0 +1,73 @@
+{
+  "about": "The no-guilt patterns (tool/no_guilt.dart), shared so the pig-tip function filters the model's words with the rules the app's own copy obeys. Matched case-insensitively. test/no_guilt_contract_test.dart keeps this file equal to the Dart list.",
+  "patterns": [
+    {
+      "pattern": "\\bover budget\\b",
+      "why": "judges a spend"
+    },
+    {
+      "pattern": "\\bbehind\\b",
+      "why": "implies being late on money"
+    },
+    {
+      "pattern": "\\bmissed\\b",
+      "why": "counts what was not done"
+    },
+    {
+      "pattern": "\\bfail(s|ed|ing|ure|ures)?\\b",
+      "why": "failure language"
+    },
+    {
+      "pattern": "\\byou should\\b",
+      "why": "tells the person what to do"
+    },
+    {
+      "pattern": "\\boverspen(t|d|ds|ding)\\b",
+      "why": "judges a spend"
+    },
+    {
+      "pattern": "\\bover (your|the|my) (plan|budget|limit)\\b",
+      "why": "judges a spend against a plan"
+    },
+    {
+      "pattern": "\\bshould(n['’]t)? have\\b",
+      "why": "hindsight blame"
+    },
+    {
+      "pattern": "\\bstreaks?\\b",
+      "why": "no streaks"
+    },
+    {
+      "pattern": "\\bwast(e|ed|es|ing|eful)\\b",
+      "why": "judges a spend"
+    },
+    {
+      "pattern": "\\bguilt(y)?\\b",
+      "why": "guilt"
+    },
+    {
+      "pattern": "\\b(shame|shameful|ashamed)\\b",
+      "why": "shame"
+    },
+    {
+      "pattern": "\\btoo much\\b",
+      "why": "judges a spend"
+    },
+    {
+      "pattern": "\\bbad (habit|habits|spend|spends|spending|choice|choices)\\b",
+      "why": "judges the person"
+    },
+    {
+      "pattern": "\\b(irresponsible|careless|reckless)\\b",
+      "why": "judges the person"
+    },
+    {
+      "pattern": "\\bdon['’]t forget\\b",
+      "why": "a nag"
+    },
+    {
+      "pattern": "\\byou only\\b",
+      "why": "a nag (\"you only saved…\")"
+    }
+  ]
+}

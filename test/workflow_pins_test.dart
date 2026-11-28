@@ -82,12 +82,19 @@ void main() {
     }
   });
 
-  test("every workflow sets up Flutter with our own action, from the workflow's "
-      'own commit', () {
+  test("every workflow that runs Flutter sets it up with our own action, from "
+      "the workflow's own commit", () {
     final checkout = RegExp(
       r'uses: actions/checkout@\S+ # \S+\n        with:\n((?:          .*\n)+)',
     );
     final pathOf = RegExp(r'^          path: (\S+)$', multiLine: true);
+    // A line that starts a flutter or dart command, in a one-line run or a
+    // run block (the Supabase workflows run neither).
+    final runsFlutter = RegExp(
+      r'^\s+(?:- )?(?:run: )?(flutter|dart) [a-z]',
+      multiLine: true,
+    );
+    expect(runsFlutter.hasMatch(workflows['ci.yaml']!), isTrue);
     for (final w in workflows.entries) {
       expect(w.value, isNot(contains('flutter-action')), reason: w.key);
       expect(
@@ -95,8 +102,8 @@ void main() {
           r'uses: \./(?:ci/)?\.github/actions/flutter$',
           multiLine: true,
         ).hasMatch(w.value),
-        isTrue,
-        reason: '${w.key} sets up Flutter',
+        runsFlutter.hasMatch(w.value),
+        reason: '${w.key} sets up Flutter exactly when it runs it',
       );
       for (final m in RegExp(
         r'uses: \./(ci/)?\.github/actions/',
