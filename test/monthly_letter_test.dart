@@ -143,7 +143,7 @@ void main() {
         );
 
     Future<TestApp> open(WidgetTester tester, DateTime now, Future<void> Function(TestApp app) seed) async {
-      final app = TestApp(clock: MovableClock(now));
+      final app = TestApp(clock: MovableClock(now), letters: true);
       await tester.runAsync(app.openJournal);
       await tester.runAsync(() => seed(app));
       await app.pump(tester);

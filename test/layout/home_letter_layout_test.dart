@@ -26,7 +26,7 @@ void main() {
     testWidgets('L1 Home with the pig\'s letter about September ($c)', (tester) async {
       final clock = MovableClock(DateTime.utc(2026, 9, 5, 3));
       setLayout(tester, c);
-      final app = TestApp(clock: clock)..prefs.appearance = c.appearance;
+      final app = TestApp(clock: clock, letters: true)..prefs.appearance = c.appearance;
       await tester.runAsync(app.openJournal);
       await tester.runAsync(() async {
         Future<void> spend(String date, {Feeling? feeling, SpendCategory category = SpendCategory.food}) async {

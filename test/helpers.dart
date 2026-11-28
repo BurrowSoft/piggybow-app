@@ -127,6 +127,7 @@ class TestApp {
     this.currency = 'THB',
     this.onboarded = true,
     this.config = const AppConfig(flavor: Flavor.staging),
+    this.letters = false,
     Clock? clock,
   }) : clock = clock ?? testClock,
        prefs = MemoryLocalPrefs(
@@ -155,6 +156,11 @@ class TestApp {
 
   /// Whether onboarding is done: tests start on Home unless they say not.
   final bool onboarded;
+
+  /// Whether Home may show the pig's monthly letter. Only the letter's own
+  /// tests ask for it: for the rest, [pump] puts the letter of the month
+  /// before today away (as "Thanks!" does), so their screens stay as made.
+  final bool letters;
 
   /// The build's configuration (a Sentry DSN, the policy and help links).
   final AppConfig config;
@@ -202,6 +208,11 @@ class TestApp {
     await initializeDateFormatting();
     // The store works on real time (not the test's fake one).
     await tester.runAsync(openJournal);
+    if (!letters) {
+      final today = localDay.today;
+      final month = wireDate(DateTime(today.year, today.month - 1)).substring(0, 7);
+      await tester.runAsync(() => journal.dismissLetter(month));
+    }
     backend = await DeviceBackend.open(
       prefs: prefs,
       timeZone: await device.timeZone(),
