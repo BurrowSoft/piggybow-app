@@ -1,7 +1,7 @@
 {
-  "source_sha": "472d2621d03f574dccdc648018d71addc520a57c",
-  "ref": "472d2621d03f574dccdc648018d71addc520a57c",
-  "run_id": "46099679576",
+  "source_sha": "aface86e07c59ae098e620d44dc27df72763a0c5",
+  "ref": "aface86e07c59ae098e620d44dc27df72763a0c5",
+  "run_id": "46113004460",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -744,6 +744,42 @@
       "height": 2340
     },
     {
+      "file": "me_delete-plus-end_dark_320x2.png",
+      "state": "PL5",
+      "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, dark)",
+      "sha256": "485b02ded1b703f0cfba760782cb38677c61999dc51fff7034eaaa8efa2840b9",
+      "bytes": 211850,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-plus-end_light_320x2.png",
+      "state": "PL5",
+      "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, light)",
+      "sha256": "35d57164977d068eb7297e075a49daadaaf8bbeed42ed229be44c66fb7e573e1",
+      "bytes": 214207,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-plus_dark_320x2.png",
+      "state": "PL5",
+      "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, dark)",
+      "sha256": "90db2489639510c26f9691bf73a8d832fe198f69e99b67a793410bc64ae34925",
+      "bytes": 208850,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-plus_light_320x2.png",
+      "state": "PL5",
+      "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, light)",
+      "sha256": "afd9be5a6fea5e268bf6dc850f0203ff315f87b524e80a9f3957bb5ca3356ecb",
+      "bytes": 210989,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "me_lock-after-restore_dark_320x2.png",
       "state": "M10",
       "test": "M10 the App lock row after a restore (320 dp, text ×2, dark)",
@@ -870,6 +906,24 @@
       "height": 2340
     },
     {
+      "file": "me_plus-on_dark_320x2.png",
+      "state": "PL4",
+      "test": "PL4 Me's Plus rows, with Plus on (320 dp, text ×2, dark)",
+      "sha256": "d11ddb767317845784b4eaa3b2677abd57978a7ef32e2356b582780faca5a27a",
+      "bytes": 192561,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plus-on_light_320x2.png",
+      "state": "PL4",
+      "test": "PL4 Me's Plus rows, with Plus on (320 dp, text ×2, light)",
+      "sha256": "78aacf9bc8d9fe47052a2e4c79164d148cb64c511a3e50c289f8abbdfbf1ac40",
+      "bytes": 192811,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "pig_calm_dark_200x1.png",
       "state": "P2",
       "test": "the pig, calm (dark)",
@@ -940,6 +994,96 @@
       "bytes": 16873,
       "width": 600,
       "height": 600
+    },
+    {
+      "file": "plus_offer-end_dark_320x2.png",
+      "state": "PL1",
+      "test": "PL1 the paywall, the offer (320 dp, text ×2, dark)",
+      "sha256": "805e027dc62687b4c0c13998b762a204bf03b09b5ffa03e898fd7b78524dff53",
+      "bytes": 180976,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_offer-end_light_320x2.png",
+      "state": "PL1",
+      "test": "PL1 the paywall, the offer (320 dp, text ×2, light)",
+      "sha256": "ec128087cf92db2688a0118df55f40db6597388c93f739fba7af61b0e1a83f0e",
+      "bytes": 182552,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_offer_dark_320x2.png",
+      "state": "PL1",
+      "test": "PL1 the paywall, the offer (320 dp, text ×2, dark)",
+      "sha256": "34b303a074065a82d18dc98ad8dc3bef422bbd51ff6f69c99239c40d565c04bc",
+      "bytes": 205170,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_offer_light_320x2.png",
+      "state": "PL1",
+      "test": "PL1 the paywall, the offer (320 dp, text ×2, light)",
+      "sha256": "a7eeef92e24690159b8373440d43af1a6089b52fdb045c5ab2387d640f326922",
+      "bytes": 204018,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_on-end_dark_320x2.png",
+      "state": "PL3",
+      "test": "PL3 the paywall with Plus on (320 dp, text ×2, dark)",
+      "sha256": "207a3c610c8725114e769497f1391b3cf05cbc067003b38d2a8edb1ae5ef20ce",
+      "bytes": 185107,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_on-end_light_320x2.png",
+      "state": "PL3",
+      "test": "PL3 the paywall with Plus on (320 dp, text ×2, light)",
+      "sha256": "45b6ff2833c199e92aba25bca6d84d535874211476dbf5d8e9a76f8ae0670a68",
+      "bytes": 184133,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_on_dark_320x2.png",
+      "state": "PL3",
+      "test": "PL3 the paywall with Plus on (320 dp, text ×2, dark)",
+      "sha256": "5fa5bf98a678dbc5f533cccacbf19dd02c6c1f28d16d7d188d62c7d72ac68800",
+      "bytes": 185335,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_on_light_320x2.png",
+      "state": "PL3",
+      "test": "PL3 the paywall with Plus on (320 dp, text ×2, light)",
+      "sha256": "58e580ac672f3a008418cb8a505bf17289036da7042e0a4856177ecbddf2bd0b",
+      "bytes": 184271,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_pending_dark_320x2.png",
+      "state": "PL2",
+      "test": "PL2 a pending payment's note (320 dp, text ×2, dark)",
+      "sha256": "e218cef31b7cf48b20aa295f47a7b84a4dbb9357b75970f0dc2e53e0c56c6e3e",
+      "bytes": 212718,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_pending_light_320x2.png",
+      "state": "PL2",
+      "test": "PL2 a pending payment's note (320 dp, text ×2, light)",
+      "sha256": "8b2b34b63e6f44ac1160e17b1423ccf280149d3ef35a2f24244f21c3aa186357",
+      "bytes": 213513,
+      "width": 960,
+      "height": 2340
     },
     {
       "file": "rainbow_0_dark_320x1.png",
