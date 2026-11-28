@@ -19,7 +19,7 @@ The app's side (S1, as PB Mobile Dev gave it):
                                             ones served; else 400
   POST /functions/v1/pig-tip/forget         deletes the anonymous user → 204
 The rows script's side (from the runner only, 127.0.0.1):
-  POST /__mock/mode?m=tip|nosig|timeout|cap|none|error|503   pig-tip's next answers
+  POST /__mock/mode?m=tip|nosig|nomodel|timeout|cap|none|error|503   pig-tip's next answers
   POST /__mock/report?m=ok|cap                                report's answers
   GET  /__mock/log                                  every request so far, JSON lines
   POST /__mock/reset                                forget everything
@@ -233,6 +233,9 @@ class Handler(BaseHTTPRequestHandler):
             if mode == "nosig":  # a 200 without a usable sig: the app's own tip
                 log({**entry, "code": 200, "tip": tip, "sig": None})
                 return self.reply(200, {"tip": tip}, headers)
+            if mode == "nomodel":  # a 200 without x-tip-model: also no tip
+                log({**entry, "code": 200, "tip": tip, "sig": sig, "model": None})
+                return self.reply(200, {"tip": tip, "sig": sig}, {"x-tip-usage": "in=120;out=18"})
             log({**entry, "code": 200, "tip": tip, "sig": sig})
             return self.reply(200, {"tip": tip, "sig": sig}, headers)
         if u.path == "/functions/v1/pig-tip/report":
