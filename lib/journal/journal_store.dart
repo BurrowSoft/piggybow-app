@@ -121,6 +121,26 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Whether Home asks how yesterday's spends felt (Me → Your pig): on until
+  /// it's switched off. Delete everything clears it with the journal.
+  Future<bool> yesterdayFeelOn() async =>
+      await _settings.record('yesterday_feel_off').get(_db) != true;
+
+  Future<void> setYesterdayFeelOn(bool on) async {
+    await _settings.record('yesterday_feel_off').put(_db, !on);
+    notifyListeners();
+  }
+
+  /// The day (YYYY-MM-DD) "Not now" hid that question: it stays hidden for
+  /// the rest of that day.
+  Future<String?> yesterdayFeelHiddenOn() async =>
+      await _settings.record('yesterday_feel_hidden').get(_db) as String?;
+
+  Future<void> hideYesterdayFeel(String today) async {
+    await _settings.record('yesterday_feel_hidden').put(_db, today);
+    notifyListeners();
+  }
+
   // ------------------------------------------------------------- entries
 
   /// Every entry, newest day first; within a day, the newest added first.

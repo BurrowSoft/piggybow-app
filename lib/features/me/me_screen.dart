@@ -53,6 +53,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
   int? _plan;
   String? _currency;
   bool _granted = true;
+  bool _yesterdayFeel = true;
   (String, String)? _version;
   AppServices? _services;
   AppLifecycleListener? _lifecycle;
@@ -95,12 +96,14 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final picks = await store.picks();
     final plan = await store.planMinor();
     final currency = await store.currency() ?? 'USD';
+    final yesterdayFeel = await store.yesterdayFeelOn();
     final granted = await services.notifications.granted();
     if (!mounted) return;
     setState(() {
       _picks = picks;
       _plan = plan;
       _currency = currency;
+      _yesterdayFeel = yesterdayFeel;
       _granted = granted;
     });
   }
@@ -219,6 +222,16 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                         ? l10n.mePlanNotSet
                         : formatMoney(plan, currency, locale),
                     onTap: () => _editPlan(currency, locale),
+                  ),
+                  // Home's "How did yesterday feel?" (on unless switched off).
+                  TestId(
+                    'me-yesterday-feel',
+                    child: SwitchListTile(
+                      title: Text(l10n.meYesterdayFeel),
+                      value: _yesterdayFeel,
+                      onChanged: (on) =>
+                          context.services.journal.setYesterdayFeelOn(on),
+                    ),
                   ),
                   _Section(l10n.meSecMoney),
                   _Row(
