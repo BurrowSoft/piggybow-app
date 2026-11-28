@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/button_label.dart';
 import '../../core/clock.dart';
+import '../../core/fit_text.dart';
 import '../../core/line_breaks.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
