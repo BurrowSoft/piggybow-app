@@ -41,11 +41,7 @@ class RenderButtonPair extends RenderBox
     with
         ContainerRenderObjectMixin<RenderBox, _PairParentData>,
         RenderBoxContainerDefaultsMixin<RenderBox, _PairParentData> {
-  RenderButtonPair({
-    required double spacing,
-    required TextDirection textDirection,
-  }) : _spacing = spacing,
-       _textDirection = textDirection;
+  RenderButtonPair({required this._spacing, required this._textDirection});
 
   double get spacing => _spacing;
   double _spacing;
