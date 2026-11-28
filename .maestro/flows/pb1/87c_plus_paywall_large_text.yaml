@@ -1,0 +1,35 @@
+appId: ${APP_ID}
+name: Plus's paywall at large text (group A, plus-rows) - at font scale 2.0, the benefits, the yearly plan and its price whole, for a look
+tags: [plus]
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-plus
+- tapOn:
+    id: me-plus
+- extendedWaitUntil:
+    visible:
+      id: plus-screen
+    timeout: 10000
+- takeScreenshot: 87-paywall-x2
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: plus-plan-yearly-start
+- takeScreenshot: 87-paywall-plan-x2
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: plus-privacy
+- takeScreenshot: 87-paywall-end-x2
+- back

@@ -1,0 +1,128 @@
+appId: ${APP_ID}
+name: Plus's gates (group A, plus-rows) - without Plus, a second goal, your own category and a Plus theme each open the paywall and change nothing; hiding a built-in category stays free
+tags: [plus]
+# Run with kind=plus-rows and zone UTC, after the whole of groups A and A′
+# (the themes are #51). Plus stays off: the fake store never owns anything.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# A first goal is free; a second one opens the paywall
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env: { NAME: "Bike", AMOUNT: "500", START: "0" }
+- back                                             # the goal screen sits over the tabs
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-new-goal
+- tapOn:
+    id: home-new-goal
+- extendedWaitUntil:
+    visible:
+      id: plus-screen
+    timeout: 10000
+- takeScreenshot: 87-gate-goal
+- back
+- extendedWaitUntil:
+    visible:
+      id: home-new-goal
+    timeout: 10000
+- assertNotVisible:
+    id: goal-name                                  # no new-goal form behind it
+# Categories: hiding a built-in is free
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-categories
+- tapOn:
+    id: me-categories
+- extendedWaitUntil:
+    visible:
+      id: categories-screen
+    timeout: 10000
+- assertVisible: "Built-in"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: categories-transport-toggle
+- tapOn:
+    id: categories-transport-toggle
+- assertVisible:
+    id: categories-transport
+- assertVisible: "Hidden"
+- takeScreenshot: 87-categories-hidden
+# Your own category opens the paywall
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: categories-add
+- tapOn:
+    id: categories-add
+- extendedWaitUntil:
+    visible:
+      id: plus-screen
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible:
+      id: categories-screen
+    timeout: 10000
+- assertNotVisible:
+    id: category-edit-screen
+# The hidden category is gone from Add; show it again
+- back
+- tapOn:
+    id: tab-home
+- tapOn:
+    id: home-add
+- assertNotVisible:
+    id: add-cat-transport
+- assertVisible:
+    id: add-cat-food
+- back
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-categories
+- tapOn:
+    id: me-categories
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: categories-transport-toggle
+- tapOn:
+    id: categories-transport-toggle
+- assertNotVisible: "Hidden"
+- back
+# A Plus theme opens the paywall and the theme stays
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-theme
+- tapOn:
+    id: me-theme
+- extendedWaitUntil:
+    visible:
+      id: theme-sheet
+    timeout: 10000
+- takeScreenshot: 87-theme-sheet
+- tapOn:
+    id: theme-plum
+- extendedWaitUntil:
+    visible:
+      id: plus-screen
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible:
+      id: me-theme
+    timeout: 10000
+- takeScreenshot: 87-theme-unchanged

@@ -1,0 +1,51 @@
+appId: ${APP_ID}
+name: Take out (#61) at large text - after 86a (its goal kept), the sheet with the refusal at font scale 2.0, for a look
+tags: [takeout]
+---
+- launchApp:
+    appId: ${APP_ID}
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-card
+- tapOn:
+    id: goal-card
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-take-out
+- tapOn:
+    id: goal-take-out
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: takeout-amount
+      TEXT: "300"
+      EXPECT: ".*300.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: takeout-save
+- tapOn:
+    id: takeout-save
+- assertVisible: "(?s).*That's more than you've\\s+saved for this goal.*"
+- takeScreenshot: 86-too-much-x2
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: takeout-back
+- tapOn:
+    id: takeout-back
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000

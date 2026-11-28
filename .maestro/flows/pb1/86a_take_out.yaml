@@ -1,0 +1,119 @@
+appId: ${APP_ID}
+name: Take money out of savings (#61) - a goal with savings offers Take out; more than saved is refused; $50 taken out shows on the goal, on Timeline and on Summary; deleting it puts things back
+tags: [takeout]
+# Run with zone UTC; no fake_now needed (everything happens today).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# A goal with $200 saved
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env: { NAME: "Bike", AMOUNT: "500", START: "0" }
+- assertNotVisible:
+    id: goal-take-out                             # nothing saved yet
+- runFlow:
+    file: ../../subflows/add_savings.yaml
+    env: { AMOUNT: "200", GOAL: "Bike" }
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+# Take out: more than saved is refused
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-take-out
+- tapOn:
+    id: goal-take-out
+- assertVisible: ".*Take out of Bike.*"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: takeout-amount
+      TEXT: "300"
+      EXPECT: ".*300.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: takeout-save
+- tapOn:
+    id: takeout-save
+- assertVisible: ".*That's more than you've saved for this goal.*"
+- takeScreenshot: 86-too-much
+# $50 is fine
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env:
+      ID: takeout-amount
+      TEXT: "50"
+      EXPECT: ".*50.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: takeout-save
+- tapOn:
+    id: takeout-save
+- assertVisible: ".*Taken out\\. It's still your money\\..*"
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- assertVisible: "Taken out"                      # the goal's list: the take-out row
+- takeScreenshot: 86-goal
+# Timeline (the goal screen sits over the tabs: Back to Home first)
+- back
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- tapOn:
+    id: tab-timeline
+- assertVisible: ".*Taken out of Bike.*"
+- takeScreenshot: 86-timeline
+# Summary: the take-out line (a TestId container: its id, then its text)
+- tapOn:
+    id: tab-summary
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: sum-taken-out
+- assertVisible:
+    id: sum-taken-out
+- assertVisible: ".*Taken out \\$50\\.00.*"
+- takeScreenshot: 86-summary
+# Delete it from the goal: the row goes, Summary's line goes
+- tapOn:
+    id: tab-home
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-card
+- tapOn:
+    id: goal-card
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- tapOn: "Taken out"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: takeout-delete
+- tapOn:
+    id: takeout-delete
+- tapOn:
+    id: takeout-delete-confirm
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- assertNotVisible: "Taken out"
+- back
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- tapOn:
+    id: tab-summary
+- assertNotVisible:
+    id: sum-taken-out

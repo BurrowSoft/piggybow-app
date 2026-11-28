@@ -1,0 +1,88 @@
+appId: ${APP_ID}
+name: Plus's paywall (group A, plus-rows) - Me's Plus row opens it; "stays free", the three benefits, the yearly plan with its free week; Start and Restore buy nothing; Back closes it
+tags: [plus]
+# Run with kind=plus-rows (PLUS_ENABLED + PLUS_FAKE_STORE, staging debug) and
+# zone UTC. The fake store shows a price and never buys or owns anything, so
+# Plus stays off throughout. Only the yearly plan is asserted (decision 85);
+# anything else on the screen is for the shots.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-plus
+- tapOn:
+    id: me-plus
+- extendedWaitUntil:
+    visible:
+      id: plus-screen
+    timeout: 10000
+- assertVisible: "Piggybow Plus"
+- assertVisible: ".*Everything you have now stays free\\..*"
+# The benefits: each a TestId container (its id, then its text)
+- assertVisible:
+    id: plus-benefit-goals
+- assertVisible: ".*Save for more than one goal at a time.*"
+- assertVisible:
+    id: plus-benefit-categories
+- assertVisible: ".*Make your own spend categories.*"
+- assertVisible:
+    id: plus-benefit-themes
+- assertVisible: ".*Give Piggybow a new color theme.*"
+- takeScreenshot: 87-paywall
+# The yearly plan, with the free week
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: plus-plan-yearly
+- assertVisible:
+    id: plus-plan-yearly
+- assertVisible: ".*Free for 7 days, then US\\$[0-9.,]+ a year.*"
+- takeScreenshot: 87-paywall-plan
+# Start buys nothing
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: plus-plan-yearly-start
+- tapOn:
+    id: plus-plan-yearly-start
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: plus-on
+- assertVisible:
+    id: plus-screen
+- takeScreenshot: 87-after-start
+# Restore finds nothing
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: plus-restore
+- tapOn:
+    id: plus-restore
+- extendedWaitUntil:
+    visible: ".*No Plus subscription was found for this store account\\..*"
+    timeout: 10000
+- assertNotVisible:
+    id: plus-on
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: plus-terms
+- assertVisible:
+    id: plus-terms
+- assertVisible:
+    id: plus-privacy
+- assertVisible: ".*Cancel anytime in Google Play\\..*"
+- takeScreenshot: 87-paywall-end
+# Back closes it onto Me
+- back
+- extendedWaitUntil:
+    visible:
+      id: me-plus
+    timeout: 10000
+- assertNotVisible:
+    id: plus-screen
