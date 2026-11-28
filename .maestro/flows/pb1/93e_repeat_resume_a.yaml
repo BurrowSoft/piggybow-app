@@ -26,8 +26,11 @@ tags: [risk, repeat]
 - runFlow:
     file: ../../subflows/reveal.yaml
     env: { ID: add-submit }
+- waitForAnimationToEnd:              # a chooser closing (Repeat) or a scroll settling eats a quick tap
+    timeout: 3000
 - tapOn:
     id: add-submit
+    retryTapIfNoChange: true
 - extendedWaitUntil:
     visible:
       id: home-add
