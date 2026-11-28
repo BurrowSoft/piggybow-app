@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 
-import '../data/plus.dart';
 import '../features/plus/plus_store.dart';
 import '../features/reminder/reminder_scheduler.dart';
 import '../journal/journal_store.dart';
@@ -21,7 +20,6 @@ class AppServices {
     required this.reminders,
     required this.notifications,
     this.appLock,
-    this.plus,
     this.plusStore,
     this.stagingTestError = stagingToolsEnabled ? throwStagingTestError : null,
     bool onboarded = true,
@@ -52,8 +50,8 @@ class AppServices {
   /// App lock; null when APP_LOCK_ENABLED is off.
   final AppLock? appLock;
 
-  /// The Plus plumbing (no UI in v0.1): null while PLUS_ENABLED is off.
-  final PlusRepository? plus;
+  /// Plus's store, Play Billing or StoreKit (no Plus UI in v0.1): null
+  /// until Plus is wired, and always while PLUS_ENABLED is off.
   final PlusStore? plusStore;
 
   /// Staging and dev builds only: sends a test error to Sentry (if a DSN is set).

@@ -2,13 +2,12 @@ import 'dart:async';
 
 import '../core/clock.dart';
 import 'models.dart';
-import 'plus.dart';
 import 'repositories.dart';
 
 /// An in-memory account backend for tests (and the session's test rows):
 /// the server's rules as the original app's migrations had them, minus
 /// everything Piggybow doesn't carry. v0.1 runs on [DeviceBackend].
-class FakeBackend implements AuthRepository, AccountRepository, PlusRepository {
+class FakeBackend implements AuthRepository, AccountRepository {
   FakeBackend({this.latency = Duration.zero, Clock? clock})
     : clock = clock ?? Clock();
 
@@ -458,51 +457,6 @@ class FakeBackend implements AuthRepository, AccountRepository, PlusRepository {
       ..reminderTime = choices.reminderTime
       ..tone = choices.tone
       ..focus = Set.of(choices.focusAreas);
-  }
-
-  /// Test hook: the signed-in person's entitlements row (null: none), as
-  /// the server would have written it.
-  Entitlement? entitlement;
-
-  /// Test hook: the row can't be read (every read fails).
-  bool entitlementUnreadable = false;
-
-  /// Test hook: what the last verifyPurchase sent; and a store that says no.
-  ({PlusSource store, String token, String productId})? lastVerify;
-  bool verifyRefuses = false;
-
-  /// Test hook: what a successful verify writes (null: leaves the row).
-  Entitlement? Function()? onVerify;
-
-  /// Test hook: the web's cancel-for-delete answer, and the calls made.
-  CancelForDelete cancelForDeleteResult = CancelForDelete.cancelled;
-  final cancelForDeleteCalls = <String>[];
-
-  @override
-  Future<CancelForDelete> cancelForDelete(String webOrigin) async {
-    cancelForDeleteCalls.add(webOrigin);
-    return webOrigin.isEmpty ? CancelForDelete.later : cancelForDeleteResult;
-  }
-
-  @override
-  Future<Entitlement?> myEntitlement() async {
-    await _tick();
-    _signedIn;
-    if (entitlementUnreadable) throw AppFailure.generic;
-    return entitlement;
-  }
-
-  @override
-  Future<void> verifyPurchase({
-    required PlusSource store,
-    required String token,
-    required String productId,
-  }) async {
-    await _tick();
-    _signedIn;
-    lastVerify = (store: store, token: token, productId: productId);
-    if (verifyRefuses) throw const AppFailure('plus_not_verified');
-    if (onVerify case final write?) entitlement = write();
   }
 }
 

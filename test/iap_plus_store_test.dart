@@ -2,20 +2,17 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:piggybow/data/plus.dart';
 import 'package:piggybow/features/plus/iap_plus_store.dart';
 import 'package:piggybow/features/plus/plus_store.dart';
 
-/// The store layer over in_app_purchase (UX: approved, pinned), with a fake
-/// gateway: the proof plus-store gets, the account it's tied to, and each
-/// way a store's sheet can end.
+/// The store layer over in_app_purchase (pinned), with a fake gateway: what
+/// a purchase reports, and each way a store's sheet can end.
 class _Gateway implements IapGateway {
   final stream = StreamController<List<PurchaseDetails>>.broadcast();
   bool available = true;
-  ({Object handle, String price, bool trial, String? offerPrice})? offer = (handle: 'p', price: '£49.99', trial: true, offerPrice: null);
-  bool? askedOffer;
-  final bought = <String>[];
-  final restoredFor = <String>[];
+  ({Object handle, String price, bool trial})? offer = (handle: 'p', price: '£49.99', trial: true);
+  final bought = <Object>[];
+  int restores = 0;
   final completed = <PurchaseDetails>[];
 
   /// What a buy or a restore makes the store report.
@@ -29,21 +26,18 @@ class _Gateway implements IapGateway {
   Future<bool> isAvailable() async => available;
 
   @override
-  Future<({Object handle, String price, bool trial, String? offerPrice})?> product(String id, {bool offer = false}) async {
-    askedOffer = offer;
-    return this.offer;
-  }
+  Future<({Object handle, String price, bool trial})?> product(String id) async => offer;
 
   @override
-  Future<bool> buy(Object handle, {required String applicationUserName}) async {
-    bought.add(applicationUserName);
+  Future<bool> buy(Object handle) async {
+    bought.add(handle);
     if (onBuy case final make?) scheduleMicrotask(() => stream.add(make()));
     return true;
   }
 
   @override
-  Future<void> restore({required String applicationUserName}) async {
-    restoredFor.add(applicationUserName);
+  Future<void> restore() async {
+    restores++;
     if (onRestore case final make?) scheduleMicrotask(() => stream.add(make()));
   }
 
@@ -69,14 +63,6 @@ PurchaseDetails _p(PurchaseStatus status, {String token = 'tok', String? id = 'G
     )..pendingCompletePurchase = pending;
 
 void main() {
-  const uid = 'AAAA1111-2222-4333-8444-555555555555';
-
-  test("Play's account id: sha-256 of the lower-cased uid, hex (as plus-store's)", () {
-    expect(playAccountId('abc'), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
-    expect(playAccountId(uid), playAccountId(uid.toLowerCase()));
-    expect(playAccountId(uid), hasLength(64));
-  });
-
   test('the product: the store price and its own word on the free week', () async {
     final g = _Gateway();
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
@@ -86,24 +72,12 @@ void main() {
     expect(await store.product(), isNull);
   });
 
-  test("the Christmas special: asked only when told, the store's own first-year "
-      'price, and no free week beside it', () async {
-    final g = _Gateway();
-    final store = IapPlusStore(source: PlusSource.play, gateway: g);
-    await store.product();
-    expect(g.askedOffer, isFalse);
-    g.offer = (handle: 'o', price: '£49.99', trial: true, offerPrice: '£24.99');
-    final p = (await store.product(offer: true))!;
-    expect(g.askedOffer, isTrue);
-    expect([p.price, p.offerPrice, p.trialOffered], ['£49.99', '£24.99', false]);
-  });
-
-  test('Play: bought → the purchase token, tied to the hashed account; finished once verified', () async {
+  test("Play: bought → the purchase token and the product's handle; finished once", () async {
     final g = _Gateway()..onBuy = () => [_p(PurchaseStatus.purchased, token: 'play-token')];
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
     await store.product();
-    final out = await store.buy(accountId: uid);
-    expect(g.bought, [playAccountId(uid)]);
+    final out = await store.buy();
+    expect(g.bought, ['p']);
     expect(out, isA<PlusBought>());
     final proof = (out as PlusBought).proof;
     expect([proof.token, proof.productId], ['play-token', plusProductId]);
@@ -111,11 +85,10 @@ void main() {
     expect(g.completed, hasLength(1));
   });
 
-  test("Apple: the transaction id, tied to the uid itself (appAccountToken)", () async {
+  test('Apple: the transaction id', () async {
     final g = _Gateway()..onBuy = () => [_p(PurchaseStatus.purchased, token: 'jws', id: '2000000123')];
     final store = IapPlusStore(source: PlusSource.apple, gateway: g);
-    final out = await store.buy(accountId: uid);
-    expect(g.bought, [uid.toLowerCase()], reason: 'a lower-case UUID, as appAccountToken');
+    final out = await store.buy();
     expect((out as PlusBought).proof.token, '2000000123');
   });
 
@@ -127,14 +100,14 @@ void main() {
     ]) {
       final g = _Gateway()..onBuy = () => [_p(status)];
       final store = IapPlusStore(source: PlusSource.play, gateway: g);
-      expect(await store.buy(accountId: uid), want, reason: '$status');
+      expect(await store.buy(), want, reason: '$status');
     }
   });
 
   test('no product here: a buy fails without a sheet', () async {
     final g = _Gateway()..offer = null;
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
-    expect(await store.buy(accountId: uid), isA<PlusBuyFailed>());
+    expect(await store.buy(), isA<PlusBuyFailed>());
     expect(g.bought, isEmpty);
   });
 
@@ -150,8 +123,8 @@ void main() {
     // A purchase reported with nobody buying (finished elsewhere, or left over).
     g.stream.add([_p(PurchaseStatus.purchased, token: 'left')]);
     await Future<void>.delayed(Duration.zero);
-    final found = await store.restore(accountId: uid);
-    expect(g.restoredFor, [playAccountId(uid)]);
+    final found = await store.restore();
+    expect(g.restores, 1);
     expect(found.map((p) => p.token), ['left', 'a', 'b']);
   });
 
@@ -162,15 +135,15 @@ void main() {
     expect(g.completed, isEmpty);
   });
 
-  // The Reviewer's payments audit (UX, 14 Nov): a cancelled or failed
-  // transaction still waiting is completed, or StoreKit reports it again on
-  // every start; one already completed is left alone.
+  // A cancelled or failed transaction still waiting is completed, or
+  // StoreKit reports it again on every start; one already completed is left
+  // alone.
   for (final status in [PurchaseStatus.canceled, PurchaseStatus.error]) {
-    test('${status.name}: completed if still waiting, never verified', () async {
+    test('${status.name}: completed if still waiting, never handed over', () async {
       final waiting = _p(status);
       final g = _Gateway()..onBuy = () => [waiting];
       final store = IapPlusStore(source: PlusSource.apple, gateway: g);
-      final out = await store.buy(accountId: uid);
+      final out = await store.buy();
       expect(out, status == PurchaseStatus.canceled ? isA<PlusCancelled>() : isA<PlusBuyFailed>());
       await Future<void>.delayed(Duration.zero);
       expect(g.completed, [waiting]);
@@ -181,7 +154,7 @@ void main() {
   test('a cancel already completed: nothing completed again', () async {
     final g = _Gateway()..onBuy = () => [_p(PurchaseStatus.canceled, pending: false)];
     final store = IapPlusStore(source: PlusSource.apple, gateway: g);
-    await store.buy(accountId: uid);
+    await store.buy();
     await Future<void>.delayed(Duration.zero);
     expect(g.completed, isEmpty);
   });
