@@ -54,9 +54,12 @@ class Entry {
     this.feeling,
     this.note = '',
     this.goalId,
+    this.repeatId,
+    this.auto = false,
   });
 
-  /// A uuid, made on the phone.
+  /// A uuid, made on the phone (for an entry a repeat added, its repeat and
+  /// day: see repeatEntryId).
   final String id;
   final EntryType type;
 
@@ -84,6 +87,14 @@ class Entry {
   /// taken out of (always one).
   final String? goalId;
 
+  /// The repeat it belongs to, its first entry included; null for most.
+  final String? repeatId;
+
+  /// True when a repeat added it, not the person: it's money like any
+  /// entry, but not something the person wrote (the pig's "recently", the
+  /// reminder's "added today" and the questions about a day leave it out).
+  final bool auto;
+
   /// The day the person picked, `YYYY-MM-DD`: never derived from a time.
   final String localDate;
 
@@ -108,6 +119,8 @@ class Entry {
     'local_date': localDate,
     'created_at': createdAt.toUtc().toIso8601String(),
     'updated_at': updatedAt.toUtc().toIso8601String(),
+    'repeat_id': repeatId,
+    'auto': auto,
   };
 
   /// Null for a record this build can't read (never a half-read entry).
@@ -136,6 +149,9 @@ class Entry {
         localDate: localDate,
         createdAt: DateTime.parse(m['created_at'] as String).toUtc(),
         updatedAt: DateTime.parse(m['updated_at'] as String).toUtc(),
+        // Older entries have neither: no repeat, written by the person.
+        repeatId: m['repeat_id'] as String?,
+        auto: m['auto'] == true,
       );
     } on Object {
       return null;
@@ -174,6 +190,8 @@ class Entry {
     localDate: localDate ?? this.localDate,
     createdAt: createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    repeatId: repeatId,
+    auto: auto,
   );
 
   @override
@@ -190,7 +208,9 @@ class Entry {
       other.goalId == goalId &&
       other.localDate == localDate &&
       other.createdAt == createdAt &&
-      other.updatedAt == updatedAt;
+      other.updatedAt == updatedAt &&
+      other.repeatId == repeatId &&
+      other.auto == auto;
 
   @override
   int get hashCode => Object.hash(
@@ -206,5 +226,7 @@ class Entry {
     localDate,
     createdAt,
     updatedAt,
+    repeatId,
+    auto,
   );
 }
