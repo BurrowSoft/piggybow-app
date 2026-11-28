@@ -203,13 +203,10 @@ Future<void> restoreBackup(
     _ => null,
   };
   if (mode != null) await step(() => session.setThemeMode(mode));
-  final stored = prefs.palette;
-  final palette = storedPaletteName(stored);
-  final at = stored?.indexOf('@') ?? -1;
-  final until = at < 0 ? null : DateTime.tryParse(stored!.substring(at + 1));
-  if (palette != null && until != null) {
-    await step(() => session.setPalette(palette, until));
-  }
+  // The chosen theme, by its name (#51): a known one only. It shows only
+  // while Plus is active here, as any theme does.
+  final palette = paletteByName(prefs.palette);
+  if (palette != null) await step(() => session.setPalette(palette));
   final reminder = prefs.restoredReminder;
   await step(
     () => session.updateReminder(on: reminder.on, time: reminder.time),

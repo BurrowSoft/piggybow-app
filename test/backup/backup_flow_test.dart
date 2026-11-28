@@ -53,7 +53,7 @@ void main() {
     WidgetTester tester, {
     String? locale = 'th',
     String? appearance = 'dark',
-    String? palette = 'sea@2099-01-01T00:00:00.000Z',
+    String? palette = 'plum',
   }) async {
     final journal = (await tester.runAsync(() async {
       final other = await JournalStore.inMemory(clock: testClock);
@@ -135,7 +135,7 @@ void main() {
     expect(await tester.runAsync(app.journal.currency), 'EUR');
     expect(app.session.locale.languageCode, 'th');
     expect(app.session.themeMode, ThemeMode.dark);
-    expect(app.session.chosenPalette, PlusPalette.sea);
+    expect(app.session.chosenPalette, PlusPalette.plum);
     expect(app.session.accountState!.reminderOn, isFalse);
     expect(app.session.accountState!.reminderTime.wire, '21:30');
   });
@@ -147,7 +147,7 @@ void main() {
       tester,
       locale: 'xx',
       appearance: 'purple',
-      palette: 'plaid@2099-01-01T00:00:00.000Z',
+      palette: 'plaid',
     );
     await tester.runAsync(
       () => restoreBackup(app.services, app.session, backup),
