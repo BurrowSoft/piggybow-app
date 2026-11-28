@@ -3,8 +3,8 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 /// The Play release build: manual, from master, the prod flavour, signed with
-/// the upload key from secrets only, and its permissions exactly the
-/// data-safety list. These file checks keep it so.
+/// the upload key from its protected environment's secrets only, and its
+/// permissions exactly the data-safety list. These file checks keep it so.
 void main() {
   final workflow = File('.github/workflows/release-aab.yaml')
       .readAsStringSync();
@@ -135,6 +135,29 @@ void main() {
         .map((f) => f.uri.pathSegments.last)
         .toList();
     expect(keys, ['debug-shared.keystore']);
+  });
+
+  // The upload key's secrets belong to the play-upload environment (the
+  // owner approves each run, master only), so only its one job reads them.
+  test('the upload key only in the play-upload environment: one job, no other workflow', () {
+    expect(
+      RegExp(r'^    environment: play-upload\r?$', multiLine: true).allMatches(workflow),
+      hasLength(1),
+    );
+    final jobs = workflow.substring(workflow.indexOf(RegExp(r'^jobs:', multiLine: true)));
+    expect(RegExp(r'^  [\w-]+:\r?$', multiLine: true).allMatches(jobs), hasLength(1), reason: 'one job');
+    expect(RegExp(r'secrets\.(\w+)').allMatches(workflow).map((m) => m.group(1)).toSet(), {
+      'PIGGYBOW_UPLOAD_KEYSTORE_B64',
+      'PIGGYBOW_UPLOAD_STORE_PASSWORD',
+      'PIGGYBOW_UPLOAD_KEY_ALIAS',
+      'PIGGYBOW_UPLOAD_KEY_PASSWORD',
+    });
+    // The emulator's prod build signs with a throwaway key under the same
+    // variable names, never these secrets.
+    for (final f in Directory('.github').listSync(recursive: true).whereType<File>()) {
+      if (f.path.replaceAll(r'\', '/').endsWith('/workflows/release-aab.yaml')) continue;
+      expect(f.readAsStringSync(), isNot(contains('secrets.PIGGYBOW_UPLOAD_')), reason: f.path);
+    }
   });
 
   test(
