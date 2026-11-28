@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../backup/backup_file.dart';
 import '../../backup/backup_flow.dart';
 import '../../backup/backup_snapshot.dart';
+import '../../core/app_config.dart';
 import '../../core/fit_text.dart';
 import '../../core/labeled_field.dart';
 import '../../core/semantics_id.dart';
@@ -13,6 +14,16 @@ import '../../session/app_session.dart' show Routes;
 import '../../session/session_scope.dart';
 import '../../theme/theme.dart';
 import '../onboarding/onboarding_screens.dart' show onboardedAtStart;
+
+/// Whether this build offers the backup file at all (AppConfig: never a
+/// release build until the privacy policy and Help describe it).
+bool backupOffered(BuildContext context) =>
+    ConfigScope.of(context).backupFileEnabled;
+
+/// Whether it offers restoring one: Android only in version 1 (Android to
+/// Android, plan §9), with the picker in MainActivity.
+bool restoreOffered(BuildContext context) =>
+    backupOffered(context) && defaultTargetPlatform == TargetPlatform.android;
 
 /// A password field for a backup: hidden unless shown, and the keyboard
 /// neither learns it nor suggests (it's never stored or logged). Its label
@@ -187,8 +198,15 @@ class _BackupScreenState extends State<BackupScreen> {
     final services = context.services;
     final session = context.readSession;
     try {
-      await backUpToFile(services, session, password);
-      if (mounted) context.pop();
+      final shared = await backUpToFile(services, session, password);
+      if (!mounted) return;
+      if (shared) {
+        context.pop();
+      } else {
+        // The sheet was dismissed: nothing went anywhere. The screen stays,
+        // the password kept, with nothing to say.
+        setState(() => _busy = false);
+      }
     } on Object {
       if (mounted) {
         setState(() {

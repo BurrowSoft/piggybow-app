@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/backup/backup_file.dart';
 import 'package:piggybow/backup/backup_flow.dart';
 import 'package:piggybow/backup/backup_snapshot.dart';
+import 'package:piggybow/core/app_config.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/l10n/gen/app_localizations.dart';
@@ -90,6 +91,56 @@ void main() {
       Directory('${backup.cache.path}/export').listSync(),
       isEmpty,
       reason: 'deleted once the share sheet returned',
+    );
+  });
+
+  testWidgets('the share sheet dismissed: the screen stays, the password '
+      'kept, nothing said, and the file gone', (tester) async {
+    final app = TestApp();
+    await app.pump(tester, location: MeRoutes.backup);
+    backup.shareGoes = false;
+    await tester.enterId('backup-password', 'correct horse');
+    await tester.enterId('backup-again', 'correct horse');
+    await tester.tap(byId('backup-go'));
+    await tester.pump();
+    // Done once the sheet was shown and the file deleted after it.
+    final export = Directory('${backup.cache.path}/export');
+    await settleIo(
+      tester,
+      () =>
+          backup.shared.isNotEmpty &&
+          export.existsSync() &&
+          export.listSync().isEmpty,
+    );
+    tester.expectScreen('backup-screen');
+    expect(byId('backup-error'), findsNothing);
+    expect(fieldText(tester, 'backup-password'), 'correct horse');
+    expect(backup.shared, hasLength(1));
+  });
+
+  testWidgets('a release build: no backup rows in Me, no "Moving from '
+      'another phone?" on the first screen', (tester) async {
+    const release = AppConfig(flavor: Flavor.prod, backupFileEnabled: false);
+    final me = TestApp(config: release);
+    await me.pump(tester, location: '/me');
+    await tester.revealId('me-export');
+    expect(byId('me-export'), findsOneWidget);
+    expect(byId('me-backup'), findsNothing);
+    expect(byId('me-restore'), findsNothing);
+
+    final fresh = TestApp(config: release, onboarded: false);
+    await fresh.pump(tester);
+    tester.expectScreen('onb-welcome');
+    expect(byId('onb-restore'), findsNothing);
+
+    // And it's off in every release build, whatever an env file says.
+    final source = File('lib/core/app_config.dart').readAsStringSync();
+    expect(
+      source,
+      contains(
+        'backupFileEnabled:\n          !kReleaseMode &&\n'
+        "          const bool.fromEnvironment('BACKUP_FILE'",
+      ),
     );
   });
 

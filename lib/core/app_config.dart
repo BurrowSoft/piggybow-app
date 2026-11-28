@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/services.dart' show appFlavor;
 import 'package:flutter/widgets.dart';
 
@@ -21,6 +21,7 @@ class AppConfig {
     this.appLockEnabled = true,
     this.plusEnabled = false,
     this.plusFakeStore = false,
+    this.backupFileEnabled = true,
     this.privacyUrl = '',
     this.supportUrl = '',
   });
@@ -56,6 +57,11 @@ class AppConfig {
           kDebugMode &&
           flavor == Flavor.staging &&
           const bool.fromEnvironment('PLUS_FAKE_STORE'),
+      // Never in a release build until the privacy policy and Help describe
+      // the backup file (UX): kReleaseMode is a compile-time true there.
+      backupFileEnabled:
+          !kReleaseMode &&
+          const bool.fromEnvironment('BACKUP_FILE', defaultValue: true),
       privacyUrl: const String.fromEnvironment('PRIVACY_URL'),
       supportUrl: const String.fromEnvironment('SUPPORT_URL'),
       fakeNow: isProd
@@ -115,6 +121,12 @@ class AppConfig {
   /// PLUS_FAKE_STORE: a store with a price that never buys, for the
   /// tester's rows. Debug builds of staging only.
   final bool plusFakeStore;
+
+  /// Feature 21, the backup file: Me's Back up and Restore, and O1's
+  /// "Moving from another phone?". Off in every release build until the
+  /// privacy policy and Help describe it; on in debug and profile builds
+  /// (BACKUP_FILE=false turns it off there too).
+  final bool backupFileEnabled;
 
   /// The website's privacy policy and support pages, once each is live
   /// (PRIVACY_URL, SUPPORT_URL). Empty = no link anywhere in the app, so a

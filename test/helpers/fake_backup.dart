@@ -25,6 +25,10 @@ class FakeBackup {
   ({String name, String text})? picked;
   Object? pickError;
 
+  /// What the share sheet says: true when the file went somewhere, false
+  /// when it was dismissed.
+  bool shareGoes = true;
+
   void install() {
     BackupHooks.current = BackupHooks(
       seal: (data, password) async =>
@@ -44,7 +48,10 @@ class FakeBackup {
         if (pickError case final error?) throw error;
         return picked;
       },
-      share: (file) async => shared.add(file.name),
+      share: (file) async {
+        shared.add(file.name);
+        return shareGoes;
+      },
       cache: () async => cache,
     );
     addTearDown(() {

@@ -213,12 +213,21 @@ void main() {
     await tester.tapId('me-theme-dark');
     await app.prefs.setLocaleCode('en');
     await app.prefs.setWelcomeSeen();
+    // What a plugin may leave in the app's cache: a copy in a folder named
+    // by a random id, and anything else.
+    final copy = Directory(
+      '${temp.path}/0f8fad5b-d9cb-469f-a165-70867728950e',
+    )..createSync();
+    File('${copy.path}/backup.piggybow').writeAsStringSync('x');
+    File('${temp.path}/stray.bin').writeAsStringSync('x');
     await tester.tapId('me-delete');
     expect(find.text('Delete everything?'), findsOneWidget);
     await tester.tapId('me-delete-confirm');
     await waitFor(tester, byId('onb-welcome'));
 
     tester.expectScreen('onb-welcome');
+    // The whole app cache: empty.
+    expect(temp.listSync(), isEmpty);
     // The journal, the reminders, every pref: gone.
     expect(await tester.runAsync(app.journal.isBlank), isTrue);
     expect(await tester.runAsync(app.journal.onboarded), isFalse);
@@ -541,9 +550,18 @@ void main() {
       File('${cache.path}/export/old.csv').writeAsStringSync('x');
       Directory('${cache.path}/share_plus').createSync();
       File('${cache.path}/share_plus/old.csv').writeAsStringSync('x');
+      // A copy a plugin left in a folder named by a random id goes too;
+      // anything else in the cache stays for its owner.
+      final copy = Directory(
+        '${cache.path}/0F8FAD5B-D9CB-469F-A165-70867728950E',
+      )..createSync();
+      File('${copy.path}/picked.mp4').writeAsStringSync('x');
+      Directory('${cache.path}/someone_else').createSync();
       await sweepExports(cache: () async => cache);
       expect(Directory('${cache.path}/export').existsSync(), isFalse);
       expect(Directory('${cache.path}/share_plus').existsSync(), isFalse);
+      expect(copy.existsSync(), isFalse);
+      expect(Directory('${cache.path}/someone_else').existsSync(), isTrue);
     });
   });
 }

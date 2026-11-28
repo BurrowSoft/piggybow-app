@@ -101,6 +101,7 @@ void main() {
             name = file.name;
             path = file.path;
             text = await File(file.path).readAsString();
+            return true;
           },
         ),
       ),

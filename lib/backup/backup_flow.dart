@@ -7,12 +7,14 @@
 // phone, and the screen keeps moving meanwhile. They use the cryptography
 // package's own Dart code there, the same on every phone.
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
+import 'dart:typed_data';
 
-import 'package:file_selector/file_selector.dart' as picker;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/material.dart' show ThemeMode;
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -41,7 +43,7 @@ class BackupHooks {
   const BackupHooks({
     this.seal = _sealInIsolate,
     this.open = _openInIsolate,
-    this.pickFile = _pickFile,
+    this.pickFile = pickBackupFile,
     this.share = _shareSheet,
     this.cache = getTemporaryDirectory,
   });
@@ -62,7 +64,8 @@ class BackupHooks {
   /// picked none. [NotABackup] for one too large to be a backup.
   final Future<({String name, String text})?> Function() pickFile;
 
-  final Future<void> Function(XFile file) share;
+  /// Whether the file went somewhere: false when the sheet was dismissed.
+  final Future<bool> Function(XFile file) share;
   final Future<Directory> Function() cache;
 }
 
@@ -72,27 +75,48 @@ Future<String> _sealInIsolate(Object? data, String password) =>
 Future<Object?> _openInIsolate(String file, String password) =>
     Isolate.run(() => openBackup(file, password));
 
-/// Android's own document picker: no storage permission. Any file, since a
-/// .piggybow file has no registered type; a wrong one says so after.
-Future<({String name, String text})?> _pickFile() async {
-  final file = await picker.openFile();
-  if (file == null) return null;
-  if (await file.length() > backupMaxBytes) throw const NotABackup();
+/// MainActivity's document picker, by these names (a test checks both
+/// sides).
+const backupChannel = 'com.burrowsoft.piggybow/backup';
+const openBackupFileMethod = 'openBackupFile';
+
+/// The phone's own document picker (MainActivity): no storage permission,
+/// any file (a .piggybow file has no registered type), and nothing copied
+/// anywhere. It checks the file's size first and reads at most
+/// [backupMaxBytes] + 1 bytes, so a big video never fills the memory. Null
+/// when nothing was picked; [NotABackup] for a file too large, unreadable or
+/// not text.
+Future<({String name, String text})?> pickBackupFile({
+  MethodChannel channel = const MethodChannel(backupChannel),
+}) async {
+  final picked = await channel.invokeMapMethod<String, Object?>(
+    openBackupFileMethod,
+    {'maxBytes': backupMaxBytes},
+  );
+  if (picked == null) return null;
+  final bytes = picked['bytes'];
+  if (bytes is! Uint8List || bytes.length > backupMaxBytes) {
+    throw const NotABackup();
+  }
+  final name = picked['name'];
   try {
-    return (name: file.name, text: await file.readAsString());
+    return (name: name is String ? name : '', text: utf8.decode(bytes));
   } on FormatException {
     throw const NotABackup();
   }
 }
 
-Future<void> _shareSheet(XFile file) =>
-    SharePlus.instance.share(ShareParams(files: [file]));
+Future<bool> _shareSheet(XFile file) async {
+  final result = await SharePlus.instance.share(ShareParams(files: [file]));
+  return result.status != ShareResultStatus.dismissed;
+}
 
 /// Me → Back up to a file: the journal and the settings that travel, sealed
 /// with [password], as piggybow-backup-YYYY-MM-DD.piggybow through the share
 /// sheet with nothing else in the share. The file is deleted once the sheet
 /// returns (and swept at each start, with the CSV's: me_actions.dart).
-Future<void> backUpToFile(
+/// False when the sheet was dismissed: nothing went anywhere.
+Future<bool> backUpToFile(
   AppServices services,
   AppSession session,
   String password, {
@@ -117,7 +141,9 @@ Future<void> backUpToFile(
   );
   await file.writeAsString(sealed);
   try {
-    await use.share(XFile(file.path, mimeType: 'application/octet-stream'));
+    return await use.share(
+      XFile(file.path, mimeType: 'application/octet-stream'),
+    );
   } finally {
     if (await file.exists()) await file.delete();
   }

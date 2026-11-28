@@ -16,6 +16,7 @@ import '../../settings_rules/settings_rules.dart';
 import '../../theme/theme.dart';
 import '../currency/currency_picker.dart';
 import '../goal/rainbow.dart';
+import '../me/backup_screens.dart' show restoreOffered;
 import '../pig/pig_view.dart';
 
 /// Whether onboarding is done, at start. It shows only over a blank journal:
@@ -133,17 +134,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   child: Text(l10n.onbStart, textAlign: TextAlign.center),
                 ),
               ),
-              const SizedBox(height: 8),
               // A new phone can bring its journal before setting up (feature
               // 21): a backup file from the old one.
-              TestId(
-                'onb-restore',
-                button: true,
-                child: TextButton(
-                  onPressed: () => context.push(OnboardingRoutes.restore),
-                  child: Text(l10n.onbMoving, textAlign: TextAlign.center),
+              if (restoreOffered(context)) ...[
+                const SizedBox(height: 8),
+                TestId(
+                  'onb-restore',
+                  button: true,
+                  child: TextButton(
+                    onPressed: () => context.push(OnboardingRoutes.restore),
+                    child: Text(l10n.onbMoving, textAlign: TextAlign.center),
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),

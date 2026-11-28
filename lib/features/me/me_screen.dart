@@ -21,6 +21,7 @@ import '../../settings_rules/settings_rules.dart';
 import '../../theme/theme.dart';
 import '../currency/currency_picker.dart';
 import '../shell/tab_top.dart';
+import 'backup_screens.dart' show backupOffered, restoreOffered;
 import 'delete_dialogs.dart';
 import 'me_actions.dart';
 import 'me_app_lock_section.dart';
@@ -282,18 +283,20 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                   // Your data (feature 21): a backup file to keep or move
                   // with, its restore, and the spreadsheet export.
                   _Section(l10n.meSecData),
-                  _Row(
-                    id: 'me-backup',
-                    title: l10n.meBackup,
-                    subtitle: l10n.meBackupHint,
-                    onTap: () => context.push(MeRoutes.backup),
-                  ),
-                  _Row(
-                    id: 'me-restore',
-                    title: l10n.meRestore,
-                    subtitle: l10n.meRestoreHint,
-                    onTap: () => context.push(MeRoutes.restore),
-                  ),
+                  if (backupOffered(context))
+                    _Row(
+                      id: 'me-backup',
+                      title: l10n.meBackup,
+                      subtitle: l10n.meBackupHint,
+                      onTap: () => context.push(MeRoutes.backup),
+                    ),
+                  if (restoreOffered(context))
+                    _Row(
+                      id: 'me-restore',
+                      title: l10n.meRestore,
+                      subtitle: l10n.meRestoreHint,
+                      onTap: () => context.push(MeRoutes.restore),
+                    ),
                   _Row(
                     id: 'me-export',
                     title: l10n.meExport,

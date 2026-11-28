@@ -34,8 +34,6 @@ dependencies:
   # no native code, an in-memory database for tests. Pinned exactly.
   sembast: 3.10.1
   share_plus: 13.3.1
-  # Opening a backup file: the system's own picker, no storage permission.
-  file_selector: 1.1.0
   # The backup file's format (Argon2id, AES-256-GCM, NFC passwords): a
   # file sealed today must open the same way later. Pinned exactly.
   cryptography: 2.9.0
