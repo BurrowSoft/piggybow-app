@@ -40,7 +40,10 @@ fi
 # The time zone, before the app ever starts (UTC by default, for the
 # fixtures). google_apis images allow adb root; the result is checked.
 if [ "$(prop persist.sys.timezone)" != "$ZONE" ]; then
-  A root >/dev/null
+  # adbd restarts as root and can drop this first connection while it does
+  # ("unable to connect for root: closed"): wait for it, and ask once more.
+  # A second failure stops the run, as before.
+  A root >/dev/null || { sleep 3; A wait-for-device; A root >/dev/null; }
   A wait-for-device
   A shell setprop persist.sys.timezone "$ZONE"
 fi
