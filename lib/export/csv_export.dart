@@ -18,6 +18,7 @@ const List<String> csvColumns = [
   'feeling',
   'note',
   'goal',
+  'repeat',
 ];
 
 /// One entry as it goes into the file. Ids, not labels, for type, category and feeling.
@@ -31,6 +32,7 @@ class CsvRow {
     this.feeling,
     required this.note,
     this.goalName,
+    this.repeat,
   });
 
   /// The entry's local_date, "YYYY-MM-DD".
@@ -50,6 +52,10 @@ class CsvRow {
 
   /// The goal's name for a save attached to a goal; empty otherwise.
   final String? goalName;
+
+  /// "monthly" or "weekly" for an entry of a repeat (its first one too);
+  /// empty otherwise.
+  final String? repeat;
 }
 
 final _isoDate = RegExp(r'^\d{4}-\d{2}-\d{2}$');
@@ -80,6 +86,9 @@ String buildCsv(List<CsvRow> rows) {
     if (r.type != 'spent' && r.type != 'saved') {
       throw ArgumentError.value(r.type, 'type', 'must be "spent" or "saved"');
     }
+    if (r.repeat != null && r.repeat != 'monthly' && r.repeat != 'weekly') {
+      throw ArgumentError.value(r.repeat, 'repeat', 'must be "monthly" or "weekly"');
+    }
     lines.add(
       [
         r.localDate,
@@ -90,6 +99,7 @@ String buildCsv(List<CsvRow> rows) {
         r.feeling ?? '',
         r.note,
         r.goalName ?? '',
+        r.repeat ?? '',
       ].map(csvCell).join(','),
     );
   }

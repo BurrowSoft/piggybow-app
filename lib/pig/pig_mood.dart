@@ -21,6 +21,7 @@ class MoodEntry {
     this.feeling,
     required this.localDate,
     required this.createdAt,
+    this.auto = false,
   });
 
   /// "spent" or "saved".
@@ -35,6 +36,10 @@ class MoodEntry {
 
   /// When it was added (UTC).
   final DateTime createdAt;
+
+  /// True when a repeat added it, not the person: it counts in this week's
+  /// picks like any entry (it's money), but never wakes the pig.
+  final bool auto;
 }
 
 /// A goal's sticky timestamps. Pass every goal, ended ones included.
@@ -188,8 +193,9 @@ PigState pigMood({
   // 4. Nothing noted yet.
   if (entries.isEmpty) return const PigState(PigMood.calm, 'pigFirstDay');
 
-  // 5. Something added in the last 72 hours (by when it was added, not the day it's dated).
-  if (entries.any((e) => _age(now, e.createdAt) < _recentWindow)) {
+  // 5. Something the person added in the last 72 hours (by when it was added, not the day it's
+  // dated); an entry a repeat added isn't the person's.
+  if (entries.any((e) => !e.auto && _age(now, e.createdAt) < _recentWindow)) {
     final line = todayDate.weekday == DateTime.monday ? 'pigCalmMonday' : rotatingLine(_calmLines, today);
     return PigState(PigMood.calm, line);
   }

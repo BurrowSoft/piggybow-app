@@ -28,6 +28,10 @@ Future<void> sweepExports({Future<Directory> Function()? cache}) async {
 Future<String> journalCsv(AppServices services) async {
   final store = services.journal;
   final goals = {for (final g in await store.goals()) g.id: g.name};
+  // Each repeat's kind, stopped ones too: their entries still say so.
+  final repeats = {
+    for (final r in await store.repeats()) r.id: r.schedule.kind.id,
+  };
   final entries = await store.entries();
   return buildCsv([
     for (final e in entries.reversed)
@@ -40,6 +44,7 @@ Future<String> journalCsv(AppServices services) async {
         feeling: e.feeling?.id,
         note: e.note,
         goalName: e.goalId == null ? null : goals[e.goalId],
+        repeat: e.repeatId == null ? null : repeats[e.repeatId],
       ),
   ]);
 }

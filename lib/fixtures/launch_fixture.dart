@@ -104,6 +104,16 @@ class LaunchFixture {
     final cases = (contract['cases'] as List).cast<Map<String, dynamic>>();
     for (final c in cases) {
       if (c['id'] != id) continue;
+      // An entry a repeat added can't be written as the person would have
+      // left it: such a case plays in the mood function's tests only.
+      final entries = (c['entries'] as List).cast<Map<String, dynamic>>();
+      if (entries.any((e) => e['auto'] == true)) {
+        return LaunchFixture._unknown(
+          id,
+          'Fixture "$id" has entries a repeat added: it plays in the mood '
+          'tests only.',
+        );
+      }
       return LaunchFixture._(
         id,
         DateTime.parse(c['now'] as String).toUtc(),
