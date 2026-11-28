@@ -758,7 +758,7 @@ class _GoalCard extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      l10n.goalCardPercent(percent),
+                      l10n.goalCardPercent(formatPercent(percent, locale)),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

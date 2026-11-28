@@ -581,7 +581,7 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         return Rainbow(
                           percent: percent,
                           semanticLabel: l10n.goalRainbowLabel(
-                            percent,
+                            formatPercent(percent, locale),
                             money(_progress),
                             money(goal.targetMinor),
                           ),

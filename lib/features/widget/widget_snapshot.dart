@@ -76,7 +76,7 @@ Map<String, Object?> widgetSnapshot({
     'spentToday': noted && currency != null ? money(spent) : null,
     'goal': goal == null || currency == null
         ? null
-        : _goal(l10n, goal, goalProgressMinor, money),
+        : _goal(l10n, goal, goalProgressMinor, money, locale),
   };
 }
 
@@ -114,6 +114,7 @@ Map<String, Object?> _goal(
   Goal goal,
   int progressMinor,
   String Function(int minor) money,
+  String locale,
 ) {
   final bands = goalBands(
     progressMinor: progressMinor,
@@ -127,7 +128,10 @@ Map<String, Object?> _goal(
     // Band i is lit once it's reached, as on Home.
     'bands': [for (var i = 0; i < goalBandCount; i++) i < bands],
     'label': l10n.goalRainbowLabel(
-      goalPercent(progressMinor: progressMinor, targetMinor: goal.targetMinor),
+      formatPercent(
+        goalPercent(progressMinor: progressMinor, targetMinor: goal.targetMinor),
+        locale,
+      ),
       saved,
       target,
     ),
