@@ -126,4 +126,25 @@ void main() {
     expect(snapshot['spentToday'], isNull);
     expect(snapshot['goal'], isNull);
   });
+
+  // Wiring item 14 (#71 with #61): money taken out of savings is never a
+  // spend.
+  test('a take-out today is not spending', () {
+    final snap = build(
+      entries: [
+        entry(EntryType.spent, 350, '2026-10-02'),
+        Entry(
+          id: 'out-1',
+          type: EntryType.withdraw,
+          amountMinor: 5000,
+          currency: 'USD',
+          localDate: '2026-10-02',
+          createdAt: t,
+          updatedAt: t,
+          goalId: 'goal-1',
+        ),
+      ],
+    );
+    expect(snap['spentToday'], r'$3.50');
+  });
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -75,7 +74,7 @@ class PiggybowApp extends StatelessWidget {
                   enabled: config.plusEnabled,
                   session: session,
                   services: services,
-                  plusActive: const _NoPlus(),
+                  plusActive: PlusActive(services.plus),
                   child: PageSystemBars(
                     child: LockGate(
                       lock: services.appLock,
@@ -99,20 +98,4 @@ class PiggybowApp extends StatelessWidget {
     session.chosenPalette,
     plusActive: services.plus?.active ?? false,
   );
-}
-
-/// Plus can't be active in this version: no entitlement exists yet. The
-/// Plus entitlement PR (#45) brings one, and is wired in here when the two
-/// meet.
-class _NoPlus implements ValueListenable<bool> {
-  const _NoPlus();
-
-  @override
-  bool get value => false;
-
-  @override
-  void addListener(VoidCallback listener) {}
-
-  @override
-  void removeListener(VoidCallback listener) {}
 }

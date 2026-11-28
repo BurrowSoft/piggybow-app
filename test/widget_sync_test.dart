@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/app_lock.dart';
+import 'package:piggybow/features/plus/fake_plus_store.dart';
+import 'package:piggybow/features/plus/plus_entitlement.dart';
+import 'package:piggybow/features/plus/plus_store.dart';
 import 'package:piggybow/features/widget/widget_sync.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
@@ -52,8 +55,11 @@ void main() {
     AppLock? lock,
     MovableClock? clock,
     Duration spell = quiet,
+    String? palette,
   }) async {
     final app = TestApp(currency: 'USD', appLock: lock, clock: clock);
+    // Me → Theme's choice, by name (palettes.dart).
+    if (palette != null) app.prefs.palette = palette;
     await app.pump(tester);
     final bridge = FakeBridge();
     await tester.pumpWidget(
@@ -221,5 +227,59 @@ void main() {
     await tester.runAsync(() => spend(app, 350));
     await settle(tester);
     expect(bridge.writes, isEmpty);
+  });
+
+  // Wiring item 14 (#71 with #45, #47 and #51).
+  test('PlusActive follows the entitlement, and tells when it changes', () async {
+    final plus = PlusEntitlement(
+      store: FakePlusStore()..owns = const [PlusProof(token: 't1', productId: plusPlayProductId)],
+      hint: MemoryPlusHint(),
+      clock: testClock,
+    );
+    final active = PlusActive(plus);
+    var told = 0;
+    void listener() => told++;
+    active.addListener(listener);
+    expect(active.value, isFalse);
+    await plus.start();
+    expect(active.value, isTrue);
+    expect(told, greaterThan(0));
+    active.removeListener(listener);
+    expect(const PlusActive(null).value, isFalse, reason: 'a build without Plus');
+  });
+
+  testWidgets("the goal is Home's first card: the oldest active one, not the "
+      'one a new save goes to', (tester) async {
+    final (app, bridge) = await mount(tester);
+    await tester.runAsync(() async {
+      await app.journal.putGoal(
+        Goal(id: 'goal-1', name: 'Bike', targetMinor: 100000, createdAt: t, updatedAt: t),
+      );
+      final later = t.add(const Duration(days: 1));
+      await app.journal.putGoal(
+        Goal(id: 'goal-2', name: 'Laptop', targetMinor: 100000, createdAt: later, updatedAt: later),
+        allowAnother: true,
+      );
+      await app.journal.addEntry(
+        type: EntryType.saved,
+        amountMinor: 500,
+        currency: 'USD',
+        localDate: app.localDay.todayWire,
+        goalId: 'goal-2',
+      );
+    });
+    await settle(tester);
+    expect((await tester.runAsync(app.journal.activeGoal))!.id, 'goal-2');
+    expect((bridge.writes.last['goal'] as Map<String, dynamic>)['name'], 'Bike');
+  });
+
+  testWidgets("the theme is Me → Theme's while Plus is active, the default "
+      'without it', (tester) async {
+    final plus = ValueNotifier(true);
+    final (_, bridge) = await mount(tester, plusActive: plus, palette: 'plum');
+    expect(bridge.writes.last['theme'], 'plum');
+    plus.value = false;
+    await settle(tester);
+    expect(bridge.writes.last['theme'], 'default');
   });
 }

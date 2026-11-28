@@ -20,6 +20,8 @@ import '../../core/device.dart' show settingsChannel;
 import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../session/app_session.dart';
+import '../../theme/palettes.dart';
+import '../plus/plus_entitlement.dart';
 import 'widget_snapshot.dart';
 
 /// Where the snapshot goes: the widget's own store on the phone.
@@ -47,6 +49,24 @@ class ChannelWidgetBridge implements WidgetBridge {
       // No widget on this build's Android side.
     }
   }
+}
+
+/// Plus as the widget reads it: active or not, from the entitlement (#45),
+/// told whenever that changes. A build without Plus ([plus] null) is never
+/// active.
+class PlusActive implements ValueListenable<bool> {
+  const PlusActive(this.plus);
+
+  final PlusEntitlement? plus;
+
+  @override
+  bool get value => plus?.active ?? false;
+
+  @override
+  void addListener(VoidCallback listener) => plus?.addListener(listener);
+
+  @override
+  void removeListener(VoidCallback listener) => plus?.removeListener(listener);
 }
 
 class WidgetSync extends StatefulWidget {
@@ -83,6 +103,7 @@ class WidgetSync extends StatefulWidget {
 class _WidgetSyncState extends State<WidgetSync> {
   AppLifecycleListener? _lifecycle;
   Timer? _timer;
+  Timer? _turn;
   bool _running = false;
   bool _again = false;
 
@@ -101,6 +122,7 @@ class _WidgetSyncState extends State<WidgetSync> {
     _services.appLock?.addListener(_writeNow);
     widget.plusActive.addListener(_writeNow);
     _lifecycle = AppLifecycleListener(onResume: _schedule);
+    _armTurn();
     _schedule();
   }
 
@@ -115,7 +137,19 @@ class _WidgetSyncState extends State<WidgetSync> {
     }
     _lifecycle?.dispose();
     _timer?.cancel();
+    _turn?.cancel();
     super.dispose();
+  }
+
+  /// One timer to the next turn of the day in the phone's zone (00:00, 06:00
+  /// and 22:00, as Home's: #62), set again at each, so the widget turns with
+  /// the day even while the app stays open.
+  void _armTurn() {
+    _turn?.cancel();
+    _turn = Timer(_services.clock.untilNextTurn(_services.localDay.zone), () {
+      _schedule();
+      _armTurn();
+    });
   }
 
   void _schedule() {
@@ -177,8 +211,12 @@ class _WidgetSyncState extends State<WidgetSync> {
   Future<Map<String, Object?>> _snapshot() async {
     final session = widget.session;
     final l10n = lookupAppLocalizations(session.locale);
-    final theme = session.palette?.name ?? widgetDefaultTheme;
     final plusActive = widget.plusActive.value;
+    // The applied theme: Me → Theme's choice while Plus is active (#51), else
+    // the default.
+    final theme =
+        appliedPalette(session.chosenPalette, plusActive: plusActive)?.name ??
+        widgetDefaultTheme;
     // On, or being turned on: the widget never lags behind the lock.
     final lockOn = _services.appLock?.on ?? false;
     // Without Plus or with the lock on, there's nothing to read: decided at
@@ -191,7 +229,9 @@ class _WidgetSyncState extends State<WidgetSync> {
     );
     if (private != null) return private;
     final store = _services.journal;
-    final goal = await store.activeGoal();
+    // Home's first card: the oldest active goal (#47), not the one a new
+    // save goes to by default.
+    final goal = (await store.activeGoals()).firstOrNull;
     return widgetSnapshot(
       l10n: l10n,
       locale: session.device.localeName,
