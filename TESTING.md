@@ -32,6 +32,31 @@ Rules for a row:
 
 <!-- rows start here -->
 
+### #52 Home and Timeline: each Add button has its own hero tag — dfd4452 — ⚪ (debug-only, UX waiver) — 2026-11-28 07:34 UTC
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46121138120, this head) | 🟢 | `+1715: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| Tester row | ⚪ | UX waiver naming dfd4452 (issuecomment-7236025327): a debug-only assert after both tabs were visited; nothing changes in release builds or on screen; the new test fails on the old code and passes here |
+
+### #50 CI: cache Gradle's downloads, keyed on pubspec.lock too — 00f962b — 🟢 — 2026-11-28 07:24 UTC
+| Check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46118287646, this head) | 🟢 | `+1714: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; the new gradle_cache_workflow_test among them |
+| The cache saved on master | 🟢 | master's push run 46119091496 saved `gradle-Linux-apk-1e1acfd8…` (2.26 GiB) from merged code |
+| The emulator restores it | 🟢 | emulator run 46120010855 (#48's row): "Cache restored from key: gradle-Linux-apk-1e1acfd8…", no download from Maven |
+
+### #48 Reminder: the notification's accent is the app's berry — 9b4c7ad — 🟢 — 2026-11-28 07:24 UTC
+Build: staging debug, built in the job from 9b4c7ad (b20fe4a merged with master 00f962b); installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Rows: `tool/device-rows/pr48.sh` (emulator run 46120010855, flows `tests/pr-48` @ 18aa3cf)
+| Row / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46119130171, this head) | 🟢 | `+1714: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| The reminder posted | 🟢 | set through Me for 7:21 AM (the Time row read back); posted by 07:22 UTC |
+| Its colour | 🟢 | `dumpsys notification`: `color=0xffa8456a` (berry #A8456A) |
+| The shade, light and night | 🟢 | the small icon's circle in berry (teal before), a lighter berry at night; the eared silhouette |
+| The header's app name | ⚪ | stays grey: Android 12 and later tint only the icon's circle |
+History: two runs on b20fe4a tested nothing: one stopped at the APK build (Maven Central's 429), one before the install on the test's own fault (a variable name shared with the install check) → 9b4c7ad 🟢
+
 ### #44 The pig's ears: one up, one flopped — 6bc7303 — 🟢 (themed icon ⏳, UX waiver) — 2026-11-28 05:53 UTC
 Build: staging debug, built in each job from 6bc7303; installed = built · Device: CI emulator, Android 14 (API 34), Pixel Launcher, 1080 × 2400, 420 dpi, UTC, en-US
 Rows: `tool/device-rows/pr44.sh` (emulator run 46111109015, flows `tests/pr-44` @ b051191), then `tool/device-rows/pr44b.sh` for the two rows left open (run 46112948061, flows `tests/pr-44` @ 9f596a0)
@@ -93,6 +118,20 @@ Build: no device for this row (CI logs + my own download of the golden render)
 | Against master dc062d9 | 🟢 | 92 identical, 5 changed (`summary_nine-at-max` and its `-end`), none new or removed |
 | The 5, each looked at beside master's | 🟢 | "$89,999,999,999.91" whole at full size, Spent and Saved stacked full width; the rest unchanged; the `-end` pair differs only where the stacked card's edge shows |
 | ⏳ on a device | | flow `31_summary_week_month` on the CI emulator |
+
+### #36 A see-through status bar over pages with no app bar — 4d96c28 — 🟢 (carried from 8ad8c24; API 34 only, older Android ⏳ under a UX waiver) — 2026-11-28 06:19 UTC
+Build: staging debug, built in the job from 8ad8c24; installed = built · Device: CI emulator, Android 14 (API 34), Pixel Launcher, 1080 × 2400, 420 dpi, UTC, en-US
+Rows: `tool/device-rows/statusbar.sh` (emulator run 46114382401, flows `tests/pr-36` @ ead02d9): flows 50 and 51 with gesture navigation, then the 3-button bar, each in light and night mode; 8 of 8 rows, 32 shots
+| Row / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46113865193, 8ad8c24) | 🟢 | `+1702: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| No black or grey strip behind the navigation bar | 🟢 | O1 Welcome, Home, the celebration, O1's currency list, the Add sheet, Me → What makes your pig happy, a goal's page: the page's own colour behind the handle and behind the 3 buttons, light and dark. Before this PR, Home had a black strip behind the handle |
+| Nothing to read or tap under the navigation bar | 🟢 | the currency list's last row, the Add sheet's Add button, Me's Done and the tab bars end above the handle and the 3 buttons |
+| The navigation bar's icons readable | 🟢 | dark on light pages, light on dark |
+| The status bar (decision 65) | 🟢 | see-through with dark icons on light and light icons on dark; over the Add sheet, the sheet's dimmed barrier, the same as before this PR |
+| Carry to 4d96c28 (8ad8c24 merged with master 10752fd) | 🟢 | the PR's own diff has the same patch-id (`e61f6619`); the merge's tree equals the plain merge; master's changes touch no styles, system-bar or layout code. CI per test (run 46115243914): `+1710: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines |
+| ⏳ Android 9 and below; API 35/36 | | not run: the emulator workflow has one image (API 34). Android 7–9 are covered by a UX waiver (8–9 on the platform's reading, 7 on the unit tests) |
+History: 8ad8c24 🟢 → 4d96c28 🟢 (carried, plain merge)
 
 ### #35 App lock: Forgot PIN uses the phone's own screen lock, or erases — 2e9c071, landed with #39 at 1575d09 — 🟢 on 1575d09 — 2026-11-28 04:04 UTC
 Build: staging debug, built from 1575d09 (this PR's 2e9c071 plus #39) · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
