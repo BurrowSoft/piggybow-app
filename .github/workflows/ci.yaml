@@ -83,8 +83,10 @@ jobs:
       - run: flutter analyze
       # Every test by name, and a JSON report for the counts below.
       - run: flutter test --coverage --reporter expanded --file-reporter json:build/test-report.json
-      # Per-test counts in the job summary: passed, failed, skipped, with
-      # every skipped test named (a green job doesn't mean a test ran).
+      # Per-test counts in the job summary and the log: passed, failed,
+      # skipped, with every skipped test named (a green job doesn't mean a
+      # test ran), each test file's own counts, and any test file that
+      # never ran.
       - name: test counts
         if: ${{ !cancelled() }}
         run: node tool/test_counts.mjs build/test-report.json | tee -a "$GITHUB_STEP_SUMMARY"
