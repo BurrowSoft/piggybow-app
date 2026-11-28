@@ -1,7 +1,7 @@
 {
-  "source_sha": "324e58bbd82eae8a78fbd7c66cf751ff986f4df3",
-  "ref": "324e58bbd82eae8a78fbd7c66cf751ff986f4df3",
-  "run_id": "46088504223",
+  "source_sha": "391062891a0d6ceb7dd4922995725c5ebddf5b23",
+  "ref": "391062891a0d6ceb7dd4922995725c5ebddf5b23",
+  "run_id": "46090932043",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -524,6 +524,96 @@
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, light)",
       "sha256": "7b2be9e7bd2deeac50abc49928ec64d74ade9eaeebab83b0f9f0e244b2e7a905",
       "bytes": 159109,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_erase-confirm_dark_320x2.png",
+      "state": "L4",
+      "test": "L4 the erase confirm (320 dp, text ×2, dark)",
+      "sha256": "8c1d6dfc258c502d13a58d4822a34463d80957b3856b501377bec70ace5e44d6",
+      "bytes": 163448,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_erase-confirm_light_320x2.png",
+      "state": "L4",
+      "test": "L4 the erase confirm (320 dp, text ×2, light)",
+      "sha256": "35552f4ae3524daceeae852ed6c0db942addc3711996c0f996ba8e2b6e4331ff",
+      "bytes": 164961,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_forgot-erase-only_dark_320x2.png",
+      "state": "L3",
+      "test": "L3 Forgot PIN, no phone screen lock (320 dp, text ×2, dark)",
+      "sha256": "bbf54706d5f0b048b972733d9a9e42476ece869ed77021d82ab8526297723e9d",
+      "bytes": 167274,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_forgot-erase-only_light_320x2.png",
+      "state": "L3",
+      "test": "L3 Forgot PIN, no phone screen lock (320 dp, text ×2, light)",
+      "sha256": "a9a5936c6f92475b04e6d77f93054caa7818c5e046da3b50ceaadac570e4874c",
+      "bytes": 169736,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_forgot_dark_320x2.png",
+      "state": "L2",
+      "test": "L2 Forgot PIN, with a phone screen lock (320 dp, text ×2, dark)",
+      "sha256": "b0e076ca1823d3eb21e007e547f97b4c569fe5aa0c12c90633d798ddbb332a44",
+      "bytes": 189797,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_forgot_light_320x2.png",
+      "state": "L2",
+      "test": "L2 Forgot PIN, with a phone screen lock (320 dp, text ×2, light)",
+      "sha256": "7162a12266fa53fd854887b03eae4161ccba7098d5989c7a916364d690821ed0",
+      "bytes": 192685,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_new-pin_dark_320x2.png",
+      "state": "L5",
+      "test": "L5 a new PIN, after the phone screen lock (320 dp, text ×2, dark)",
+      "sha256": "d056fc33e8af7aee15e4210ff54da786d49810f69d7632818d7eef93e3f71a95",
+      "bytes": 124908,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_new-pin_light_320x2.png",
+      "state": "L5",
+      "test": "L5 a new PIN, after the phone screen lock (320 dp, text ×2, light)",
+      "sha256": "7991a13d0d399c489dcbda6aa777ce3aa0e1d453a47291a385e3c9e99ebda4d5",
+      "bytes": 121854,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_pin_dark_320x2.png",
+      "state": "L1",
+      "test": "L1 the lock screen (320 dp, text ×2, dark)",
+      "sha256": "0522c03a022a00553c2a30a5754f6a73a48305e1be8fd348c487e9380422f76d",
+      "bytes": 108382,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_pin_light_320x2.png",
+      "state": "L1",
+      "test": "L1 the lock screen (320 dp, text ×2, light)",
+      "sha256": "eaaa386cd7ec769af9b3f6cdb3d3b44e1889e53a7f2fb15bfab00b8aea42e9f3",
+      "bytes": 105581,
       "width": 960,
       "height": 2340
     },
