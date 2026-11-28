@@ -203,6 +203,8 @@ void main() {
     expect(workflow, contains(r'-lt 16384'));
     expect(workflow, contains(r'"$ZIPALIGN" -c -P 16'));
     expect(workflow, contains('merged-manifest.xml'));
+    // Printed in the run, so a reviewer reads it without the AAB.
+    expect(workflow, contains('cat merged-manifest.xml'));
     expect(workflow, contains('native-libs.txt'));
     expect(
       gradle,
