@@ -45,7 +45,7 @@ const before = (await runSql(
   "select enabled, model, per_person_daily from public.tip_settings where id = 1",
 )) as Array<Record<string, unknown>>;
 const was = before[0] ?? {};
-const wasModel = MODELS.includes(String(was.model)) ? String(was.model) : "claude-haiku-5-5";
+const wasModel = MODELS.includes(String(was.model)) ? String(was.model) : "claude-sonnet-5-5";
 const wasEnabled = was.enabled === true;
 const wasPerPerson = Number.isInteger(was.per_person_daily) ? Number(was.per_person_daily) : 1;
 

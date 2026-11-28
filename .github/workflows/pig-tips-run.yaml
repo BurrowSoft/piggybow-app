@@ -13,7 +13,8 @@ on:
       model:
         description: "The model to ask"
         type: choice
-        options: [claude-haiku-5-5, claude-sonnet-5-5]
+        options: [claude-sonnet-5-5, claude-haiku-5-5]
+        default: claude-sonnet-5-5
 
 permissions:
   contents: read

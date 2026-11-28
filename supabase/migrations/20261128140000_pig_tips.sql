@@ -9,7 +9,8 @@ create table if not exists public.tip_settings (
   id smallint primary key default 1 check (id = 1),
   -- The kill switch: off, every request gets no tip (the app's own tip).
   enabled boolean not null default false,
-  model text not null default 'claude-haiku-5-5'
+  -- Sonnet 5.5; Haiku 5.5 is the cheaper fallback, one update away.
+  model text not null default 'claude-sonnet-5-5'
     check (model in ('claude-haiku-5-5', 'claude-sonnet-5-5')),
   effort text not null default 'low'
     check (effort in ('low', 'medium', 'high')),

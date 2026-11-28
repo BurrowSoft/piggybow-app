@@ -24,7 +24,7 @@ A **204 from `/pig-tip`** happens when:
 - the day's cap for everyone is reached;
 - this person's tip for the day is used;
 - the model declines or fails;
-- the filter holds the tip back.
+- the filter holds the tip back: over 160 characters; numbers or counts, in digits or words; money signs; the summary's own labels; guilt words; advice topics; or another language.
 
 **503** means the server's own error. For 204, 503, 429, any other 5xx or a timeout, the app shows its own tip for the day and asks again only the next local day.
 
