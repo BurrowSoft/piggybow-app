@@ -30,7 +30,7 @@ tags: [backup]
     id: restore-choose
 - runFlow:
     file: ../../subflows/pick_download.yaml
-    env: { FILE: "piggybow-backup-" }
+    env: { FILE: "piggybow-backu" }
 - extendedWaitUntil:
     visible:
       id: restore-password

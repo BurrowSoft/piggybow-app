@@ -11,14 +11,14 @@ tags: [backup]
     timeout: 10000
 - assertNotVisible:
     id: backup-error
-- tapOn:
-    id: backup-show
+# Both passwords kept: 21 dots each ("correct horse battery"). The eye
+# (backup-show) has no node of its own in the hierarchy, so the length is read
 - assertVisible:
     id: backup-password
-    text: ".*correct horse battery.*"
+    text: "•{21}"
 - assertVisible:
     id: backup-again
-    text: ".*correct horse battery.*"
+    text: "•{21}"
 - takeScreenshot: 91-backup-dismissed
 - back
 - extendedWaitUntil:

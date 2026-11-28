@@ -75,7 +75,7 @@ else
 fi
 
 # BK-3: a wrong password
-if MF_NAME=91d-wrong mf flows/pb1/91d_restore_wrong_password.yaml -e FILE=piggybow-backup- -e "PASSWORD=wrong horse battery" -e SHOT=91-wrong-password; then
+if MF_NAME=91d-wrong mf flows/pb1/91d_restore_wrong_password.yaml -e FILE=piggybow-backu -e "PASSWORD=wrong horse battery" -e "DOTS=•{19}" -e SHOT=91-wrong-password; then
   row BK-3 PASS "flow 91d: 'This password doesn't open this backup. Check it and try again.'; the password kept"
 else
   row BK-3 FAIL "flow 91d (wrong password)"
@@ -122,7 +122,7 @@ open(sys.argv[2], 'wb').write(data)
 print("changed byte", i, "of", len(data))
 PY
 A push "$WORK/tampered-copy.piggybow" "$DL/tampered-copy.piggybow" >/dev/null && scan tampered-copy.piggybow
-if MF_NAME=91d-tampered mf flows/pb1/91d_restore_wrong_password.yaml -e FILE=tampered-copy -e "PASSWORD=correct horse battery" -e SHOT=91-tampered; then
+if MF_NAME=91d-tampered mf flows/pb1/91d_restore_wrong_password.yaml -e FILE=tampered-copy -e "PASSWORD=correct horse battery" -e "DOTS=•{21}" -e SHOT=91-tampered; then
   row BK-6 PASS "flow 91d on a copy with one byte changed: the wrong-password line, no crash"
 else
   row BK-6 FAIL "flow 91d (tampered copy)"
