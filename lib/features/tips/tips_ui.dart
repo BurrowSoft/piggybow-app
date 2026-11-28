@@ -176,7 +176,9 @@ class _TipsConsentSheetState extends State<_TipsConsentSheet> {
   }
 }
 
-/// One point of the sheet's list: a small dot, then its line.
+/// One point of the sheet's list: a small dot, then its line. The dot sits
+/// in a box one first line tall (the same style and text size), so it's at
+/// that line's middle at every text size (UX).
 class _Point extends StatelessWidget {
   const _Point(this.text, {required this.style});
 
@@ -186,14 +188,25 @@ class _Point extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dot = Theme.of(context).colorScheme.primary;
+    final line = TextPainter(
+      text: TextSpan(text: text.characters.take(1).toString(), style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final lineHeight = line.height;
+    line.dispose();
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsetsDirectional.only(top: 9, end: 12),
-            child: Icon(Icons.circle, size: 6, color: dot),
+            padding: const EdgeInsetsDirectional.only(end: 12),
+            child: SizedBox(
+              height: lineHeight,
+              child: Center(child: Icon(Icons.circle, size: 6, color: dot)),
+            ),
           ),
           Expanded(child: Text(text, style: style)),
         ],

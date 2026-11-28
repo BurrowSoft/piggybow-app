@@ -1143,13 +1143,14 @@ class _IdeaCard extends StatelessWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              // A label, not a sentence (UX): caption size, muted.
               if (written != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: 8),
                 TestId(
                   'home-idea-ai',
                   child: Text(
                     l10n.ideaWrittenByAi,
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.labelSmall?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
