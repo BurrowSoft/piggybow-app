@@ -6,7 +6,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/core/backup.dart';
 import 'package:piggybow/core/clock.dart';
 import 'package:piggybow/core/device.dart';
+import 'package:piggybow/core/local_prefs.dart';
 import 'package:piggybow/journal/journal_store.dart';
+
+import 'helpers.dart';
 
 /// On an iPhone the journal is never in a backup (decision 72, I-1(b)): its
 /// folder is flagged out of every backup at each start, before the journal
@@ -107,6 +110,80 @@ void main() {
     expect(await excludeFromBackup(dir.path), isTrue);
     messenger.setMockMethodCallHandler(channel, null);
     expect(await excludeFromBackup(dir.path), isFalse);
+  });
+
+  test('the journal file: missing before the first open, there after', () async {
+    expect(await JournalStore.missingIn(dir), isTrue);
+    final store = await openOn(TargetPlatform.android);
+    await store.close();
+    expect(await JournalStore.missingIn(dir), isFalse);
+  });
+
+  group('prefs a backup brought back, with no journal (the Reviewer, #79)', () {
+    MemoryLocalPrefs restored() => MemoryLocalPrefs(
+      localeCode: 'en',
+      welcomeSeen: true,
+      accountOnDevice: true,
+      deviceAccount: '{"id":"device-1"}',
+    );
+
+    test('an iPhone with no journal file forgets them', () async {
+      final prefs = restored();
+      expect(
+        await forgetPrefsWithoutJournal(
+          journalMissing: true,
+          prefs: prefs,
+          platform: TargetPlatform.iOS,
+        ),
+        isTrue,
+      );
+      expect(
+        (prefs.welcomeSeen, prefs.accountOnDevice, prefs.deviceAccount),
+        (false, false, null),
+      );
+    });
+
+    test('with its journal, or on Android, they stay', () async {
+      for (final (missing, platform) in [
+        (false, TargetPlatform.iOS),
+        (true, TargetPlatform.android),
+      ]) {
+        final prefs = restored();
+        expect(
+          await forgetPrefsWithoutJournal(
+            journalMissing: missing,
+            prefs: prefs,
+            platform: platform,
+          ),
+          isFalse,
+        );
+        expect(prefs.welcomeSeen, isTrue, reason: '$platform');
+        expect(prefs.deviceAccount, isNotNull, reason: '$platform');
+      }
+    });
+
+    testWidgets('a restored iPhone with no journal opens on the first-run screens', (
+      tester,
+    ) async {
+      // What a backup restores: the device's prefs, never the journal.
+      final app = TestApp(onboarded: false);
+      app.prefs
+        ..welcomeSeen = true
+        ..accountOnDevice = true;
+      // main.dart, before anything reads the prefs.
+      await tester.runAsync(
+        () => forgetPrefsWithoutJournal(
+          journalMissing: true,
+          prefs: app.prefs,
+          platform: TargetPlatform.iOS,
+        ),
+      );
+      await tester.runAsync(app.openJournal);
+      await app.pump(tester);
+      await tester.pumpAndSettle();
+      tester.expectScreen('onb-welcome');
+      expect(app.prefs.welcomeSeen, isFalse);
+    });
   });
 
   test(

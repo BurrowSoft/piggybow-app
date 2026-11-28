@@ -1,4 +1,4 @@
-import 'dart:io' show Directory;
+import 'dart:io' show Directory, File;
 
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, visibleForTesting;
 import 'package:flutter/widgets.dart';
@@ -32,6 +32,16 @@ class JournalStore extends ChangeNotifier {
   /// The journal file in the app's private support folder.
   static Future<JournalStore> open({required Clock clock}) async =>
       openIn(await getApplicationSupportDirectory(), clock: clock);
+
+  /// Whether the app's private support folder has no journal file yet. Read
+  /// before [open], which makes one (main.dart: an iPhone start without it
+  /// forgets the prefs a backup brought back).
+  static Future<bool> missingHere() async =>
+      missingIn(await getApplicationSupportDirectory());
+
+  /// Whether [dir] has no journal file yet.
+  static Future<bool> missingIn(Directory dir) async =>
+      !await File('${dir.path}/$fileName').exists();
 
   /// The journal file in [dir] ([open]'s folder, or a test's). On an iPhone,
   /// [dir] is first kept out of every backup, at every start and before the
