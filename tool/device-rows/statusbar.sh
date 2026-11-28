@@ -10,6 +10,7 @@ guard_emulator
 cleanup(){
   A shell cmd uimode night no >/dev/null 2>&1
   echo "$(stamp) END: $PASSES pass, $FAILS fail (the shots decide)"
+  rows_exit
 }
 trap cleanup EXIT
 
