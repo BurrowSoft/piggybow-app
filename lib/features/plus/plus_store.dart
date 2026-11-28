@@ -1,52 +1,38 @@
-import '../../data/plus.dart';
+// Piggybow Plus's store layer (decision 79): Plus is bought and read on the
+// phone, through Google Play Billing or StoreKit 2. There is no server and
+// no account (decision 3), so nothing checks a purchase elsewhere and
+// nothing ties it to a person: the store account (the Google account, the
+// Apple ID) owns it.
 
-/// The one Plus product, the same id in both stores (docs/plus-app-purchases.md).
+/// Which store this phone buys Plus from.
+enum PlusSource { play, apple }
+
+/// The one Plus product, the same id in both stores.
 const plusProductId = 'piggybow_plus_yearly';
-
-/// The Christmas special's Play offer id on that product (the owner's store
-/// setup; a PLACEHOLDER until he creates it). Apple uses the product's
-/// introductory offer instead.
-const plusOfferId = 'christmas-first-year';
 
 /// What the store says about the product on this phone.
 class PlusProduct {
-  const PlusProduct({
-    required this.price,
-    required this.trialOffered,
-    this.offerPrice,
-    this.offerFromStore = false,
-  });
+  const PlusProduct({required this.price, required this.trialOffered});
 
-  /// The store's own formatted yearly price ("£49.99"): the app never shows
-  /// a price of its own, so the price shown is the price charged.
+  /// The store's own formatted price ("£49.99"): the app never shows a
+  /// price of its own, so the price shown is the price charged.
   final String price;
 
-  /// The store offers this account the free week (Play's offer
-  /// free-trial-7d, Apple's introductory offer). The store decides, not us.
+  /// The store offers this account the free week (a Play offer, Apple's
+  /// introductory offer). The store decides, not us.
   final bool trialOffered;
-
-  /// The Christmas special: the store's own first-year price for this
-  /// account (Play's offer phase, Apple's introductory price); null when
-  /// the store doesn't offer it. Never computed here.
-  final String? offerPrice;
-
-  /// [offerPrice] and [trialOffered] are the store's final word for this
-  /// buyer (Apple, iOS plan S11): StoreKit applies its introductory offer to
-  /// every eligible Apple ID on its own dates, so the app shows what StoreKit
-  /// reports, not the app's December window or the account's row. Play's
-  /// offer is bought only when the app picks it, so Play keeps those rules.
-  final bool offerFromStore;
 }
 
-/// A purchase the store reports (bought or restored), for plus-store.
+/// A purchase the store reports (bought or restored).
 class PlusProof {
   const PlusProof({required this.token, required this.productId, this.handle});
 
-  /// Play's purchase token or Apple's transaction id.
+  /// Play's purchase token or Apple's transaction id: one purchase, however
+  /// many times the store reports it.
   final String token;
   final String productId;
 
-  /// The store layer's own object, to finish the purchase after /verify.
+  /// The store layer's own object, to finish the purchase with.
   final Object? handle;
 }
 
@@ -54,19 +40,19 @@ sealed class PlusBuyOutcome {
   const PlusBuyOutcome();
 }
 
-/// Bought: the proof goes to plus-store, then the purchase is finished.
+/// Bought: the app finishes it in the store (see [PlusStore.finish]).
 class PlusBought extends PlusBuyOutcome {
   const PlusBought(this.proof);
   final PlusProof proof;
 }
 
-/// The person closed the store's sheet: nothing shows (UX, 11 Nov).
+/// The person closed the store's sheet: nothing shows.
 class PlusCancelled extends PlusBuyOutcome {
   const PlusCancelled();
 }
 
-/// Play's pending payment, Apple's Ask to Buy: Plus starts once approved
-/// (the store's notification reaches plus-store).
+/// Play's pending payment, Apple's Ask to Buy: Plus starts once the store
+/// approves it and reports the purchase again.
 class PlusPending extends PlusBuyOutcome {
   const PlusPending();
 }
@@ -83,34 +69,27 @@ abstract interface class PlusStore {
   PlusSource get source;
 
   /// The product as this account sees it; null when purchases aren't
-  /// available here (no store, no product yet, offline).
-  ///
-  /// [offer]: look for the Christmas special too (only while its window is
-  /// open and the account is eligible); then Start buys it.
-  Future<PlusProduct?> product({bool offer = false});
+  /// available here (no store, no product yet).
+  Future<PlusProduct?> product();
 
-  /// The store's purchase sheet for [plusProductId], tied to the person
-  /// ([accountId]: Play's obfuscatedAccountId, a hash of the user id; Apple's
-  /// appAccountToken, the user id) so plus-store can match it.
-  Future<PlusBuyOutcome> buy({required String accountId});
+  /// The store's purchase sheet for [plusProductId].
+  Future<PlusBuyOutcome> buy();
 
-  /// The account's current Plus purchases (never a new purchase, never a
-  /// charge). Empty: none found.
-  Future<List<PlusProof>> restore({required String accountId});
+  /// The store account's current Plus purchases (never a new purchase,
+  /// never a charge). Empty: none found.
+  Future<List<PlusProof>> restore();
 
-  /// After plus-store wrote the row: finish the purchase in the store
-  /// (StoreKit's finishTransaction; Play's acknowledgement is the server's).
+  /// Finishes a purchase in the store: Play's acknowledgement (Play refunds
+  /// a purchase left unacknowledged for 3 days), StoreKit's finish.
   Future<void> finish(PlusProof proof);
 
-  /// Purchases the store reported with nobody waiting (finished on another
-  /// screen, or left unfinished last time), handed over once: the
-  /// controller verifies and finishes them when it loads (the Reviewer's
-  /// payments audit). Also starts listening, so later ones wait for the
-  /// next load.
+  /// Purchases the store reported with nobody waiting (approved after a
+  /// pending payment, or left unfinished last time), handed over once.
+  /// Also starts listening, so later ones wait for the next call.
   List<PlusProof> takeUnclaimed();
 
-  /// The store's own manage-subscriptions page (Apple: StoreKit 2's
-  /// showManageSubscriptions sheet; UX, 23 Nov). Never a purchase or a
-  /// charge; a no-op where the store has no such sheet.
+  /// The store's own manage-subscriptions page (StoreKit 2's sheet on the
+  /// iPhone). Never a purchase or a charge; a no-op where the store has no
+  /// such sheet.
   Future<void> manageSubscriptions();
 }

@@ -9,15 +9,15 @@ import 'package:piggybow/features/plus/rows_plus_store.dart';
 /// that ships can switch it on.
 void main() {
   test(
-    "the rows' store shows the spec's price and never buys or finds anything",
+    "the rows' store shows a placeholder price and never buys or finds anything",
     () async {
       final lines = <String>[];
       final store = RowsPlusStore(log: lines.add);
       final product = await store.product();
       expect(product?.price, r'US$59.99');
       expect(product?.trialOffered, isTrue);
-      expect(await store.buy(accountId: 'u1'), isA<PlusCancelled>());
-      expect(await store.restore(accountId: 'u1'), isEmpty);
+      expect(await store.buy(), isA<PlusCancelled>());
+      expect(await store.restore(), isEmpty);
       expect(lines, hasLength(2));
       expect(lines.every((l) => l.startsWith('[plus-fake]')), isTrue);
     },

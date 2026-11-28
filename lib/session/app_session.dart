@@ -13,7 +13,6 @@ import '../core/device.dart';
 import '../core/local_prefs.dart';
 import '../core/policy.dart';
 import '../data/models.dart';
-import '../data/plus.dart' show CancelForDelete;
 import '../data/repositories.dart';
 
 /// Onboarding and sign-in routes. Paths never carry user data (they end up
@@ -1201,10 +1200,6 @@ class AppSession extends ChangeNotifier {
   /// device forgets the session and the user's local copies (pending
   /// check-ins, drafts, caches; decision 85). Sign in then says it's done.
   /// Throws [AppFailure] if the server didn't delete (nothing is wiped).
-  /// Set just before a delete whose Plus came from the web: the deleted
-  /// notice then says "cancelled now" or "within a day" (web #331).
-  CancelForDelete? deletedPlusNote;
-
   Future<void> deleteAccount() async {
     final uid = _user?.id;
     if (uid == null) return;

@@ -1,16 +1,12 @@
-import '../../data/plus.dart';
 import 'plus_store.dart';
 
-/// A store with no store behind it: tests, and dev builds on the in-memory
-/// backend. Each field is a test hook.
+/// A store with no store behind it, for tests. Each field is a test hook.
 class FakePlusStore implements PlusStore {
   FakePlusStore({
     this.source = PlusSource.play,
     this.price = '£49.99',
     this.trialOffered = true,
     this.available = true,
-    this.offerPrice,
-    this.offerFromStore = false,
   });
 
   @override
@@ -19,16 +15,6 @@ class FakePlusStore implements PlusStore {
   bool trialOffered;
   bool available;
 
-  /// The store's first-year price (null: no offer); given only when asked.
-  String? offerPrice;
-
-  /// Apple-like (S11): [offerPrice] and [trialOffered] are the store's final
-  /// word, given whether or not the app asked for the offer.
-  bool offerFromStore;
-
-  /// Whether the last product() asked for the offer.
-  bool? askedOffer;
-
   /// What the next buy() answers (null: bought, with [nextToken]).
   PlusBuyOutcome? nextOutcome;
   String nextToken = 'fake-token-1';
@@ -36,34 +22,25 @@ class FakePlusStore implements PlusStore {
   /// What restore() finds.
   List<PlusProof> owned = const [];
 
-  /// The account each buy and restore was tied to; the proofs finished.
-  final buys = <String>[];
-  final restores = <String>[];
+  /// How many buys and restores were asked for; the proofs finished.
+  int buyCalls = 0;
+  int restoreCalls = 0;
   final finished = <String>[];
 
   @override
-  Future<PlusProduct?> product({bool offer = false}) async {
-    askedOffer = offer;
-    return available
-        ? PlusProduct(
-            price: price,
-            trialOffered: trialOffered,
-            offerPrice: offer || offerFromStore ? offerPrice : null,
-            offerFromStore: offerFromStore,
-          )
-        : null;
-  }
+  Future<PlusProduct?> product() async =>
+      available ? PlusProduct(price: price, trialOffered: trialOffered) : null;
 
   @override
-  Future<PlusBuyOutcome> buy({required String accountId}) async {
-    buys.add(accountId);
+  Future<PlusBuyOutcome> buy() async {
+    buyCalls++;
     return nextOutcome ??
         PlusBought(PlusProof(token: nextToken, productId: plusProductId));
   }
 
   @override
-  Future<List<PlusProof>> restore({required String accountId}) async {
-    restores.add(accountId);
+  Future<List<PlusProof>> restore() async {
+    restoreCalls++;
     return owned;
   }
 
