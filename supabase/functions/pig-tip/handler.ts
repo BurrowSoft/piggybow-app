@@ -113,9 +113,18 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     if (route === "report") return await report(req, uid, deps, log);
     return await tip(req, uid, deps, log);
   } catch (error) {
-    log({ status: 503, why: error instanceof Error ? error.name : "error" });
+    log({ status: 503, why: whyOf(error) });
     return new Response(null, { status: 503 });
   }
+}
+
+/** Why something failed, for the log: the error's name and, when it has a
+ * short code (Postgres' 42501, PostgREST's PGRST301…), that code. Never its
+ * message, which can quote data. */
+function whyOf(error: unknown): string {
+  const name = error instanceof Error ? error.name : "error";
+  const code = typeof error === "object" && error !== null ? (error as { code?: unknown }).code : undefined;
+  return typeof code === "string" && /^[A-Za-z0-9_]{1,16}$/.test(code) ? `${name}:${code}` : name;
 }
 
 /** No signing key: the server can't give a tip a report could prove. */
