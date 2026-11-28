@@ -85,6 +85,7 @@ void main() {
       'closing it changes nothing', (tester) async {
     final o = await open(tester);
     expect(shown(tester), strawberry);
+    await tester.revealId('me-theme');
     expect(rowSays('Strawberry'), findsOneWidget);
     await tester.tapId('me-theme');
     tester.expectScreen('theme-sheet');
@@ -119,6 +120,7 @@ void main() {
       'back: Plum again', (tester) async {
     final o = await open(tester, plusOn: true, stored: 'plum');
     expect(shown(tester), plum);
+    await tester.revealId('me-theme');
     o.store.owns = const [];
     await tester.runAsync(o.plus!.refresh);
     await tester.pumpAndSettle();
@@ -139,6 +141,7 @@ void main() {
       'Strawberry', (tester) async {
     await open(tester, stored: 'plum');
     expect(shown(tester), strawberry);
+    await tester.revealId('me-theme');
     expect(
       rowSays('Strawberry for now · Plum comes back with Plus'),
       findsOneWidget,

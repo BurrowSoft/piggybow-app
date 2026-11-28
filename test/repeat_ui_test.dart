@@ -270,6 +270,8 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await waitFor(tester, byId('home-repeats'));
+      // On the 2nd, October's letter (#67) is over the card.
+      await tester.revealId('home-repeats-repeat-entry-1-2026-11-02');
       expect(byId('home-repeats-repeat-entry-1-2026-11-02'), findsOneWidget);
     });
 

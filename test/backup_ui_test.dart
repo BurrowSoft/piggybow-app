@@ -60,6 +60,10 @@ void main() {
       await tester.revealId(id);
       expect(byId(id), findsOneWidget, reason: id);
     }
+    // The section's title, over its rows: revealing them may have
+    // scrolled it away.
+    await tester.ensureVisible(find.text(l10n.meSecData, skipOffstage: false));
+    await tester.pumpAndSettle();
     expect(find.text(l10n.meSecData), findsOneWidget);
     await tester.tapId('me-backup');
     tester.expectScreen('backup-screen');
