@@ -5,6 +5,7 @@ tags: [plus]
 - launchApp:
     appId: ${APP_ID}
     stopApp: false
+- runFlow: ../../subflows/to_home.yaml         # through onboarding if it's a fresh start
 # The flow before ends on Me, scrolled down (Home's Add button isn't there):
 # wait for the tabs, then scroll straight up to Plus, the first row (at ×2
 # Me is long: reveal's 4 s down-then-up can end short of the top)
