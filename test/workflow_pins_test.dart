@@ -95,6 +95,20 @@ steps:
     },
   );
 
+  test('the release job runs flutter-action with its cache off: its cache '
+      'steps use actions/cache by tag', () {
+    final release = workflows['release-aab.yaml']!.replaceAll('\r\n', '\n');
+    final steps = RegExp(
+      r'uses: subosito/flutter-action@[0-9a-f]{40} # v[0-9.]+\n'
+      r'        with:\n((?:          .*\n)+)',
+    ).allMatches(release).toList();
+    expect(steps, hasLength(1));
+    final inputs = steps.single.group(1)!;
+    expect(inputs, contains('\n          cache: false\n'));
+    // pub-cache: true would turn its second cache step back on.
+    expect(inputs, isNot(contains('pub-cache:')));
+  });
+
   test('bundletool is checked by its sha256 before it runs', () {
     final release = workflows['release-aab.yaml']!;
     final download = release.indexOf(
