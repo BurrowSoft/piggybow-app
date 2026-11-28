@@ -11,6 +11,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:piggybow/core/button_pair.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
@@ -197,11 +198,40 @@ void main() {
       (tester) async {
         await open(tester, c, seed: fullWeek);
         expect(byId('home-reminder-yes'), findsOneWidget);
+        // The offer's buttons (decision 57): one line at the end when both
+        // fit, else full width, the yes on top and No thanks 8 dp under it.
+        final pair = tester.renderObject<RenderButtonPair>(
+          find.byType(ButtonPair),
+        );
+        final yes = tester.getRect(byId('home-reminder-yes'));
+        final no = tester.getRect(byId('home-reminder-no'));
+        final line = tester.getRect(find.byType(ButtonPair));
+        if (pair.stacked) {
+          expect(yes.width, moreOrLessEquals(line.width), reason: 'H2 yes');
+          expect(no.width, moreOrLessEquals(line.width), reason: 'H2 no');
+          expect(no.top, moreOrLessEquals(yes.bottom + 8), reason: 'H2 gap');
+        } else {
+          expect(yes.right, moreOrLessEquals(line.right), reason: 'H2 end');
+          expect(no.right + 8, moreOrLessEquals(yes.left), reason: 'H2 row');
+          expect(no.center.dy, moreOrLessEquals(yes.center.dy));
+        }
+        if (c.width == 320 && c.textScale == 2) {
+          expect(pair.stacked, isTrue, reason: 'H2 at 320 ×2: no room');
+        }
+        if (c.width == 360 && c.textScale == 1) {
+          expect(pair.stacked, isFalse, reason: 'H2 at 360 ×1: one line');
+        }
         await checkScrolled(
           tester,
           listIn('home-screen'),
           'H2',
           amounts: fullAmounts,
+        );
+        // At the end of the list the last row clears the +.
+        expect(
+          tester.getRect(byId('home-idea-another')).bottom,
+          lessThanOrEqualTo(tester.getRect(byId('home-add')).top),
+          reason: 'H2: the last row above the +',
         );
         if (c.takesGolden) {
           await expectLayoutGoldens(
@@ -229,6 +259,11 @@ void main() {
           scrollable: listIn('home-screen'),
         );
         expect(find.text('Reached: $goal40'), findsOneWidget);
+        expect(
+          tester.getRect(byId('goal-card-reached')).top,
+          greaterThanOrEqualTo(tester.getRect(byId('goal-create')).bottom),
+          reason: 'H4: "Reached:" under Start a goal (decision 57)',
+        );
         if (c.takesGolden) {
           // After reaching (R100): "Reached:" and "You reached …!" (H4).
           await expectLayoutGoldens(
