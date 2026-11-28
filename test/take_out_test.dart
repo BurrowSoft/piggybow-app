@@ -85,9 +85,13 @@ void main() {
     expect((out.goalId, out.amountMinor, out.note, out.localDate), ('goal-1', 5000, 'New tyre', '2026-10-02'));
     expect(await progress(tester, app), 25000);
     expect(find.text('${money(25000)} of ${money(100000)}'), findsOneWidget);
-    // In the goal's own list: "New tyre", −amount.
+    // In the goal's own list: "New tyre" over "Taken out · Today", −amount.
     expect(
       find.descendant(of: byId('goal-save-${out.id}'), matching: find.text('$minusSign${money(5000)}')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: byId('goal-save-${out.id}'), matching: find.text('Taken out · Today')),
       findsOneWidget,
     );
   });
@@ -193,6 +197,10 @@ void main() {
     final goal = (await tester.runAsync(() => app.journal.goal('goal-1')))!;
     expect(goal.status, GoalStatus.reached);
     expect(await progress(tester, app), 12000);
+    // With no note: "Taken out" over its day.
+    final row = byId('goal-save-entry-2');
+    expect(find.descendant(of: row, matching: find.text('Taken out')), findsOneWidget);
+    expect(find.descendant(of: row, matching: find.text('Today')), findsOneWidget);
   });
 
   const lockedLine = 'Some of this money was taken out of Bike. Change or remove that first.';

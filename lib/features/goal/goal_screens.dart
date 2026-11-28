@@ -547,12 +547,19 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                                       title: e.note.isNotEmpty
                                           ? e.note
                                           : l10n.goalTakenOutRow,
-                                      day: dayLabel(
-                                        l10n,
-                                        context.session.dateLocale,
-                                        e.date,
-                                        today: context.services.localDay.today,
-                                      ),
+                                      // Under a note, the line says what it
+                                      // is: "Taken out · Today".
+                                      day: [
+                                        if (e.note.isNotEmpty)
+                                          l10n.goalTakenOutRow,
+                                        dayLabel(
+                                          l10n,
+                                          context.session.dateLocale,
+                                          e.date,
+                                          today:
+                                              context.services.localDay.today,
+                                        ),
+                                      ].join(' · '),
                                       // In ink, never red; a minus.
                                       amount:
                                           '$minusSign${money(e.amountMinor)}',
@@ -583,7 +590,8 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 }
 
 /// One of a goal's saves: its note (or "Saved"), its day, and "+amount" in
-/// the accent; or money taken out of it, "−amount" in ink ([accent] false).
+/// the accent; or money taken out of it: its note over "Taken out · day" (or
+/// "Taken out" over its day), "−amount" in ink ([accent] false).
 /// At large text the amount goes on its own line under the day.
 class _SaveRow extends StatelessWidget {
   const _SaveRow({

@@ -127,7 +127,7 @@ void main() {
   });
 
   test('a save can be lowered only down to what the goal needs: after 600 of '
-      '1000 taken out, 700 is fine, 300 is not', () async {
+      '1000 taken out, 700 is fine, 300 is not, 600 exactly is', () async {
     await store.putGoal(bike());
     final s = await save(1000);
     await takeOut(600);
@@ -139,9 +139,11 @@ void main() {
     final lowered = await store.updateEntry(s.copyWith(amountMinor: 700));
     expect(lowered.amountMinor, 700);
     expect(await progress(), 100);
-    // Raised, it frees itself again.
-    await store.updateEntry(lowered.copyWith(amountMinor: 5000));
-    expect(await store.saveFloor((await store.entry(s.id))!), 0);
+    await store.updateEntry(lowered.copyWith(amountMinor: 600));
+    expect(await progress(), 0);
+    // A second save shares what was taken out: this one needs less.
+    await save(400);
+    expect(await store.saveFloor((await store.entry(s.id))!), 200);
   });
 
   test("a save the goal needs can't leave it: not made a spend, not moved", () async {

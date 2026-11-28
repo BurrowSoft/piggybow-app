@@ -123,7 +123,7 @@ void main() {
           expect(f.error, isNull, reason: id);
           expect(f.check(f.today), isNull, reason: id);
         }
-        expect(caseIds, hasLength(35));
+        expect(caseIds, hasLength(38));
         final unknown = LaunchFixture.byId('C99', casesJson);
         expect(unknown.error, contains('C99'));
         expect(unknown.check('2026-12-02'), contains('C99'));
