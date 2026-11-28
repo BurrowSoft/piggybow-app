@@ -115,16 +115,21 @@ void main() {
   Future<List<Entry>> stored(WidgetTester tester, TestApp app) async =>
       (await tester.runAsync(app.journal.entries))!;
 
-  /// How the amount was read ([asTyped]), under it; and, in another
-  /// currency, the amount at home ([atHome], formatted) in its sentence,
-  /// under the rate (UX's order).
+  /// In the home currency, how the amount was read ([asTyped]), under it.
+  /// In another currency, no such echo (it would only repeat the field),
+  /// and the amount at home ([atHome], formatted) in its sentence, under
+  /// the rate.
   Future<void> expectLines(
     WidgetTester tester, {
-    required String asTyped,
+    String? asTyped,
     String? atHome,
   }) async {
     await show(tester, 'add-amount');
-    expect(inSheet(find.text(asTyped)), findsOneWidget);
+    if (asTyped != null) {
+      expect(inSheet(find.text(asTyped)), findsOneWidget);
+    } else {
+      expect(byId('add-amount-preview'), findsNothing);
+    }
     if (atHome == null) {
       expect(byId('add-converted'), findsNothing);
     } else {
@@ -204,7 +209,7 @@ void main() {
       expect(inSheet(find.text('THB')), findsOneWidget, reason: 'after it');
 
       await enter(tester, 'add-amount', '12.34');
-      await expectLines(tester, asTyped: '= ${eur(1234)}');
+      await expectLines(tester);
       await tapIn(tester, 'add-cat-food');
       await tester.tapId('add-submit');
       await show(tester, 'add-rate');
@@ -215,7 +220,6 @@ void main() {
       expect(find.text('Enter the rate'), findsNothing);
       await expectLines(
         tester,
-        asTyped: '= ${eur(1234)}',
         atHome: thb(48274),
       );
       await tester.tapId('add-submit');
@@ -254,7 +258,6 @@ void main() {
       await enter(tester, 'add-amount', '12.34');
       await expectLines(
         tester,
-        asTyped: '= ${eur(1234)}',
         atHome: thb(48274),
       );
 
@@ -264,7 +267,6 @@ void main() {
       await enter(tester, 'add-rate', '0.0256');
       await expectLines(
         tester,
-        asTyped: '= ${eur(1234)}',
         atHome: thb(48203),
       );
 
@@ -298,7 +300,7 @@ void main() {
         find.text('Type the rate with digits and one . only, like 36.5.'),
         findsOneWidget,
       );
-      await expectLines(tester, asTyped: '= ${eur(1234)}');
+      await expectLines(tester);
 
       await enter(tester, 'add-rate', '0');
       expect(
@@ -342,7 +344,6 @@ void main() {
       await enter(tester, 'add-rate', '39,12');
       await expectLines(
         tester,
-        asTyped: '= ${eur(1234, 'de_DE')}',
         atHome: thb(48274, 'de_DE'),
       );
       await tapIn(tester, 'add-cat-food');
@@ -364,14 +365,12 @@ void main() {
       expect(await rateText(tester), '39.12');
       await expectLines(
         tester,
-        asTyped: '= ${eur(1234)}',
         atHome: thb(48274),
       );
 
       await enter(tester, 'add-amount', '20');
       await expectLines(
         tester,
-        asTyped: '= ${eur(2000)}',
         atHome: thb(78240),
       );
       await tester.tapId('edit-save');
