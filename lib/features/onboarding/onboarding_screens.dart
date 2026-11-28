@@ -31,7 +31,7 @@ Future<bool> onboardedAtStart(JournalStore journal) async {
 
 /// O1 Welcome (plan §3.1): the pig, happy, under a full rainbow; what the
 /// app is; that nothing leaves the phone; the currency, which can change
-/// here; and Get started.
+/// here; Get started; and "Moving from another phone?" (a backup file).
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -131,6 +131,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 child: FilledButton(
                   onPressed: () => context.push(OnboardingRoutes.happy),
                   child: Text(l10n.onbStart, textAlign: TextAlign.center),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // A new phone can bring its journal before setting up (feature
+              // 21): a backup file from the old one.
+              TestId(
+                'onb-restore',
+                button: true,
+                child: TextButton(
+                  onPressed: () => context.push(OnboardingRoutes.restore),
+                  child: Text(l10n.onbMoving, textAlign: TextAlign.center),
                 ),
               ),
             ],
