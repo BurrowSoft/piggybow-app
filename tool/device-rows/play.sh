@@ -21,6 +21,7 @@ cleanup(){
   ps display reset >/dev/null 2>&1
   echo "$(stamp) display: $(A shell wm size | tr -d '\r' | tr '\n' ' ')"
   echo "$(stamp) END: $PASSES pass, $FAILS fail (the six shots decide)"
+  rows_exit
 }
 trap cleanup EXIT
 
