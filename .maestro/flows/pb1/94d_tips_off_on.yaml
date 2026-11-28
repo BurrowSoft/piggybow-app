@@ -2,7 +2,7 @@ appId: ${APP_ID}
 name: Pig tips (A3, TI-2) - Me's switch off at once ("Pig tips are off. Your pig will share its built-in tips."); on again asks again and turns on
 tags: [tips]
 # Run by group-tips.sh; the script reads the mock: off calls forget; on calls
-# signup (a new id) and, the day's attempt being used, no tip call.
+# signup (a new id); its tip calls that day are counted (TI-7b).
 ---
 - tapOn:
     id: tab-me

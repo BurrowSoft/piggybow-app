@@ -137,9 +137,25 @@ class Handler(BaseHTTPRequestHandler):
         if data:
             self.wfile.write(data)
 
-    def body(self):
+    def raw_body(self):
+        # dart:io's HttpClient sends a body without a Content-Length as
+        # Transfer-Encoding: chunked (the app's IoTipsHttp does): read both.
+        if "chunked" in (self.headers.get("Transfer-Encoding") or "").lower():
+            out = b""
+            while len(out) <= 65536:
+                size = int(self.rfile.readline(1024).split(b";")[0].strip() or b"0", 16)
+                if size == 0:
+                    while self.rfile.readline(1024) not in (b"\r\n", b"\n", b""):
+                        pass  # trailers, up to the blank line
+                    break
+                out += self.rfile.read(size)
+                self.rfile.readline(1024)  # the CRLF after each chunk
+            return out
         n = int(self.headers.get("Content-Length") or 0)
-        raw = self.rfile.read(n) if n else b""
+        return self.rfile.read(n) if n else b""
+
+    def body(self):
+        raw = self.raw_body()
         try:
             return json.loads(raw) if raw else None
         except ValueError:

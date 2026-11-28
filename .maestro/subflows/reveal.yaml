@@ -1,6 +1,7 @@
 # Scroll-safe: bring id ${ID} on screen before a tap or an assert, whichever
 # way it is (below the fold at 320 dp, or above after an earlier scroll).
-# Both scrolls are no-ops when it's already visible; the caller's tap or
+# Both scrolls are no-ops when it's already visible (10 s each: Me is
+# five screens long); the caller's tap or
 # assert then fails clearly if it never shows. (Moodbow's pattern.)
 # env: ID
 appId: ${APP_ID}
@@ -9,11 +10,11 @@ appId: ${APP_ID}
     element:
       id: ${ID}
     direction: DOWN
-    timeout: 4000
+    timeout: 10000
     optional: true
 - scrollUntilVisible:
     element:
       id: ${ID}
     direction: UP
-    timeout: 4000
+    timeout: 10000
     optional: true
