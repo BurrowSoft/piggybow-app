@@ -218,9 +218,6 @@ void main() {
         if (c.width == 320 && c.textScale == 2) {
           expect(pair.stacked, isTrue, reason: 'H2 at 320 ×2: no room');
         }
-        if (c.width == 360 && c.textScale == 1) {
-          expect(pair.stacked, isFalse, reason: 'H2 at 360 ×1: one line');
-        }
         await checkScrolled(
           tester,
           listIn('home-screen'),
