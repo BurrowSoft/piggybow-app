@@ -18,7 +18,7 @@ void main() {
   late MovableClock clock;
   late JournalStore store;
   var ids = 0;
-  final eur = parseRate('39.12', RateDirection.toHome).rate!;
+  final eur = parseRate('39.12', RateDirection.toHome, mark: '.').rate!;
 
   setUp(() async {
     ids = 0;
@@ -57,7 +57,7 @@ void main() {
     await expectLater(spend(100, 'THB', rate: eur), throwsArgumentError);
     await expectLater(spend(100, 'EUR'), throwsArgumentError);
     // €0.01 at "1 EUR = 0.4 THB" is 0.4 of a satang.
-    await expectLater(spend(1, 'EUR', rate: parseRate('0.4', RateDirection.toHome).rate), throwsArgumentError);
+    await expectLater(spend(1, 'EUR', rate: parseRate('0.4', RateDirection.toHome, mark: '.').rate), throwsArgumentError);
     expect(await store.entries(), isEmpty);
   });
 
@@ -65,7 +65,7 @@ void main() {
     final e = await spend(1234, 'EUR', rate: eur);
     final more = await store.updateEntry(e.copyWith(amountMinor: 2000));
     expect(more.homeMinor, 78240);
-    final other = parseRate('40', RateDirection.toHome).rate!;
+    final other = parseRate('40', RateDirection.toHome, mark: '.').rate!;
     final rated = await store.updateEntry(more.copyWith(rate: other));
     expect(rated.homeMinor, 80000);
     final home = await store.updateEntry(rated.copyWith(currency: 'THB', amountMinor: 80000, clearRate: true));
@@ -76,7 +76,7 @@ void main() {
     expect(await store.lastRate('EUR'), isNull);
     await spend(1234, 'EUR', rate: eur);
     expect(await store.lastRate('EUR'), eur);
-    final yen = parseRate('0.2301', RateDirection.toHome).rate!;
+    final yen = parseRate('0.2301', RateDirection.toHome, mark: '.').rate!;
     await spend(1000, 'JPY', rate: yen);
     expect((await store.lastRate('EUR'), await store.lastRate('JPY')), (eur, yen));
   });

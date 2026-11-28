@@ -16,11 +16,13 @@ import '../../journal/quick_amounts.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/currency.dart';
 import '../../money/money.dart';
+import '../../money/rate.dart';
 import '../../pig/pig_mood.dart' show PigReaction;
 import '../../repeat/repeat.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../../theme/theme.dart';
+import '../currency/currency_picker.dart';
 import '../plus/plus_screen.dart';
 import '../repeat/repeat_choice.dart';
 import 'add_again.dart';
@@ -107,8 +109,19 @@ class _EntrySheetState extends State<EntrySheet> {
   List<CustomCategory> _customs = const [];
   AppServices? _services;
 
-  /// Null until the journal's currency and today are read.
+  /// The entry's currency: the journal's (home) currency for a new entry,
+  /// or another one picked with the currency chip (feature 19). Null until
+  /// the journal's currency and today are read.
   String? _currency;
+
+  /// The journal's home currency; null until read.
+  String? _home;
+
+  /// In another currency: the rate, typed one way or the other. The flip
+  /// keeps what was typed each way.
+  final _rate = TextEditingController();
+  RateDirection _direction = RateDirection.toHome;
+  final _rateTyped = <RateDirection, String>{};
 
   /// The journal's entries, for the quick amounts (adding only).
   List<Entry> _entries = const [];
@@ -187,7 +200,9 @@ class _EntrySheetState extends State<EntrySheet> {
     final services = context.services;
     final store = services.journal;
     final e = widget.editing;
-    final currency = e?.currency ?? await store.currency() ?? 'USD';
+    final home = await store.currency() ?? 'USD';
+    // A new entry starts in the home currency (UX); an edit, in its own.
+    final currency = e?.currency ?? home;
     // A save shows where it goes: its own goal when it has one, else the
     // goal it was opened for (if active), else the default goal (where a
     // new save goes).
@@ -211,6 +226,7 @@ class _EntrySheetState extends State<EntrySheet> {
     setState(() {
       _hidden = hidden;
       _customs = customs;
+      _home = home;
       _currency = currency;
       _goals = active;
       _goalId = goalId;
@@ -229,6 +245,11 @@ class _EntrySheetState extends State<EntrySheet> {
       _date = e?.date ?? today;
       if (e != null) {
         _amount.text = inputAmount(e.amountMinor, currency, _locale);
+        final rate = e.rate;
+        if (rate != null) {
+          _direction = rate.direction;
+          _rate.text = rateInput(rate, _mark);
+        }
       }
     });
   }
@@ -251,7 +272,92 @@ class _EntrySheetState extends State<EntrySheet> {
     _services?.plus?.removeListener(_plusChanged);
     _amount.dispose();
     _note.dispose();
+    _rate.dispose();
     super.dispose();
+  }
+
+  /// The phone's decimal separator: the only mark a rate is typed with (UX).
+  String get _mark => rateMark(_locale);
+
+  /// The entry is in another currency than the journal's.
+  bool get _abroad {
+    final currency = _currency;
+    final home = _home;
+    return currency != null && home != null && currency != home;
+  }
+
+  /// The typed rate, read; null in the home currency.
+  ParsedRate? get _parsedRate =>
+      _abroad ? parseRate(_rate.text, _direction, mark: _mark) : null;
+
+  /// The amount in the home currency, once the amount and the rate are both
+  /// read; null until then, and in the home currency.
+  Conversion? get _conversion {
+    final minor = _parsed?.minor;
+    final rate = _parsedRate?.rate;
+    if (minor == null || rate == null) return null;
+    return convertToHome(
+      amountMinor: minor,
+      currency: _currency!,
+      home: _home!,
+      rate: rate,
+    );
+  }
+
+  /// The rate's error line: after Add for an empty or zero rate; at once for
+  /// one that can't be read, and for an amount that comes out too small or
+  /// too large in the home currency.
+  String? _rateError(AppLocalizations l10n) {
+    final problem = _parsedRate?.problem;
+    if (problem != null) {
+      return switch (problem) {
+        RateProblem.invalid => l10n.rateFormatError(_mark, '36${_mark}5'),
+        RateProblem.empty => _tried ? l10n.rateEmpty : null,
+        RateProblem.zero => _tried ? l10n.rateZero : null,
+      };
+    }
+    return switch (_conversion?.problem) {
+      null => null,
+      ConversionProblem.tooLarge => l10n.addAmountTooBig,
+      ConversionProblem.tooSmall => l10n.rateTooSmall(
+        formatMoney(1, _home!, _locale),
+      ),
+    };
+  }
+
+  /// The currency chip: the picker, then, in another currency, the last rate
+  /// typed for it (if any).
+  Future<void> _pickCurrency() async {
+    final current = _currency;
+    final home = _home;
+    if (current == null || home == null) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final picked = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => CurrencyPickerScreen(current: current)),
+    );
+    if (picked == null || picked == current || !mounted) return;
+    final last = picked == home
+        ? null
+        : await context.services.journal.lastRate(picked);
+    if (!mounted) return;
+    setState(() {
+      _currency = picked;
+      _rateTyped.clear();
+      _direction = last?.direction ?? RateDirection.toHome;
+      _rate.text = last == null ? '' : rateInput(last, _mark);
+    });
+  }
+
+  /// ⇄: the rate typed the other way ("1 THB = 0.0256 EUR"). What was typed
+  /// each way is kept, so flipping back loses nothing.
+  void _flip() {
+    setState(() {
+      _rateTyped[_direction] = _rate.text;
+      _direction = _direction == RateDirection.toHome
+          ? RateDirection.fromHome
+          : RateDirection.toHome;
+      _rate.text = _rateTyped[_direction] ?? '';
+    });
   }
 
   ParsedAmount? get _parsed {
@@ -288,9 +394,14 @@ class _EntrySheetState extends State<EntrySheet> {
     if (_busy || currency == null || date == null || parsed == null) return;
     final spend = _type == EntryType.spent;
     final l10n = AppLocalizations.of(context);
+    // In another currency, a rate that converts the amount (feature 19).
+    final abroad = _abroad;
+    final rate = _parsedRate?.rate;
+    final converted = _conversion?.minor;
     if (parsed.problem != null ||
         (spend && !_hasCategory) ||
-        _amountError(l10n) != null) {
+        _amountError(l10n) != null ||
+        (abroad && converted == null)) {
       setState(() => _tried = true);
       return;
     }
@@ -326,6 +437,7 @@ class _EntrySheetState extends State<EntrySheet> {
           // The first of a repeat: it adds the next ones on their days.
           repeat: repeat,
           today: repeat == null ? null : services.localDay.todayWire,
+          rate: abroad ? rate : null,
         );
         // The pig answers what was just added (plan §4.4).
         services.lastAdd.value = !spend
@@ -350,6 +462,12 @@ class _EntrySheetState extends State<EntrySheet> {
             localDate: wireDate(date),
             // The goal chosen (several goals), else the one it has.
             goalId: spend ? null : _goalId,
+            // Its currency may change; the store converts it again (or, back
+            // in the home currency, keeps no rate).
+            currency: currency,
+            rate: abroad ? rate : null,
+            convertedMinor: abroad ? converted : null,
+            clearRate: !abroad,
           ),
         );
       }
@@ -579,6 +697,19 @@ class _EntrySheetState extends State<EntrySheet> {
     final spend = _type == EntryType.spent;
     final parsed = _parsed;
     final amountError = _amountError(l10n);
+    final home = _home;
+    final abroad = _abroad;
+    final rateError = _rateError(l10n);
+    final converted = _conversion?.minor;
+    // The rate as typed: "1 EUR = [39.12] THB", or the other way round.
+    final (rateFrom, rateTo) = switch ((currency, home)) {
+      (final c?, final h?) =>
+        _direction == RateDirection.toHome ? (c, h) : (h, c),
+      _ => ('', ''),
+    };
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     return Material(
       color: theme.colorScheme.surface,
       // Above the keyboard: the form scrolls, and Add stays in reach.
@@ -725,10 +856,25 @@ class _EntrySheetState extends State<EntrySheet> {
                                   ),
                                   maxLines: 1,
                                   softWrap: false,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
+                                  style: muted,
                                 ),
+                              ),
+                            ),
+                          ),
+                        // In another currency: the amount at home, as it
+                        // will be counted, once the rate is read. A sentence
+                        // (UX), so it can't be read as a second sum; it
+                        // wraps at large text.
+                        if (abroad && amountError == null && converted != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2, left: 12),
+                            child: TestId(
+                              'add-converted',
+                              child: Text(
+                                l10n.travelHomeAmount(
+                                  formatMoney(converted, home!, _locale),
+                                ),
+                                style: muted,
                               ),
                             ),
                           ),
@@ -743,6 +889,84 @@ class _EntrySheetState extends State<EntrySheet> {
                             locale: _locale,
                             onUse: (minor) => _useQuickAmount(minor, currency),
                           ),
+                        const SizedBox(height: 8),
+                        // The entry's currency: the home one unless another
+                        // is picked (feature 19).
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: TestId(
+                            'add-currency',
+                            button: true,
+                            child: ActionChip(
+                              avatar: const Icon(
+                                Icons.currency_exchange,
+                                size: 18,
+                              ),
+                              label: Semantics(
+                                label: l10n.addCurrency(
+                                  l10n.currencyName(currency),
+                                ),
+                                child: ExcludeSemantics(child: Text(currency)),
+                              ),
+                              onPressed: _busy ? null : _pickCurrency,
+                            ),
+                          ),
+                        ),
+                        if (abroad) ...[
+                          const SizedBox(height: 16),
+                          Text(
+                            l10n.rateLabel,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TestId(
+                                  'add-rate',
+                                  child: TextField(
+                                    controller: _rate,
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                          decimal: true,
+                                        ),
+                                    inputFormatters: [_RateFormatter(_mark)],
+                                    onChanged: (_) => setState(() {}),
+                                    style: context.inputText,
+                                    decoration: InputDecoration(
+                                      // "1 EUR =", over what's typed.
+                                      labelText: l10n.rateOne(rateFrom),
+                                      // "THB", always shown after it.
+                                      suffixIcon: Padding(
+                                        padding: const EdgeInsetsDirectional
+                                            .only(start: 8, end: 12),
+                                        child: Text(
+                                          rateTo,
+                                          style: context.inputText,
+                                        ),
+                                      ),
+                                      suffixIconConstraints:
+                                          const BoxConstraints(minHeight: 48),
+                                      errorText: rateError,
+                                      errorMaxLines: 4,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              TestId(
+                                'add-rate-flip',
+                                button: true,
+                                child: IconButton(
+                                  icon: const Icon(Icons.swap_horiz),
+                                  tooltip: l10n.rateFlip,
+                                  onPressed: _flip,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         if (spend) ...[
                           Text(
@@ -1284,5 +1508,34 @@ class AmountInputFormatter extends TextInputFormatter {
   ) {
     final pasted = newValue.text.length - oldValue.text.length > 1;
     return pasted || _allowed.hasMatch(newValue.text) ? newValue : oldValue;
+  }
+}
+
+/// Typing a rate: digits and at most one [mark] (the phone's decimal
+/// separator, never a grouping mark), with at most [maxRateDecimals]
+/// decimals and [maxRateDigits] digits, leading zeros aside. A paste goes in
+/// as it is, and the field says when it can't be read.
+class _RateFormatter extends TextInputFormatter {
+  _RateFormatter(this.mark)
+    : _allowed = RegExp(
+        '^[0-9]*(${RegExp.escape(mark)}[0-9]{0,$maxRateDecimals})?\$',
+      );
+
+  final String mark;
+  final RegExp _allowed;
+  static final _leadingZeros = RegExp('^0+');
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+    final pasted = text.length - oldValue.text.length > 1;
+    if (pasted) return newValue;
+    final digits = text.replaceAll(mark, '').replaceFirst(_leadingZeros, '');
+    return _allowed.hasMatch(text) && digits.length <= maxRateDigits
+        ? newValue
+        : oldValue;
   }
 }

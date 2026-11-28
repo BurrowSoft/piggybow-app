@@ -6,7 +6,10 @@
 // when it's saved, with BigInt and a single rounding: halves go up (amounts
 // are never negative).
 
+import 'package:intl/intl.dart' show NumberFormat;
+
 import 'currency.dart';
+import 'locale.dart';
 import 'money.dart';
 
 /// Which way a rate was typed.
@@ -83,19 +86,32 @@ enum RateProblem { empty, invalid, zero }
 
 typedef ParsedRate = ({Rate? rate, RateProblem? problem});
 
-/// Digits, then optionally one mark ("." or ",") and more digits, as amounts.
-final _rateText = RegExp(r'^([0-9]*)(?:([.,])([0-9]*))?$');
 final _leadingZeros = RegExp('^0+');
 
-/// Reads a typed rate ("39.12", "39,12", "0.0256", ".5"): at most
-/// [maxRateDecimals] decimals and [maxRateDigits] digits, and more than 0.
-ParsedRate parseRate(String text, RateDirection direction) {
+/// The mark a rate is typed with in [locale]: its decimal separator, "." or
+/// "," (any other becomes "."), as amounts are pre-filled ([inputAmount]).
+String rateMark(String locale) {
+  final sep = NumberFormat.decimalPattern(intlNumberLocale(locale)).symbols.DECIMAL_SEP;
+  return sep == ',' ? ',' : '.';
+}
+
+/// Digits, then optionally [mark] and more digits: never a grouping mark, so
+/// "1,400" is no rate where "," groups thousands (en) and 1.4 where it's the
+/// decimal separator (de).
+RegExp _rateText(String mark) => RegExp('^([0-9]*)(?:${RegExp.escape(mark)}([0-9]*))?\$');
+
+/// Reads a typed rate ("39.12" with "." as the [mark], "39,12" with ","):
+/// at most [maxRateDecimals] decimals and [maxRateDigits] digits, and more
+/// than 0. Any other character, the other mark included, is
+/// [RateProblem.invalid].
+ParsedRate parseRate(String text, RateDirection direction, {required String mark}) {
+  assert(mark == '.' || mark == ',');
   final t = text.trim();
   if (t.isEmpty) return (rate: null, problem: RateProblem.empty);
-  final m = _rateText.firstMatch(t);
+  final m = _rateText(mark).firstMatch(t);
   if (m == null) return (rate: null, problem: RateProblem.invalid);
   final whole = m[1]!;
-  final fraction = m[3] ?? '';
+  final fraction = m[2] ?? '';
   if (whole.isEmpty && fraction.isEmpty) return (rate: null, problem: RateProblem.invalid);
   if (fraction.length > maxRateDecimals) return (rate: null, problem: RateProblem.invalid);
   final digits = (whole + fraction).replaceFirst(_leadingZeros, '');
@@ -109,7 +125,7 @@ ParsedRate parseRate(String text, RateDirection direction) {
 
 /// [amountMinor] of [currency] in [home]'s minor units, at [rate]: converted
 /// once, and rounded once, halves up. Null when that's less than one minor
-/// unit, or more than [maxAmountMinor].
+/// unit, or more than [maxAmountMinor] ([convertToHome] says which).
 ///
 /// - toHome: amount × units × 10^d(home) ÷ (10^scale × 10^d(currency))
 /// - fromHome: amount × 10^scale × 10^d(home) ÷ (units × 10^d(currency))
@@ -117,6 +133,20 @@ ParsedRate parseRate(String text, RateDirection direction) {
 /// d is a currency's minor digits (decision 28): €12.34 at "1 EUR = 39.12
 /// THB" is 1234 × 3912 × 100 ÷ (100 × 100) = 48274.08, so ฿482.74.
 int? toHomeMinor({
+  required int amountMinor,
+  required String currency,
+  required String home,
+  required Rate rate,
+}) => convertToHome(amountMinor: amountMinor, currency: currency, home: home, rate: rate).minor;
+
+/// Why a conversion gives no amount: under one minor unit of the home
+/// currency, or over [maxAmountMinor].
+enum ConversionProblem { tooSmall, tooLarge }
+
+typedef Conversion = ({int? minor, ConversionProblem? problem});
+
+/// [toHomeMinor], saying why when there's no amount.
+Conversion convertToHome({
   required int amountMinor,
   required String currency,
   required String home,
@@ -137,8 +167,11 @@ int? toHomeMinor({
   final quotient = numerator ~/ denominator;
   final rest = numerator.remainder(denominator);
   final rounded = rest * BigInt.two >= denominator ? quotient + BigInt.one : quotient;
-  if (rounded < BigInt.one || rounded > BigInt.from(maxAmountMinor)) return null;
-  return rounded.toInt();
+  if (rounded < BigInt.one) return (minor: null, problem: ConversionProblem.tooSmall);
+  if (rounded > BigInt.from(maxAmountMinor)) {
+    return (minor: null, problem: ConversionProblem.tooLarge);
+  }
+  return (minor: rounded.toInt(), problem: null);
 }
 
 /// 10 to the [n], by multiplying (the money path uses no power function).
@@ -149,6 +182,10 @@ BigInt _tenTo(int n) {
   }
   return r;
 }
+
+/// [rate] as its field is pre-filled: its digits with [mark] ("39,12" in de).
+/// [parseRate] reads it back to the same rate.
+String rateInput(Rate rate, String mark) => rate.plain.replaceFirst('.', mark);
 
 /// The rate as typed, with currency codes, for the CSV:
 /// "1 EUR = 39.12 THB" or "1 THB = 0.0256 EUR".

@@ -9,36 +9,64 @@ void main() {
   const toHome = RateDirection.toHome;
   const fromHome = RateDirection.fromHome;
 
-  Rate rate(String text, [RateDirection direction = toHome]) => parseRate(text, direction).rate!;
+  Rate rate(String text, [RateDirection direction = toHome, String mark = '.']) =>
+      parseRate(text, direction, mark: mark).rate!;
 
   int? convert(int minor, String currency, String home, Rate r) =>
       toHomeMinor(amountMinor: minor, currency: currency, home: home, rate: r);
 
   group('a typed rate', () {
-    test('"." or "," as the mark; kept as its digits and their scale', () {
+    test("the locale's mark; kept as its digits and their scale", () {
       expect(rate('39.12'), const Rate(units: 3912, scale: 2, direction: toHome));
-      expect(rate('39,12'), const Rate(units: 3912, scale: 2, direction: toHome));
+      expect(rate('39,12', toHome, ','), const Rate(units: 3912, scale: 2, direction: toHome));
       expect(rate('0.0256', fromHome), const Rate(units: 256, scale: 4, direction: fromHome));
       expect(rate('.5'), const Rate(units: 5, scale: 1, direction: toHome));
       expect(rate('25400'), const Rate(units: 25400, scale: 0, direction: toHome));
       expect(rate(' 7. '), const Rate(units: 7, scale: 0, direction: toHome));
     });
 
+    test('never a grouping mark: "1,400" is no rate where "," groups, and 1.4 where it is the mark', () {
+      expect(parseRate('1,400', toHome, mark: '.').problem, RateProblem.invalid);
+      expect(parseRate('39,12', toHome, mark: '.').problem, RateProblem.invalid);
+      expect(rate('1,400', toHome, ','), const Rate(units: 1400, scale: 3, direction: toHome));
+      expect(rate('1,400', toHome, ',').plain, '1.400');
+      expect(parseRate('39.12', toHome, mark: ',').problem, RateProblem.invalid);
+      for (final mark in ['.', ',']) {
+        expect(parseRate('1.400,5', toHome, mark: mark).problem, RateProblem.invalid, reason: mark);
+        expect(parseRate('1 400', toHome, mark: mark).problem, RateProblem.invalid, reason: mark);
+      }
+    });
+
+    test("each locale's mark, and a rate pre-filled with it reads back the same", () {
+      expect(rateMark('en_US'), '.');
+      expect(rateMark('th_TH'), '.');
+      expect(rateMark('de_DE'), ',');
+      expect(rateMark('pt_BR'), ',');
+      for (final mark in ['.', ',']) {
+        for (final r in [rate('39.12'), rate('0.0256', fromHome), rate('25400'), rate('1.400')]) {
+          final text = rateInput(r, mark);
+          expect(text.contains(mark == '.' ? ',' : '.'), isFalse, reason: text);
+          expect(parseRate(text, r.direction, mark: mark).rate, r, reason: text);
+        }
+      }
+      expect(rateInput(rate('39.12'), ','), '39,12');
+    });
+
     test('written back with "." and its own digits', () {
-      expect(rate('39,12').plain, '39.12');
+      expect(rate('39,12', toHome, ',').plain, '39.12');
       expect(rate('0.0256').plain, '0.0256');
       expect(rate('39.10').plain, '39.10');
       expect(rate('25400').plain, '25400');
     });
 
     test('empty, unreadable, zero, over 6 decimals or over 9 digits: refused', () {
-      expect(parseRate('', toHome).problem, RateProblem.empty);
-      expect(parseRate('  ', toHome).problem, RateProblem.empty);
+      expect(parseRate('', toHome, mark: '.').problem, RateProblem.empty);
+      expect(parseRate('  ', toHome, mark: '.').problem, RateProblem.empty);
       for (final bad in ['abc', '1.2.3', '1,000.5', '-3', '+3', '1e3', '.', '1.1234567', '1234567890']) {
-        expect(parseRate(bad, toHome).problem, RateProblem.invalid, reason: bad);
+        expect(parseRate(bad, toHome, mark: '.').problem, RateProblem.invalid, reason: bad);
       }
       for (final zero in ['0', '0.0', '000', '.000']) {
-        expect(parseRate(zero, toHome).problem, RateProblem.zero, reason: zero);
+        expect(parseRate(zero, toHome, mark: '.').problem, RateProblem.zero, reason: zero);
       }
       // Leading zeros don't count toward the 9 digits.
       expect(rate('000123456789').units, 123456789);
@@ -61,7 +89,7 @@ void main() {
     });
 
     test('the CSV form, with codes, from the digits', () {
-      expect(rateText(rate('39,12'), currency: 'EUR', home: 'THB'), '1 EUR = 39.12 THB');
+      expect(rateText(rate('39,12', toHome, ','), currency: 'EUR', home: 'THB'), '1 EUR = 39.12 THB');
       expect(rateText(rate('0.0256', fromHome), currency: 'EUR', home: 'THB'), '1 THB = 0.0256 EUR');
     });
   });
@@ -106,6 +134,19 @@ void main() {
       expect(convert(maxAmountMinor, 'USD', 'THB', rate('1.01')), isNull);
       // The largest amount at 1 still fits.
       expect(convert(maxAmountMinor, 'USD', 'EUR', rate('1')), maxAmountMinor);
+    });
+
+    test('says why there is no amount: under one minor unit, or over the cap', () {
+      ConversionProblem? why(int minor, String currency, String home, Rate r) =>
+          convertToHome(amountMinor: minor, currency: currency, home: home, rate: r).problem;
+      expect(why(1, 'USD', 'EUR', rate('0.4')), ConversionProblem.tooSmall);
+      // ¥1 at "1 JPY = 0.0001 THB": 0.01 of a satang.
+      expect(why(1, 'JPY', 'THB', rate('0.0001')), ConversionProblem.tooSmall);
+      expect(why(maxAmountMinor, 'USD', 'THB', rate('1.01')), ConversionProblem.tooLarge);
+      expect(
+        convertToHome(amountMinor: 1234, currency: 'EUR', home: 'THB', rate: rate('39.12')),
+        (minor: 48274, problem: null),
+      );
     });
 
     test('never from nothing', () {

@@ -378,6 +378,7 @@ class _Days extends StatelessWidget {
           customs: customs,
           repeat: repeats[entry.repeatId],
           locale: locale,
+          home: home,
         ),
       },
     );
@@ -470,6 +471,7 @@ class _Row extends StatelessWidget {
     required this.customs,
     required this.repeat,
     required this.locale,
+    required this.home,
   });
 
   final Entry entry;
@@ -481,6 +483,10 @@ class _Row extends StatelessWidget {
   final Repeat? repeat;
   final String locale;
 
+  /// The journal's home currency: an entry in another one shows its amount
+  /// there too, under its own (feature 19).
+  final String home;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -490,7 +496,7 @@ class _Row extends StatelessWidget {
     final String title;
     final String? subtitle;
     final Widget icon;
-    final Widget amount;
+    final Widget ownAmount;
     if (e.type == EntryType.spent) {
       // A built-in's name, or your own category's (Plus).
       final categoryId = e.categoryId!;
@@ -508,7 +514,7 @@ class _Row extends StatelessWidget {
         color: theme.colorScheme.onSurfaceVariant,
       );
       // Spends in ink: never red, never a minus sign.
-      amount = Text(
+      ownAmount = Text(
         money,
         maxLines: 1,
         softWrap: false,
@@ -524,7 +530,7 @@ class _Row extends StatelessWidget {
       subtitle = e.note.isNotEmpty ? takenOut : null;
       icon = const _MiniRainbow();
       // Taken out of savings: in ink, never red; a minus, as it goes down.
-      amount = Text(
+      ownAmount = Text(
         '$minusSign$money',
         maxLines: 1,
         softWrap: false,
@@ -539,7 +545,7 @@ class _Row extends StatelessWidget {
       title = e.note.isNotEmpty ? e.note : savedFor;
       subtitle = e.note.isNotEmpty ? savedFor : null;
       icon = const _MiniRainbow();
-      amount = Text(
+      ownAmount = Text(
         '+$money',
         maxLines: 1,
         softWrap: false,
@@ -549,6 +555,24 @@ class _Row extends StatelessWidget {
       );
     }
     final takenOutOf = e.type == EntryType.withdraw ? goal : null;
+    // In another currency: "€12.34", and under it, muted, "= ฿482.74".
+    final Widget amount = e.convertedMinor == null
+        ? ownAmount
+        : Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              ownAmount,
+              Text(
+                l10n.addConverted(formatMoney(e.homeMinor, home, locale)),
+                maxLines: 1,
+                softWrap: false,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          );
     return TestId(
       'tl-row-${e.id}',
       button: true,
