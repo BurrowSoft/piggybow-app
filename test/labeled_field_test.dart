@@ -87,6 +87,32 @@ void main() {
     semantics.dispose();
   });
 
+  // Above the field, the field keeps no empty band where a floating label
+  // would be: its text starts where a field with no label's does, but for
+  // Material's 4 dp gap at the text size (UX, from #87's goldens).
+  testWidgets('large text: no empty band over the field under its label', (
+    tester,
+  ) async {
+    screen(tester, 320, 2);
+    double textTop() =>
+        tester.getTopLeft(find.byType(EditableText)).dy -
+        tester.getTopLeft(find.byType(TextField)).dy;
+    await tester.pumpWidget(
+      page(
+        const Align(
+          alignment: Alignment.topCenter,
+          child: TextField(decoration: InputDecoration()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final plain = textTop();
+    await tester.pumpWidget(page(labeled()));
+    await tester.pumpAndSettle();
+    expect(decorationOf(tester).labelText, isNull, reason: 'above the field');
+    expect(textTop(), lessThanOrEqualTo(plain + 4 * 2 + 0.5));
+  });
+
   testWidgets('typed text survives moving between the two forms', (
     tester,
   ) async {

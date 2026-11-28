@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 /// [InputDecoration] keeps a label on one line with an "…", and a wrapped one
 /// would run over the field. So a label that fits is the usual floating label,
 /// and one that doesn't (large text, a long language) sits above the field in
-/// full; the field keeps it as its spoken name either way.
+/// full; the field keeps it as its spoken name either way. Above the field,
+/// the field's own label is empty and takes almost no room: Material sizes
+/// the floating label's band from its style, so that style has no size.
 class LabeledField extends StatelessWidget {
   const LabeledField({
     super.key,
@@ -25,6 +27,10 @@ class LabeledField extends StatelessWidget {
   /// The field's width, only where it can't be asked for: an [AlertDialog]
   /// sizes itself by intrinsics, which a [LayoutBuilder] doesn't support.
   final double? width;
+
+  /// The empty label's style above the field: no height, so no empty band
+  /// where a floating label would be (only Material's 4 dp gap is left).
+  static const _noBand = TextStyle(fontSize: 0);
 
   /// Material's space for a prefix or suffix icon, and its padding without one.
   static const _iconSpace = 48.0;
@@ -69,6 +75,8 @@ class LabeledField extends StatelessWidget {
                       label: label,
                       child: const SizedBox.shrink(),
                     ),
+                    labelStyle: _noBand,
+                    floatingLabelStyle: _noBand,
                   ),
           ),
         ),
