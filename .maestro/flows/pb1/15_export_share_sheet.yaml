@@ -1,0 +1,43 @@
+appId: ${APP_ID}
+name: PR 4 export - Me, Export my data opens the system share sheet with a piggybow-date.csv file (moved from PR 2 by decision 43)
+tags: [pb1, me]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_timeline.yaml
+- tapOn:
+    id: "tl-empty-add|tl-add"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "7"
+      EXPECT: ".*7.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-other
+- tapOn:
+    id: add-cat-other
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-export
+- tapOn:
+    id: me-export
+# The Android share sheet is system UI: match loosely. The file content itself
+# is proven by the unit tests (header, BOM, quoting, amounts).
+- extendedWaitUntil:
+    visible: ".*piggybow-\\d{4}-\\d{2}-\\d{2}\\.csv.*|.*Share.*"
+    timeout: 15000
+- takeScreenshot: export-share-sheet   # looked at by the tester; CI emulator only
+- back                                  # closes the share sheet (no keyboard is open here)
+- assertVisible:
+    id: me-export                       # back in Me, nothing else changed

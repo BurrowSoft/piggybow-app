@@ -1,0 +1,54 @@
+# From Home with no active goal: tap "Start a goal" (goal-create), fill the goal
+# and tap "Start my rainbow". START is the optional "Already saved" (use "0"
+# to leave it at zero; the field accepts 0).
+# "Start my rainbow" returns to Home with the goal card (or shows the
+# celebration when "Already saved" reaches the target); the subflow then opens
+# the goal's detail from the card, so callers continue on goal-screen.
+# env: NAME, AMOUNT, START
+appId: ${APP_ID}
+---
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: goal-create
+- tapOn:
+    id: goal-create
+- runFlow:
+    file: paste_into.yaml
+    env:
+      ID: goal-name
+      TEXT: ${NAME}
+      EXPECT: ".*${NAME}.*"
+- runFlow:
+    file: paste_into.yaml
+    env:
+      ID: goal-amount
+      TEXT: ${AMOUNT}
+      EXPECT: ".*${AMOUNT}.*"
+- runFlow:
+    file: paste_into.yaml
+    env:
+      ID: goal-start
+      TEXT: ${START}
+      EXPECT: ".*${START}.*"
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: goal-submit
+- tapOn:
+    id: goal-submit
+- extendedWaitUntil:
+    visible:
+      id: "goal-card|goal-screen|goal-done-screen"
+    timeout: 10000
+- runFlow:
+    when:
+      visible:
+        id: goal-card
+    commands:
+      - tapOn:
+          id: goal-card
+      - extendedWaitUntil:
+          visible:
+            id: goal-screen
+          timeout: 10000

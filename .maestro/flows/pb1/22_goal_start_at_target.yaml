@@ -1,0 +1,29 @@
+appId: ${APP_ID}
+name: PR 3 Already saved at or above the target counts as reached - one celebration at creation, none after a relaunch
+tags: [pb1, goal]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env:
+      NAME: "Rainy day"
+      AMOUNT: "100"
+      START: "120"
+- extendedWaitUntil:
+    visible:
+      id: goal-done-screen
+    timeout: 10000
+- tapOn:
+    id: goal-done-close
+- assertVisible:
+    id: goal-card-reached
+    text: ".*Reached: Rainy day.*"
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 20000
+- assertNotVisible:
+    id: goal-done-screen

@@ -1,0 +1,43 @@
+appId: ${APP_ID}
+name: PR 3 the rainbow at 0, 32 and 100 percent from fixtures - the label in words, a screenshot each, compared by eye with the design files
+tags: [pb1, rainbow, fixtures]
+---
+- launchApp:
+    clearState: true
+    arguments:
+      route: "/fixture/R0"
+- extendedWaitUntil:
+    visible:
+      id: goal-card
+    timeout: 120000
+- tapOn:
+    id: goal-card
+- assertVisible:
+    text: "Rainbow 0% filled.*"
+- assertNotVisible: "Saves"               # no saves, no header
+- waitForAnimationToEnd              # let late-decoded art (the pig's SVG) paint before the screenshot
+- takeScreenshot: rainbow-0
+- launchApp:
+    clearState: true
+    arguments:
+      route: "/fixture/R32"
+- extendedWaitUntil:
+    visible:
+      id: goal-card
+    timeout: 120000
+- tapOn:
+    id: goal-card
+- assertVisible:
+    text: "Rainbow 32% filled.*"
+- waitForAnimationToEnd              # let late-decoded art (the pig's SVG) paint before the screenshot
+- takeScreenshot: rainbow-32
+- launchApp:
+    clearState: true
+    arguments:
+      route: "/fixture/R100"
+- extendedWaitUntil:
+    visible:
+      id: "goal-card|goal-card-reached"
+    timeout: 120000
+- waitForAnimationToEnd              # let late-decoded art (the pig's SVG) paint before the screenshot
+- takeScreenshot: rainbow-100-home

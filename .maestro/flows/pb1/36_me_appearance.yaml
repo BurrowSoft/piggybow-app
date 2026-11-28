@@ -1,0 +1,55 @@
+appId: ${APP_ID}
+name: PR 4 Appearance - Same as device, Light and Dark radio rows in Me; the choice applies at once and survives a relaunch
+tags: [pb1, me]
+---
+# Ids as in #29 / #32: me-theme-system, me-theme-light, me-theme-dark
+# (radio rows; the selected one reads as checked).
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-theme-system
+- assertVisible:
+    id: me-theme-system
+    checked: true                    # the default
+- tapOn:
+    id: me-theme-dark
+- assertVisible:
+    id: me-theme-dark
+    checked: true
+- assertVisible:
+    id: me-theme-system
+    checked: false
+- waitForAnimationToEnd
+- takeScreenshot: 36-me-dark
+# The choice is kept across a relaunch (no clearState)
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "home-pig|tab-me"
+    timeout: 30000
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-theme-dark
+- assertVisible:
+    id: me-theme-dark
+    checked: true
+- tapOn:
+    id: me-theme-light
+- assertVisible:
+    id: me-theme-light
+    checked: true
+- waitForAnimationToEnd
+- takeScreenshot: 36-me-light
+- tapOn:
+    id: me-theme-system              # back to the default
+- assertVisible:
+    id: me-theme-system
+    checked: true

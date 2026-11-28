@@ -1,0 +1,23 @@
+# From a fresh launch to Home: the shortest onboarding path when it shows
+# (Get started → "Saving something each week" → Continue → Maybe later).
+appId: ${APP_ID}
+---
+- runFlow:
+    when:
+      visible:
+        id: onb-start
+    commands:
+      - tapOn:
+          id: onb-start
+      - tapOn:
+          id: onb-pick-save
+      - tapOn:
+          id: onb-continue
+      - tapOn:
+          id: onb-goal-later
+- tapOn:
+    id: tab-home
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 10000

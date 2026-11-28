@@ -1,0 +1,27 @@
+# Launch a TEST build with a pig-contract case loaded as on-device data and
+# the clock frozen at that case's "now" (launch arguments; test builds only,
+# compiled out of store builds): `route: /fixture/<case>` (Flutter reads the "route" extra).
+# The run's zone must match the case: UTC for all cases except C14 (a UTC+7 zone);
+# a mismatch shows fixture-error. Then check the pig's mood and line on Home.
+# env: FIXTURE (a contract case id, e.g. C4), MOOD (sleepy|calm|happy|delighted),
+#      LINE (a regex for the bubble text)
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    arguments:
+      route: "/fixture/${FIXTURE}"     # staging builds only; prod ignores it
+- extendedWaitUntil:
+    visible:
+      id: "home-pig|fixture-error"
+    timeout: 120000
+- assertNotVisible:
+    id: fixture-error                 # the run's zone doesn't match the case's "today"
+- assertVisible:
+    id: home-pig
+    text: "(?i).*${MOOD}.*"            # its label: "Your pig looks <mood>."
+- assertVisible:
+    id: home-pig-line
+    text: ${LINE}
+- waitForAnimationToEnd              # let late-decoded art (the pig's SVG) paint before the screenshot
+- takeScreenshot: home-${FIXTURE}

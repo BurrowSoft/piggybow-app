@@ -1,0 +1,81 @@
+appId: ${APP_ID}
+name: PR 4 Remove plan unpicks "weekly plan" (Q-D); when it was the only pick, the picker opens first and asks for another
+tags: [pb1, me]
+---
+# A. Picks save + plan: Remove plan -> "Not set", the plan pick cleared, save kept
+- runFlow: ../../subflows/fresh_launch.yaml
+- tapOn:
+    id: onb-start
+- tapOn:
+    id: onb-pick-save
+- tapOn:
+    id: onb-pick-plan
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: onb-plan
+      TEXT: "2000"
+      EXPECT: ".*2000.*"
+- tapOn:
+    id: onb-continue
+- tapOn:
+    id: onb-goal-later
+- tapOn:
+    id: tab-me
+- assertVisible:                     # the plan set in onboarding shows on its row
+    id: me-plan
+    text: ".*2,000.*"
+- takeScreenshot: 34-me-plan-set
+- tapOn:
+    id: me-plan
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-plan-remove
+- tapOn:
+    id: me-plan-remove
+- assertVisible:
+    id: me-plan
+    text: ".*Not set.*"
+- takeScreenshot: 34-me-plan-not-set
+- tapOn:
+    id: me-happy
+- assertVisible:
+    id: onb-pick-plan
+    checked: false
+- assertVisible:
+    id: onb-pick-save
+    checked: true
+- tapOn: "Back"                    # the app bar arrow
+# B. Plan as the only pick: Remove plan opens the picker first ("Pick at least one.")
+- runFlow: ../../subflows/fresh_launch.yaml
+- tapOn:
+    id: onb-start
+- tapOn:
+    id: onb-pick-plan
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: onb-plan
+      TEXT: "2000"
+      EXPECT: ".*2000.*"
+- tapOn:
+    id: onb-continue
+- tapOn:
+    id: onb-goal-later
+- tapOn:
+    id: tab-me
+- tapOn:
+    id: me-plan
+- tapOn:
+    id: me-plan-remove
+- assertVisible:
+    id: onb-pick-save                    # the picker opened first
+- assertVisible: ".*Pick at least one\\..*"
+- tapOn:
+    id: onb-pick-save
+- tapOn:
+    id: me-happy-done
+- assertVisible:
+    id: me-plan
+    text: ".*Not set.*"

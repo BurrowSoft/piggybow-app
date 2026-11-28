@@ -1,0 +1,56 @@
+appId: ${APP_ID}
+name: PR 3 lowering the target below the progress counts as reaching it - one celebration
+tags: [pb1, goal]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env:
+      NAME: "Bike"
+      AMOUNT: "100"
+      START: "0"
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/add_savings.yaml
+    env:
+      AMOUNT: "60"
+      GOAL: "Bike"
+- extendedWaitUntil:
+    visible:
+      text: "Rainbow 60% filled.*"
+    timeout: 10000
+- tapOn:
+    id: goal-menu
+- tapOn:
+    id: goal-edit
+- runFlow:
+    file: ../../subflows/replace_into.yaml
+    env:
+      ID: goal-amount
+      TEXT: "50"
+      EXPECT: ".*50.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-submit
+- tapOn:
+    id: goal-submit
+- extendedWaitUntil:
+    visible:
+      id: goal-done-screen
+    timeout: 10000
+- tapOn:
+    id: goal-done-close
+- runFlow:                           # Done returns to the goal's detail when the save was made there
+    when:
+      visible:
+        id: goal-screen
+    commands:
+      - tapOn: "Back"
+- assertVisible:
+    id: goal-card-reached
+    text: ".*Reached: Bike.*"

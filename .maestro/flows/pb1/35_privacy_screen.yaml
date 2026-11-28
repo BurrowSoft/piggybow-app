@@ -1,0 +1,32 @@
+appId: ${APP_ID}
+name: PR 4 Your privacy in a build without a Sentry DSN - lines 1, 2, 4, 5 and no crash-report line; no policy link and no Help row while their URLs are empty
+tags: [pb1, me]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-privacy
+- tapOn:
+    id: me-privacy
+- assertVisible: ".*stored on this phone, and in your phone's own backup.*"
+- assertVisible: ".*no account and no server for your money notes.*"
+- assertVisible: ".*erases everything Piggybow stored on this phone.*"
+- assertVisible: ".*No ads, no tracking.*"
+- assertNotVisible: ".*crash report.*"          # privacy3 only with a DSN
+# No web-policy link yet: it comes with PRIVACY_URL and its own id; assert it
+# then (an absence check on an id that doesn't exist yet would prove nothing).
+- takeScreenshot: 35-your-privacy
+- tapOn: "Back"                    # the app bar arrow
+- assertNotVisible:
+    id: me-help                                 # SUPPORT_URL empty
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-version
+- assertVisible:
+    id: me-version
+    text: "Version .* \\(.*\\)"

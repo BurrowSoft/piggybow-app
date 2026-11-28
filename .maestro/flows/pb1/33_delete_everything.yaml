@@ -1,0 +1,119 @@
+appId: ${APP_ID}
+name: PR 4 Delete everything - Cancel keeps all; Delete returns to O1 with no entries, goal, plan or picks left
+tags: [pb1, me]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+# Onboarding with picks save + plan, plan 2000, and a goal
+- tapOn:
+    id: onb-start
+- tapOn:
+    id: onb-pick-save
+- tapOn:
+    id: onb-pick-plan
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: onb-plan
+      TEXT: "2000"
+      EXPECT: ".*2000.*"
+- tapOn:
+    id: onb-continue
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: goal-name
+      TEXT: "Bike"
+      EXPECT: ".*Bike.*"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: goal-amount
+      TEXT: "300"
+      EXPECT: ".*300.*"
+- tapOn:
+    id: onb-goal-start
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 10000
+# One spend
+- tapOn:
+    id: home-add
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "9"
+      EXPECT: ".*9.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-fun
+- tapOn:
+    id: add-cat-fun
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+# Cancel keeps everything
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-delete
+- tapOn:
+    id: me-delete
+- assertVisible: ".*Delete everything\\?.*"
+- tapOn:
+    id: me-delete-cancel
+- tapOn:
+    id: tab-timeline
+- assertVisible:
+    id: "tl-row-.*"
+# Delete everything
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-delete
+- tapOn:
+    id: me-delete
+- tapOn:
+    id: me-delete-confirm
+- extendedWaitUntil:
+    visible:
+      id: onb-start                     # back on O1
+    timeout: 10000
+# Through onboarding again: nothing pre-selected, nothing left behind
+- tapOn:
+    id: onb-start
+- assertVisible:
+    id: onb-pick-save
+    checked: false
+- assertVisible:
+    id: onb-pick-plan
+    checked: false
+- tapOn:
+    id: onb-pick-save
+- tapOn:
+    id: onb-continue
+- tapOn:
+    id: onb-goal-later
+- assertVisible: ".*Start a savings goal.*"      # the empty card (no id of its own)
+- assertVisible:
+    id: goal-create
+- assertNotVisible:
+    id: goal-card-reached
+- tapOn:
+    id: tab-timeline
+- assertVisible:
+    id: tl-empty-add
+- tapOn:
+    id: tab-me
+- assertVisible:
+    id: me-plan
+    text: ".*Not set.*"

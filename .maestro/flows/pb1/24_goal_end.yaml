@@ -1,0 +1,48 @@
+appId: ${APP_ID}
+name: PR 3 End goal - Cancel keeps it; End leaves the saves in the journal as Saved for, and Home shows the empty card without Reached
+tags: [pb1, goal]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env:
+      NAME: "Bike"
+      AMOUNT: "100"
+      START: "0"
+- extendedWaitUntil:
+    visible:
+      id: goal-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/add_savings.yaml
+    env:
+      AMOUNT: "30"
+      GOAL: "Bike"
+- tapOn:
+    id: goal-menu
+- tapOn:
+    id: goal-end
+- assertVisible: ".*End this goal\\?.*"
+- takeScreenshot: 24-end-goal-dialog
+- tapOn:
+    id: goal-end-cancel
+- assertVisible:
+    id: goal-screen                  # still on the detail, goal kept
+- tapOn:
+    id: goal-menu
+- tapOn:
+    id: goal-end
+- tapOn:
+    id: goal-end-confirm
+- extendedWaitUntil:
+    visible:
+      id: goal-create                 # the empty card's button (the card has no id)
+    timeout: 10000
+- assertNotVisible:
+    id: goal-card-reached             # ended, not reached
+- tapOn:
+    id: tab-timeline
+- assertVisible:
+    id: "tl-row-.*"
+    text: ".*Saved for Bike.*"        # tlSavedFor (the save had no note)

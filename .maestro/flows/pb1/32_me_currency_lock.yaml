@@ -1,0 +1,77 @@
+appId: ${APP_ID}
+name: PR 4 the currency lock - changeable while no entry and no goal exist, fixed after the first entry, changeable again after Delete everything
+tags: [pb1, me]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# Nothing exists yet: the picker opens
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-currency
+- tapOn:
+    id: me-currency
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: currency-EUR
+- tapOn:
+    id: currency-EUR
+- assertVisible:
+    id: me-currency
+    text: ".*Euro.*"
+# One entry -> fixed
+- tapOn:
+    id: tab-timeline
+- tapOn:
+    id: "tl-empty-add|tl-add"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "4"
+      EXPECT: ".*4.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-currency
+- tapOn:
+    id: me-currency
+- assertVisible: ".*Currency is set.*"
+- assertNotVisible:
+    id: "currency-.*"
+- tapOn:
+    id: currency-fixed-ok
+# Delete everything -> O1, and the currency can change again
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-delete
+- tapOn:
+    id: me-delete
+- tapOn:
+    id: me-delete-confirm
+- extendedWaitUntil:
+    visible:
+      id: onb-start
+    timeout: 10000
+- tapOn:
+    id: onb-currency-change
+- assertVisible:
+    id: "currency-.*"
