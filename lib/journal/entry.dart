@@ -46,6 +46,7 @@ class Entry {
     required this.createdAt,
     required this.updatedAt,
     this.category,
+    this.customCategory,
     this.feeling,
     this.note = '',
     this.goalId,
@@ -59,8 +60,15 @@ class Entry {
   final int amountMinor;
   final String currency;
 
-  /// Spends only.
+  /// Spends only: a built-in category, or [customCategory] (one of them).
   final SpendCategory? category;
+
+  /// Spends only: the id of a category of your own (Plus, decision 79),
+  /// "c:…"; null with a built-in [category].
+  final String? customCategory;
+
+  /// The spend's category id, built-in or your own (Summary, the CSV).
+  String? get categoryId => category?.id ?? customCategory;
 
   /// Spends only; null = not answered.
   final Feeling? feeling;
@@ -87,7 +95,8 @@ class Entry {
     'type': type.id,
     'amount_minor': amountMinor,
     'currency': currency,
-    'category': category?.id,
+    // One field for both: a built-in's id ("food") or your own's ("c:…").
+    'category': categoryId,
     'feeling': feeling?.id,
     'note': note,
     'goal_id': goalId,
@@ -112,6 +121,10 @@ class Entry {
         category: type == EntryType.spent
             ? SpendCategory.fromId(m['category'])
             : null,
+        customCategory:
+            type == EntryType.spent && CustomCategory.isCustomId(m['category'])
+            ? m['category'] as String
+            : null,
         feeling: type == EntryType.spent ? Feeling.fromId(m['feeling']) : null,
         note: (m['note'] as String?) ?? '',
         goalId: type == EntryType.saved ? m['goal_id'] as String? : null,
@@ -124,10 +137,13 @@ class Entry {
     }
   }
 
+  /// A built-in [category] replaces a [customCategory] and the other way
+  /// round; [clearCategory] clears both.
   Entry copyWith({
     EntryType? type,
     int? amountMinor,
     SpendCategory? category,
+    String? customCategory,
     bool clearCategory = false,
     Feeling? feeling,
     bool clearFeeling = false,
@@ -141,7 +157,12 @@ class Entry {
     type: type ?? this.type,
     amountMinor: amountMinor ?? this.amountMinor,
     currency: currency,
-    category: clearCategory ? null : (category ?? this.category),
+    category: clearCategory || customCategory != null
+        ? null
+        : (category ?? this.category),
+    customCategory: clearCategory || category != null
+        ? null
+        : (customCategory ?? this.customCategory),
     feeling: clearFeeling ? null : (feeling ?? this.feeling),
     note: note ?? this.note,
     goalId: clearGoal ? null : (goalId ?? this.goalId),
@@ -158,6 +179,7 @@ class Entry {
       other.amountMinor == amountMinor &&
       other.currency == currency &&
       other.category == category &&
+      other.customCategory == customCategory &&
       other.feeling == feeling &&
       other.note == note &&
       other.goalId == goalId &&
@@ -172,6 +194,7 @@ class Entry {
     amountMinor,
     currency,
     category,
+    customCategory,
     feeling,
     note,
     goalId,

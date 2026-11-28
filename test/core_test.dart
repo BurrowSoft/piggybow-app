@@ -78,8 +78,8 @@ void main() {
       expect(text, isNot(contains('sentry.io')), reason: flavor);
       // No Sentry project yet: crash reports are off in every build.
       expect(e['SENTRY_DSN'], isEmpty, reason: flavor);
-      // Links appear only once each page is live (a link never 404s). Both
-      // pages are.
+      // Links appear only once each page is live (a link never 404s). The
+      // privacy policy and support pages are; the terms page isn't yet.
       expect(
         e['PRIVACY_URL'],
         'https://www.piggybow.com/privacy',
@@ -90,6 +90,7 @@ void main() {
         'https://www.piggybow.com/support',
         reason: flavor,
       );
+      expect(e['TERMS_URL'], isEmpty, reason: flavor);
     }
   });
 
@@ -125,6 +126,7 @@ void main() {
       final text = File(path).readAsStringSync();
       expect(text, isNot(contains('QUICK_REMINDER_NOW')), reason: path);
       expect(text, isNot(contains('PLUS_FAKE_STORE')), reason: path);
+      expect(text, isNot(contains('PLUS_ROWS_OWNED')), reason: path);
     }
   });
 }

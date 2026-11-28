@@ -24,6 +24,7 @@ import '../../tips/tips.dart';
 import '../add/entry_sheet.dart';
 import '../goal/rainbow.dart';
 import '../pig/pig_view.dart';
+import '../plus/plus_screen.dart';
 import '../shell/tab_top.dart';
 
 /// Home (plan §3.2): the pig and its line, the reminder offer after the first
@@ -40,7 +41,7 @@ class _HomeData {
   const _HomeData({
     required this.entries,
     required this.goals,
-    required this.active,
+    required this.actives,
     required this.progress,
     required this.picks,
     required this.plan,
@@ -50,8 +51,10 @@ class _HomeData {
 
   final List<Entry> entries;
   final List<Goal> goals;
-  final Goal? active;
-  final int progress;
+
+  /// The active goals, oldest first, and each one's progress by id.
+  final List<Goal> actives;
+  final Map<String, int> progress;
   final Set<HappyPick> picks;
   final int? plan;
   final bool offerAnswered;
@@ -95,12 +98,12 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     final store = context.services.journal;
     final entries = await store.entries();
     final goals = await store.goals();
-    final active = await store.activeGoal();
+    final actives = await store.activeGoals();
     final data = _HomeData(
       entries: entries,
       goals: goals,
-      active: active,
-      progress: active == null ? 0 : await store.goalProgress(active),
+      actives: actives,
+      progress: {for (final g in actives) g.id: await store.goalProgress(g)},
       picks: await store.picks(),
       plan: await store.planMinor(),
       offerAnswered: await store.reminderOfferAnswered(),
@@ -155,7 +158,24 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
                     const _ReminderOffer(),
                   ],
                   const SizedBox(height: 16),
-                  _GoalCard(data: data),
+                  if (data.actives.isEmpty)
+                    _NoGoalCard(data: data)
+                  else ...[
+                    for (final (i, g) in data.actives.indexed) ...[
+                      if (i > 0) const SizedBox(height: 16),
+                      _GoalCard(
+                        id: i == 0 ? 'goal-card' : 'goal-card-${i + 1}',
+                        goal: g,
+                        progress: data.progress[g.id] ?? 0,
+                        currency: data.currency,
+                      ),
+                    ],
+                    // Builds with Plus only; without it, the paywall first.
+                    if (context.services.plus != null) ...[
+                      const SizedBox(height: 8),
+                      const _NewGoal(),
+                    ],
+                  ],
                   const SizedBox(height: 16),
                   _WeekCard(data: data),
                   const SizedBox(height: 16),
@@ -298,10 +318,10 @@ class _ReminderOffer extends StatelessWidget {
   }
 }
 
-/// The active goal's rainbow and numbers; with none, a way to start one
-/// (and the last goal's name if it was reached).
-class _GoalCard extends StatelessWidget {
-  const _GoalCard({required this.data});
+/// With no active goal: a way to start one (and the last goal's name if it
+/// was reached).
+class _NoGoalCard extends StatelessWidget {
+  const _NoGoalCard({required this.data});
 
   final _HomeData data;
 
@@ -309,78 +329,122 @@ class _GoalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final locale = context.session.device.localeName;
-    final goal = data.active;
-    if (goal == null) {
-      final last = data.goals.firstOrNull;
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(l10n.goalCardEmptyTitle, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 4),
-              Text(
-                l10n.goalCardEmptyBody,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+    final last = data.goals.firstOrNull;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(l10n.goalCardEmptyTitle, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(
+              l10n.goalCardEmptyBody,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
-              const SizedBox(height: 12),
+            ),
+            const SizedBox(height: 12),
+            TestId(
+              'goal-create',
+              button: true,
+              child: FilledButton.tonal(
+                onPressed: () => context.push(GoalRoutes.create),
+                child: ButtonLabel(l10n.goalCardEmptyButton),
+              ),
+            ),
+            // Under the button (decision 57).
+            if (last != null && last.status == GoalStatus.reached) ...[
+              const SizedBox(height: 8),
+              // Opens the reached goal's read-only detail (R1).
               TestId(
-                'goal-create',
+                'goal-card-reached',
                 button: true,
-                child: FilledButton.tonal(
-                  onPressed: () => context.push(GoalRoutes.create),
-                  child: ButtonLabel(l10n.goalCardEmptyButton),
-                ),
-              ),
-              // Under the button (decision 57).
-              if (last != null && last.status == GoalStatus.reached) ...[
-                const SizedBox(height: 8),
-                // Opens the reached goal's read-only detail (R1).
-                TestId(
-                  'goal-card-reached',
-                  button: true,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: () => context.push(GoalRoutes.detail(last.id)),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(minHeight: 48),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              l10n.goalCardReached(last.name),
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: theme.colorScheme.onSurface,
-                              ),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => context.push(GoalRoutes.detail(last.id)),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minHeight: 48),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            l10n.goalCardReached(last.name),
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface,
                             ),
                           ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ],
+              ),
             ],
-          ),
+          ],
         ),
-      );
-    }
+      ),
+    );
+  }
+}
+
+/// Home's New goal, under the last goal card, in builds with Plus: a goal
+/// beside the ones there needs Plus (decision 79), so without it the
+/// paywall opens first.
+class _NewGoal extends StatelessWidget {
+  const _NewGoal();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return TestId(
+      'home-new-goal',
+      button: true,
+      child: FilledButton.tonalIcon(
+        onPressed: () async {
+          if (!await requirePlus(context)) return;
+          if (context.mounted) unawaited(context.push(GoalRoutes.create));
+        },
+        icon: const Icon(Icons.add),
+        label: ButtonLabel(l10n.homeNewGoal),
+      ),
+    );
+  }
+}
+
+/// One active goal's rainbow and numbers; a tap opens it. With Plus there
+/// can be several, oldest first (decision 79).
+class _GoalCard extends StatelessWidget {
+  const _GoalCard({
+    required this.id,
+    required this.goal,
+    required this.progress,
+    required this.currency,
+  });
+
+  /// The card's test id: goal-card for the first, then goal-card-2 and on.
+  final String id;
+  final Goal goal;
+  final int progress;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final locale = context.session.device.localeName;
     final percent = goalPercent(
-      progressMinor: data.progress,
+      progressMinor: progress,
       targetMinor: goal.targetMinor,
     );
-    final saved = formatMoney(data.progress, data.currency, locale);
-    final target = formatMoney(goal.targetMinor, data.currency, locale);
+    final saved = formatMoney(progress, currency, locale);
+    final target = formatMoney(goal.targetMinor, currency, locale);
     return TestId(
-      'goal-card',
+      id,
       button: true,
       child: Card(
         clipBehavior: Clip.antiAlias,
@@ -463,7 +527,7 @@ class _WeekCard extends StatelessWidget {
           SummaryEntry(
             type: e.type.id,
             amountMinor: e.amountMinor,
-            category: e.category?.id,
+            category: e.categoryId,
             feeling: e.feeling?.id,
             localDate: e.localDate,
           ),

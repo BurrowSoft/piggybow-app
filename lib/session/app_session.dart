@@ -13,7 +13,6 @@ import '../core/device.dart';
 import '../core/local_prefs.dart';
 import '../core/policy.dart';
 import '../data/models.dart';
-import '../data/plus.dart' show CancelForDelete;
 import '../data/repositories.dart';
 
 /// Onboarding and sign-in routes. Paths never carry user data (they end up
@@ -73,7 +72,6 @@ class AppSession extends ChangeNotifier {
     required this.account,
     required this.prefs,
     required this.device,
-    required this.aiEnabled,
     required this.shippedLocales,
     this.anonStart = false,
     this.onAnonymousStart,
@@ -153,10 +151,6 @@ class AppSession extends ChangeNotifier {
   /// An email sign-in: the text from "How was your day?", if any, becomes
   /// that account's new-entry draft (decision 216, review N2).
   final Future<void> Function(String userId, String timeZone)? onSignedIn;
-
-  /// This build offers AI on this platform (AppConfig.aiOn, PLAN-ai-golive
-  /// §4). A person sees AI only when [aiShown].
-  final bool aiEnabled;
 
   /// Language codes the build ships (the ARB files), English first. The beta
   /// ships English only, so the Language step is skipped (decision 32).
@@ -297,12 +291,6 @@ class AppSession extends ChangeNotifier {
   AuthUser? get user => _user;
   AccountState? get accountState => _accountState;
 
-  /// UX ruling 1 (23 Nov): AI shows only with this build's AI for the
-  /// platform AND get_me().ai_available. No account yet (signed out, the
-  /// no-signup start, a restore in progress): false. Me → AI is the way in,
-  /// with its own consent sheet. Every AI surface reads this one rule.
-  bool get aiShown => aiEnabled && (_accountState?.aiAvailable ?? false);
-
   /// The locale dates are formatted in (decision 89): the app language in
   /// the device's region (en-US "October 2", en-GB "2 October"), else the
   /// profile country's, else the language's default (en → en_US).
@@ -402,9 +390,9 @@ class AppSession extends ChangeNotifier {
   }
 
   /// What the Consent screen agrees to, each with the app's language (decision 224).
-  /// Never an AI item: the AI consent is asked only in Me → AI, through its
-  /// confirmation sheet (UX, 23 Nov), so a sign-up, a no-signup start or a
-  /// re-consent never records, changes or withdraws it.
+  /// Never an AI item: the AI consent is asked only where AI is turned on,
+  /// through its own sheet, so a sign-up, a no-signup start or a re-consent
+  /// never records, changes or withdraws it.
   List<ConsentItem> _consentsNow() {
     final ui = _locale.languageCode;
     return [
@@ -715,9 +703,6 @@ class AppSession extends ChangeNotifier {
       _reconnect?.cancel();
       final fromCopy = _fromCopy;
       _fromCopy = false;
-      // UX ruling 1: aiShown reads get_me().ai_available, so a reconnect that
-      // finds the server switch changed must rebuild (critic step 7).
-      final wasAi = _accountState?.aiAvailable;
       _accountState = state;
       // An offline start opened on the stored session, which may predate an
       // email confirmed elsewhere (03, row 6b): ask the server once online.
@@ -735,9 +720,8 @@ class AppSession extends ChangeNotifier {
       }
       // Only an account that was the device copy can change what's shown
       // or routed (consents, settings): then the session notifies. A
-      // mid-session blip changes nothing, so it never rebuilds routes;
-      // except when the server's AI switch changed meanwhile (aiShown).
-      if (fromCopy || linked || wasAi != state.aiAvailable) notifyListeners();
+      // mid-session blip changes nothing, so it never rebuilds routes.
+      if (fromCopy || linked) notifyListeners();
     } on TimeoutException {
       // Still offline: the next tick tries again.
     } on AppFailure catch (e) {
@@ -1026,35 +1010,6 @@ class AppSession extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Me → AI on/off (reflect.md): on = the AI consent, then ai_enabled;
-  /// off = ai_enabled off, then the recorded withdrawal. On failure the
-  /// account is reloaded (what the server really has) and the error
-  /// rethrown: the switch shows the saved state (decision 111).
-  Future<void> setAiEnabled(bool on) async {
-    final consent = ConsentItem(ConsentKind.ai, PolicyVersions.ai, granted: on);
-    try {
-      if (on) {
-        await account.recordConsents([consent]);
-        await account.updateAiSettings(enabled: true);
-      } else {
-        await account.updateAiSettings(enabled: false);
-        await account.recordConsents([consent]);
-      }
-    } on AppFailure {
-      await refreshAccount();
-      rethrow;
-    }
-    _accountWrites++;
-    final s = _accountState;
-    if (s != null) {
-      _accountState = s.copyWith(
-        aiEnabled: on,
-        consents: {...s.consents, ConsentKind.ai: consent},
-      );
-    }
-    notifyListeners();
-  }
-
   /// The privacy-change notice (019), dismissed with "Got it". It goes at
   /// once and blocks nothing: a failed save brings it back on the next read,
   /// the honest result (as the web). `invalid_value` means another notice
@@ -1087,28 +1042,6 @@ class AppSession extends ChangeNotifier {
     } on AppFailure catch (e) {
       if (e.code == 'invalid_value') await refreshAccount();
     }
-  }
-
-  /// Me → AI tone / focus areas. Throws [AppFailure] (decision 111).
-  Future<void> updateAiStyle({Tone? tone, Set<FocusArea>? focus}) async {
-    try {
-      await account.updateAiSettings(tone: tone, focus: focus);
-    } on AppFailure {
-      await _signOutIfAccountGone();
-      rethrow;
-    }
-    _accountWrites++;
-    _accountState = _accountState?.copyWith(tone: tone, focusAreas: focus);
-    notifyListeners();
-  }
-
-  /// The balance a reflect call returned (Me → AI credits stays current).
-  void applyCredits(int balance) {
-    final s = _accountState;
-    if (s == null || s.creditBalance == balance) return;
-    _accountWrites++;
-    _accountState = s.copyWith(creditBalance: balance);
-    notifyListeners();
   }
 
   /// Me → Appearance (decision 133): this device only.
@@ -1199,10 +1132,6 @@ class AppSession extends ChangeNotifier {
   /// device forgets the session and the user's local copies (pending
   /// check-ins, drafts, caches; decision 85). Sign in then says it's done.
   /// Throws [AppFailure] if the server didn't delete (nothing is wiped).
-  /// Set just before a delete whose Plus came from the web: the deleted
-  /// notice then says "cancelled now" or "within a day" (web #331).
-  CancelForDelete? deletedPlusNote;
-
   Future<void> deleteAccount() async {
     final uid = _user?.id;
     if (uid == null) return;

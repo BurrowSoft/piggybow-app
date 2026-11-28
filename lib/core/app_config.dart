@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kReleaseMode;
 import 'package:flutter/services.dart' show appFlavor;
 import 'package:flutter/widgets.dart';
 
@@ -21,8 +21,10 @@ class AppConfig {
     this.appLockEnabled = true,
     this.plusEnabled = false,
     this.plusFakeStore = false,
+    this.plusRowsOwned = false,
     this.privacyUrl = '',
     this.supportUrl = '',
+    this.termsUrl = '',
   });
 
   factory AppConfig.fromEnvironment() {
@@ -49,15 +51,27 @@ class AppConfig {
         'APP_LOCK_ENABLED',
         defaultValue: true,
       ),
-      plusEnabled: const bool.fromEnvironment('PLUS_ENABLED'),
+      // Plus stays out of every release build, Android and iPhone alike,
+      // until its own release PR lifts this with its gates met (decision 79).
+      // kReleaseMode is a compile-time constant: true there, so this is
+      // false whatever the env file says.
+      plusEnabled: const bool.fromEnvironment('PLUS_ENABLED') && !kReleaseMode,
       // Rows only: a debug build of staging, never a release or prod build
       // (kDebugMode is a compile-time false there).
       plusFakeStore:
           kDebugMode &&
           flavor == Flavor.staging &&
           const bool.fromEnvironment('PLUS_FAKE_STORE'),
+      // Rows only, and only on top of the rows' store: the same guard, so
+      // never a release or prod build either.
+      plusRowsOwned:
+          kDebugMode &&
+          flavor == Flavor.staging &&
+          const bool.fromEnvironment('PLUS_FAKE_STORE') &&
+          const bool.fromEnvironment('PLUS_ROWS_OWNED'),
       privacyUrl: const String.fromEnvironment('PRIVACY_URL'),
       supportUrl: const String.fromEnvironment('SUPPORT_URL'),
+      termsUrl: const String.fromEnvironment('TERMS_URL'),
       fakeNow: isProd
           ? null
           : DateTime.tryParse(const String.fromEnvironment('FAKE_NOW')),
@@ -108,19 +122,27 @@ class AppConfig {
   /// settings.
   final bool appLockEnabled;
 
-  /// Piggybow Plus: the store plumbing only (no Plus UI in v0.1). Off
-  /// everywhere.
+  /// Piggybow Plus (decision 79): its row in Me, the paywall and its
+  /// features. Never in a release build yet (fromEnvironment above), and off
+  /// in every env file (a test checks).
   final bool plusEnabled;
 
-  /// PLUS_FAKE_STORE: a store with a price that never buys, for the
+  /// PLUS_FAKE_STORE: a store with prices that never buys, for the
   /// tester's rows. Debug builds of staging only.
   final bool plusFakeStore;
 
-  /// The website's privacy policy and support pages, once each is live
-  /// (PRIVACY_URL, SUPPORT_URL). Empty = no link anywhere in the app, so a
-  /// link never opens a page that isn't there yet.
+  /// PLUS_ROWS_OWNED: that store reports an active yearly purchase, so the
+  /// tester's rows see Plus on with nothing bought. Debug builds of staging
+  /// only, and only with PLUS_FAKE_STORE.
+  final bool plusRowsOwned;
+
+  /// The website's privacy policy, support and terms of use pages, once
+  /// each is live (PRIVACY_URL, SUPPORT_URL, TERMS_URL). Empty = no link
+  /// anywhere in the app, so a link never opens a page that isn't there
+  /// yet.
   final String privacyUrl;
   final String supportUrl;
+  final String termsUrl;
 }
 
 enum Flavor {

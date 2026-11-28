@@ -355,16 +355,14 @@ void main() {
       expect(w, contains('max_build_duration: 60'), reason: name);
     }
 
-    final workflows = Directory('.github/workflows')
-        .listSync()
-        .whereType<File>()
-        .map((f) => f.readAsStringSync());
-    final ciFlutter = {
-      for (final w in workflows)
-        ...RegExp(r'flutter-version: (\S+)')
-            .allMatches(w)
-            .map((m) => m.group(1)),
-    };
+    // CI's Flutter: the release its own action sets up.
+    final ciFlutter = RegExp(r'^\s*version=(\S+)$', multiLine: true)
+        .allMatches(
+          File('.github/actions/flutter/action.yml').readAsStringSync(),
+        )
+        .map((m) => m.group(1))
+        .toSet();
+    expect(ciFlutter, hasLength(1));
     final cmFlutter = RegExp(r'flutter: (\S+)')
         .allMatches(codemagic)
         .map((m) => m.group(1))

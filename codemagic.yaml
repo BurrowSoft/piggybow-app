@@ -24,7 +24,7 @@ workflows:
     integrations:
       app_store_connect: piggybow_asc
     environment:
-      flutter: 3.47.5 # keep in step with .github/workflows/ci.yaml
+      flutter: 3.47.5 # keep in step with .github/actions/flutter/action.yml
       xcode: "26.6" # quoted: YAML would read 26.10 as 26.1
       cocoapods: default
       ios_signing:
@@ -63,7 +63,7 @@ workflows:
     integrations:
       app_store_connect: piggybow_asc
     environment:
-      flutter: 3.47.5 # keep in step with .github/workflows/ci.yaml
+      flutter: 3.47.5 # keep in step with .github/actions/flutter/action.yml
       xcode: "26.6" # quoted: YAML would read 26.10 as 26.1
       cocoapods: default
       ios_signing:

@@ -203,6 +203,8 @@ void main() {
     expect(workflow, contains(r'-lt 16384'));
     expect(workflow, contains(r'"$ZIPALIGN" -c -P 16'));
     expect(workflow, contains('merged-manifest.xml'));
+    // Printed in the run, so a reviewer reads it without the AAB.
+    expect(workflow, contains('cat merged-manifest.xml'));
     expect(workflow, contains('native-libs.txt'));
     expect(
       gradle,
@@ -231,14 +233,21 @@ void main() {
   });
 
   test('one Flutter version everywhere', () {
-    final versions = {
-      for (final f in Directory(
-        '.github/workflows',
-      ).listSync().whereType<File>())
-        ...RegExp(r'flutter-version: (\S+)')
-            .allMatches(f.readAsStringSync())
-            .map((m) => m.group(1)),
-    };
-    expect(versions, hasLength(1));
+    // CI's Flutter is the one release its own action sets up; no workflow
+    // names another.
+    final action = File('.github/actions/flutter/action.yml').readAsStringSync();
+    expect(
+      RegExp(r'^\s*version=(\S+)$', multiLine: true).allMatches(action),
+      hasLength(1),
+    );
+    for (final f in Directory(
+      '.github/workflows',
+    ).listSync().whereType<File>()) {
+      expect(
+        f.readAsStringSync(),
+        isNot(contains('flutter-version:')),
+        reason: f.path,
+      );
+    }
   });
 }

@@ -47,25 +47,6 @@ class ConsentItem {
   int get hashCode => Object.hash(kind, version, granted);
 }
 
-/// AI tone (`user_settings.tone`).
-enum Tone { warm, direct, brief }
-
-/// Focus areas (`user_settings.focus_areas`); [id] is the stored value and
-/// the Semantics id suffix (`setup-focus-<id>`).
-enum FocusArea {
-  sleep('sleep'),
-  stress('stress'),
-  work('work'),
-  study('study'),
-  relationships('relationships'),
-  family('family'),
-  health('health'),
-  selfEsteem('self_esteem');
-
-  const FocusArea(this.id);
-  final String id;
-}
-
 @immutable
 class ReminderTime {
   const ReminderTime(this.hour, this.minute);
@@ -91,14 +72,10 @@ class ReminderTime {
 @immutable
 class SetupChoices {
   const SetupChoices({
-    this.focusAreas = const {},
-    this.tone = Tone.warm,
     this.reminderOn = true,
     this.reminderTime = ReminderTime.defaultTime,
   });
 
-  final Set<FocusArea> focusAreas;
-  final Tone tone;
   final bool reminderOn;
   final ReminderTime reminderTime;
 }
@@ -142,15 +119,10 @@ class AccountState {
     this.locale,
     this.reminderOn = true,
     this.reminderTime = ReminderTime.defaultTime,
-    this.creditBalance = 0,
-    this.aiAvailable = false,
-    this.aiEnabled = false,
     this.policyNoticeId,
     this.policyNoticeSeen,
     this.policyNoticeV2Id,
     this.policyNoticeV2Seen,
-    this.tone = Tone.warm,
-    this.focusAreas = const {},
   });
 
   /// The latest consent per kind.
@@ -171,15 +143,6 @@ class AccountState {
   /// `user_settings.reminder_on` / `reminder_time` (Me → Daily reminder).
   final bool reminderOn;
   final ReminderTime reminderTime;
-
-  /// AI credits (`get_my_credits().balance`): Delete account warns when > 0.
-  final int creditBalance;
-
-  /// `get_me().ai_available`: the global AI switch (decision 110).
-  final bool aiAvailable;
-
-  /// `user_settings.ai_enabled` (Me → AI).
-  final bool aiEnabled;
 
   /// `get_me().policy_notice_id` (019): the privacy-change notice that's out,
   /// or null (none).
@@ -210,20 +173,6 @@ class AccountState {
     return id != null && id.isNotEmpty && id != policyNoticeV2Seen && policyNoticeSlug(id) != null;
   }
 
-  /// `user_settings.tone` / `focus_areas` (Me → AI).
-  final Tone tone;
-  final Set<FocusArea> focusAreas;
-
-  /// AI consent at [version], granted (the latest record).
-  bool hasAiConsent(String version) {
-    final c = consents[ConsentKind.ai];
-    return c != null && c.granted && c.version == version;
-  }
-
-  /// Reflect is shown only with all three (reflect.md "Gate").
-  bool aiUsable(String consentVersion) =>
-      aiAvailable && aiEnabled && hasAiConsent(consentVersion);
-
   /// The device copy for an offline start (decision 93), per user id.
   Map<String, Object?> toCacheJson() => {
     'consents': [for (final c in consents.values) c.toJson()],
@@ -233,15 +182,10 @@ class AccountState {
     'locale': locale,
     'reminderOn': reminderOn,
     'reminderTime': reminderTime.wire,
-    'creditBalance': creditBalance,
-    'aiAvailable': aiAvailable,
-    'aiEnabled': aiEnabled,
     'policyNoticeId': policyNoticeId,
     'policyNoticeSeen': policyNoticeSeen,
     'policyNoticeV2Id': policyNoticeV2Id,
     'policyNoticeV2Seen': policyNoticeV2Seen,
-    'tone': tone.name,
-    'focusAreas': [for (final f in focusAreas) f.id],
   };
 
   /// Null when the copy is unreadable (an older or damaged one): the app
@@ -266,21 +210,14 @@ class AccountState {
         locale: j['locale'] as String?,
         reminderOn: j['reminderOn'] as bool,
         reminderTime: ReminderTime(int.parse(time[0]), int.parse(time[1])),
-        creditBalance: (j['creditBalance'] as num).toInt(),
-        aiAvailable: j['aiAvailable'] as bool,
-        aiEnabled: j['aiEnabled'] as bool,
+        // A copy from an earlier build also has its AI settings fields
+        // (creditBalance, aiAvailable, aiEnabled, tone, focusAreas): unread.
         // Absent in a copy from an older build: no notice until get_me says.
         policyNoticeId: j['policyNoticeId'] as String?,
         policyNoticeSeen: j['policyNoticeSeen'] as String?,
         // Absent in a copy from a build before 1.4.2: none until get_me says.
         policyNoticeV2Id: j['policyNoticeV2Id'] as String?,
         policyNoticeV2Seen: j['policyNoticeV2Seen'] as String?,
-        tone: Tone.values.byName(j['tone'] as String),
-        focusAreas: {
-          for (final id in (j['focusAreas'] as List).cast<String>())
-            for (final f in FocusArea.values)
-              if (f.id == id) f,
-        },
       );
     } on Object {
       return null;
@@ -295,12 +232,8 @@ class AccountState {
     String? locale,
     bool? reminderOn,
     ReminderTime? reminderTime,
-    int? creditBalance,
-    bool? aiEnabled,
     String? policyNoticeSeen,
     String? policyNoticeV2Seen,
-    Tone? tone,
-    Set<FocusArea>? focusAreas,
   }) => AccountState(
     consents: consents ?? this.consents,
     onboarded: onboarded,
@@ -309,15 +242,10 @@ class AccountState {
     locale: locale ?? this.locale,
     reminderOn: reminderOn ?? this.reminderOn,
     reminderTime: reminderTime ?? this.reminderTime,
-    creditBalance: creditBalance ?? this.creditBalance,
-    aiAvailable: aiAvailable,
-    aiEnabled: aiEnabled ?? this.aiEnabled,
     policyNoticeId: policyNoticeId,
     policyNoticeSeen: policyNoticeSeen ?? this.policyNoticeSeen,
     policyNoticeV2Id: policyNoticeV2Id,
     policyNoticeV2Seen: policyNoticeV2Seen ?? this.policyNoticeV2Seen,
-    tone: tone ?? this.tone,
-    focusAreas: focusAreas ?? this.focusAreas,
   );
 
   /// Privacy, terms and 18+ are granted at the given current versions.

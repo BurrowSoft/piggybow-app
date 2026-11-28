@@ -18,7 +18,8 @@ permissions:
 jobs:
   # Budget: analyze + test are skipped on a docs-only PR (*.md), and the
   # tracker check runs only when what Gradle resolves can change (android/,
-  # pubspec) or a workflow does (it may change how Gradle runs). Not
+  # pubspec) or a workflow or our own action does (it may change how Gradle
+  # runs; the Flutter action holds the Flutter release). Not
   # paths-ignore: a workflow skipped by a path filter leaves the required check
   # "Expected" forever, while a skipped job counts as passed.
   changes:
@@ -29,12 +30,13 @@ jobs:
       app: ${{ steps.c.outputs.app }}
       deps: ${{ steps.c.outputs.deps }}
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          persist-credentials: false
       - id: c
         run: |
-          deps_in() { if echo "$1" | grep -qE '^(android/|pubspec\.(yaml|lock)$|\.github/workflows/)'; then echo true; else echo false; fi; }
+          deps_in() { if echo "$1" | grep -qE '^(android/|pubspec\.(yaml|lock)$|\.github/(workflows|actions)/)'; then echo true; else echo false; fi; }
           if [ "${{ github.event_name }}" != "pull_request" ]; then
             # A master push or a manual run: everything.
             echo "app=true" >> "$GITHUB_OUTPUT"; echo "deps=true" >> "$GITHUB_OUTPUT"; exit 0
@@ -57,11 +59,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          flutter-version: 3.47.5
-          channel: stable
+          persist-credentials: false
+      - uses: ./.github/actions/flutter
+        with:
           cache: true
       - run: flutter pub get --enforce-lockfile
       - name: l10n parity (every shipped ARB matches app_en.arb)
@@ -102,8 +104,10 @@ jobs:
     if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.deps == 'true') }}
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: 17
@@ -126,10 +130,8 @@ jobs:
           restore-keys: |
             gradle-${{ runner.os }}-trackers-
             gradle-${{ runner.os }}-apk-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./.github/actions/flutter
         with:
-          flutter-version: 3.47.5
-          channel: stable
           cache: true
       - run: flutter build apk --config-only --flavor staging
       - name: verifyNoTrackingDeps
@@ -172,8 +174,10 @@ jobs:
           sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
             /usr/local/lib/node_modules /opt/hostedtoolcache/CodeQL
           df -h /
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4.9.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
           java-version: 17
@@ -189,10 +193,8 @@ jobs:
           key: gradle-${{ runner.os }}-apk-${{ hashFiles('android/**/*.gradle*', 'android/gradle.properties', 'android/gradle/wrapper/gradle-wrapper.properties', 'pubspec.lock') }}
           restore-keys: |
             gradle-${{ runner.os }}-apk-
-      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+      - uses: ./.github/actions/flutter
         with:
-          flutter-version: 3.47.5
-          channel: stable
           cache: true
       # Builds only: no APK is uploaded (the repo is public).
       - run: flutter build apk --debug --flavor staging --dart-define-from-file=env/staging.json

@@ -53,6 +53,9 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
   int? _plan;
   String? _currency;
   bool _granted = true;
+
+  /// How many goals were reached (Reached goals shows from the first).
+  int _reached = 0;
   (String, String)? _version;
   AppServices? _services;
   AppLifecycleListener? _lifecycle;
@@ -68,6 +71,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
       final services = _services = context.services;
       services.journal.addListener(_load);
       services.appLock?.addListener(_lockChanged);
+      services.plus?.addListener(_lockChanged);
       // Notifications can be turned on or off outside the app.
       _lifecycle = AppLifecycleListener(onResume: _load);
       _load();
@@ -79,11 +83,13 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
   void dispose() {
     _services?.journal.removeListener(_load);
     _services?.appLock?.removeListener(_lockChanged);
+    _services?.plus?.removeListener(_lockChanged);
     _lifecycle?.dispose();
     super.dispose();
   }
 
-  /// The App lock row follows the lock: on, off, or off after a restore.
+  /// The App lock row follows the lock: on, off, or off after a restore;
+  /// the Plus rows follow Plus.
   void _lockChanged() {
     if (mounted) setState(() {});
   }
@@ -96,12 +102,14 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final plan = await store.planMinor();
     final currency = await store.currency() ?? 'USD';
     final granted = await services.notifications.granted();
+    final reached = (await store.reachedGoals()).length;
     if (!mounted) return;
     setState(() {
       _picks = picks;
       _plan = plan;
       _currency = currency;
       _granted = granted;
+      _reached = reached;
     });
   }
 
@@ -165,10 +173,16 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final l10n = AppLocalizations.of(context);
     final services = context.services;
     final session = context.readSession;
+    final plus = services.plus;
     if (!await confirmDeleteEverything(
       context,
       body: l10n.deleteAllBody,
       idPrefix: 'me-delete',
+      // Erasing the app never cancels the store's subscription: it says so,
+      // with the way to the store's page.
+      note: plus != null && plus.active
+          ? PlusKeepsRunning(plus: plus, idPrefix: 'me-delete')
+          : null,
     )) {
       return;
     }
@@ -192,6 +206,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final reminderTime =
         session.accountState?.reminderTime ?? ReminderTime.defaultTime;
     final lock = services.appLock;
+    final plus = services.plus;
     return TestId.container(
       'me-screen',
       child: Scaffold(
@@ -202,6 +217,22 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                 primary: true,
                 padding: const EdgeInsets.only(bottom: 24),
                 children: [
+                  // Only in builds with Plus (decision 79).
+                  if (plus != null) ...[
+                    _Section(l10n.meSecPlus),
+                    _Row(
+                      id: 'me-plus',
+                      title: l10n.mePlus,
+                      subtitle: plus.active ? l10n.mePlusOn : l10n.mePlusOff,
+                      onTap: () => context.push(PlusRoutes.paywall),
+                    ),
+                    if (plus.active)
+                      _Row(
+                        id: 'me-plus-manage',
+                        title: l10n.plusManage,
+                        onTap: plus.manage,
+                      ),
+                  ],
                   _Section(l10n.meSecPig),
                   _Row(
                     id: 'me-happy',
@@ -220,6 +251,14 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                         : formatMoney(plan, currency, locale),
                     onTap: () => _editPlan(currency, locale),
                   ),
+                  // From the first goal reached (for everyone; decision 79).
+                  if (_reached > 0)
+                    _Row(
+                      id: 'me-reached',
+                      title: l10n.meReachedGoals,
+                      subtitle: l10n.meReachedGoalsCount(_reached),
+                      onTap: () => context.push(MeRoutes.reached),
+                    ),
                   _Section(l10n.meSecMoney),
                   _Row(
                     id: 'me-currency',
@@ -232,6 +271,13 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                       await changeCurrency(context);
                       await _load();
                     },
+                  ),
+                  // For everyone: hiding is free; your own are Plus's.
+                  _Row(
+                    id: 'me-categories',
+                    title: l10n.meCategories,
+                    subtitle: l10n.meCategoriesSub,
+                    onTap: () => context.push(MeRoutes.categories),
                   ),
                   _Section(l10n.meSecReminders),
                   TestId(
@@ -300,7 +346,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                     id: 'me-export',
                     title: l10n.meExport,
                     subtitle: l10n.meExportHint,
-                    onTap: () => exportJournal(services),
+                    onTap: () => exportJournal(services, l10n: l10n),
                   ),
                   _Row(
                     id: 'me-delete',

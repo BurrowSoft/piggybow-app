@@ -2,13 +2,12 @@ import 'dart:async';
 
 import '../core/clock.dart';
 import 'models.dart';
-import 'plus.dart';
 import 'repositories.dart';
 
 /// An in-memory account backend for tests (and the session's test rows):
 /// the server's rules as the original app's migrations had them, minus
 /// everything Piggybow doesn't carry. v0.1 runs on [DeviceBackend].
-class FakeBackend implements AuthRepository, AccountRepository, PlusRepository {
+class FakeBackend implements AuthRepository, AccountRepository {
   FakeBackend({this.latency = Duration.zero, Clock? clock})
     : clock = clock ?? Clock();
 
@@ -266,15 +265,6 @@ class FakeBackend implements AuthRepository, AccountRepository, PlusRepository {
   /// Test hook: the token was refreshed.
   void fireSessionRefreshed() => _refreshed.add(null);
 
-  /// Test hook: the server's age signal switch.
-  bool ageSwitch = true;
-
-  @override
-  Future<bool> ageSignalOn() async {
-    await _tick();
-    return ageSwitch;
-  }
-
   /// What gotrue-dart does when a refresh is rejected: the session is
   /// removed on the client and a signedOut event fires (no error code).
   void dropSessionAfterFailedRefresh() {
@@ -315,15 +305,10 @@ class FakeBackend implements AuthRepository, AccountRepository, PlusRepository {
       locale: user.locale,
       reminderOn: user.reminderOn,
       reminderTime: user.reminderTime,
-      creditBalance: user.credits,
-      aiAvailable: aiGlobal,
-      aiEnabled: user.aiEnabled,
       policyNoticeId: policyNoticeId,
       policyNoticeSeen: user.policyNoticeSeen,
       policyNoticeV2Id: policyNoticeV2Id,
       policyNoticeV2Seen: user.policyNoticeV2Seen,
-      tone: user.tone,
-      focusAreas: Set.unmodifiable(user.focus),
     );
   }
 
@@ -362,10 +347,6 @@ class FakeBackend implements AuthRepository, AccountRepository, PlusRepository {
     if (id != policyNoticeId) throw const AppFailure('invalid_value');
     _signedIn.policyNoticeSeen = id;
   }
-
-  /// Sets a user's AI credit balance (tests: the Delete account warning).
-  void setCredits(String email, int balance) =>
-      _users[email.toLowerCase()]?.credits = balance;
 
   @override
   Future<void> updateReminder({
@@ -418,22 +399,6 @@ class FakeBackend implements AuthRepository, AccountRepository, PlusRepository {
   }
 
   @override
-  Future<void> updateAiSettings({
-    bool? enabled,
-    Tone? tone,
-    Set<FocusArea>? focus,
-  }) async {
-    await _tick();
-    final u = _signedIn;
-    if (enabled != null) u.aiEnabled = enabled;
-    if (tone != null) u.tone = tone;
-    if (focus != null) u.focus = Set.of(focus);
-  }
-
-  /// The global AI switch (get_me().ai_available).
-  bool aiGlobal = true;
-
-  @override
   Future<void> deleteMyAccount() async {
     await _tick();
     _users.remove(_signedIn.key);
@@ -455,54 +420,7 @@ class FakeBackend implements AuthRepository, AccountRepository, PlusRepository {
     _signedIn
       ..onboarded = true
       ..reminderOn = choices.reminderOn
-      ..reminderTime = choices.reminderTime
-      ..tone = choices.tone
-      ..focus = Set.of(choices.focusAreas);
-  }
-
-  /// Test hook: the signed-in person's entitlements row (null: none), as
-  /// the server would have written it.
-  Entitlement? entitlement;
-
-  /// Test hook: the row can't be read (every read fails).
-  bool entitlementUnreadable = false;
-
-  /// Test hook: what the last verifyPurchase sent; and a store that says no.
-  ({PlusSource store, String token, String productId})? lastVerify;
-  bool verifyRefuses = false;
-
-  /// Test hook: what a successful verify writes (null: leaves the row).
-  Entitlement? Function()? onVerify;
-
-  /// Test hook: the web's cancel-for-delete answer, and the calls made.
-  CancelForDelete cancelForDeleteResult = CancelForDelete.cancelled;
-  final cancelForDeleteCalls = <String>[];
-
-  @override
-  Future<CancelForDelete> cancelForDelete(String webOrigin) async {
-    cancelForDeleteCalls.add(webOrigin);
-    return webOrigin.isEmpty ? CancelForDelete.later : cancelForDeleteResult;
-  }
-
-  @override
-  Future<Entitlement?> myEntitlement() async {
-    await _tick();
-    _signedIn;
-    if (entitlementUnreadable) throw AppFailure.generic;
-    return entitlement;
-  }
-
-  @override
-  Future<void> verifyPurchase({
-    required PlusSource store,
-    required String token,
-    required String productId,
-  }) async {
-    await _tick();
-    _signedIn;
-    lastVerify = (store: store, token: token, productId: productId);
-    if (verifyRefuses) throw const AppFailure('plus_not_verified');
-    if (onVerify case final write?) entitlement = write();
+      ..reminderTime = choices.reminderTime;
   }
 }
 
@@ -532,12 +450,8 @@ class _FakeUser {
   String locale = 'en';
   bool reminderOn = true;
   ReminderTime reminderTime = ReminderTime.defaultTime;
-  int credits = 0;
-  bool aiEnabled = false;
   String? policyNoticeSeen;
   String? policyNoticeV2Seen;
-  Tone tone = Tone.warm;
-  Set<FocusArea> focus = {};
   final consents = <ConsentKind, ConsentItem>{};
 
   AuthUser toAuthUser() =>

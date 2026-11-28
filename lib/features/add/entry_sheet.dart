@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/button_label.dart';
@@ -10,13 +11,16 @@ import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../journal/category.dart';
 import '../../journal/entry.dart';
+import '../../journal/goal.dart';
 import '../../journal/journal_store.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../money/currency.dart';
 import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show PigReaction;
+import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../../theme/theme.dart';
+import '../plus/plus_screen.dart';
 
 /// Opens the Add sheet on [start] (Spent unless said), or the Edit sheet for
 /// [editing], on the root navigator: full height over the tab bar, so no
@@ -28,6 +32,7 @@ Future<bool> showEntrySheet(
   BuildContext context, {
   EntryType start = EntryType.spent,
   Entry? editing,
+  String? goalId,
 }) async {
   final l10n = AppLocalizations.of(context);
   final messenger = ScaffoldMessenger.maybeOf(context);
@@ -36,7 +41,7 @@ Future<bool> showEntrySheet(
     useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
-    builder: (_) => EntrySheet(start: start, editing: editing),
+    builder: (_) => EntrySheet(start: start, editing: editing, goalId: goalId),
   );
   if (saved == true && editing == null) {
     messenger?.showSnackBar(SnackBar(content: Text(l10n.addedSnack)));
@@ -53,10 +58,18 @@ bool get entrySheetOpen => _sheetsOpen > 0;
 /// A full-height sheet: Spent or Saved, the amount, a spend's category and
 /// feeling (or a save's goal), a note and the day.
 class EntrySheet extends StatefulWidget {
-  const EntrySheet({super.key, this.start = EntryType.spent, this.editing});
+  const EntrySheet({
+    super.key,
+    this.start = EntryType.spent,
+    this.editing,
+    this.goalId,
+  });
 
   final EntryType start;
   final Entry? editing;
+
+  /// A new save's goal to start with (a goal's own Add savings).
+  final String? goalId;
 
   @override
   State<EntrySheet> createState() => _EntrySheetState();
@@ -66,14 +79,35 @@ class _EntrySheetState extends State<EntrySheet> {
   late EntryType _type = widget.editing?.type ?? widget.start;
   final _amount = TextEditingController();
   final _note = TextEditingController();
+
+  /// A spend's category: a built-in, or one of your own (one or the other).
   SpendCategory? _category;
+  String? _custom;
   Feeling? _feeling;
+
+  /// The built-ins hidden from the sheet, and your own categories (oldest
+  /// first): what the grid offers (offeredCategories).
+  Set<SpendCategory> _hidden = const {};
+  List<CustomCategory> _customs = const [];
+  AppServices? _services;
 
   /// Null until the journal's currency and today are read.
   String? _currency;
   DateTime? _date;
   DateTime? _today;
   String? _goalName;
+
+  /// The active goals, oldest first, and the goal a save goes to. With two
+  /// or more (Plus, decision 79) the sheet lets the person choose.
+  List<Goal> _goals = const [];
+  String? _goalId;
+
+  /// A save's goal can be chosen: two or more active goals, and the entry
+  /// isn't a save already kept by a goal that's no longer active (reached
+  /// or ended: it stays there).
+  bool get _goalChoice =>
+      _goals.length >= 2 &&
+      (_goalId == null || _goals.any((g) => g.id == _goalId));
 
   /// Add was pressed: missing fields now say so.
   bool _tried = false;
@@ -93,10 +127,27 @@ class _EntrySheetState extends State<EntrySheet> {
     final e = widget.editing;
     if (e != null) {
       _category = e.category;
+      _custom = e.customCategory;
       _feeling = e.feeling;
       _note.text = e.note;
     }
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Your own categories are in the grid while Plus is on.
+      (_services = context.services).plus?.addListener(_plusChanged);
+      _load();
+    });
+  }
+
+  void _plusChanged() {
+    if (mounted) setState(() {});
+  }
+
+  bool get _hasCategory => _category != null || _custom != null;
+
+  Future<(Set<SpendCategory>, List<CustomCategory>)> _readCategories() async {
+    final store = context.services.journal;
+    return (await store.hiddenBuiltIns(), await store.customCategories());
   }
 
   Future<void> _load() async {
@@ -105,15 +156,26 @@ class _EntrySheetState extends State<EntrySheet> {
     final e = widget.editing;
     final currency = e?.currency ?? await store.currency() ?? 'USD';
     // A save shows where it goes: its own goal when it has one, else the
-    // active goal (where a new save goes).
-    final goalId = e?.goalId;
-    final goal = goalId != null
-        ? await store.goal(goalId)
-        : await store.activeGoal();
+    // goal it was opened for (if active), else the default goal (where a
+    // new save goes).
+    final active = await store.activeGoals();
+    final preset = widget.goalId;
+    final goalId =
+        e?.goalId ??
+        (active.any((g) => g.id == preset)
+            ? preset
+            : (await store.activeGoal())?.id);
+    final goal = goalId == null ? null : await store.goal(goalId);
+    if (!mounted) return;
+    final (hidden, customs) = await _readCategories();
     if (!mounted) return;
     final today = services.localDay.today;
     setState(() {
+      _hidden = hidden;
+      _customs = customs;
       _currency = currency;
+      _goals = active;
+      _goalId = goalId;
       _goalName = goal?.name;
       _today = today;
       _date = e?.date ?? today;
@@ -126,6 +188,7 @@ class _EntrySheetState extends State<EntrySheet> {
   @override
   void dispose() {
     _sheetsOpen--;
+    _services?.plus?.removeListener(_plusChanged);
     _amount.dispose();
     _note.dispose();
     super.dispose();
@@ -155,7 +218,7 @@ class _EntrySheetState extends State<EntrySheet> {
     final parsed = _parsed;
     if (_busy || currency == null || date == null || parsed == null) return;
     final spend = _type == EntryType.spent;
-    if (parsed.problem != null || (spend && _category == null)) {
+    if (parsed.problem != null || (spend && !_hasCategory)) {
       setState(() => _tried = true);
       return;
     }
@@ -174,8 +237,10 @@ class _EntrySheetState extends State<EntrySheet> {
           currency: currency,
           localDate: wireDate(date),
           category: _category,
+          customCategory: _custom,
           feeling: _feeling,
           note: _note.text,
+          goalId: spend ? null : _goalId,
         );
         // The pig answers what was just added (plan §4.4).
         services.lastAdd.value = !spend
@@ -192,11 +257,14 @@ class _EntrySheetState extends State<EntrySheet> {
             type: _type,
             amountMinor: parsed.minor!,
             category: _category,
-            clearCategory: _category == null,
+            customCategory: _custom,
+            clearCategory: !_hasCategory,
             feeling: _feeling,
             clearFeeling: _feeling == null,
             note: _note.text,
             localDate: wireDate(date),
+            // The goal chosen (several goals), else the one it has.
+            goalId: spend ? null : _goalId,
           ),
         );
       }
@@ -280,6 +348,63 @@ class _EntrySheetState extends State<EntrySheet> {
       lastDate: today,
     );
     if (picked != null && mounted) setState(() => _date = dateOnly(picked));
+  }
+
+  /// Add category (Plus): the paywall first without it, then the editor
+  /// over the sheet; the new category comes back picked.
+  Future<void> _addCategory() async {
+    // As for the date: the keyboard doesn't come back to the amount.
+    FocusManager.instance.primaryFocus?.unfocus();
+    if (!await requirePlus(context) || !mounted) return;
+    final id = await context.push<String>(CategoryRoutes.create);
+    if (!mounted) return;
+    final (hidden, customs) = await _readCategories();
+    if (!mounted) return;
+    setState(() {
+      _hidden = hidden;
+      _customs = customs;
+      if (id != null) {
+        _category = null;
+        _custom = id;
+      }
+    });
+  }
+
+  /// The grid: the categories offered (the spend's own and the one picked
+  /// always among them), then Add category in builds with Plus.
+  List<_Tile> _tiles(AppLocalizations l10n) {
+    final plus = context.services.plus;
+    final picked = _category?.id ?? _custom;
+    final byId = {for (final c in _customs) c.id: c};
+    final number = {for (final (i, c) in _customs.indexed) c.id: i + 1};
+    void pick(String id) => setState(() {
+      _category = SpendCategory.fromId(id);
+      _custom = _category == null ? id : null;
+    });
+    return [
+      for (final id in offeredCategories(
+        hidden: _hidden,
+        customs: _customs,
+        plus: plus?.active ?? false,
+        keep: [?widget.editing?.categoryId, ?picked],
+      ))
+        _Tile(
+          id: number.containsKey(id)
+              ? 'add-cat-custom-${number[id]}'
+              : 'add-cat-$id',
+          label: categoryName(l10n, id, byId),
+          icon: categoryIcon(id, byId),
+          selected: id == picked,
+          onTap: () => pick(id),
+        ),
+      if (plus != null)
+        _Tile(
+          id: 'add-cat-add',
+          label: l10n.categoryAdd,
+          icon: Icons.add,
+          onTap: _addCategory,
+        ),
+    ];
   }
 
   String _dateLabel(AppLocalizations l10n, DateTime date, DateTime today) {
@@ -448,11 +573,8 @@ class _EntrySheetState extends State<EntrySheet> {
                             style: theme.textTheme.titleSmall,
                           ),
                           const SizedBox(height: 8),
-                          _CategoryGrid(
-                            selected: _category,
-                            onPick: (c) => setState(() => _category = c),
-                          ),
-                          if (_tried && _category == null)
+                          _CategoryGrid(tiles: _tiles(l10n)),
+                          if (_tried && !_hasCategory)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Semantics(
@@ -465,6 +587,35 @@ class _EntrySheetState extends State<EntrySheet> {
                                 ),
                               ),
                             ),
+                        ] else if (_goalChoice) ...[
+                          // Several goals (Plus): which one this save is for,
+                          // one always picked, oldest goal first.
+                          Text(
+                            l10n.addSaveToward,
+                            style: theme.textTheme.titleSmall,
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final (i, g) in _goals.indexed)
+                                TestId(
+                                  'add-goal-${i + 1}',
+                                  button: true,
+                                  selected: _goalId == g.id,
+                                  child: ChoiceChip(
+                                    label: Text(g.name),
+                                    selected: _goalId == g.id,
+                                    showCheckmark: false,
+                                    onSelected: (_) => setState(() {
+                                      _goalId = g.id;
+                                      _goalName = g.name;
+                                    }),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ] else
                           Text(
                             _goalName == null
@@ -631,90 +782,104 @@ class _EntrySheetState extends State<EntrySheet> {
   }
 }
 
-/// The nine categories, three to a row; each row as tall as its tallest
-/// label (large text wraps, never cuts).
-class _CategoryGrid extends StatelessWidget {
-  const _CategoryGrid({required this.selected, required this.onPick});
+/// One cell of the category grid: a category, or Add category ([selected]
+/// null: an action, never picked).
+class _Tile {
+  const _Tile({
+    required this.id,
+    required this.label,
+    required this.icon,
+    this.selected,
+    required this.onTap,
+  });
 
-  final SpendCategory? selected;
-  final ValueChanged<SpendCategory> onPick;
+  final String id;
+  final String label;
+  final IconData icon;
+  final bool? selected;
+  final VoidCallback onTap;
+}
+
+/// The tiles, three to a row (a short last row keeps the same cell width);
+/// each row as tall as its tallest label (large text wraps, never cuts).
+class _CategoryGrid extends StatelessWidget {
+  const _CategoryGrid({required this.tiles});
+
+  final List<_Tile> tiles;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final accent = theme.colorScheme.primary;
-    const all = SpendCategory.values;
-    // One size for the nine labels: each word whole in its cell (a third of
-    // the row, less the gaps and padding), smaller only when it must.
+    // One size for every label: each word whole in its cell (a third of the
+    // row, less the gaps and padding), smaller only when it must.
     return LayoutBuilder(
       builder: (context, box) {
         final scaler = wholeWordsScaler(
           context,
-          texts: [for (final c in all) c.label(l10n)],
+          texts: [for (final t in tiles) t.label],
           style: theme.textTheme.bodySmall,
           available: (box.maxWidth - 16) / 3 - 16,
         );
+        Widget cell(_Tile t) {
+          final on = t.selected ?? false;
+          return TestId(
+            t.id,
+            button: true,
+            selected: t.selected,
+            child: Material(
+              color: on
+                  ? context.palette.pillBackground
+                  : theme.colorScheme.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: on ? accent : theme.colorScheme.outlineVariant,
+                  width: on ? 2 : 1,
+                ),
+              ),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: t.onTap,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 72),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(t.icon, color: on ? accent : null),
+                        const SizedBox(height: 4),
+                        Text(
+                          t.label,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodySmall,
+                          textScaler: scaler,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
         return Column(
           children: [
-            for (var row = 0; row < all.length; row += 3)
+            for (var row = 0; row < tiles.length; row += 3)
               Padding(
                 padding: const EdgeInsets.only(bottom: 8),
                 child: IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      for (final (i, c) in all.skip(row).take(3).indexed) ...[
+                      for (var i = 0; i < 3; i++) ...[
                         if (i > 0) const SizedBox(width: 8),
                         Expanded(
-                          child: TestId(
-                            'add-cat-${c.id}',
-                            button: true,
-                            selected: selected == c,
-                            child: Material(
-                              color: selected == c
-                                  ? context.palette.pillBackground
-                                  : theme.colorScheme.surface,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(
-                                  color: selected == c
-                                      ? accent
-                                      : theme.colorScheme.outlineVariant,
-                                  width: selected == c ? 2 : 1,
-                                ),
-                              ),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(12),
-                                onTap: () => onPick(c),
-                                child: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                    minHeight: 72,
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          c.icon,
-                                          color: selected == c ? accent : null,
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          c.label(l10n),
-                                          textAlign: TextAlign.center,
-                                          style: theme.textTheme.bodySmall,
-                                          textScaler: scaler,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
+                          child: row + i < tiles.length
+                              ? cell(tiles[row + i])
+                              : const SizedBox.shrink(),
                         ),
                       ],
                     ],

@@ -1,12 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/services.dart';
 import '../../data/device_backend.dart';
 import '../../export/csv_export.dart';
+import '../../journal/category.dart';
+import '../../l10n/gen/app_localizations.dart';
 import '../../session/app_session.dart';
 
 /// The folders in the app's own cache that hold export files: ours, and the
@@ -24,10 +27,16 @@ Future<void> sweepExports({Future<Directory> Function()? cache}) async {
 }
 
 /// The journal as a CSV (plan §3.8, csv_export.dart): oldest first, a save
-/// to a goal names it.
-Future<String> journalCsv(AppServices services) async {
+/// to a goal names it, a spend's category has its name beside its id (a
+/// built-in's in [l10n]'s language, the app's; English when none is given).
+Future<String> journalCsv(
+  AppServices services, {
+  AppLocalizations? l10n,
+}) async {
   final store = services.journal;
+  final words = l10n ?? lookupAppLocalizations(const Locale('en'));
   final goals = {for (final g in await store.goals()) g.id: g.name};
+  final customs = {for (final c in await store.customCategories()) c.id: c};
   final entries = await store.entries();
   return buildCsv([
     for (final e in entries.reversed)
@@ -36,7 +45,11 @@ Future<String> journalCsv(AppServices services) async {
         type: e.type.id,
         amountMinor: e.amountMinor,
         currency: e.currency,
-        category: e.category?.id,
+        category: e.categoryId,
+        categoryName: switch (e.categoryId) {
+          final id? => categoryName(words, id, customs),
+          null => null,
+        },
         feeling: e.feeling?.id,
         note: e.note,
         goalName: e.goalId == null ? null : goals[e.goalId],
@@ -50,6 +63,7 @@ Future<String> journalCsv(AppServices services) async {
 /// need an origin rect (sharePositionOrigin) when iOS ships.
 Future<void> exportJournal(
   AppServices services, {
+  AppLocalizations? l10n,
   Future<Directory> Function()? cache,
   Future<void> Function(XFile file)? share,
 }) async {
@@ -59,7 +73,7 @@ Future<void> exportJournal(
   final file = File(
     '${folder.path}/${csvFileName(services.localDay.today)}',
   );
-  await file.writeAsString(await journalCsv(services));
+  await file.writeAsString(await journalCsv(services, l10n: l10n));
   try {
     final xfile = XFile(file.path, mimeType: 'text/csv');
     await (share ?? _shareSheet)(xfile);
@@ -75,7 +89,9 @@ Future<void> _shareSheet(XFile file) =>
 /// the journal; the scheduled reminders; the app lock's secure storage,
 /// every id (only after the journal is gone); every pref (the device
 /// account, its reminder, language, appearance and the rest); every export
-/// file. Then a fresh device account, and onboarding from O1. The lock, the
+/// file; Plus's launch hint (the store's own record of a subscription stays:
+/// erasing the app never cancels it). Then a fresh device account, and
+/// onboarding from O1. The lock, the
 /// prefs and the account go only after the journal did; the other steps run
 /// even if one fails; false when any did (Me says so and offers Try again).
 /// Crash reports keep no cache while the build has no Sentry DSN (v0.1).
@@ -108,6 +124,7 @@ Future<bool> deleteEverything(
   final journalGone = await step(services.journal.wipe);
   await step(services.reminders.cancelAll);
   await step(() => sweepExports(cache: cache));
+  await step(() async => services.plus?.forget());
   if (!journalGone) return false;
   await step(() async => services.appLock?.eraseAll());
   await step(session.prefs.clear);

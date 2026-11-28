@@ -8,7 +8,7 @@ A Flutter app for Android and iPhone, by BurrowSoft.
 
 ## Build and test
 
-- Flutter 3.47.5 (Dart 3.13), as pinned in `.github/workflows/` and `codemagic.yaml`.
+- Flutter 3.47.5 (Dart 3.13), as pinned in `.github/actions/flutter/action.yml` (CI) and `codemagic.yaml`.
 - Flavors: `dev`, `staging` and `prod`, each with its own `env/<flavor>.json`:
 
   ```sh

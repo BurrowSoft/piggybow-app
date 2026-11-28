@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "b4916f41bd87bb84ac7c678a0117d69c2d9c2f74",
+  "ref": "b4916f41bd87bb84ac7c678a0117d69c2d9c2f74",
+  "run_id": "46149037492",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -74,6 +74,150 @@
       "test": "A2 a full spend: the largest amount, the longest category, 80 characters (320 dp, text ×2, light)",
       "sha256": "11c1fcbf356cfb25c65740cb4db1ca75b55819ac36a9da79293f5cee8cad24a7",
       "bytes": 191588,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_own-categories_dark_320x2.png",
+      "state": "PC4",
+      "test": "PC4 the Add sheet's grid: your own and Add category (320 dp, text ×2, dark)",
+      "sha256": "ff3adccb438b618334e8a943fab808cc209337b475d79118de786c317ab34c86",
+      "bytes": 160092,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_own-categories_light_320x2.png",
+      "state": "PC4",
+      "test": "PC4 the Add sheet's grid: your own and Add category (320 dp, text ×2, light)",
+      "sha256": "9ef417dd9d194c254b527b27a24e76e4db8b6897331e910abef9f35b487ed318",
+      "bytes": 160350,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_own-long-word_dark_320x2.png",
+      "state": "PC5",
+      "test": "PC5 the Add sheet's grid: one long word of your own (320 dp, text ×2, dark)",
+      "sha256": "fcec4527d8ec6cc06c416089fc447be11f883f7c29842f8ac80e639b58f588a4",
+      "bytes": 159546,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_own-long-word_light_320x2.png",
+      "state": "PC5",
+      "test": "PC5 the Add sheet's grid: one long word of your own (320 dp, text ×2, light)",
+      "sha256": "452c5e14208ee7e7be136cb8a3495ed18cbd83806e15af1d6d8931165ac4ac5f",
+      "bytes": 160716,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_save-toward_dark_320x2.png",
+      "state": "PG2",
+      "test": "PG2 the Add sheet: Save toward (320 dp, text ×2, dark)",
+      "sha256": "24f8f83621987391562c67057fd2514974f637818396ae97f2723eccb5ccab95",
+      "bytes": 115922,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "add_save-toward_light_320x2.png",
+      "state": "PG2",
+      "test": "PG2 the Add sheet: Save toward (320 dp, text ×2, light)",
+      "sha256": "09d98b00b39167d47dbb91bf8466e2a2398b2cd9e991b7368b3ed13f2e54c303",
+      "bytes": 116702,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "categories_plus-end_dark_320x2.png",
+      "state": "PC1",
+      "test": "PC1 Categories with Plus (320 dp, text ×2, dark)",
+      "sha256": "10753b735b5a4e67734d3e5a215ebd439be46fdc91df1c3d16d384f2fba18af0",
+      "bytes": 145964,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "categories_plus-end_light_320x2.png",
+      "state": "PC1",
+      "test": "PC1 Categories with Plus (320 dp, text ×2, light)",
+      "sha256": "96b66a20c4ac71b278085f42395a7b7778a59bf92114e8b864dead1bd47e781e",
+      "bytes": 145264,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "categories_plus-ended-end_dark_320x2.png",
+      "state": "PC2",
+      "test": "PC2 Categories after Plus ended (320 dp, text ×2, dark)",
+      "sha256": "a38aeb6946e89815ce7f36e37d3b621635fbef4fb4ebb4f7f6cfc6861cfb462a",
+      "bytes": 186090,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "categories_plus-ended-end_light_320x2.png",
+      "state": "PC2",
+      "test": "PC2 Categories after Plus ended (320 dp, text ×2, light)",
+      "sha256": "1ce94ad5fc26568d67855908b5a046a87e0295e17c254b93098834936f3756d9",
+      "bytes": 185652,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "categories_plus-ended_dark_320x2.png",
+      "state": "PC2",
+      "test": "PC2 Categories after Plus ended (320 dp, text ×2, dark)",
+      "sha256": "c9b8bff5202d174b38ff5560f45d8804992c9c96ad2691243fc3521a37e7acd7",
+      "bytes": 163418,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "categories_plus-ended_light_320x2.png",
+      "state": "PC2",
+      "test": "PC2 Categories after Plus ended (320 dp, text ×2, light)",
+      "sha256": "1fcc9c7f4d524e8138c9611d04cd0d82233e9c7d30ad5c1f853b7d21b58a0c55",
+      "bytes": 163617,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "categories_plus_dark_320x2.png",
+      "state": "PC1",
+      "test": "PC1 Categories with Plus (320 dp, text ×2, dark)",
+      "sha256": "c9b8bff5202d174b38ff5560f45d8804992c9c96ad2691243fc3521a37e7acd7",
+      "bytes": 163418,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "categories_plus_light_320x2.png",
+      "state": "PC1",
+      "test": "PC1 Categories with Plus (320 dp, text ×2, light)",
+      "sha256": "1fcc9c7f4d524e8138c9611d04cd0d82233e9c7d30ad5c1f853b7d21b58a0c55",
+      "bytes": 163617,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "category-edit_new_dark_320x2.png",
+      "state": "PC3",
+      "test": "PC3 a new category in the editor (320 dp, text ×2, dark)",
+      "sha256": "dbf2d3b49fd0285ed73df5c84af13d6c6421f6b1bd2ce2ddf32172e09840f226",
+      "bytes": 118631,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "category-edit_new_light_320x2.png",
+      "state": "PC3",
+      "test": "PC3 a new category in the editor (320 dp, text ×2, light)",
+      "sha256": "676364771d63f49a6c73a45c447c50603a0e91ce6c2175bfbf19095d96f8bd8f",
+      "bytes": 120012,
       "width": 960,
       "height": 2340
     },
@@ -438,6 +582,24 @@
       "height": 2340
     },
     {
+      "file": "home_new-goal_dark_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, dark)",
+      "sha256": "96c5270fe65fb82c3df6fc4cb6b03df09e965d8fd4ea330be5208789f124d363",
+      "bytes": 184101,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_new-goal_light_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, light)",
+      "sha256": "4e6cec57259bb0f80115b6a3075f784312f49c5dd9c9548558caa0edad172f22",
+      "bytes": 184696,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "home_reached-card_dark_320x2.png",
       "state": "H4",
       "test": "H4/H5 Home after a goal was reached: \"Reached:\" and the longest line (320 dp, text ×2, dark)",
@@ -524,6 +686,24 @@
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, light)",
       "sha256": "2ab26dc2922ca7af16458ecb275ac5313d020b3dc400c3379101dee826332276",
       "bytes": 162520,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_two-goals_dark_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, dark)",
+      "sha256": "83896c3cd90cec4967a9b4705b92d4fdd8246fa6f6c4bb5757b7e3161783fa43",
+      "bytes": 176035,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_two-goals_light_320x2.png",
+      "state": "PG1",
+      "test": "PG1 Home: two goals and New goal (320 dp, text ×2, light)",
+      "sha256": "073a5afd051c76ef6a589e6e812111c359049d62c2ea98e8560822a8fdd99b51",
+      "bytes": 177307,
       "width": 960,
       "height": 2340
     },
@@ -744,6 +924,42 @@
       "height": 2340
     },
     {
+      "file": "me_delete-plus-end_dark_320x2.png",
+      "state": "PL5",
+      "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, dark)",
+      "sha256": "485b02ded1b703f0cfba760782cb38677c61999dc51fff7034eaaa8efa2840b9",
+      "bytes": 211850,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-plus-end_light_320x2.png",
+      "state": "PL5",
+      "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, light)",
+      "sha256": "35d57164977d068eb7297e075a49daadaaf8bbeed42ed229be44c66fb7e573e1",
+      "bytes": 214207,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-plus_dark_320x2.png",
+      "state": "PL5",
+      "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, dark)",
+      "sha256": "90db2489639510c26f9691bf73a8d832fe198f69e99b67a793410bc64ae34925",
+      "bytes": 208850,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-plus_light_320x2.png",
+      "state": "PL5",
+      "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, light)",
+      "sha256": "afd9be5a6fea5e268bf6dc850f0203ff315f87b524e80a9f3957bb5ca3356ecb",
+      "bytes": 210989,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "me_lock-after-restore_dark_320x2.png",
       "state": "M10",
       "test": "M10 the App lock row after a restore (320 dp, text ×2, dark)",
@@ -819,8 +1035,8 @@
       "file": "me_plan-dialog-empty_dark_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
-      "sha256": "5e7b6e0da00bcc1a0612de3d0fb91f6415c7f9b80d400c40f7dbbe15210ff289",
-      "bytes": 166515,
+      "sha256": "9b5f748f95297e08b2518ffbf319e5f37014d24c3f252f25698ed8dff43cdc44",
+      "bytes": 157924,
       "width": 960,
       "height": 2340
     },
@@ -828,8 +1044,8 @@
       "file": "me_plan-dialog-empty_light_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
-      "sha256": "6d7d7b075553ee0a96105a9f38395605b3055e16ea67b28621589cdbd3b6c625",
-      "bytes": 168538,
+      "sha256": "4dd0fd2fc9c1a1eeec4a854c09ec5c08b09487582a2e712c6ba293af9c222c94",
+      "bytes": 159926,
       "width": 960,
       "height": 2340
     },
@@ -837,8 +1053,8 @@
       "file": "me_plan-dialog-set_dark_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
-      "sha256": "852b0bbe9409d27f6b3c402b263db90cf1e489cec2b6220683f644e524245072",
-      "bytes": 174272,
+      "sha256": "79fa7d4ca575c209d65aec9798bbac969e8fe7ff92b73ab39c37d5af03bfd34e",
+      "bytes": 170246,
       "width": 960,
       "height": 2340
     },
@@ -846,8 +1062,8 @@
       "file": "me_plan-dialog-set_light_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
-      "sha256": "f630a770cb7d5fdbe5202aa7a29c15ffbe0a51593605920c63e0c00ca670e662",
-      "bytes": 175687,
+      "sha256": "e8ab3b5be899cef92ac295518038384e3d2c27797daf7ff690ba95bf540dbafd",
+      "bytes": 172144,
       "width": 960,
       "height": 2340
     },
@@ -866,6 +1082,42 @@
       "test": "M2 Me, a plan set (320 dp, text ×2, light)",
       "sha256": "77d4c42ccf4cc1dc3514886576521308e9a3c38758dafc7b6104d056372b5586",
       "bytes": 181540,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plus-on_dark_320x2.png",
+      "state": "PL4",
+      "test": "PL4 Me's Plus rows, with Plus on (320 dp, text ×2, dark)",
+      "sha256": "d11ddb767317845784b4eaa3b2677abd57978a7ef32e2356b582780faca5a27a",
+      "bytes": 192561,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plus-on_light_320x2.png",
+      "state": "PL4",
+      "test": "PL4 Me's Plus rows, with Plus on (320 dp, text ×2, light)",
+      "sha256": "78aacf9bc8d9fe47052a2e4c79164d148cb64c511a3e50c289f8abbdfbf1ac40",
+      "bytes": 192811,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_reached-row_dark_320x2.png",
+      "state": "PG3",
+      "test": "PG3 Me's Reached goals row (320 dp, text ×2, dark)",
+      "sha256": "9ef69de8001e66052423b9a1e547906adec6da50329c0bcd6487523467c9479e",
+      "bytes": 187102,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_reached-row_light_320x2.png",
+      "state": "PG3",
+      "test": "PG3 Me's Reached goals row (320 dp, text ×2, light)",
+      "sha256": "8674ba162c7901565f49b53fc7066aeb528de014028721e0f79426c976205056",
+      "bytes": 187820,
       "width": 960,
       "height": 2340
     },
@@ -942,6 +1194,96 @@
       "height": 600
     },
     {
+      "file": "plus_offer-end_dark_320x2.png",
+      "state": "PL1",
+      "test": "PL1 the paywall, the offer (320 dp, text ×2, dark)",
+      "sha256": "64a2a2665785beb7515ecfc9a3ff707d48d77ee551418526e0a1f842eed003c6",
+      "bytes": 178940,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_offer-end_light_320x2.png",
+      "state": "PL1",
+      "test": "PL1 the paywall, the offer (320 dp, text ×2, light)",
+      "sha256": "91fdcaf29d4dfa8d696cd074e1072932910b5c426047df82a282aba8ab8a0af4",
+      "bytes": 179902,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_offer_dark_320x2.png",
+      "state": "PL1",
+      "test": "PL1 the paywall, the offer (320 dp, text ×2, dark)",
+      "sha256": "14b2094953b53421e4e7d1078dd1bcc23230358a46938d6852cb34f78f799c0a",
+      "bytes": 207855,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_offer_light_320x2.png",
+      "state": "PL1",
+      "test": "PL1 the paywall, the offer (320 dp, text ×2, light)",
+      "sha256": "16da99462733a87b9cb0461a79bf6c8190e7cf181b40e21122bed8324dbac81c",
+      "bytes": 206148,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_on-end_dark_320x2.png",
+      "state": "PL3",
+      "test": "PL3 the paywall with Plus on (320 dp, text ×2, dark)",
+      "sha256": "216a96edb1b8efcf07fb4d7a003239aa9e921cc603b46374c2146ec2c87802d1",
+      "bytes": 187563,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_on-end_light_320x2.png",
+      "state": "PL3",
+      "test": "PL3 the paywall with Plus on (320 dp, text ×2, light)",
+      "sha256": "227f1a775fabd264c6645530e1cd8a659bcd3661ab67500d058eca869f8eee19",
+      "bytes": 186354,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_on_dark_320x2.png",
+      "state": "PL3",
+      "test": "PL3 the paywall with Plus on (320 dp, text ×2, dark)",
+      "sha256": "314094b35a056bb6c64f6a15a9aaaf7f8e853d3ffe94eee7f27be6dfed16d42c",
+      "bytes": 187720,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_on_light_320x2.png",
+      "state": "PL3",
+      "test": "PL3 the paywall with Plus on (320 dp, text ×2, light)",
+      "sha256": "d815cd939d57398df26c663179afbec1491217d25ecdb8d37ed728fcae475d5b",
+      "bytes": 186441,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_pending_dark_320x2.png",
+      "state": "PL2",
+      "test": "PL2 a pending payment's note (320 dp, text ×2, dark)",
+      "sha256": "4f05794ec4302dc4abd4d5c9a0f1575178057dbf73fbe52b963b8004c2bbbc4c",
+      "bytes": 210995,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "plus_pending_light_320x2.png",
+      "state": "PL2",
+      "test": "PL2 a pending payment's note (320 dp, text ×2, light)",
+      "sha256": "ea3317e56c17185faf59b8e342ca4150e9eb6d79df1cbadeeb9214eee8b19145",
+      "bytes": 212426,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "rainbow_0_dark_320x1.png",
       "state": "R1",
       "test": "the rainbow at 0 % (dark)",
@@ -1012,6 +1354,24 @@
       "bytes": 52392,
       "width": 960,
       "height": 960
+    },
+    {
+      "file": "reached_list_dark_320x2.png",
+      "state": "PG4",
+      "test": "PG4 the Reached goals list (320 dp, text ×2, dark)",
+      "sha256": "8a5994e28b576789d609a0a09a7c5076b3afec82cdcbda7c0e35a8b64fae60a5",
+      "bytes": 114686,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "reached_list_light_320x2.png",
+      "state": "PG4",
+      "test": "PG4 the Reached goals list (320 dp, text ×2, light)",
+      "sha256": "12c1848211b0b3df0db642a00ee3fe672bb1c5fe2901be696cc83fa7cd4c5d20",
+      "bytes": 114450,
+      "width": 960,
+      "height": 2340
     },
     {
       "file": "summary_empty-week_dark_360x1.png",

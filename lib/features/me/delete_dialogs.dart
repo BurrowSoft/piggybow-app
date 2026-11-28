@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../core/button_label.dart';
 import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../session/app_session.dart';
+import '../plus/plus_entitlement.dart';
+import '../plus/plus_store.dart';
 import 'me_actions.dart';
 
 /// The two dialogs of Delete everything (plan §3.8, decision 67), shared by
@@ -12,11 +15,13 @@ import 'me_actions.dart';
 /// [idPrefix] names their buttons: `<prefix>-cancel`, `<prefix>-confirm`,
 /// `<prefix>-failed-ok` and `<prefix>-retry`.
 
-/// "Delete everything?" with [body]: true when the person confirms.
+/// "Delete everything?" with [body], and [note] below it when there is one:
+/// true when the person confirms.
 Future<bool> confirmDeleteEverything(
   BuildContext context, {
   required String body,
   required String idPrefix,
+  Widget? note,
 }) async {
   final l10n = AppLocalizations.of(context);
   final sure = await showDialog<bool>(
@@ -29,7 +34,13 @@ Future<bool> confirmDeleteEverything(
         l10n.deleteAllTitle,
         style: Theme.of(context).textTheme.headlineSmall,
       ),
-      content: Text(body),
+      content: note == null
+          ? Text(body)
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [Text(body), const SizedBox(height: 12), note],
+            ),
       actions: [
         TestId(
           '$idPrefix-cancel',
@@ -51,6 +62,45 @@ Future<bool> confirmDeleteEverything(
     ),
   );
   return sure == true;
+}
+
+/// Delete everything's line while Plus is on: erasing the app's data never
+/// cancels the store's subscription, so it says where to cancel it (the
+/// store this phone buys from), with the store's own subscription page.
+class PlusKeepsRunning extends StatelessWidget {
+  const PlusKeepsRunning({super.key, required this.plus, required this.idPrefix});
+
+  final PlusEntitlement plus;
+
+  /// Names the link: `<prefix>-plus-manage`.
+  final String idPrefix;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TestId.container(
+          '$idPrefix-plus-line',
+          child: Text(
+            plus.source == PlusSource.apple
+                ? l10n.deleteAllPlusApple
+                : l10n.deleteAllPlusPlay,
+          ),
+        ),
+        TestId(
+          '$idPrefix-plus-manage',
+          button: true,
+          child: TextButton(
+            onPressed: plus.manage,
+            child: ButtonLabel(l10n.plusManage),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// The wipe ([deleteEverything]: the journal first, and only then the lock,

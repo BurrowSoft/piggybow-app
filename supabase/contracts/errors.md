@@ -21,7 +21,6 @@ Every RPC raises `RAISE EXCEPTION '<code>'`; clients get the code as the error m
 | `ai_consent_required` | `update_settings(p_ai_enabled => true)`, `ai_begin_request` | No current AI consent, or AI switched off | Offer the AI consent |
 | `invalid_consent` | `record_consents` | Not a non-empty array of `{kind, version, granted}` | Generic error |
 | `unknown_version` | `record_consents` | `(kind, version)` not in `policy_versions` | Update the app |
-| `plus_required` | `letter_save` (032), `picture_reserve` (035) | No Piggybow Plus (no lapse grace for pictures) | Open the Plus screen |
 | `not_a_moment` | `picture_reserve` (035) | Pictures are added only to a starred moment | Generic error (the camera only shows on moments) |
 | `picture_limit` | `picture_reserve` (035) | The entry already has 3 pictures (starred or not, pending ones included) | Hide add; generic error if raced |
 | `picture_quota` | `picture_reserve`, `picture_confirm` (035) | This UTC month's picture bytes would pass the allowance (no refund on delete) | "You've added this month's pictures. More next month." |

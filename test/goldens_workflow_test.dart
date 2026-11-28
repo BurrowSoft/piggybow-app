@@ -27,7 +27,17 @@ void main() {
     expect(wf, contains('\npermissions:\n  contents: read\n'));
     expect(wf, isNot(contains(': write')));
     expect(wf, isNot(contains('secrets.')));
-    expect('uses: actions/checkout@'.allMatches(wf), hasLength(1));
+    // The commit rendered, and at ci/ only this workflow's own
+    // .github/actions/, for its Flutter action.
+    expect('uses: actions/checkout@'.allMatches(wf), hasLength(2));
+    expect(
+      wf,
+      contains(
+        '          path: ci\n'
+        '          sparse-checkout: .github/actions/\n'
+        '          sparse-checkout-cone-mode: false\n',
+      ),
+    );
     expect(wf, contains('persist-credentials: false'));
     // Job-level: a run joins the group only when its job runs.
     expect(
@@ -44,12 +54,17 @@ void main() {
     final check = jobSection(ci, 'check');
     expect(check, contains('flutter test'));
     final runner = valuesOf(check, 'runs-on');
-    final flutter = valuesOf(check, 'flutter-version');
     expect(runner, hasLength(1));
-    expect(flutter, hasLength(1));
     expect(valuesOf(wf, 'runs-on'), runner);
-    expect(valuesOf(wf, 'flutter-version'), flutter);
-    expect(valuesOf(wf, 'channel'), valuesOf(check, 'channel'));
+    // One Flutter action, which alone names the release: ci.yaml's from its
+    // own checkout, this one's from this workflow's own commit at ci/.
+    List<String> flutterActions(String yaml) => [
+      for (final u in valuesOf(yaml, 'uses'))
+        if (u.endsWith('.github/actions/flutter')) u,
+    ];
+    expect(flutterActions(check), ['./.github/actions/flutter']);
+    expect(flutterActions(wf), ['./ci/.github/actions/flutter']);
+    expect(wf, isNot(contains('flutter-version:')));
   });
 
   test('the ref reaches the shell only as env, and is checked', () {

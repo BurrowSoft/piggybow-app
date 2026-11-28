@@ -2,25 +2,25 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
-import 'package:piggybow/data/plus.dart';
 import 'package:piggybow/features/plus/iap_plus_store.dart';
 import 'package:piggybow/features/plus/plus_store.dart';
 
-/// The store layer over in_app_purchase (UX: approved, pinned), with a fake
-/// gateway: the proof plus-store gets, the account it's tied to, and each
+/// The store layer over in_app_purchase (pinned), with a fake gateway: the
+/// plans, what the store account owns, what a purchase reports, and each
 /// way a store's sheet can end.
 class _Gateway implements IapGateway {
   final stream = StreamController<List<PurchaseDetails>>.broadcast();
   bool available = true;
-  ({Object handle, String price, bool trial, String? offerPrice})? offer = (handle: 'p', price: '£49.99', trial: true, offerPrice: null);
-  bool? askedOffer;
-  final bought = <String>[];
-  final restoredFor = <String>[];
-  final completed = <PurchaseDetails>[];
+  List<PlusPlan> offered = const [
+    PlusPlan(period: PlusPeriod.year, price: '£19.99', trialOffered: true, handle: 'y'),
+  ];
+  List<PlusProof>? owns = const [];
+  Object? ownedError;
+  final bought = <Object>[];
+  final completed = <Object>[];
 
-  /// What a buy or a restore makes the store report.
+  /// What a buy makes the store report.
   List<PurchaseDetails> Function()? onBuy;
-  List<PurchaseDetails> Function()? onRestore;
 
   @override
   Stream<List<PurchaseDetails>> get purchases => stream.stream;
@@ -29,93 +29,85 @@ class _Gateway implements IapGateway {
   Future<bool> isAvailable() async => available;
 
   @override
-  Future<({Object handle, String price, bool trial, String? offerPrice})?> product(String id, {bool offer = false}) async {
-    askedOffer = offer;
-    return this.offer;
-  }
+  Future<List<PlusPlan>> plans() async => offered;
 
   @override
-  Future<bool> buy(Object handle, {required String applicationUserName}) async {
-    bought.add(applicationUserName);
+  Future<bool> buy(Object handle) async {
+    bought.add(handle);
     if (onBuy case final make?) scheduleMicrotask(() => stream.add(make()));
     return true;
   }
 
   @override
-  Future<void> restore({required String applicationUserName}) async {
-    restoredFor.add(applicationUserName);
-    if (onRestore case final make?) scheduleMicrotask(() => stream.add(make()));
+  Future<List<PlusProof>?> owned() async {
+    if (ownedError case final e?) throw e;
+    return owns;
   }
 
   @override
-  Future<void> complete(PurchaseDetails purchase) async => completed.add(purchase);
+  Future<void> complete(Object handle) async => completed.add(handle);
 
   int manageCalls = 0;
   @override
   Future<void> manageSubscriptions() async => manageCalls++;
 }
 
-PurchaseDetails _p(PurchaseStatus status, {String token = 'tok', String? id = 'GPA.1', bool pending = true}) =>
-    PurchaseDetails(
-      purchaseID: id,
-      productID: plusProductId,
-      verificationData: PurchaseVerificationData(
-        localVerificationData: '',
-        serverVerificationData: token,
-        source: 'test',
-      ),
-      transactionDate: null,
-      status: status,
-    )..pendingCompletePurchase = pending;
+PurchaseDetails _p(
+  PurchaseStatus status, {
+  String token = 'tok',
+  String? id = 'GPA.1',
+  String productId = plusPlayProductId,
+  bool pending = true,
+}) => PurchaseDetails(
+  purchaseID: id,
+  productID: productId,
+  verificationData: PurchaseVerificationData(
+    localVerificationData: '',
+    serverVerificationData: token,
+    source: 'test',
+  ),
+  transactionDate: null,
+  status: status,
+)..pendingCompletePurchase = pending;
+
+PlayPhase _phase(int micros, String price, String period, {int cycles = 0}) =>
+    (micros: micros, price: price, period: period, cycles: cycles);
+
+PlayOffer _offer(String plan, String? offerId, List<PlayPhase> phases) =>
+    (basePlanId: plan, offerId: offerId, phases: phases, handle: '$plan/${offerId ?? 'base'}');
 
 void main() {
-  const uid = 'AAAA1111-2222-4333-8444-555555555555';
+  const yearly = PlusPlan(period: PlusPeriod.year, price: '£19.99', trialOffered: true, handle: 'y');
 
-  test("Play's account id: sha-256 of the lower-cased uid, hex (as plus-store's)", () {
-    expect(playAccountId('abc'), 'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad');
-    expect(playAccountId(uid), playAccountId(uid.toLowerCase()));
-    expect(playAccountId(uid), hasLength(64));
-  });
-
-  test('the product: the store price and its own word on the free week', () async {
+  test("the plans: the store's own, none when purchases aren't available", () async {
     final g = _Gateway();
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
-    final p = (await store.product())!;
-    expect([p.price, p.trialOffered], ['£49.99', true]);
+    final plans = await store.plans();
+    expect([for (final p in plans) (p.period, p.price, p.trialOffered)], [
+      (PlusPeriod.year, '£19.99', true),
+    ]);
     g.available = false;
-    expect(await store.product(), isNull);
+    expect(await store.plans(), isEmpty);
   });
 
-  test("the Christmas special: asked only when told, the store's own first-year "
-      'price, and no free week beside it', () async {
-    final g = _Gateway();
-    final store = IapPlusStore(source: PlusSource.play, gateway: g);
-    await store.product();
-    expect(g.askedOffer, isFalse);
-    g.offer = (handle: 'o', price: '£49.99', trial: true, offerPrice: '£24.99');
-    final p = (await store.product(offer: true))!;
-    expect(g.askedOffer, isTrue);
-    expect([p.price, p.offerPrice, p.trialOffered], ['£49.99', '£24.99', false]);
-  });
-
-  test('Play: bought → the purchase token, tied to the hashed account; finished once verified', () async {
+  test('Play: bought → the purchase token, still to finish; finished once', () async {
     final g = _Gateway()..onBuy = () => [_p(PurchaseStatus.purchased, token: 'play-token')];
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
-    await store.product();
-    final out = await store.buy(accountId: uid);
-    expect(g.bought, [playAccountId(uid)]);
-    expect(out, isA<PlusBought>());
+    final out = await store.buy(yearly);
+    expect(g.bought, ['y']);
     final proof = (out as PlusBought).proof;
-    expect([proof.token, proof.productId], ['play-token', plusProductId]);
+    expect([proof.token, proof.productId, proof.needsFinish], ['play-token', plusPlayProductId, true]);
     await store.finish(proof);
     expect(g.completed, hasLength(1));
   });
 
-  test("Apple: the transaction id, tied to the uid itself (appAccountToken)", () async {
-    final g = _Gateway()..onBuy = () => [_p(PurchaseStatus.purchased, token: 'jws', id: '2000000123')];
+  test('Apple: the transaction id', () async {
+    final g = _Gateway()
+      ..onBuy = () => [
+        _p(PurchaseStatus.purchased, token: 'jws', id: '2000000123', productId: plusAppleYearlyId),
+      ];
     final store = IapPlusStore(source: PlusSource.apple, gateway: g);
-    final out = await store.buy(accountId: uid);
-    expect(g.bought, [uid.toLowerCase()], reason: 'a lower-case UUID, as appAccountToken');
+    final out = await store.buy(yearly);
     expect((out as PlusBought).proof.token, '2000000123');
   });
 
@@ -127,50 +119,65 @@ void main() {
     ]) {
       final g = _Gateway()..onBuy = () => [_p(status)];
       final store = IapPlusStore(source: PlusSource.play, gateway: g);
-      expect(await store.buy(accountId: uid), want, reason: '$status');
+      expect(await store.buy(yearly), want, reason: '$status');
     }
   });
 
-  test('no product here: a buy fails without a sheet', () async {
-    final g = _Gateway()..offer = null;
+  test('a plan the store gave no handle: a buy fails without a sheet', () async {
+    final g = _Gateway();
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
-    expect(await store.buy(accountId: uid), isA<PlusBuyFailed>());
+    const none = PlusPlan(period: PlusPeriod.year, price: '£19.99', trialOffered: false);
+    expect(await store.buy(none), isA<PlusBuyFailed>());
     expect(g.bought, isEmpty);
   });
 
-  test('Restore: what the store reports, once per token, and a purchase nobody waited for', () async {
+  test("owned: Plus's own purchases, once each; null whenever the store can't say", () async {
     final g = _Gateway()
-      ..onRestore = () => [
-        _p(PurchaseStatus.restored, token: 'a'),
-        _p(PurchaseStatus.restored, token: 'a'),
-        _p(PurchaseStatus.restored, token: 'b'),
+      ..owns = const [
+        PlusProof(token: 'a', productId: plusPlayProductId),
+        PlusProof(token: 'a', productId: plusPlayProductId),
+        PlusProof(token: 'x', productId: 'another_product'),
+        PlusProof(token: '', productId: plusPlayProductId),
+        PlusProof(token: 'b', productId: plusAppleYearlyId),
+        // No monthly plan (decision 85): its id is not Plus's.
+        PlusProof(token: 'm', productId: 'piggybow_plus_monthly'),
       ];
-    final store = IapPlusStore(source: PlusSource.play, gateway: g, restoreQuiet: Duration.zero);
-    await store.product();
-    // A purchase reported with nobody buying (finished elsewhere, or left over).
-    g.stream.add([_p(PurchaseStatus.purchased, token: 'left')]);
-    await Future<void>.delayed(Duration.zero);
-    final found = await store.restore(accountId: uid);
-    expect(g.restoredFor, [playAccountId(uid)]);
-    expect(found.map((p) => p.token), ['left', 'a', 'b']);
+    final store = IapPlusStore(source: PlusSource.play, gateway: g);
+    expect((await store.owned())!.map((p) => p.token), ['a', 'b']);
+    g.owns = const [];
+    expect(await store.owned(), isEmpty, reason: "the store's word: none");
+    g.owns = null;
+    expect(await store.owned(), isNull);
+    g
+      ..owns = const []
+      ..ownedError = StateError('the store app is not answering');
+    expect(await store.owned(), isNull);
+    g
+      ..ownedError = null
+      ..available = false;
+    expect(await store.owned(), isNull);
   });
 
-  test('finish: only a purchase still waiting to be completed', () async {
+  test('finish: only a purchase that still waits', () async {
     final g = _Gateway();
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
-    await store.finish(PlusProof(token: 't', productId: plusProductId, handle: _p(PurchaseStatus.purchased, pending: false)));
+    await store.finish(const PlusProof(token: 't', productId: plusPlayProductId, handle: 'done'));
     expect(g.completed, isEmpty);
+    await store.finish(
+      const PlusProof(token: 't', productId: plusPlayProductId, handle: 'open', needsFinish: true),
+    );
+    expect(g.completed, ['open']);
   });
 
-  // The Reviewer's payments audit (UX, 14 Nov): a cancelled or failed
-  // transaction still waiting is completed, or StoreKit reports it again on
-  // every start; one already completed is left alone.
+  // A cancelled or failed transaction still waiting is completed, or
+  // StoreKit reports it again on every start; one already completed is left
+  // alone.
   for (final status in [PurchaseStatus.canceled, PurchaseStatus.error]) {
-    test('${status.name}: completed if still waiting, never verified', () async {
+    test('${status.name}: completed if still waiting, never handed over', () async {
       final waiting = _p(status);
       final g = _Gateway()..onBuy = () => [waiting];
       final store = IapPlusStore(source: PlusSource.apple, gateway: g);
-      final out = await store.buy(accountId: uid);
+      final out = await store.buy(yearly);
       expect(out, status == PurchaseStatus.canceled ? isA<PlusCancelled>() : isA<PlusBuyFailed>());
       await Future<void>.delayed(Duration.zero);
       expect(g.completed, [waiting]);
@@ -181,23 +188,100 @@ void main() {
   test('a cancel already completed: nothing completed again', () async {
     final g = _Gateway()..onBuy = () => [_p(PurchaseStatus.canceled, pending: false)];
     final store = IapPlusStore(source: PlusSource.apple, gateway: g);
-    await store.buy(accountId: uid);
+    await store.buy(yearly);
     await Future<void>.delayed(Duration.zero);
     expect(g.completed, isEmpty);
   });
 
-  test('takeUnclaimed: purchases reported with nobody waiting, once each, '
-      'then gone', () async {
+  test('takeUnclaimed: purchases reported with nobody waiting, announced, once each, '
+      'then gone; another product is not Plus', () async {
     final g = _Gateway();
     final store = IapPlusStore(source: PlusSource.play, gateway: g);
+    var pings = 0;
+    store.changes.addListener(() => pings++);
     expect(store.takeUnclaimed(), isEmpty, reason: 'and now it listens');
+    g.stream.add([_p(PurchaseStatus.purchased, token: 'z', productId: 'another_product')]);
+    await Future<void>.delayed(Duration.zero);
+    expect(pings, 0);
     g.stream.add([
       _p(PurchaseStatus.purchased, token: 'left'),
       _p(PurchaseStatus.restored, token: 'left'),
       _p(PurchaseStatus.purchased, token: 'other'),
     ]);
     await Future<void>.delayed(Duration.zero);
-    expect(store.takeUnclaimed().map((p) => p.token), ['left', 'other']);
+    expect(pings, 1);
+    final taken = store.takeUnclaimed();
+    expect(taken.map((p) => p.token), ['left', 'other']);
+    expect(taken.every((p) => p.needsFinish), isTrue);
     expect(store.takeUnclaimed(), isEmpty);
+  });
+
+  group("playPlans: Play's base plans and offers, as the paywall shows them", () {
+    // No monthly plan (decision 85): a base plan by that name is ignored.
+    final monthly = _offer('monthly', null, [_phase(2990000, '£2.99', 'P1M')]);
+    final yearlyBase = _offer(plusPlayYearlyPlan, null, [_phase(19990000, '£19.99', 'P1Y')]);
+    final freeWeek = _offer(plusPlayYearlyPlan, 'free-week', [
+      _phase(0, 'Free', 'P1W', cycles: 1),
+      _phase(19990000, '£19.99', 'P1Y'),
+    ]);
+
+    test('the yearly plan alone; the free week on it when Play offers it, bought with it', () {
+      final plans = playPlans([yearlyBase, freeWeek, monthly]);
+      expect([for (final p in plans) (p.period, p.price, p.trialOffered, p.handle)], [
+        (PlusPeriod.year, '£19.99', true, 'yearly/free-week'),
+      ]);
+    });
+
+    test('7 days counts as a week; any other offer is not the free week', () {
+      final sevenDays = _offer(plusPlayYearlyPlan, 'seven', [
+        _phase(0, 'Free', 'P7D', cycles: 1),
+        _phase(19990000, '£19.99', 'P1Y'),
+      ]);
+      expect(playPlans([yearlyBase, sevenDays]).single.trialOffered, isTrue);
+      for (final other in [
+        _offer(plusPlayYearlyPlan, 'three-days', [_phase(0, 'Free', 'P3D', cycles: 1)]),
+        _offer(plusPlayYearlyPlan, 'two-weeks', [_phase(0, 'Free', 'P1W', cycles: 2)]),
+        _offer(plusPlayYearlyPlan, 'cheaper-first-year', [_phase(9990000, '£9.99', 'P1Y', cycles: 1)]),
+      ]) {
+        final plan = playPlans([yearlyBase, other]).single;
+        expect([plan.trialOffered, plan.handle], [false, 'yearly/base'], reason: '${other.offerId}');
+      }
+    });
+
+    test('a plan with no base plan, or no paid phase, is not on sale; other plans are ignored', () {
+      expect(playPlans([freeWeek, monthly]), isEmpty);
+      expect(playPlans([_offer(plusPlayYearlyPlan, null, [_phase(0, 'Free', 'P1Y')])]), isEmpty);
+      expect(playPlans([_offer('weekly', null, [_phase(990000, '£0.99', 'P1W')])]), isEmpty);
+      expect(playPlans(const []), isEmpty);
+    });
+
+    test('playFreeWeek: free, billed once, a week', () {
+      expect(playFreeWeek(_phase(0, 'Free', 'P1W', cycles: 1)), isTrue);
+      expect(playFreeWeek(_phase(0, 'Free', 'P7D', cycles: 1)), isTrue);
+      expect(playFreeWeek(_phase(1, '£0.00', 'P1W', cycles: 1)), isFalse);
+      expect(playFreeWeek(_phase(0, 'Free', 'P1W', cycles: 0)), isFalse);
+      expect(playFreeWeek(_phase(0, 'Free', 'P1M', cycles: 1)), isFalse);
+    });
+  });
+
+  test("Play's subscription page for Plus, in the Play Store app", () {
+    expect(
+      playSubscriptionsUri('com.burrowsoft.piggybow').toString(),
+      'https://play.google.com/store/account/subscriptions?sku=piggybow_plus&package=com.burrowsoft.piggybow',
+    );
+  });
+
+  test("Plus's product ids, as the stores' consoles name them, and nothing else", () {
+    // Yearly only (decision 85): Play's one base plan, Apple's one product.
+    expect(
+      [plusPlayProductId, plusPlayYearlyPlan, plusAppleYearlyId],
+      ['piggybow_plus', 'yearly', 'piggybow_plus_yearly'],
+    );
+    for (final id in [plusPlayProductId, plusAppleYearlyId]) {
+      expect(isPlusProduct(id), isTrue, reason: id);
+    }
+    for (final id in ['piggybow_plus_monthly', 'piggybow_plus_weekly', '']) {
+      expect(isPlusProduct(id), isFalse, reason: id);
+    }
   });
 }

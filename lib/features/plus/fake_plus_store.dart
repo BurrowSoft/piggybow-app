@@ -1,74 +1,63 @@
-import '../../data/plus.dart';
+import 'package:flutter/foundation.dart';
+
 import 'plus_store.dart';
 
-/// A store with no store behind it: tests, and dev builds on the in-memory
-/// backend. Each field is a test hook.
+/// A store with no store behind it, for tests. Each field is a test hook.
 class FakePlusStore implements PlusStore {
   FakePlusStore({
     this.source = PlusSource.play,
-    this.price = '£49.99',
+    this.yearly = '£19.99',
     this.trialOffered = true,
     this.available = true,
-    this.offerPrice,
-    this.offerFromStore = false,
   });
 
   @override
   final PlusSource source;
-  String price;
+
+  /// The yearly plan's price (Plus is yearly only, decision 85), as the
+  /// store formats it.
+  String yearly;
+
+  /// The free week on the yearly plan.
   bool trialOffered;
+
+  /// Purchases are available here (else no plans, and owned() can't say).
   bool available;
 
-  /// The store's first-year price (null: no offer); given only when asked.
-  String? offerPrice;
-
-  /// Apple-like (S11): [offerPrice] and [trialOffered] are the store's final
-  /// word, given whether or not the app asked for the offer.
-  bool offerFromStore;
-
-  /// Whether the last product() asked for the offer.
-  bool? askedOffer;
+  /// What owned() finds (null: the store can't say).
+  List<PlusProof>? owns = const [];
 
   /// What the next buy() answers (null: bought, with [nextToken]).
   PlusBuyOutcome? nextOutcome;
   String nextToken = 'fake-token-1';
 
-  /// What restore() finds.
-  List<PlusProof> owned = const [];
-
-  /// The account each buy and restore was tied to; the proofs finished.
-  final buys = <String>[];
-  final restores = <String>[];
+  /// The plans bought, owned() calls, and the proofs finished.
+  final bought = <PlusPeriod>[];
+  int ownedCalls = 0;
   final finished = <String>[];
 
   @override
-  Future<PlusProduct?> product({bool offer = false}) async {
-    askedOffer = offer;
-    return available
-        ? PlusProduct(
-            price: price,
-            trialOffered: trialOffered,
-            offerPrice: offer || offerFromStore ? offerPrice : null,
-            offerFromStore: offerFromStore,
-          )
-        : null;
-  }
+  Future<List<PlusPlan>> plans() async => available
+      ? [PlusPlan(period: PlusPeriod.year, price: yearly, trialOffered: trialOffered, handle: 'year')]
+      : const [];
 
   @override
-  Future<PlusBuyOutcome> buy({required String accountId}) async {
-    buys.add(accountId);
+  Future<PlusBuyOutcome> buy(PlusPlan plan) async {
+    bought.add(plan.period);
     return nextOutcome ??
-        PlusBought(PlusProof(token: nextToken, productId: plusProductId));
+        PlusBought(PlusProof(token: nextToken, productId: plusPlayProductId, needsFinish: true));
   }
 
   @override
-  Future<List<PlusProof>> restore({required String accountId}) async {
-    restores.add(accountId);
-    return owned;
+  Future<List<PlusProof>?> owned() async {
+    ownedCalls++;
+    return available ? owns : null;
   }
 
   @override
-  Future<void> finish(PlusProof proof) async => finished.add(proof.token);
+  Future<void> finish(PlusProof proof) async {
+    if (proof.needsFinish) finished.add(proof.token);
+  }
 
   /// What takeUnclaimed() hands over (once).
   List<PlusProof> unclaimed = [];
@@ -80,9 +69,24 @@ class FakePlusStore implements PlusStore {
     return out;
   }
 
-  /// How many times the store's manage sheet was asked for.
+  final _changes = _Changes();
+
+  @override
+  Listenable get changes => _changes;
+
+  /// The store reports [proof] with nobody waiting.
+  void report(PlusProof proof) {
+    unclaimed = [...unclaimed, proof];
+    _changes.ping();
+  }
+
+  /// How many times the store's subscription page was asked for.
   int manageCalls = 0;
 
   @override
   Future<void> manageSubscriptions() async => manageCalls++;
+}
+
+class _Changes extends ChangeNotifier {
+  void ping() => notifyListeners();
 }
