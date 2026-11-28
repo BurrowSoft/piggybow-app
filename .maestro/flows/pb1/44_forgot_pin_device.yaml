@@ -39,8 +39,11 @@ tags: [pb1, lock, devicelock]
     id: lock-forgot
 - tapOn:
     id: lock-forgot-device                                     # "Use phone screen lock"
-- extendedWaitUntil:                                           # the system's credential screen (system UI)
-    visible: ".*PIN.*"
+# The system's credential screen is a secure window: its text isn't in the
+# hierarchy Maestro reads, but its PIN keyboard (Gboard's number pad) is.
+- extendedWaitUntil:
+    visible:
+      id: "com.google.android.inputmethod.latin:id/key_pos_number_line1_1"
     timeout: 15000
 - takeScreenshot: 44-system-pin-prompt
 - inputText: "1111"
