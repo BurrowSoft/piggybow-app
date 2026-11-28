@@ -126,6 +126,41 @@ void main() {
     );
   });
 
+  test('a see-through pixel is refused, never flattened', () {
+    final seeThrough = [
+      for (final row in rgba) [...row],
+    ];
+    seeThrough[2][7] = 128; // Row 2, pixel 1's alpha.
+    expect(
+      () => toRgb(png(seeThrough, width: width)),
+      throwsA(
+        isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          'pixel (1, 2) has alpha 128, not opaque',
+        ),
+      ),
+    );
+  });
+
+  test('a chunk with a bad CRC is refused', () {
+    final broken = png(rgba, width: width);
+    // The last byte of IHDR's CRC (8 signature + 4 length + 4 type + 13 data
+    // + 4 CRC).
+    broken[8 + 4 + 4 + 13 + 3] ^= 0xff;
+    expect(
+      () => toRgb(broken),
+      throwsA(
+        isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          'chunk IHDR has a bad CRC',
+        ),
+      ),
+    );
+    expect(check(broken, width: width, height: 5), 'chunk IHDR has a bad CRC');
+  });
+
   test("the CRC is PNG's (IEND's is AE 42 60 82)", () {
     final iend = chunk('IEND', const []);
     expect(iend.sublist(8), [0xAE, 0x42, 0x60, 0x82]);

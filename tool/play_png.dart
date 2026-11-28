@@ -71,6 +71,10 @@ List<Chunk> chunks(Uint8List png) {
     if (at + 12 + length > png.length) {
       throw FormatException('chunk $type runs past the end');
     }
+    final crc = view.getUint32(at + 8 + length);
+    if (crc32(png, at + 4, at + 8 + length) != crc) {
+      throw FormatException('chunk $type has a bad CRC');
+    }
     found.add((
       type: type,
       data: Uint8List.sublistView(png, at + 8, at + 8 + length),
@@ -81,8 +85,9 @@ List<Chunk> chunks(Uint8List png) {
   return found;
 }
 
-/// [png] as an 8-bit RGB PNG: the same pixels with the alpha dropped (a
-/// screenshot's is opaque), and only IHDR, IDAT and IEND.
+/// [png] as an 8-bit RGB PNG: the same pixels with the alpha dropped, and
+/// only IHDR, IDAT and IEND. A screenshot is opaque; a pixel that isn't is
+/// refused, never flattened onto a guessed colour.
 Uint8List toRgb(Uint8List png) {
   final all = chunks(png);
   final ihdr = all
@@ -122,6 +127,11 @@ Uint8List toRgb(Uint8List png) {
     rows[o++] = 0;
     for (var x = 0; x < width; x++) {
       final p = y * stride + x * channels;
+      if (channels == 4 && pixels[p + 3] != 255) {
+        throw FormatException(
+          'pixel ($x, $y) has alpha ${pixels[p + 3]}, not opaque',
+        );
+      }
       rows[o++] = pixels[p];
       rows[o++] = pixels[p + 1];
       rows[o++] = pixels[p + 2];
