@@ -1,0 +1,45 @@
+appId: ${APP_ID}
+name: PR 5a a reminder a few minutes from now - set through Me's time picker (text input), with no entry today, so today's reminder is planned; the script then waits for it
+tags: [reminder-soon]
+# env (from pr32.sh): HH (1-12), MM (00-59), AMPM (AM|PM): about 3 minutes
+# from now in the emulator's zone (UTC). Picking a time turns the reminder on.
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+    permissions:
+      notifications: allow
+- extendedWaitUntil:
+    visible:
+      id: "onb-start|tab-home|start-error"
+    timeout: 120000
+- assertNotVisible:
+    id: start-error
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-reminder-time
+- tapOn:
+    id: me-reminder-time
+- tapOn: "Switch to text input mode"          # Material's time picker: the keyboard icon
+- tapOn: "Hour"
+- eraseText: 2
+- inputText: ${HH}
+- tapOn: "Minute"
+- eraseText: 2
+- inputText: ${MM}
+- tapOn: ${AMPM}
+- takeScreenshot: 48-time-picker
+- tapOn: "OK"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-reminder
+- assertVisible:
+    id: me-reminder
+    checked: true
+- takeScreenshot: 48-me-reminder-soon
+- pressKey: Home                              # the app in the background, as at 8 PM

@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+name: PR 5a the posted reminder - tapping it in the shade opens the app with the Add sheet
+tags: [reminder-soon]
+# Run by pr32.sh once the notification is posted and the shade is open.
+---
+- tapOn: "Piggybow"                           # the notification's title in the shade
+- extendedWaitUntil:
+    visible:
+      id: add-amount                          # the Add sheet
+    timeout: 15000
+- takeScreenshot: 49-add-from-reminder
+- assertVisible:
+    id: add-submit
+# "Never a second sheet over an open one" is pinned by #32's widget tests (each tap answered once).

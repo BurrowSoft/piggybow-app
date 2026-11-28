@@ -1,0 +1,33 @@
+appId: ${APP_ID}
+name: PR 5 the reminder offer with permission denied - Me shows "Notifications are off" and Open settings opens the system settings
+tags: [pb1, reminder]
+---
+- runFlow: ../../subflows/fresh_launch_notif_unset.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow: ../../subflows/add_first_spend.yaml
+- extendedWaitUntil:
+    visible:
+      id: home-reminder-yes
+    timeout: 10000
+- tapOn:
+    id: home-reminder-yes
+- extendedWaitUntil:
+    visible: "Don.t allow"
+    timeout: 10000
+- tapOn: "Don.t allow"
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-open-settings
+- assertVisible: ".*Notifications are off for Piggybow\\. Turn them on in your phone.s settings\\..*"
+- tapOn:
+    id: me-open-settings
+- extendedWaitUntil:
+    visible: ".*[Nn]otifications.*"     # the system's app notification settings (system UI)
+    timeout: 10000
+- takeScreenshot: reminder-open-settings
+- launchApp                             # back to the app (no clearState)
+- assertVisible:
+    id: me-open-settings

@@ -1,0 +1,36 @@
+# fresh_launch with the notification permission left unset (reminder flows).
+# A clean install state and first launch. The seed shows start-screen while
+# the session starts, then the tabs; from PR 4 on, onboarding (onb-start).
+# Another app's ANR dialog (seen on CI emulators) is dismissed: up to two
+# rounds, because a second one can appear right after the first is gone.
+# Piggybow's own ANR is never dismissed, so it still fails the flow.
+# The launch is tried at most twice: on Android 14, clearing the app's data
+# can remove the old task just after the relaunch and kill the new process
+# (logcat: "remove task", then "failed to attach"), leaving a blank window.
+# A real start hang fails both tries; a retry shows in commands.json.
+appId: ${APP_ID}
+---
+- retry:
+    maxRetries: 1
+    commands:
+      - launchApp:
+          clearState: true
+          clearKeychain: true
+          permissions:
+            notifications: unset  # the system prompt must appear (reminder flows)
+      - extendedWaitUntil:
+          visible:
+            id: "onb-start|tab-home|tab-timeline|start-error|android:id/aerr_wait"   # id matching is a regex
+          timeout: 120000                                                           # a debug cold start on a CI emulator can be slow
+- runFlow: dismiss_system_anr.yaml
+- extendedWaitUntil:
+    visible:
+      id: "onb-start|tab-home|tab-timeline|start-error|android:id/aerr_wait"
+    timeout: 60000
+- runFlow: dismiss_system_anr.yaml
+- extendedWaitUntil:
+    visible:
+      id: "onb-start|tab-home|tab-timeline|start-error"
+    timeout: 60000
+- assertNotVisible:
+    id: start-error                     # the start failed (or took over ~10 s): fail here, plainly

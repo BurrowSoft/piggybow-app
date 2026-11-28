@@ -1,0 +1,41 @@
+appId: ${APP_ID}
+name: PR 5 the reminder offer - No thanks hides it for good, asks for no permission, and leaves the reminder off
+tags: [pb1, reminder]
+---
+# Ids as in #32: home-reminder-yes / home-reminder-no (the offer under the
+# first entry), me-reminder (the switch).
+- runFlow: ../../subflows/fresh_launch_notif_unset.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow: ../../subflows/add_first_spend.yaml
+- extendedWaitUntil:
+    visible:
+      id: home-reminder-no
+    timeout: 10000
+- takeScreenshot: 39-reminder-offer
+- tapOn:
+    id: home-reminder-no
+- assertNotVisible:
+    id: home-reminder-yes             # the offer is gone
+- assertNotVisible: "Allow"           # No thanks asks for no permission
+# Gone for good: not after another entry, not after a relaunch
+- runFlow: ../../subflows/add_first_spend.yaml
+- assertNotVisible:
+    id: home-reminder-yes
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 20000
+- assertNotVisible:
+    id: home-reminder-yes
+# The reminder stays off in Me
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-reminder
+- assertVisible:
+    id: me-reminder
+    checked: false
