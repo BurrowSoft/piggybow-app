@@ -20,9 +20,11 @@ import '../../session/session_scope.dart';
 import '../../settings_rules/settings_rules.dart';
 import '../../theme/palettes.dart';
 import '../../theme/theme.dart';
+import '../../tips/pig_tips.dart';
 import '../currency/currency_picker.dart';
 import '../plus/plus_screen.dart';
 import '../shell/tab_top.dart';
+import '../tips/tips_ui.dart';
 import 'backup_screens.dart' show backupOffered, restoreOffered;
 import 'delete_dialogs.dart';
 import 'me_actions.dart';
@@ -322,6 +324,11 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                           context.services.journal.setLettersOn(on),
                     ),
                   ),
+                  // Pig tips (decision 90): only where they're offered. On
+                  // asks first (the consent sheet); off is at once.
+                  if (context.services.pigTips case final tips?
+                      when tips.offered)
+                    _PigTipsSwitch(tips: tips),
                   _Section(l10n.meSecMoney),
                   _Row(
                     id: 'me-currency',
@@ -695,6 +702,31 @@ class MeLockPage extends StatelessWidget {
   }
 }
 
+/// Me → Your pig → Pig tips: the switch follows the client's own state, so
+/// it shows on only once tips really are on.
+class _PigTipsSwitch extends StatelessWidget {
+  const _PigTipsSwitch({required this.tips});
+
+  final PigTips tips;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return ValueListenableBuilder<bool>(
+      valueListenable: tips.on,
+      builder: (context, on, _) => TestId(
+        'me-pig-tips',
+        child: SwitchListTile(
+          title: Text(l10n.mePigTips),
+          subtitle: Text(on ? l10n.mePigTipsOn : l10n.mePigTipsOff),
+          value: on,
+          onChanged: (value) => switchPigTips(context, tips, value),
+        ),
+      ),
+    );
+  }
+}
+
 /// Me → Your privacy (plan §3.8): the short version, in the app. The
 /// crash-report line only in builds with a Sentry DSN; after the lines, the
 /// full policy's link once PRIVACY_URL is set, opening in the browser.
@@ -709,6 +741,8 @@ class PrivacyScreen extends StatelessWidget {
     final lines = [
       l10n.privacy1,
       l10n.privacy2,
+      // Pig tips: only where they're offered (decision 90).
+      if (context.services.pigTips?.offered ?? false) l10n.privacyTips,
       if (config.sentryDsn.isNotEmpty) l10n.privacy3,
       l10n.privacy4,
       l10n.privacy5,

@@ -1,7 +1,7 @@
 {
-  "source_sha": "6ba95859959ee49bbda045b154a1a9a8c95199aa",
-  "ref": "6ba95859959ee49bbda045b154a1a9a8c95199aa",
-  "run_id": "46159510177",
+  "source_sha": "28ed141fd8713d32c87701349d267d4bddd40593",
+  "ref": "28ed141fd8713d32c87701349d267d4bddd40593",
+  "run_id": "46164465290",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -1374,6 +1374,24 @@
       "height": 2340
     },
     {
+      "file": "home_tip-report_dark_320x2.png",
+      "state": "TP3",
+      "test": "TP3 the Report sheet (320 dp, text ×2, dark)",
+      "sha256": "a8ee224c82bdb2a84c05770b2edb99af45931ceba2dda450f5434ae05df4cdc6",
+      "bytes": 166141,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_tip-report_light_320x2.png",
+      "state": "TP3",
+      "test": "TP3 the Report sheet (320 dp, text ×2, light)",
+      "sha256": "40efe7bfb02c5d8240d3e27607e6b0583571d16225f9b8b2c881469d061b8469",
+      "bytes": 166917,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "home_two-goals_dark_320x2.png",
       "state": "PG1",
       "test": "PG1 Home: two goals and New goal (320 dp, text ×2, dark)",
@@ -1425,6 +1443,24 @@
       "sha256": "224e318bb9e19a4993d08287ea399a62699fa358d6d9225df3bc61ad795b6f73",
       "bytes": 181950,
       "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "home_written-tip_dark_320x2.png",
+      "state": "TP2",
+      "test": "TP2 Home with a written tip (320 dp, text ×2, dark)",
+      "sha256": "3d02ffd80028cdb1a55f9573359f9bad47fa9e91959f309f9b8e71df52342408",
+      "bytes": 169818,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_written-tip_light_320x2.png",
+      "state": "TP2",
+      "test": "TP2 Home with a written tip (320 dp, text ×2, light)",
+      "sha256": "b3e9bc5fa311b7a2188bacac1e617d7708bb7cc2b266ec89c89cc3f2b9b59c47",
+      "bytes": 171350,
+      "width": 960,
       "height": 2340
     },
     {
@@ -1896,6 +1932,24 @@
       "height": 2340
     },
     {
+      "file": "me_pig-tips-on_dark_320x2.png",
+      "state": "TP4",
+      "test": "TP4 Me with pig tips on (320 dp, text ×2, dark)",
+      "sha256": "8b274c09b3ae18eec6ae819c89c96f9f40be31a618a099dad73d1b0ee8814e35",
+      "bytes": 176435,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_pig-tips-on_light_320x2.png",
+      "state": "TP4",
+      "test": "TP4 Me with pig tips on (320 dp, text ×2, light)",
+      "sha256": "f2f3a8738688368a4616018d2ca5e9b4d42cafc0fcbeb3f0cbbc8d5f3462e3a3",
+      "bytes": 176949,
+      "width": 960,
+      "height": 2340
+    },
+    {
       "file": "me_plan-dialog-empty_dark_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
@@ -1982,6 +2036,24 @@
       "test": "PG3 Me's Reached goals row (320 dp, text ×2, light)",
       "sha256": "b2558e1d5d0efafee79b2f3ef1560e1df220e3fe916482495b9875805c0c96bb",
       "bytes": 183272,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_tips-sheet_dark_320x2.png",
+      "state": "TP1",
+      "test": "TP1 the consent sheet (320 dp, text ×2, dark)",
+      "sha256": "5bfb241d54b25f2032330c7ffdcaa1752cfc183883b6cf8c9884054a773b894a",
+      "bytes": 200006,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_tips-sheet_light_320x2.png",
+      "state": "TP1",
+      "test": "TP1 the consent sheet (320 dp, text ×2, light)",
+      "sha256": "395695ea7e181bfd9f3d385692415cd0d307c98940bdeae6dcde108d3f9cbf08",
+      "bytes": 200939,
       "width": 960,
       "height": 2340
     },

@@ -117,8 +117,9 @@ abstract interface class PigTips {
   /// On: the consents recorded and an anonymous id on this phone.
   ValueListenable<bool> get on;
 
-  /// After the consent sheet's Agree, with the 18+ box checked: records the
-  /// AI and 18+ consents with these versions, then signs in anonymously.
+  /// After "Yes, turn on tips" on the consent sheet, which says tips are for
+  /// adults (18+, a line of the sheet, not a box): records the AI and 18+
+  /// consents with these versions, then signs in anonymously.
   /// Throws [PigTipsUnavailable] when the server can't be reached or refuses;
   /// tips stay off.
   Future<void> turnOn({required String aiVersion, required String age18Version});

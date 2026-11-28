@@ -27,6 +27,7 @@ import '../../summary/noted_days.dart';
 import '../../summary/summary.dart';
 import '../../summary/unfelt_yesterday.dart';
 import '../../theme/theme.dart';
+import '../../tips/pig_tips.dart';
 import '../../tips/tips.dart';
 import '../add/entry_sheet.dart';
 import '../goal/rainbow.dart';
@@ -34,6 +35,7 @@ import '../pig/pig_view.dart';
 import '../plus/plus_screen.dart';
 import '../repeat/repeat_choice.dart';
 import '../shell/tab_top.dart';
+import '../tips/tips_ui.dart';
 
 /// Home (plan §3.2): the pig and its line, the reminder offer after the first
 /// entry, the goal card, this week, today's idea, and Add.
@@ -97,6 +99,14 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
   int? _tip;
   String? _readDay;
 
+  /// The day's written tip, while pig tips are on (A2 asks once a day and
+  /// keeps the answer). Null: the built-in tip shows.
+  WrittenTip? _written;
+
+  /// The day a written tip was reported: no written tip for the rest of it
+  /// (A2 keeps that too; this covers the moments before it has).
+  String? _reportedDay;
+
   /// Home reads again at the next local turn (Clock.turnHours) and when the
   /// app comes back: what it shows depends on the phone's day and hour, not
   /// only on the journal.
@@ -115,6 +125,7 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       services.journal.addListener(_load);
       services.localDay.addListener(_load);
       services.lastAdd.addListener(_rebuild);
+      services.pigTips?.on.addListener(_loadTip);
       _lifecycle = AppLifecycleListener(onResume: _load);
       _load();
     });
@@ -125,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     _services?.journal.removeListener(_load);
     _services?.localDay.removeListener(_load);
     _services?.lastAdd.removeListener(_rebuild);
+    _services?.pigTips?.on.removeListener(_loadTip);
     _lifecycle?.dispose();
     _turn?.cancel();
     super.dispose();
@@ -205,6 +217,44 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       _readDay = day;
     });
     _armTurn();
+    unawaited(_loadTip());
+  }
+
+  /// Today's written tip, while pig tips are on. It never holds the rest of
+  /// Home up: the built-in tip shows until it comes, and stays when none
+  /// does (A2's tipFor never throws).
+  Future<void> _loadTip() async {
+    final services = _services;
+    if (services == null || !mounted) return;
+    final tips = services.pigTips;
+    final day = services.localDay.todayWire;
+    final tip = tips != null && tips.offered && tips.on.value
+        ? await tips.tipFor(day)
+        : null;
+    if (!mounted) return;
+    final written =
+        tip is WrittenTip && tip.day == day && _reportedDay != day ? tip : null;
+    if (written != _written) setState(() => _written = written);
+  }
+
+  /// Report under a written tip: the day's built-in tip takes its place at
+  /// once, and for the rest of the day (UX).
+  Future<void> _report() async {
+    final tips = _services?.pigTips;
+    final tip = _written;
+    if (tips == null || tip == null) return;
+    await reportTip(
+      context,
+      tips,
+      tip,
+      onReported: () {
+        if (!mounted) return;
+        setState(() {
+          _reportedDay = tip.day;
+          _written = null;
+        });
+      },
+    );
   }
 
   @override
@@ -292,11 +342,17 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
                   const SizedBox(height: 16),
                   _IdeaCard(
                     tip: _tip ?? tipForDay(context.services.localDay.today),
-                    onAnother: () => setState(
-                      () => _tip = nextTip(
-                        _tip ?? tipForDay(context.services.localDay.today),
-                      ),
-                    ),
+                    // The day's written tip, until "Another idea" (UX).
+                    written: _tip == null ? _written : null,
+                    onAnother: () => setState(() {
+                      final todays = tipForDay(context.services.localDay.today);
+                      // From a written tip, the day's built-in tip comes
+                      // first; the written one is back tomorrow.
+                      _tip = _tip == null && _written != null
+                          ? todays
+                          : nextTip(_tip ?? todays);
+                    }),
+                    onReport: _report,
                   ),
                 ],
               ),
@@ -1042,16 +1098,34 @@ class _LetterCard extends StatelessWidget {
 }
 
 /// Today's idea (plan §4.5): one a day; "Another idea" steps to the next.
+/// With pig tips on, the day's [written] tip comes first, with "Written by
+/// AI" and Report under it; the built-in tips have neither (UX).
 class _IdeaCard extends StatelessWidget {
-  const _IdeaCard({required this.tip, required this.onAnother});
+  const _IdeaCard({
+    required this.tip,
+    this.written,
+    required this.onAnother,
+    required this.onReport,
+  });
 
   final int tip;
+  final WrittenTip? written;
   final VoidCallback onAnother;
+  final VoidCallback onReport;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final written = this.written;
+    final another = TestId(
+      'home-idea-another',
+      button: true,
+      child: TextButton(
+        onPressed: onAnother,
+        child: ButtonLabel(l10n.ideaAnother),
+      ),
+    );
     return TestId.container(
       'home-idea',
       child: Card(
@@ -1064,22 +1138,45 @@ class _IdeaCard extends StatelessWidget {
               const SizedBox(height: 8),
               // The cards' body style (decision 57).
               Text(
-                tipText(l10n, tip),
+                written?.text ?? tipText(l10n, tip),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+              // A label, not a sentence (UX): caption size, muted.
+              if (written != null) ...[
+                const SizedBox(height: 8),
+                TestId(
+                  'home-idea-ai',
+                  child: Text(
+                    l10n.ideaWrittenByAi,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 8),
               Align(
                 alignment: AlignmentDirectional.centerEnd,
-                child: TestId(
-                  'home-idea-another',
-                  button: true,
-                  child: TextButton(
-                    onPressed: onAnother,
-                    child: ButtonLabel(l10n.ideaAnother),
-                  ),
-                ),
+                // A built-in tip: "Another idea" alone, as ever.
+                child: written == null
+                    ? another
+                    : Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: 8,
+                        children: [
+                          TestId(
+                            'home-idea-report',
+                            button: true,
+                            child: TextButton(
+                              onPressed: onReport,
+                              child: ButtonLabel(l10n.ideaReport),
+                            ),
+                          ),
+                          another,
+                        ],
+                      ),
               ),
             ],
           ),
