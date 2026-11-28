@@ -127,7 +127,7 @@ void main() {
             ))
               c['id'] as String,
         };
-        expect(auto, {'C34', 'C35'});
+        expect(auto, {'C38', 'C39'});
         for (final id in [...caseIds, 'R0', 'R32', 'R100']) {
           final f = LaunchFixture.byId(id, casesJson);
           if (auto.contains(id)) {
