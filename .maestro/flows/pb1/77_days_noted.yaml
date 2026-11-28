@@ -1,0 +1,53 @@
+appId: ${APP_ID}
+name: Days noted this week (#59) - one day gives no line; a second day gives "You noted 2 days this week"; two entries on a day count once; a save counts; last week doesn't
+tags: [noted]
+# Run with zone=Asia/Bangkok and fake_now=2026-11-25T05:00:00Z: the app's clock
+# is frozen at Wednesday 25 November, 12:00 there; the week is Monday 23 to
+# Sunday 29.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# Two spends today (Wednesday): one day, no line
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "5", CAT: "food" }
+- runFlow:
+    file: ../../subflows/add_spend.yaml
+    env: { AMOUNT: "7", CAT: "food" }
+- assertNotVisible:
+    id: home-week-noted
+# A spend on Monday: 2 days
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "4", CAT: "transport", DAY: "Monday, November 23, 2026" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-week-noted
+- assertVisible:
+    id: home-week-noted
+    text: "You noted 2 days this week"
+- takeScreenshot: 77-noted-2
+# A save on Tuesday: saves count, 3 days
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-saved, AMOUNT: "10", CAT: "none", DAY: "Tuesday, November 24, 2026" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-week-noted
+- assertVisible:
+    id: home-week-noted
+    text: "You noted 3 days this week"
+# Last Sunday (the week before): not counted, still 3
+- runFlow:
+    file: ../../subflows/add_dated.yaml
+    env: { SEG: add-seg-spent, AMOUNT: "9", CAT: "food", DAY: "Sunday, November 22, 2026" }
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-week-noted
+- assertVisible:
+    id: home-week-noted
+    text: "You noted 3 days this week"
+- takeScreenshot: 77-noted-3

@@ -1,0 +1,17 @@
+appId: ${APP_ID}
+name: Days noted this week (#59) at large text - after flow 77 (its entries kept), the line at font scale 2.0, wrapping inside the This week card, for a look
+tags: [noted]
+---
+- launchApp                                       # no clearState: flow 77's entries
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 30000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-week-noted
+- assertVisible:
+    id: home-week-noted
+    text: "(?s)You noted 3 days\\s+this week"
+- takeScreenshot: 77-noted-x2
