@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/services.dart' show appFlavor;
+import 'package:flutter/widgets.dart';
 
 /// Build-time configuration, read from `--dart-define-from-file=env/<flavor>.json`.
 ///
@@ -17,7 +18,7 @@ class AppConfig {
     this.ptBrOffered = false,
     this.deOffered = false,
     this.itOffered = false,
-    this.appLockEnabled = false,
+    this.appLockEnabled = true,
     this.plusEnabled = false,
     this.plusFakeStore = false,
     this.privacyUrl = '',
@@ -42,7 +43,12 @@ class AppConfig {
       ptBrOffered: const bool.fromEnvironment('PT_BR_OFFERED'),
       deOffered: const bool.fromEnvironment('DE_OFFERED'),
       itOffered: const bool.fromEnvironment('IT_OFFERED'),
-      appLockEnabled: const bool.fromEnvironment('APP_LOCK_ENABLED'),
+      // The app lock is in v0.1 (plan P12): on in every build unless an env
+      // file says otherwise, and none does (a test checks).
+      appLockEnabled: const bool.fromEnvironment(
+        'APP_LOCK_ENABLED',
+        defaultValue: true,
+      ),
       plusEnabled: const bool.fromEnvironment('PLUS_ENABLED'),
       // Rows only: a debug build of staging, never a release or prod build
       // (kDebugMode is a compile-time false there).
@@ -139,4 +145,18 @@ enum Flavor {
     }
     return parse(nativeFlavor);
   }
+}
+
+/// The build's configuration, for screens that show or hide by it (Me:
+/// the crash-report line, the policy and help links, the app lock).
+class ConfigScope extends InheritedWidget {
+  const ConfigScope({super.key, required this.config, required super.child});
+
+  final AppConfig config;
+
+  static AppConfig of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ConfigScope>()!.config;
+
+  @override
+  bool updateShouldNotify(ConfigScope old) => old.config != config;
 }

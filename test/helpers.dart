@@ -46,6 +46,25 @@ class FakeReminderScheduler implements ReminderScheduler {
   int replaces = 0;
   int cancels = 0;
 
+  /// A reminder tapped and not yet answered; a test taps one with [tap].
+  @override
+  final ValueNotifier<bool> tapPending = ValueNotifier<bool>(false);
+
+  /// A reminder tapped (or the app started from one).
+  void tap() {
+    tapPending.value = true;
+  }
+
+  @override
+  bool takeTap() {
+    if (!tapPending.value) return false;
+    tapPending.value = false;
+    return true;
+  }
+
+  @override
+  Future<void> listen() async {}
+
   @override
   Future<void> replaceAll(List<PlannedReminder> plan, ReminderCopy copy) async {
     replaces++;
@@ -53,8 +72,12 @@ class FakeReminderScheduler implements ReminderScheduler {
     this.copy = copy;
   }
 
+  /// Makes [cancelAll] fail (a wipe step that fails).
+  bool failCancel = false;
+
   @override
   Future<void> cancelAll() async {
+    if (failCancel) throw StateError('no notifications service');
     cancels++;
     scheduled = const [];
   }
@@ -62,6 +85,12 @@ class FakeReminderScheduler implements ReminderScheduler {
 
 class FakeNotifications implements NotificationPermission {
   int requests = 0;
+
+  /// How many times Me opened the phone's notification settings.
+  int settingsOpened = 0;
+
+  @override
+  Future<void> openSettings() async => settingsOpened++;
   bool grant = true;
 
   /// Whether notifications are allowed now (a granted request sets it).
@@ -97,6 +126,7 @@ class TestApp {
     this.appLock,
     this.currency = 'THB',
     this.onboarded = true,
+    this.config = const AppConfig(flavor: Flavor.staging),
     Clock? clock,
   }) : clock = clock ?? testClock,
        prefs = MemoryLocalPrefs(
@@ -126,6 +156,9 @@ class TestApp {
   /// Whether onboarding is done: tests start on Home unless they say not.
   final bool onboarded;
 
+  /// The build's configuration (a Sentry DSN, the policy and help links).
+  final AppConfig config;
+
   late final DeviceBackend backend;
   late final AppSession session;
 
@@ -133,6 +166,9 @@ class TestApp {
   late final JournalStore journal;
   late final LocalDay localDay;
   int _ids = 0;
+
+  /// Device account ids: device-1, then device-2 after Delete everything…
+  int _deviceIds = 0;
 
   late final services = AppServices(
     clock: clock,
@@ -170,7 +206,7 @@ class TestApp {
       prefs: prefs,
       timeZone: await device.timeZone(),
       country: device.countryCode,
-      newId: () => 'device-1',
+      newId: () => 'device-${++_deviceIds}',
       now: clock.nowUtc,
     );
     session = AppSession(
@@ -188,7 +224,7 @@ class TestApp {
     await session.restore();
     await tester.pumpWidget(
       PiggybowApp(
-        config: const AppConfig(flavor: Flavor.staging),
+        config: config,
         session: session,
         services: services,
         router: buildRouter(

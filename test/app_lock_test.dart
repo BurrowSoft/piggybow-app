@@ -10,6 +10,12 @@ class FakeBiometrics implements Biometrics {
   BiometricKind kindIs = BiometricKind.other;
   int asked = 0;
 
+  /// The phone's own screen lock (Forgot PIN): whether it has one, whether
+  /// the person passes it, and how often it was asked.
+  bool screenLock = true;
+  bool screenLockPass = true;
+  int screenLockAsked = 0;
+
   @override
   Future<bool> available() async => has;
 
@@ -21,6 +27,15 @@ class FakeBiometrics implements Biometrics {
 
   @override
   Future<BiometricKind> kind() async => kindIs;
+
+  @override
+  Future<bool> screenLockSet() async => screenLock;
+
+  @override
+  Future<bool> authenticateWithScreenLock(String reason) async {
+    screenLockAsked++;
+    return screenLock && screenLockPass;
+  }
 }
 
 /// Writes held from [close] until [open]: the PIN "still being stored"
@@ -353,5 +368,100 @@ void main() {
     final again = make();
     await again.load();
     expect(again.locked, isFalse);
+  });
+
+  test('the keys belong to the phone, not an account (decision 70)', () async {
+    final lock = make();
+    await lock.setPin('2468');
+    await lock.setBiometrics(on: true);
+    expect(store.values.keys, {
+      'app_lock.pin_hash',
+      'app_lock.settings',
+      'app_lock.fails',
+    });
+    // The same lock whoever the device account is (Delete everything makes
+    // a fresh one): load takes no account.
+    final again = make();
+    await again.load();
+    expect(again.enabled, isTrue);
+    expect(again.biometricsOn, isTrue);
+  });
+
+  group('Forgot PIN: the phone\'s own screen lock, then a new PIN', () {
+    late AppLock lock;
+    setUp(() async {
+      lock = make();
+      await lock.setPin('2468');
+      lock.lockNow();
+      expect(lock.locked, isTrue);
+    });
+
+    test('a pass lets a new PIN be chosen; it unlocks, the old one goes',
+        () async {
+      // Five wrong tries: the new PIN starts the count again.
+      for (var i = 0; i < AppLock.maxTries; i++) {
+        await lock.unlockWithPin('0000');
+      }
+      expect(lock.waitRemaining, isNotNull);
+      expect(await lock.verifyWithScreenLock('Unlock Piggybow'), isTrue);
+      expect(bio.screenLockAsked, 1);
+      expect(lock.mayResetPin, isTrue);
+      expect(lock.locked, isTrue, reason: 'not unlocked yet');
+      await lock.resetPin('1357');
+      expect(lock.locked, isFalse);
+      expect(lock.mayResetPin, isFalse);
+      expect(lock.waitRemaining, isNull);
+      lock.lockNow();
+      expect(await lock.unlockWithPin('2468'), isFalse, reason: 'the old');
+      expect(await lock.unlockWithPin('1357'), isTrue, reason: 'the new');
+    });
+
+    test('cancelled or failed: no new PIN, still locked', () async {
+      bio.screenLockPass = false;
+      expect(await lock.verifyWithScreenLock('Unlock Piggybow'), isFalse);
+      expect(lock.mayResetPin, isFalse);
+      await expectLater(lock.resetPin('1357'), throwsStateError);
+      expect(lock.locked, isTrue);
+      expect(await lock.unlockWithPin('2468'), isTrue, reason: 'unchanged');
+    });
+
+    test('no new PIN without the screen lock first', () async {
+      await expectLater(lock.resetPin('1357'), throwsStateError);
+      expect(lock.locked, isTrue);
+    });
+
+    test('leaving the app takes the new-PIN step back', () async {
+      await lock.verifyWithScreenLock('Unlock Piggybow');
+      expect(lock.mayResetPin, isTrue);
+      lock.wentAway();
+      expect(lock.mayResetPin, isFalse);
+      lock.cameBack();
+      expect(lock.locked, isTrue);
+    });
+
+    test('Cancel leaves the new-PIN step', () async {
+      await lock.verifyWithScreenLock('Unlock Piggybow');
+      lock.cancelResetPin();
+      expect(lock.mayResetPin, isFalse);
+      expect(lock.locked, isTrue);
+    });
+
+    test('unlocked already: the screen lock lets nothing be reset', () async {
+      await lock.unlockWithPin('2468');
+      expect(await lock.verifyWithScreenLock('Unlock Piggybow'), isFalse);
+      expect(lock.mayResetPin, isFalse);
+    });
+  });
+
+  test('Delete everything: every key, older per-account ones too', () async {
+    store.values.addAll({
+      'app_lock.u1.pin_hash': 'a',
+      'app_lock.u2.settings': 'b',
+      'app_lock.pin_hash': 'c',
+    });
+    final lock = make();
+    await lock.eraseAll();
+    expect(store.values, isEmpty);
+    expect(lock.enabled, isFalse);
   });
 }

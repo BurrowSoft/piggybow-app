@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 /// Long words at large text (French row, 320 dp / 200 %): Flutter breaks a word
 /// that doesn't fit its line in the middle ("Statist/iques"), and an [AppBar]
@@ -15,12 +18,28 @@ TextScaler _fitting(
   TextStyle? style,
   double available, {
   double floor = 0,
+}) => _fitTo(
+  // As Text reads it: over the inherited style.
+  DefaultTextStyle.of(context).style.merge(style),
+  Directionality.of(context),
+  scaler,
+  texts,
+  available,
+  floor: floor,
+);
+
+/// [_fitting] with the style already merged and the direction known: a
+/// render object has no context.
+TextScaler _fitTo(
+  TextStyle merged,
+  TextDirection direction,
+  TextScaler scaler,
+  Iterable<String> texts,
+  double available, {
+  double floor = 0,
 }) {
   // No room to measure against (mid-layout): nothing to fit to.
   if (available <= 1) return scaler;
-  // As Text reads it: over the inherited style.
-  final merged = DefaultTextStyle.of(context).style.merge(style);
-  final direction = Directionality.of(context);
   double widthAt(String text, TextScaler at) {
     final painter = TextPainter(
       text: TextSpan(text: text, style: merged),
@@ -113,19 +132,150 @@ class WholeWordsText extends StatelessWidget {
   final TextAlign? textAlign;
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, box) => Text(
-      text,
-      style: style,
-      textAlign: textAlign,
-      textScaler: wholeWordsScaler(
-        context,
-        texts: [text],
+  Widget build(BuildContext context) => _WholeWordsSizes(
+    text: text,
+    style: DefaultTextStyle.of(context).style.merge(style),
+    direction: Directionality.of(context),
+    scaler: MediaQuery.textScalerOf(context),
+    child: LayoutBuilder(
+      builder: (context, box) => Text(
+        text,
         style: style,
-        available: box.maxWidth,
+        textAlign: textAlign,
+        textScaler: wholeWordsScaler(
+          context,
+          texts: [text],
+          style: style,
+          available: box.maxWidth,
+        ),
       ),
     ),
   );
+}
+
+/// [WholeWordsText]'s size before layout, for whoever asks: an AlertDialog
+/// asks its title how wide it would be whenever the dialog isn't at its
+/// narrowest (phones wider than 360 dp). A LayoutBuilder can't answer, and
+/// asserts in debug builds. Measured as [WholeWordsText] lays it out.
+class _WholeWordsSizes extends SingleChildRenderObjectWidget {
+  const _WholeWordsSizes({
+    required this.text,
+    required this.style,
+    required this.direction,
+    required this.scaler,
+    required super.child,
+  });
+
+  final String text;
+
+  /// Over the inherited style, as Text reads it.
+  final TextStyle style;
+  final TextDirection direction;
+
+  /// The system's text size.
+  final TextScaler scaler;
+
+  @override
+  _RenderWholeWordsSizes createRenderObject(BuildContext context) {
+    return _RenderWholeWordsSizes(text, style, direction, scaler);
+  }
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderWholeWordsSizes renderObject,
+  ) {
+    renderObject.update(text, style, direction, scaler);
+  }
+}
+
+class _RenderWholeWordsSizes extends RenderProxyBox {
+  _RenderWholeWordsSizes(
+    this._text,
+    this._style,
+    this._direction,
+    this._scaler,
+  );
+
+  String _text;
+  TextStyle _style;
+  TextDirection _direction;
+  TextScaler _scaler;
+
+  void update(
+    String text,
+    TextStyle style,
+    TextDirection direction,
+    TextScaler scaler,
+  ) {
+    if (text == _text &&
+        style == _style &&
+        direction == _direction &&
+        scaler == _scaler) {
+      return;
+    }
+    _text = text;
+    _style = style;
+    _direction = direction;
+    _scaler = scaler;
+    markNeedsLayout();
+  }
+
+  /// The size [WholeWordsText] picks [width] wide ([wholeWordsScaler]).
+  TextScaler _scaleAt(double width) {
+    final words = _hasThai(_text) ? const <String>[] : _text.split(_spaces);
+    return _fitTo(_style, _direction, _scaler, words, width, floor: 1);
+  }
+
+  /// [read] off the text laid out between [minWidth] and [maxWidth], at the
+  /// size it takes [maxWidth] wide (or at [at]).
+  T _measure<T>(
+    T Function(TextPainter painter) read, {
+    double minWidth = 0,
+    double maxWidth = double.infinity,
+    TextScaler? at,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(text: _text, style: _style),
+      textDirection: _direction,
+      textScaler: at ?? _scaleAt(maxWidth),
+    )..layout(minWidth: minWidth, maxWidth: maxWidth);
+    final result = read(painter);
+    painter.dispose();
+    return result;
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) {
+    // Its words stay whole down to normal size (the system's, if smaller).
+    final floor = TextScaler.linear(math.min(1.0, _scaler.scale(1)));
+    return _measure((p) => p.minIntrinsicWidth, at: floor);
+  }
+
+  @override
+  double computeMaxIntrinsicWidth(double height) {
+    return _measure((p) => p.maxIntrinsicWidth);
+  }
+
+  @override
+  double computeMinIntrinsicHeight(double width) {
+    return _measure((p) => p.height, maxWidth: width);
+  }
+
+  @override
+  double computeMaxIntrinsicHeight(double width) {
+    return computeMinIntrinsicHeight(width);
+  }
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final size = _measure(
+      (p) => p.size,
+      minWidth: constraints.minWidth,
+      maxWidth: constraints.maxWidth,
+    );
+    return constraints.constrain(size);
+  }
 }
 
 /// A screen's big title, or a label next to one: wraps between words, never

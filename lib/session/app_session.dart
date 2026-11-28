@@ -205,6 +205,15 @@ class AppSession extends ChangeNotifier {
     return state;
   }
 
+  /// After Delete everything (plan §3.8): the fresh device account, read in
+  /// place, with no trip through the start screen.
+  Future<void> reloadAccount() async {
+    final user = _user = auth.currentUser;
+    _accountState = user == null ? null : await _loadAccount();
+    if (user != null) await prefs.setAccountOnDevice(true);
+    notifyListeners();
+  }
+
   /// The stored session's user while restore() runs (a background drop can
   /// land before the user is routed in).
   String? _restoringUserId;

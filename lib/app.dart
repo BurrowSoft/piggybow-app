@@ -26,43 +26,46 @@ class PiggybowApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ServicesScope(
-      services: services,
-      child: SessionScope(
-        session: session,
-        child: ReminderSync(
+    return ConfigScope(
+      config: config,
+      child: ServicesScope(
+        services: services,
+        child: SessionScope(
           session: session,
-          services: services,
-          child: ListenableBuilder(
-            listenable: session,
-            builder: (context, _) => MaterialApp.router(
-              onGenerateTitle: (context) =>
-                  AppLocalizations.of(context).appName,
-              debugShowCheckedModeBanner: false,
-              scrollBehavior: const AppScrollBehavior(),
-              theme: buildTheme(
-                Brightness.light,
-                disableAnimations: config.disableAnimations,
-                plusPalette: session.palette,
-              ),
-              darkTheme: buildTheme(
-                Brightness.dark,
-                disableAnimations: config.disableAnimations,
-                plusPalette: session.palette,
-              ),
-              // The user's choice, else the device language if shipped,
-              // else English (v0.1 ships English only).
-              locale: session.locale,
-              // Me → Appearance, this device only.
-              themeMode: session.themeMode,
-              supportedLocales: AppLocalizations.supportedLocales,
-              localizationsDelegates: AppLocalizations.localizationsDelegates,
-              routerConfig: router,
-              // The lock screen and the app-switcher cover.
-              builder: (context, child) => LockGate(
-                lock: services.appLock,
-                session: session,
-                child: child!,
+          child: ReminderSync(
+            session: session,
+            services: services,
+            child: ListenableBuilder(
+              listenable: session,
+              builder: (context, _) => MaterialApp.router(
+                onGenerateTitle: (context) =>
+                    AppLocalizations.of(context).appName,
+                debugShowCheckedModeBanner: false,
+                scrollBehavior: const AppScrollBehavior(),
+                theme: buildTheme(
+                  Brightness.light,
+                  disableAnimations: config.disableAnimations,
+                  plusPalette: session.palette,
+                ),
+                darkTheme: buildTheme(
+                  Brightness.dark,
+                  disableAnimations: config.disableAnimations,
+                  plusPalette: session.palette,
+                ),
+                // The user's choice, else the device language if shipped,
+                // else English (v0.1 ships English only).
+                locale: session.locale,
+                // Me → Appearance, this device only.
+                themeMode: session.themeMode,
+                supportedLocales: AppLocalizations.supportedLocales,
+                localizationsDelegates: AppLocalizations.localizationsDelegates,
+                routerConfig: router,
+                // The lock screen and the app-switcher cover.
+                builder: (context, child) => LockGate(
+                  lock: services.appLock,
+                  session: session,
+                  child: child!,
+                ),
               ),
             ),
           ),
