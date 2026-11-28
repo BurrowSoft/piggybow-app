@@ -1,6 +1,7 @@
 // Goldens: categories (decision 44), at 320 dp ×2, light and dark, for PB
 // UX & PM's look: Categories with Plus and after Plus ended, a new category
-// in the editor, and the Add sheet's grid with your own and Add category.
+// in the editor, and the Add sheet's grid with your own and Add category
+// (and with one long word).
 @Tags(['golden'])
 library;
 
@@ -43,12 +44,13 @@ void main() {
       .first;
 
   /// Fun hidden; your own Coffee runs, and Pets (hidden on Categories, so
-  /// both states show; shown in the sheet).
+  /// both states show; shown in the sheet); or [firstName] for Coffee runs.
   Future<void> open(
     WidgetTester tester,
     LayoutCase c, {
     required String location,
     bool plusOn = true,
+    String firstName = 'Coffee runs',
   }) async {
     setLayout(tester, c);
     final app = TestApp(
@@ -63,7 +65,7 @@ void main() {
     await tester.runAsync(app.openJournal);
     await tester.runAsync(() async {
       for (final (id, name, icon, day) in [
-        ('a', 'Coffee runs', CategoryIcon.coffee, 1),
+        ('a', firstName, CategoryIcon.coffee, 1),
         ('b', 'Pets', CategoryIcon.pets, 2),
       ]) {
         await app.journal.putCustomCategory(
@@ -140,6 +142,26 @@ void main() {
         screen: 'add',
         state: 'own-categories',
         stateId: 'PC4',
+      );
+    });
+
+    // For UX's look: one size for every label, so a long word in a name of
+    // your own makes them all smaller, down to normal size; past that the
+    // word may break (UX's rule for names).
+    testWidgets("PC5 the Add sheet's grid: one long word of your own ($c)", (tester) async {
+      await open(tester, c, location: '/home', firstName: 'Subscriptions');
+      await tester.tapId('home-add');
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      await Scrollable.ensureVisible(tester.element(byId('add-cat-food')));
+      await tester.pumpAndSettle();
+      expect(byId('add-cat-custom-1'), findsOneWidget);
+      await expectLayoutGolden(
+        tester,
+        c,
+        screen: 'add',
+        state: 'own-long-word',
+        stateId: 'PC5',
       );
     });
   }
