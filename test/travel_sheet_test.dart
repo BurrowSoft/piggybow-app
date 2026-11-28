@@ -135,6 +135,41 @@ void main() {
     }
   }
 
+  // Wiring item 21 (E's repeats with #76): a repeat stays in the home
+  // currency for now. In another one the Repeat row says so and can't be
+  // tapped, and Add makes no repeat; back in the home currency it's on.
+  testWidgets(
+    'in another currency, Repeat is off and says why, and Add makes no repeat',
+    (tester) async {
+      const why = 'Repeats work in your home currency for now.';
+      ListTile row() => tester.widget<ListTile>(
+        find.descendant(of: byId('add-repeat'), matching: find.byType(ListTile)),
+      );
+      final app = await openAdd(tester);
+      await pickCurrency(tester, 'EUR');
+      await show(tester, 'add-repeat');
+      expect(
+        find.descendant(of: byId('add-repeat'), matching: find.text(why)),
+        findsOneWidget,
+      );
+      expect(row().onTap, isNull);
+
+      await pickCurrency(tester, 'THB');
+      await show(tester, 'add-repeat');
+      expect(find.text(why), findsNothing);
+      expect(row().onTap, isNotNull);
+
+      await pickCurrency(tester, 'EUR');
+      await enter(tester, 'add-amount', '12.34');
+      await enter(tester, 'add-rate', '39.12');
+      await tapIn(tester, 'add-cat-food');
+      await tester.tapId('add-submit');
+      final entry = (await stored(tester, app)).single;
+      expect((entry.currency, entry.convertedMinor, entry.repeatId), ('EUR', 48274, null));
+      expect(await tester.runAsync(app.journal.repeats), isEmpty);
+    },
+  );
+
   testWidgets('a new entry starts in the home currency, with no rate', (
     tester,
   ) async {

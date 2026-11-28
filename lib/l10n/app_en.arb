@@ -614,6 +614,8 @@
   "mePrivacyWidget": "The widget shows today's spending and a goal on your home screen. With the app lock on, it shows only the pig and \"Tap to open\".",
   "addRepeat": "Repeat",
   "repeatNone": "Doesn't repeat",
+  "repeatHomeCurrencyOnly": "Repeats work in your home currency for now.",
+  "@repeatHomeCurrencyOnly": {"description": "Under the Add sheet's Repeat row, which then can't be tapped, while the entry is in another currency than the journal's: a repeat can't be made in it yet (wiring item 21)."},
   "repeatMonthly": "Every month on day {day}",
   "@repeatMonthly": {"placeholders": {"day": {"type": "int"}}},
   "repeatMonthlyLast": "Every month on the last day",

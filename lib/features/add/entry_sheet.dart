@@ -427,7 +427,9 @@ class _EntrySheetState extends State<EntrySheet> {
     final editing = widget.editing;
     try {
       if (editing == null) {
-        final repeat = scheduleFor(_repeat, date);
+        // A repeat stays in the home currency for now (wiring item 21): in
+        // another one, Add makes none.
+        final repeat = abroad ? null : scheduleFor(_repeat, date);
         await store.addEntry(
           type: _type,
           amountMinor: parsed.minor!,
@@ -1129,6 +1131,7 @@ class _EntrySheetState extends State<EntrySheet> {
                             choice: _repeat,
                             date: date,
                             onTap: _pickRepeat,
+                            off: abroad ? l10n.repeatHomeCurrencyOnly : null,
                           ),
                         ],
                         // Editing an entry of a repeat: which one, and
@@ -1370,30 +1373,36 @@ class _CategoryGrid extends StatelessWidget {
 }
 
 /// The Add sheet's Repeat row: "Doesn't repeat", or the schedule the picked
-/// day makes, with the shorter-months hint for days 29 and 30.
+/// day makes, with the shorter-months hint for days 29 and 30. With [off],
+/// why this entry can't repeat: the row says so in the hint's place,
+/// "Doesn't repeat" over it, and can't be tapped (the choice made is kept
+/// for when it can again).
 class _RepeatRow extends StatelessWidget {
   const _RepeatRow({
     required this.choice,
     required this.date,
     required this.onTap,
+    this.off,
   });
 
   final RepeatChoice choice;
   final DateTime date;
   final VoidCallback onTap;
+  final String? off;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
-    final schedule = scheduleFor(choice, date);
+    final off = this.off;
+    final schedule = off == null ? scheduleFor(choice, date) : null;
     final value = schedule == null
         ? l10n.repeatNone
         : scheduleText(l10n, context.session.dateLocale, schedule);
-    final hint = scheduleHint(l10n, schedule);
+    final hint = off ?? scheduleHint(l10n, schedule);
     return TestId(
       'add-repeat',
-      button: true,
+      button: off == null,
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         leading: const Icon(Icons.repeat),
@@ -1411,8 +1420,8 @@ class _RepeatRow extends StatelessWidget {
               ),
           ],
         ),
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
+        trailing: off == null ? const Icon(Icons.chevron_right) : null,
+        onTap: off == null ? onTap : null,
       ),
     );
   }
