@@ -14,8 +14,7 @@ name: Release AAB
 # repository secrets, so no other workflow can read them):
 # PIGGYBOW_UPLOAD_KEYSTORE_B64, PIGGYBOW_UPLOAD_STORE_PASSWORD,
 # PIGGYBOW_UPLOAD_KEY_ALIAS, PIGGYBOW_UPLOAD_KEY_PASSWORD. The environment
-# takes master only, and each run waits until the owner's own account
-# approves it: its only required reviewer, with self-review prevented.
+# gives them only to runs from master.
 on:
   workflow_dispatch:
     inputs:
@@ -35,7 +34,7 @@ jobs:
   aab:
     name: signed prod AAB
     runs-on: ubuntu-latest
-    # The upload key: this environment's secrets, after the owner's approval
+    # The upload key: this environment's secrets, for runs from master only
     # (see the top of this file).
     environment: play-upload
     timeout-minutes: 40

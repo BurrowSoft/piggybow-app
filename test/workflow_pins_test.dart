@@ -272,8 +272,8 @@ steps:
     expect(downloads, greaterThanOrEqualTo(3), reason: 'downloads found');
   });
 
-  // A secret only behind a protected environment (the owner approves each
-  // run there): each job that reads one, GITHUB_TOKEN aside, names its
+  // A secret only in an environment, which gives it to runs from master
+  // only: each job that reads one, GITHUB_TOKEN aside, names its
   // environment, so no other job can read it.
   test('every job that reads a secret runs in an environment', () {
     final secret = RegExp(r'secrets\.(?!GITHUB_TOKEN\b)\w+');

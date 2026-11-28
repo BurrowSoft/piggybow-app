@@ -137,8 +137,8 @@ void main() {
     expect(keys, ['debug-shared.keystore']);
   });
 
-  // The upload key's secrets belong to the play-upload environment (the
-  // owner approves each run, master only), so only its one job reads them.
+  // The upload key's secrets belong to the play-upload environment (runs
+  // from master only), so only its one job reads them.
   test('the upload key only in the play-upload environment: one job, no other workflow', () {
     expect(
       RegExp(r'^    environment: play-upload\r?$', multiLine: true).allMatches(workflow),
