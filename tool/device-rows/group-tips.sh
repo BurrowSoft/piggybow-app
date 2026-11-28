@@ -73,10 +73,13 @@ if mf flows/pb1/94d_tips_off_on.yaml && [ "$(jq -s '[.[] | select(.path == "/fun
 else
   row TI-2 FAIL "flow 94d (forget $(count /functions/v1/pig-tip/forget), distinct ids $(ids))"
 fi
-# Off → on the same day: the client clears the day's record on both
-# (turnOn, turnOff), so the new id asks again. The plan said none: reported
-# as a count until the owner says which is meant.
-row TI-7b INFO "off → on the same day: tip calls $before → $(count $TIPCALL) (the plan expected none; the client clears the day on off and on)"
+# Off → on the same day: at most one written tip per phone per local day,
+# whatever the toggles (UX's triage of F-TI-1), so the new id makes no tip call.
+if [ "$(count $TIPCALL)" = "$before" ]; then
+  row TI-7b PASS "off → on the same day: no new tip call ($before → $(count $TIPCALL)); one written tip per phone per day"
+else
+  row TI-7b FAIL "off → on the same day: tip calls $before → $(count $TIPCALL), expected none (F-TI-1)"
+fi
 
 # TI-3: the next days, each answer that means "no tip"
 n=1; ok=0
