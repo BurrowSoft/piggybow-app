@@ -1,7 +1,7 @@
 name: piggybow
 description: "Piggybow: a private money journal."
 publish_to: 'none'
-version: 0.1.1+2
+version: 0.2.0+2
 
 environment:
   sdk: ^3.13.4
