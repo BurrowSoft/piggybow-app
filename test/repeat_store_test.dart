@@ -222,7 +222,7 @@ void main() {
     expect((await theRepeat()).skipThrough, '2026-10-31');
   });
 
-  test('a repeating save goes to the active goal; once reached, the next to none', () async {
+  test("a repeating save goes to its first entry's goal; once reached, the next to none", () async {
     await store.putGoal(
       Goal(
         id: 'g1',
@@ -248,6 +248,72 @@ void main() {
     expect(goal.status, GoalStatus.reached);
     expect(goal.reachedAt, isNotNull);
     expect(await store.goalProgress(goal), 300000);
+  });
+
+  group("with two goals, a repeating save never goes to a goal the person didn't pick", () {
+    Goal goal(String id, String name, int target) => Goal(
+      id: id,
+      name: name,
+      targetMinor: target,
+      createdAt: clock.nowUtc(),
+      updatedAt: clock.nowUtc(),
+    );
+
+    /// ฿1,000 saved every month on the 1st, the first to [goalId].
+    Future<Entry> monthlySave({String? goalId, bool noGoal = false}) => store.addEntry(
+      type: EntryType.saved,
+      amountMinor: 100000,
+      currency: 'THB',
+      localDate: '2026-10-01',
+      goalId: goalId,
+      noGoal: noGoal,
+      repeat: const RepeatSchedule.monthly(1),
+      today: '2026-10-01',
+    );
+
+    test("its first entry's goal, even when another is the default", () async {
+      await store.putGoal(goal('g1', 'Bike', 10000000));
+      await store.putGoal(goal('g2', 'Trip', 10000000), allowAnother: true);
+      expect((await monthlySave(goalId: 'g2')).goalId, 'g2');
+      expect((await theRepeat()).goalId, 'g2');
+      // A save of the person's own to Bike makes Bike the default.
+      clock.now = DateTime.utc(2026, 10, 2, 2);
+      await store.addEntry(
+        type: EntryType.saved,
+        amountMinor: 500,
+        currency: 'THB',
+        localDate: '2026-10-02',
+        goalId: 'g1',
+      );
+      expect((await store.activeGoal())?.id, 'g1');
+      final added = await store.catchUpRepeats(today: '2026-12-01');
+      expect([for (final e in added) e.goalId], ['g2', 'g2']);
+    });
+
+    test('once its goal is reached, none: never the other goal', () async {
+      await store.putGoal(goal('g1', 'Bike', 10000000));
+      await store.putGoal(goal('g2', 'Trip', 150000), allowAnother: true);
+      await monthlySave(goalId: 'g2');
+      final added = await store.catchUpRepeats(today: '2026-12-01');
+      expect([for (final e in added) e.goalId], ['g2', null]);
+      expect((await store.goal('g2'))!.status, GoalStatus.reached);
+      expect((await store.goal('g1'))!.status, GoalStatus.active);
+    });
+
+    test('a first save to no goal: its repeats go to none, even once a goal exists', () async {
+      expect((await monthlySave()).goalId, isNull);
+      expect((await theRepeat()).goalId, isNull);
+      await store.putGoal(goal('g1', 'Bike', 10000000));
+      final added = await store.catchUpRepeats(today: '2026-11-01');
+      expect([for (final e in added) e.goalId], [null]);
+    });
+
+    test('a first save kept out of the goal: its repeats stay out', () async {
+      await store.putGoal(goal('g1', 'Bike', 10000000));
+      expect((await monthlySave(noGoal: true)).goalId, isNull);
+      final added = await store.catchUpRepeats(today: '2026-11-01');
+      expect([for (final e in added) e.goalId], [null]);
+    });
   });
 
   test('a repeat needs today and a valid schedule; nothing is written without', () async {

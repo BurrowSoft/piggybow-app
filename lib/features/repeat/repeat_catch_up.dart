@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import '../../core/clock.dart';
 import '../../core/services.dart';
 
 /// Keeps repeats caught up (JournalStore.catchUpRepeats, with LocalDay's
@@ -62,17 +61,13 @@ class _RepeatCatchUpState extends State<RepeatCatchUp> {
     if (mounted) _armMidnight();
   }
 
-  /// Again just after the next local midnight (in the phone's zone, DST
-  /// included).
+  /// Again just after the next local midnight in the phone's zone: the same
+  /// turn clock Home and the widget use (Clock.untilNextTurn, DST included),
+  /// at its midnight only.
   void _armMidnight() {
     _midnight?.cancel();
-    final day = _services.localDay;
-    final next = Clock.wallClock(addDays(day.today, 1), 0, day.zone);
-    final wait = next.difference(_services.clock.nowUtc());
-    _midnight = Timer(
-      (wait.isNegative ? Duration.zero : wait) + const Duration(seconds: 1),
-      _run,
-    );
+    final wait = _services.clock.untilNextTurn(_services.localDay.zone, hours: const [0]);
+    _midnight = Timer(wait + const Duration(seconds: 1), _run);
   }
 
   @override

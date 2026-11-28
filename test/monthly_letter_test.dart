@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
+import 'package:piggybow/money/rate.dart';
 import 'package:piggybow/pig/monthly_letter.dart';
 
 import 'helpers.dart';
@@ -20,6 +21,9 @@ void main() {
     SpendCategory category = SpendCategory.food,
     int minor = 1000,
     String currency = 'THB',
+    Rate? rate,
+    int? converted,
+    bool auto = false,
   }) =>
       Entry(
         id: 'e${++ids}',
@@ -31,6 +35,10 @@ void main() {
         updatedAt: t,
         category: type == EntryType.spent ? category : null,
         feeling: feeling,
+        rate: rate,
+        convertedMinor: converted,
+        repeatId: auto ? 'r1' : null,
+        auto: auto,
       );
   Goal goal(String name, DateTime? reachedAt) =>
       Goal(id: name, name: name, targetMinor: 1000, createdAt: t, updatedAt: t, reachedAt: reachedAt);
@@ -45,7 +53,6 @@ void main() {
         today: today,
         entries: entries,
         goals: goals,
-        currency: 'THB',
         zone: 'Asia/Bangkok',
         on: on,
         dismissed: dismissed,
@@ -71,19 +78,38 @@ void main() {
       expect(letter(DateTime(2026, 11, 2), [entry('2026-10-15')], dismissed: '2026-10'), isNull);
       expect(letter(DateTime(2026, 11, 2), [entry('2026-10-15')], dismissed: '2026-09'), isNotNull);
     });
+
+    test("none for a month with only a repeat's entries: the person noted nothing", () {
+      final repeats = [
+        entry('2026-10-01', auto: true),
+        entry('2026-10-01', type: EntryType.saved, minor: 50000, auto: true),
+      ];
+      expect(letter(DateTime(2026, 11, 2), repeats), isNull);
+      expect(letter(DateTime(2026, 11, 2), [...repeats, entry('2026-10-15')])?.days, 1);
+    });
   });
 
   group('the facts', () {
-    test("the days with an entry; saves in the journal's currency only", () {
+    test("the days the person noted something; saves at their home amounts, a repeat's too", () {
       final l = letter(DateTime(2026, 11, 1), [
         entry('2026-10-03'),
         entry('2026-10-03'),
         entry('2026-10-20', type: EntryType.saved, minor: 50000),
         entry('2026-10-21', type: EntryType.saved, minor: 25000),
-        entry('2026-10-22', type: EntryType.saved, minor: 999, currency: 'USD'),
+        // $9.99 at 33 baht to the dollar: ฿329.67 at home.
+        entry(
+          '2026-10-22',
+          type: EntryType.saved,
+          minor: 999,
+          currency: 'USD',
+          rate: const Rate(units: 33, scale: 0, direction: RateDirection.toHome),
+          converted: 32967,
+        ),
+        // A repeat's save: its money counts, its day doesn't.
+        entry('2026-10-25', type: EntryType.saved, minor: 10000, auto: true),
       ])!;
       expect(l.days, 4);
-      expect(l.savedMinor, 75000);
+      expect(l.savedMinor, 50000 + 25000 + 32967 + 10000);
     });
 
     test('the "worth it" category only when it strictly leads, with two at least', () {

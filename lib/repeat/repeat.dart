@@ -75,6 +75,7 @@ class Repeat {
     required this.createdAt,
     required this.updatedAt,
     this.category,
+    this.goalId,
     this.note = '',
     this.skipThrough,
     this.stoppedOn,
@@ -90,6 +91,11 @@ class Repeat {
 
   /// Spends only.
   final SpendCategory? category;
+
+  /// Saves only: the goal its first entry went to, or null (none). Its saves
+  /// go there while that goal is active, then to none: never to a goal the
+  /// person didn't pick.
+  final String? goalId;
 
   /// Up to 80 characters; may be empty. Its entries get it too.
   final String note;
@@ -128,6 +134,7 @@ class Repeat {
     'amount_minor': amountMinor,
     'currency': currency,
     'category': category?.id,
+    'goal_id': goalId,
     'note': note,
     'kind': schedule.kind.id,
     'day': schedule.day,
@@ -173,12 +180,15 @@ class Repeat {
           ? SpendCategory.fromId(m['category'])
           : null;
       if (type == EntryType.spent && category == null) return null;
+      // Older records have none: their saves go to none.
+      final goalId = type == EntryType.saved ? (m['goal_id'] as String?) : null;
       return Repeat(
         id: id,
         type: type,
         amountMinor: amount,
         currency: m['currency'] as String,
         category: category,
+        goalId: goalId,
         note: (m['note'] as String?) ?? '',
         schedule: schedule,
         firstDate: firstDate,
@@ -210,6 +220,7 @@ class Repeat {
     amountMinor: amountMinor ?? this.amountMinor,
     currency: currency,
     category: type == EntryType.spent ? (category ?? this.category) : null,
+    goalId: goalId,
     note: note ?? this.note,
     schedule: schedule ?? this.schedule,
     firstDate: firstDate,
@@ -229,6 +240,7 @@ class Repeat {
       other.amountMinor == amountMinor &&
       other.currency == currency &&
       other.category == category &&
+      other.goalId == goalId &&
       other.note == note &&
       other.schedule == schedule &&
       other.firstDate == firstDate &&
@@ -246,6 +258,7 @@ class Repeat {
     amountMinor,
     currency,
     category,
+    goalId,
     note,
     schedule,
     firstDate,

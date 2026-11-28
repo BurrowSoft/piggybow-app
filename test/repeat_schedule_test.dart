@@ -239,4 +239,27 @@ void main() {
     expect(Repeat.fromMap('r', {...map, 'made_through': '1/10/2026'}), isNull);
     expect(Repeat.fromMap('r', {...map, 'stopped_on': '2026-10-05'})?.running, isFalse);
   });
+
+  test("a save's repeat keeps its goal; a spend's has none; older records read as none", () {
+    final save = Repeat(
+      id: 's',
+      type: EntryType.saved,
+      amountMinor: 100000,
+      currency: 'THB',
+      goalId: 'g1',
+      schedule: const RepeatSchedule.monthly(1),
+      firstDate: '2026-10-01',
+      startedOn: '2026-10-01',
+      madeThrough: '2026-10-01',
+      createdAt: DateTime.utc(2026, 10),
+      updatedAt: DateTime.utc(2026, 10),
+    );
+    final map = save.toMap();
+    expect(Repeat.fromMap('s', map), save);
+    expect(Repeat.fromMap('s', map)?.goalId, 'g1');
+    expect(Repeat.fromMap('s', {...map}..remove('goal_id'))?.goalId, isNull);
+    expect(save.copyWith(madeThrough: '2026-11-01').goalId, 'g1');
+    final spend = {...map, 'type': EntryType.spent.id, 'category': SpendCategory.home.id};
+    expect(Repeat.fromMap('s', spend)?.goalId, isNull, reason: 'spends go to no goal');
+  });
 }

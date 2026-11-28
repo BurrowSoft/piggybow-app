@@ -25,6 +25,7 @@ import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../../summary/noted_days.dart';
 import '../../summary/summary.dart';
+import '../../summary/unfelt_yesterday.dart';
 import '../../theme/theme.dart';
 import '../../tips/tips.dart';
 import '../add/entry_sheet.dart';
@@ -148,21 +149,13 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     final entries = await store.entries();
     final goals = await store.goals();
     final actives = await store.activeGoals();
-    // Yesterday on this phone (its own time zone): its spends with no feeling
-    // yet, in the order they were added, three at most. Never a count of the
-    // rest.
+    // Yesterday on this phone (its own time zone): the person's own spends
+    // with no feeling yet, three at most (unfeltYesterday).
     final today = localDay.today;
     final yesterday = wireDate(DateTime(today.year, today.month, today.day - 1));
     final ask = await store.yesterdayFeelOn() &&
         await store.yesterdayFeelHiddenOn() != localDay.todayWire;
-    final unfelt = ask
-        ? ([
-            for (final e in entries)
-              if (e.type == EntryType.spent && e.localDate == yesterday && e.feeling == null) e,
-          ]..sort((a, b) => a.createdAt.compareTo(b.createdAt)))
-            .take(3)
-            .toList()
-        : const <Entry>[];
+    final unfelt = ask ? unfeltYesterday(entries, yesterday) : const <Entry>[];
     final currency = await store.currency() ?? 'USD';
     final seen = await store.repeatsSeenAt();
     final seenIds = await store.repeatsSeenIds();
@@ -188,7 +181,6 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
         today: localDay.today,
         entries: entries,
         goals: goals,
-        currency: currency,
         zone: localDay.zone,
         on: await store.lettersOn(),
         dismissed: await store.letterDismissed(),
@@ -772,7 +764,8 @@ class _WeekCard extends StatelessWidget {
       color: theme.colorScheme.onSurface,
     );
     final percent = week.planPercent;
-    final noted = notedDays([for (final e in data.entries) e.localDate], period);
+    // The days the person noted something: a repeat's entries don't count.
+    final noted = ownNotedDays(data.entries, period);
     final muted = theme.textTheme.bodyMedium?.copyWith(
       color: theme.colorScheme.onSurfaceVariant,
     );

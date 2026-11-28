@@ -11,7 +11,7 @@ const letterDays = 7;
 
 /// What the letter says about one month. Each fact has its line, left out
 /// when it doesn't apply; the days are always there (a month with no entries
-/// has no letter).
+/// of the person's own has no letter).
 class MonthlyLetter {
   const MonthlyLetter({
     required this.month,
@@ -27,7 +27,8 @@ class MonthlyLetter {
   /// The names of the goals reached that month, in the order they were.
   final List<String> goalsReached;
 
-  /// That month's saves in the journal's currency; 0 leaves the line out.
+  /// That month's saves at their home amounts (the journal's currency,
+  /// whatever each was saved in), a repeat's too; 0 leaves the line out.
   final int savedMinor;
 
   /// The category with strictly the most "worth it" spends, at least two of
@@ -35,7 +36,8 @@ class MonthlyLetter {
   /// fewer) leaves the line out.
   final String? worthCategoryId;
 
-  /// How many days had at least one entry.
+  /// How many days had an entry of the person's own: a repeat's entries
+  /// weren't noted by them, so their days don't count.
   final int days;
 
   /// The month as stored when its letter is put away: `YYYY-MM`.
@@ -44,13 +46,13 @@ class MonthlyLetter {
 
 /// The letter to show on [today] (the phone's date) about the month before,
 /// or null: none when [on] is false, after the month's first [letterDays]
-/// days, once [dismissed] holds that month, or when that month has no entries.
-/// Saves count in [currency] only; a goal's reached time is dated in [zone].
+/// days, once [dismissed] holds that month, or when that month has no entries
+/// of the person's own (a repeat's alone write no letter). Saves count at
+/// their home amounts; a goal's reached time is dated in [zone].
 MonthlyLetter? monthlyLetter({
   required DateTime today,
   required List<Entry> entries,
   required List<Goal> goals,
-  required String currency,
   required String zone,
   required bool on,
   required String? dismissed,
@@ -61,12 +63,13 @@ MonthlyLetter? monthlyLetter({
   if (dismissed == wireDate(month).substring(0, 7)) return null;
 
   final inMonth = [for (final e in entries) if (e.localDate.startsWith(prefix)) e];
-  if (inMonth.isEmpty) return null;
+  final noted = {for (final e in inMonth) if (!e.auto) e.localDate};
+  if (noted.isEmpty) return null;
 
   var saved = 0;
   final worth = <String, int>{};
   for (final e in inMonth) {
-    if (e.type == EntryType.saved && e.currency == currency) saved += e.amountMinor;
+    if (e.type == EntryType.saved) saved += e.homeMinor;
     final id = e.categoryId;
     if (e.type == EntryType.spent && e.feeling == Feeling.worthIt && id != null) {
       worth[id] = (worth[id] ?? 0) + 1;
@@ -89,6 +92,6 @@ MonthlyLetter? monthlyLetter({
     ],
     savedMinor: saved,
     worthCategoryId: top,
-    days: {for (final e in inMonth) e.localDate}.length,
+    days: noted.length,
   );
 }

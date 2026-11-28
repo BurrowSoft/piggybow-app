@@ -323,6 +323,7 @@ class JournalStore extends ChangeNotifier {
         amountMinor: entry.amountMinor,
         currency: currency,
         category: entry.category,
+        goalId: entry.goalId,
         note: entry.note,
         schedule: repeat,
         firstDate: entry.localDate,
@@ -551,6 +552,15 @@ class JournalStore extends ChangeNotifier {
   Future<Goal?> goal(String id) async {
     final m = await _goals.record(id).get(_db);
     return m == null ? null : Goal.fromMap(id, m);
+  }
+
+  /// A repeated save's goal ([Repeat.goalId]): that goal while it's active,
+  /// else none. As [client] (the catch-up's transaction) reads it.
+  Future<String?> _repeatGoalIn(DatabaseClient client, String? goalId) async {
+    if (goalId == null) return null;
+    final m = await _goals.record(goalId).get(client);
+    final g = m == null ? null : Goal.fromMap(goalId, m);
+    return g?.status == GoalStatus.active ? goalId : null;
   }
 
   /// Stores [goal]; a new target can reach it (the goal screens own the
@@ -891,11 +901,12 @@ class JournalStore extends ChangeNotifier {
   /// midnight.
   ///
   /// An added entry copies its repeat's amount, category and note, has no
-  /// feeling and is marked auto. A save goes to the active goal, as one from
-  /// the Add sheet would. Each day is written in one transaction with its
-  /// repeat's "made through", and its id is its repeat and day: two runs at
-  /// once add nothing twice, and a day whose entry was deleted never comes
-  /// back. A [today] up to 2 days before "made through" (a trip across time
+  /// feeling and is marked auto. A save goes to the goal its repeat's first
+  /// entry went to, while that goal is active, else to none: never to a goal
+  /// the person didn't pick (Add again's rule). Each day is written in one
+  /// transaction with its repeat's "made through", and its id is its repeat
+  /// and day: two runs at once add nothing twice, and a day whose entry was
+  /// deleted never comes back. A [today] up to 2 days before "made through" (a trip across time
   /// zones) adds nothing and moves nothing. Further back, the clock was set
   /// ahead and put right: "made through" goes back to the repeat's latest
   /// entry on or before today (never before the day it was made), so it
@@ -945,7 +956,7 @@ class JournalStore extends ChangeNotifier {
             currency: r.currency,
             category: spend ? r.category : null,
             note: r.note,
-            goalId: spend ? null : (await _activeGoalIn(txn))?.id,
+            goalId: spend ? null : await _repeatGoalIn(txn, r.goalId),
             localDate: wireDate(date),
             createdAt: now,
             updatedAt: now,
