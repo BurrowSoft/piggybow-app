@@ -224,9 +224,13 @@ void main() {
       screen(tester, 411, 1);
       await tester.pumpWidget(
         const MaterialApp(
-          home: Center(
-            child: IntrinsicWidth(
-              child: WholeWordsText('Not everything was erased'),
+          // A Scaffold, so the text takes the theme's style (with no
+          // Material above it, Flutter's 48 px debug style).
+          home: Scaffold(
+            body: Center(
+              child: IntrinsicWidth(
+                child: WholeWordsText('Not everything was erased'),
+              ),
             ),
           ),
         ),
