@@ -46,6 +46,17 @@ android {
         resValue("bool", "widget_enabled", (dartDefines["PLUS_ENABLED"] == "true").toString())
     }
 
+    // The JVM tests (src/test) say each case, passed or not, so CI's log can
+    // be read test by test; a failure with its full stack.
+    testOptions {
+        unitTests.all {
+            it.testLogging {
+                events("passed", "skipped", "failed")
+                exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            }
+        }
+    }
+
     // dev = local work, staging = testers + Maestro (Android forbids a flavor named "test"), prod = the store build.
     // They install side by side; Dart reads the matching env/<flavor>.json.
     // resValue (the per-flavor app name) is off by default in AGP 9.
