@@ -1,0 +1,62 @@
+appId: ${APP_ID}
+name: PR 5c backup row, part A - a spend, the reminder on, a goal, the lock with PIN 1357 and one export file, before pr5.sh runs bmgr
+tags: [pb1, backup]
+# Built through the UI (no fixture needed): the spend is 5 Food & drinks
+# (add_first_spend), the goal "Bike" 100. pr5.sh then backs up, reinstalls and
+# restores; 46b (encrypted transport) or 46c (no encryption) reads the result.
+---
+- runFlow: ../../subflows/fresh_launch_notif_unset.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow: ../../subflows/add_first_spend.yaml
+# The reminder on, through the offer (Allow in the system dialog)
+- extendedWaitUntil:
+    visible:
+      id: home-reminder-yes
+    timeout: 10000
+- tapOn:
+    id: home-reminder-yes
+- extendedWaitUntil:
+    visible: "Allow"
+    timeout: 10000
+- tapOn: "Allow"
+# A goal
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env: { NAME: "Bike", AMOUNT: "100", START: "0" }
+- tapOn:                                            # the goal's detail → Home (its app bar arrow)
+    text: "Back"
+    above:
+      id: goal-add-savings
+- extendedWaitUntil:
+    visible:
+      id: home-pig
+    timeout: 10000
+# The lock on (PIN 1357, secure storage only)
+- runFlow: ../../subflows/set_lock_1357.yaml
+# An export file in the share/cache folder (must NOT come back after a restore)
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-export
+- tapOn:
+    id: me-export
+- extendedWaitUntil:
+    visible: ".*piggybow-\\d{4}-\\d{2}-\\d{2}\\.csv.*|.*Share.*"
+    timeout: 15000
+- back
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-reminder
+- assertVisible:
+    id: me-reminder
+    checked: true
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-lock
+- assertVisible:
+    id: me-lock
+    text: ".*On.*"                                  # meStateOn
+- takeScreenshot: 46a-me-before-backup
+- stopApp

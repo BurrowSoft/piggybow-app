@@ -1,0 +1,69 @@
+appId: ${APP_ID}
+name: PR 5c backup row, part B - after an encrypted backup and a restore on a fresh install - the data is back, no lock prompt, the lock row says Off after a restore until it's opened
+tags: [pb1, backup]
+# Runs after pr5.sh R9e: the local transport reporting client-side encryption,
+# a phone screen lock set, 46a, bmgr backupnow, uninstall, install, restore.
+---
+- launchApp                                         # no clearState: the restored data must be read
+- extendedWaitUntil:
+    visible:
+      id: "home-pig|lock-screen|onb-start"
+    timeout: 120000
+- assertNotVisible:
+    id: lock-screen                                 # the PIN wasn't restored (secure storage is excluded), so the lock is off
+- assertNotVisible:
+    id: onb-start                                   # the settings came back: no onboarding
+- takeScreenshot: 46b-home-after-restore
+- assertVisible: ".*Bike.*"                         # the goal card
+- tapOn:
+    id: tab-timeline
+- assertVisible: ".*Food & drinks.*"                # the spend from 46a
+- assertVisible: ".*\\$5\\.00.*"
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-lock
+- assertVisible:
+    id: me-lock
+    text: ".*Off after a restore\\. Turn it on again\\..*"    # lockOffAfterRestore
+- takeScreenshot: 46b-me-after-restore
+# The reminder: the setting is restored, but a reinstall drops the runtime
+# notification permission. Me shows either the switch on, or "Notifications
+# are off" with Open settings. The screenshot above decides which; both are right.
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-reminder
+- takeScreenshot: 46b-me-reminder-after-restore
+# Opening the lock row clears the note (restore detection, §4.7)
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-lock
+- tapOn:
+    id: me-lock
+- extendedWaitUntil:
+    visible:
+      id: pin-setup-screen
+    timeout: 10000
+- tapOn:
+    id: pin-setup-back                              # leave without a PIN
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-lock
+- assertNotVisible: ".*Off after a restore.*"
+- assertVisible:
+    id: me-lock
+    text: ".*Off.*"                                 # meStateOff
+# Still no lock after a relaunch
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "home-pig|tab-me"
+    timeout: 20000
+- assertNotVisible:
+    id: lock-screen

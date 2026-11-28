@@ -1,0 +1,22 @@
+appId: ${APP_ID}
+name: PR 5c backup row, part C - with no end-to-end encryption on the transport (no phone screen lock), nothing of Piggybow is backed up, so a reinstall and restore start blank
+tags: [pb1, backup]
+# Runs after pr5.sh R9n: the local transport WITHOUT client-side encryption, no
+# phone screen lock, 46a, bmgr backupnow, uninstall, install, restore.
+# Android 12+: disableIfNoEncryptionCapabilities="true" on cloud backup.
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "onb-start|home-pig|lock-screen"
+    timeout: 120000
+- assertVisible:
+    id: onb-start                                   # a blank journal: O1
+- assertNotVisible:
+    id: lock-screen
+- takeScreenshot: 46c-o1-nothing-restored
+- runFlow: ../../subflows/to_home.yaml
+- assertNotVisible: ".*Bike.*"
+- tapOn:
+    id: tab-timeline
+- assertVisible: "Nothing here yet"
