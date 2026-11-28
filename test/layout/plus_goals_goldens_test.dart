@@ -140,7 +140,8 @@ void main() {
 
     testWidgets("PG3 Me's Reached goals row ($c)", (tester) async {
       await open(tester, c, location: '/me', reached: true);
-      await tester.ensureVisible(byId('me-reached'));
+      // Me's list is built lazily: at large text the row is further down.
+      await tester.revealId('me-reached');
       await tester.pumpAndSettle();
       await expectLayoutGolden(
         tester,

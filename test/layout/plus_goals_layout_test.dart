@@ -140,6 +140,9 @@ void main() {
 
     testWidgets("G3 Me's Reached goals row, then the list ($c)", (tester) async {
       await open(tester, c, location: '/me', reached: true);
+      // Me's list is built lazily: at large text the row is further down.
+      await tester.revealId('me-reached');
+      await tester.pumpAndSettle();
       expect(byId('me-reached'), findsOneWidget);
       await expectSoundLayout(tester, reason: 'G3 Me');
       await tester.tapId('me-reached');
