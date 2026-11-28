@@ -602,22 +602,50 @@ class _YesterdayCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
+                      LayoutBuilder(
+                        builder: (context, box) {
+                          final title = Text(
+                            spend.note.isNotEmpty ? spend.note : spend.category!.label(l10n),
+                            style: theme.textTheme.bodyLarge,
+                          );
+                          // Spends in ink: never red, never a minus sign. One
+                          // line; a very large amount gets smaller rather than
+                          // pushing the title out.
+                          final amount = FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerEnd,
                             child: Text(
-                              spend.note.isNotEmpty ? spend.note : spend.category!.label(l10n),
+                              formatMoney(spend.amountMinor, spend.currency, locale),
+                              maxLines: 1,
+                              softWrap: false,
                               style: theme.textTheme.bodyLarge,
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Spends in ink: never red, never a minus sign.
-                          Text(
-                            formatMoney(spend.amountMinor, spend.currency, locale),
-                            style: theme.textTheme.bodyLarge,
-                          ),
-                        ],
+                          );
+                          // At large text the amount gets its own line under
+                          // the title, as on Timeline, so the title keeps
+                          // whole words.
+                          if (MediaQuery.textScalerOf(context).scale(1) >= 1.3) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                title,
+                                Align(alignment: AlignmentDirectional.centerEnd, child: amount),
+                              ],
+                            );
+                          }
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: title),
+                              const SizedBox(width: 8),
+                              // At most half the row.
+                              ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
+                                child: amount,
+                              ),
+                            ],
+                          );
+                        },
                       ),
                       const SizedBox(height: 8),
                       Wrap(
