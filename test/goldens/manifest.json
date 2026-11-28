@@ -1,7 +1,7 @@
 {
-  "source_sha": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "ref": "af847b2668ab914b1462b1736fa12e2ed6432d61",
-  "run_id": "46110158079",
+  "source_sha": "b677efe9a7cd3109207835621aa5036dae7abdb0",
+  "ref": "b677efe9a7cd3109207835621aa5036dae7abdb0",
+  "run_id": "46124486923",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -279,8 +279,8 @@
       "file": "home_delighted-end_dark_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig delighted (contract C4) (320 dp, text ×2, dark)",
-      "sha256": "298a291ff7872147a836987d1ee15d00c881400bf9585741b626ab0ec86d8e4e",
-      "bytes": 181452,
+      "sha256": "973d1a7a25f05643ea3a1a65a76121d3b66cadf5bf7b71dc66ebf72fa6caba2b",
+      "bytes": 150754,
       "width": 960,
       "height": 2340
     },
@@ -288,8 +288,8 @@
       "file": "home_delighted-end_light_320x2.png",
       "state": "H5",
       "test": "H5 Home with the pig delighted (contract C4) (320 dp, text ×2, light)",
-      "sha256": "ecdf1ad75e6f22979545b5b3bb1650dd6e9acefbda46a514026bf9a67493fec9",
-      "bytes": 181983,
+      "sha256": "6dade5a81c54ff02a30babdb1c2b3d1f084de4435fe953a22850a36a636ca85f",
+      "bytes": 152231,
       "width": 960,
       "height": 2340
     },
@@ -524,6 +524,42 @@
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, light)",
       "sha256": "2ab26dc2922ca7af16458ecb275ac5313d020b3dc400c3379101dee826332276",
       "bytes": 162520,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_yesterday-end_dark_320x2.png",
+      "state": "H12",
+      "test": "H12 Home asks how yesterday felt (320 dp, text ×2, dark)",
+      "sha256": "e9527c66f3d2fcdd7c2e969a65a1cc8a721eeaab5bbb75b8b0780838ed419d12",
+      "bytes": 154392,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_yesterday-end_light_320x2.png",
+      "state": "H12",
+      "test": "H12 Home asks how yesterday felt (320 dp, text ×2, light)",
+      "sha256": "9f2c647bd651bbe166b6b7ce5e430812189dc47a90f6ff18415a231f72682c22",
+      "bytes": 156417,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_yesterday_dark_320x2.png",
+      "state": "H12",
+      "test": "H12 Home asks how yesterday felt (320 dp, text ×2, dark)",
+      "sha256": "198b2b4af81195f2d1920cbaa80056087d564072e9f090cea6804b7e91c4f8e9",
+      "bytes": 165207,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "home_yesterday_light_320x2.png",
+      "state": "H12",
+      "test": "H12 Home asks how yesterday felt (320 dp, text ×2, light)",
+      "sha256": "179af916e3286d2d6289458f630f79c60eee2339ef235bae1dd250d0dc59a0a4",
+      "bytes": 164842,
       "width": 960,
       "height": 2340
     },
@@ -783,8 +819,8 @@
       "file": "me_no-plan_dark_320x2.png",
       "state": "M1",
       "test": "M1 Me, no plan (320 dp, text ×2, dark)",
-      "sha256": "abbec9e958b8ca17922372a49a070842ff50a859dc15a9cd4eadb18006f81af3",
-      "bytes": 177066,
+      "sha256": "d0a90936ec3a0e902c127cfb4797c65a8ef3b43100b65038fe756de5a6ecf2e0",
+      "bytes": 194188,
       "width": 960,
       "height": 2340
     },
@@ -792,8 +828,8 @@
       "file": "me_no-plan_light_320x2.png",
       "state": "M1",
       "test": "M1 Me, no plan (320 dp, text ×2, light)",
-      "sha256": "a588d7849b219de0e6cb7ad250d8a258543d7b9cba6787a183ce00a9629dc50f",
-      "bytes": 176948,
+      "sha256": "c1822ad8be83baa737ca5f026bb7d4078626a1d746f32e8f124cb663c1673d32",
+      "bytes": 193977,
       "width": 960,
       "height": 2340
     },
@@ -819,8 +855,8 @@
       "file": "me_plan-dialog-empty_dark_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
-      "sha256": "5e7b6e0da00bcc1a0612de3d0fb91f6415c7f9b80d400c40f7dbbe15210ff289",
-      "bytes": 166515,
+      "sha256": "23e683144cd58e1d232aa5b080ec6ef8a7f3f148bf7001015dc6991d208a0b22",
+      "bytes": 155781,
       "width": 960,
       "height": 2340
     },
@@ -828,8 +864,8 @@
       "file": "me_plan-dialog-empty_light_320x2.png",
       "state": "M4",
       "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
-      "sha256": "6d7d7b075553ee0a96105a9f38395605b3055e16ea67b28621589cdbd3b6c625",
-      "bytes": 168538,
+      "sha256": "2388e09cc40c5000a1e67148f0d70bef7bc07340a771dc2e0b3aa0818e7cb32d",
+      "bytes": 157986,
       "width": 960,
       "height": 2340
     },
@@ -837,8 +873,8 @@
       "file": "me_plan-dialog-set_dark_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
-      "sha256": "852b0bbe9409d27f6b3c402b263db90cf1e489cec2b6220683f644e524245072",
-      "bytes": 174272,
+      "sha256": "4af5f4e97822e5bc435fe4ea7c02885da4a4502fe82963f1657a71b815df46d3",
+      "bytes": 171840,
       "width": 960,
       "height": 2340
     },
@@ -846,8 +882,8 @@
       "file": "me_plan-dialog-set_light_320x2.png",
       "state": "M5",
       "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
-      "sha256": "f630a770cb7d5fdbe5202aa7a29c15ffbe0a51593605920c63e0c00ca670e662",
-      "bytes": 175687,
+      "sha256": "1258545dd92989d54d74c0dfcf7e5f0dfecb27996760ab0ed2ad3a93af6d1cb4",
+      "bytes": 174370,
       "width": 960,
       "height": 2340
     },
@@ -855,8 +891,8 @@
       "file": "me_plan-set_dark_320x2.png",
       "state": "M2",
       "test": "M2 Me, a plan set (320 dp, text ×2, dark)",
-      "sha256": "9cfbd819e51a9d7613ec29d76f3d19e9655ff2423e63c932061e1471e6615d28",
-      "bytes": 181688,
+      "sha256": "c4001bb6d4216b54a94bbdcbbd66d2bb437e8e131dcc18463cbe9c702097fcc1",
+      "bytes": 198793,
       "width": 960,
       "height": 2340
     },
@@ -864,8 +900,8 @@
       "file": "me_plan-set_light_320x2.png",
       "state": "M2",
       "test": "M2 Me, a plan set (320 dp, text ×2, light)",
-      "sha256": "77d4c42ccf4cc1dc3514886576521308e9a3c38758dafc7b6104d056372b5586",
-      "bytes": 181540,
+      "sha256": "d4e091860bef061fb51073c086f916fb614b84c577a86bb9c2fe5a0215656a23",
+      "bytes": 198569,
       "width": 960,
       "height": 2340
     },
