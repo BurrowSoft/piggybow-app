@@ -1,0 +1,133 @@
+appId: ${APP_ID}
+name: Money in another currency (group F) - a ฿300 spend at 1 THB = 0.028 shows "That's $8.40 at this rate."; the rate flips both ways; it's counted at home as $8.40; the next THB spend starts from the last rate
+tags: [currency]
+# Run with zone UTC; the home currency is the emulator's (USD, en-US).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-amount
+      TEXT: "300"
+      EXPECT: ".*300.*"
+# Thai baht
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-currency
+- tapOn:
+    id: add-currency
+- extendedWaitUntil:
+    visible:
+      id: currency-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: currency-THB
+- tapOn:
+    id: currency-THB
+- extendedWaitUntil:
+    visible:
+      id: add-currency
+    timeout: 10000
+- assertVisible:
+    id: add-currency
+    text: "(?s).*Thai baht.*"
+# 1 THB = 0.028 (USD): $8.40 at home
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-rate
+      TEXT: "0.028"
+      EXPECT: ".*0\\.028.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-converted
+- assertVisible:
+    id: add-converted
+    text: ".*That's \\$8\\.40 at this rate\\..*"
+- takeScreenshot: 89-rate
+# Flipped: 1 USD = 35.71 (THB), the same $8.40; flipped back keeps 0.028
+- tapOn:
+    id: add-rate-flip
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: add-rate
+      TEXT: "35.71"
+      EXPECT: ".*35\\.71.*"
+- assertVisible:
+    id: add-converted
+    text: ".*That's \\$8\\.40 at this rate\\..*"
+- takeScreenshot: 89-rate-flipped
+- tapOn:
+    id: add-rate-flip
+- assertVisible:
+    id: add-rate
+    text: ".*0\\.028.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-food
+- tapOn:
+    id: add-cat-food
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-submit
+- tapOn:
+    id: add-submit
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# Counted at home: Summary's week is $8.40
+- tapOn:
+    id: tab-summary
+- tapOn:
+    id: sum-week
+- assertVisible: ".*\\$8\\.40.*"
+- takeScreenshot: 89-summary
+# Timeline shows the baht amount
+- tapOn:
+    id: tab-timeline
+- assertVisible: ".*฿300.*"
+- takeScreenshot: 89-timeline
+# The next THB spend starts from the last rate
+- tapOn:
+    id: tab-home
+- tapOn:
+    id: home-add
+- tapOn:
+    id: add-seg-spent
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-currency
+- tapOn:
+    id: add-currency
+- extendedWaitUntil:
+    visible:
+      id: currency-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: currency-THB
+- tapOn:
+    id: currency-THB
+- extendedWaitUntil:
+    visible:
+      id: add-rate
+    timeout: 10000
+- assertVisible:
+    id: add-rate
+    text: ".*0\\.028.*"
+- back
