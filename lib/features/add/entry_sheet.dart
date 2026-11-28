@@ -845,8 +845,12 @@ class _EntrySheetState extends State<EntrySheet> {
                             ),
                           ),
                         ),
-                        // How the amount was read, whenever it can be.
-                        if (amountError == null && parsed?.minor != null)
+                        // How the amount was read, whenever it can be; not
+                        // in another currency, where it would only repeat the
+                        // field (the amount at home follows the rate).
+                        if (!abroad &&
+                            amountError == null &&
+                            parsed?.minor != null)
                           Padding(
                             padding: const EdgeInsets.only(top: 4, left: 12),
                             child: TestId(
