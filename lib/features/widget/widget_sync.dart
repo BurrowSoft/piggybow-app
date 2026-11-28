@@ -4,8 +4,10 @@
 // the day, the app lock, Plus, the theme or the language.
 //
 // One write at a time, after a short quiet spell, and only when the snapshot
-// changed. A write that fails waits for the next change: never break the
-// app over the widget.
+// changed. When the widget may have to show less (the lock turned on, Plus
+// ending, Delete everything), there's no quiet spell: it's written at once.
+// A write that fails waits for the next change: never break the app over
+// the widget.
 
 import 'dart:async';
 import 'dart:convert';
@@ -79,7 +81,6 @@ class WidgetSync extends StatefulWidget {
 }
 
 class _WidgetSyncState extends State<WidgetSync> {
-  late final List<Listenable> _sources;
   AppLifecycleListener? _lifecycle;
   Timer? _timer;
   bool _running = false;
@@ -93,17 +94,12 @@ class _WidgetSyncState extends State<WidgetSync> {
   @override
   void initState() {
     super.initState();
-    _sources = [
-      widget.session,
-      _services.journal,
-      _services.localDay,
-      ?_services.appLock,
-      widget.plusActive,
-    ];
     if (!widget.enabled) return;
-    for (final source in _sources) {
-      source.addListener(_schedule);
-    }
+    widget.session.addListener(_schedule);
+    _services.journal.addListener(_onJournal);
+    _services.localDay.addListener(_schedule);
+    _services.appLock?.addListener(_writeNow);
+    widget.plusActive.addListener(_writeNow);
     _lifecycle = AppLifecycleListener(onResume: _schedule);
     _schedule();
   }
@@ -111,9 +107,11 @@ class _WidgetSyncState extends State<WidgetSync> {
   @override
   void dispose() {
     if (widget.enabled) {
-      for (final source in _sources) {
-        source.removeListener(_schedule);
-      }
+      widget.session.removeListener(_schedule);
+      _services.journal.removeListener(_onJournal);
+      _services.localDay.removeListener(_schedule);
+      _services.appLock?.removeListener(_writeNow);
+      widget.plusActive.removeListener(_writeNow);
     }
     _lifecycle?.dispose();
     _timer?.cancel();
@@ -123,6 +121,31 @@ class _WidgetSyncState extends State<WidgetSync> {
   void _schedule() {
     _timer?.cancel();
     _timer = Timer(widget.quiet, _write);
+  }
+
+  /// No quiet spell when the widget may have to show less: the lock turned
+  /// on, or Plus ending, has to reach the home screen before the app can be
+  /// swiped away. (Turned off, or back, it's as quick, and as harmless.)
+  void _writeNow() {
+    _timer?.cancel();
+    unawaited(_write());
+  }
+
+  /// Delete everything leaves a blank journal: written at once too. Any other
+  /// change to the journal waits for the quiet spell.
+  Future<void> _onJournal() async {
+    var blank = false;
+    try {
+      blank = await _services.journal.isBlank();
+    } on Object {
+      // Read as not blank: the quiet spell, then the usual write.
+    }
+    if (!mounted) return;
+    if (blank) {
+      _writeNow();
+    } else {
+      _schedule();
+    }
   }
 
   /// One write at a time; a change meanwhile writes once more afterwards.
