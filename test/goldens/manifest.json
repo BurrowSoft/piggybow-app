@@ -1,7 +1,7 @@
 {
-  "source_sha": "d3343583d75df0f0d268f4066871b2cd351c9725",
-  "ref": "d3343583d75df0f0d268f4066871b2cd351c9725",
-  "run_id": "46150391683",
+  "source_sha": "5195356e6ed988d31f2783b70944a6ce5717218b",
+  "ref": "5195356e6ed988d31f2783b70944a6ce5717218b",
+  "run_id": "46150795750",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -927,8 +927,8 @@
       "file": "me_delete-plus-end_dark_320x2.png",
       "state": "PL5",
       "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, dark)",
-      "sha256": "485b02ded1b703f0cfba760782cb38677c61999dc51fff7034eaaa8efa2840b9",
-      "bytes": 211850,
+      "sha256": "249aac201d473397c051c87ea5dc92fb9662082630bf1a5b91a421593bea0227",
+      "bytes": 211419,
       "width": 960,
       "height": 2340
     },
@@ -936,8 +936,8 @@
       "file": "me_delete-plus-end_light_320x2.png",
       "state": "PL5",
       "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, light)",
-      "sha256": "35d57164977d068eb7297e075a49daadaaf8bbeed42ed229be44c66fb7e573e1",
-      "bytes": 214207,
+      "sha256": "49245f9b88b4b4200103531ba31afef0525e8618a494b74378ccf7fc812c16e5",
+      "bytes": 213854,
       "width": 960,
       "height": 2340
     },
@@ -945,8 +945,8 @@
       "file": "me_delete-plus_dark_320x2.png",
       "state": "PL5",
       "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, dark)",
-      "sha256": "90db2489639510c26f9691bf73a8d832fe198f69e99b67a793410bc64ae34925",
-      "bytes": 208850,
+      "sha256": "9511cca4b5443c151449cc35663f6b3e1ef0366055e966b913f67b7466e6e4db",
+      "bytes": 208407,
       "width": 960,
       "height": 2340
     },
@@ -954,8 +954,8 @@
       "file": "me_delete-plus_light_320x2.png",
       "state": "PL5",
       "test": "PL5 \"Delete everything?\" with its Plus line (320 dp, text ×2, light)",
-      "sha256": "afd9be5a6fea5e268bf6dc850f0203ff315f87b524e80a9f3957bb5ca3356ecb",
-      "bytes": 210989,
+      "sha256": "a90c4e108cfa08568a3cd462cafa191c69e66d641b3a334690d877dd9897b19b",
+      "bytes": 210562,
       "width": 960,
       "height": 2340
     },
@@ -1119,6 +1119,78 @@
       "sha256": "8674ba162c7901565f49b53fc7066aeb528de014028721e0f79426c976205056",
       "bytes": 187820,
       "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "patterns_not-yet_dark_320x2.png",
+      "state": "PS2",
+      "test": "PS2 Patterns: not enough yet (320 dp, text ×2, dark)",
+      "sha256": "1b2f916f7c7aa28d8d9ee188feea7fa2d2d53ab7b88845506ddb68cfc0fbc9f1",
+      "bytes": 199859,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "patterns_not-yet_dark_360x1.png",
+      "state": "PS2",
+      "test": "PS2 Patterns: not enough yet (360 dp, text ×1, dark)",
+      "sha256": "106633e82f2ee7bd45b4d5b4cf984c8dc6672fbe3ecf2aab3f40b48f062e4aee",
+      "bytes": 103755,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "patterns_not-yet_light_320x2.png",
+      "state": "PS2",
+      "test": "PS2 Patterns: not enough yet (320 dp, text ×2, light)",
+      "sha256": "9d751dfd968e91d318cc64bddbd0fb2e5b0dc49e62cf90db84f1353600baaac9",
+      "bytes": 199171,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "patterns_not-yet_light_360x1.png",
+      "state": "PS2",
+      "test": "PS2 Patterns: not enough yet (360 dp, text ×1, light)",
+      "sha256": "b32ed542634bed79a225b6dde7adf12f0b024543520811671f06212de717208a",
+      "bytes": 105409,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "patterns_three_dark_320x2.png",
+      "state": "PS1",
+      "test": "PS1 Patterns: three patterns (320 dp, text ×2, dark)",
+      "sha256": "514e5e0d56bcb02b8f464e8d26af6444c41cd338c6929b34bad6476e0191a67b",
+      "bytes": 188147,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "patterns_three_dark_360x1.png",
+      "state": "PS1",
+      "test": "PS1 Patterns: three patterns (360 dp, text ×1, dark)",
+      "sha256": "0fde15c7bc5a11fd4384a4fffe375710082b598db87c06bec0633a900f02a6ff",
+      "bytes": 146226,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "patterns_three_light_320x2.png",
+      "state": "PS1",
+      "test": "PS1 Patterns: three patterns (320 dp, text ×2, light)",
+      "sha256": "0a504d0d67240e7e1e302d97ab274f3a56b00862a0e0a105940601960742d8e7",
+      "bytes": 188950,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "patterns_three_light_360x1.png",
+      "state": "PS1",
+      "test": "PS1 Patterns: three patterns (360 dp, text ×1, light)",
+      "sha256": "4d7146fc4f2289ddc29d7544f01e268da90bcc7ed5f2f79f3e9ee31e903cf496",
+      "bytes": 148245,
+      "width": 1080,
       "height": 2340
     },
     {
@@ -1455,6 +1527,78 @@
       "height": 2340
     },
     {
+      "file": "summary_patterns-teaser_dark_320x2.png",
+      "state": "PC2",
+      "test": "PC2 Summary: the Patterns teaser without Plus (320 dp, text ×2, dark)",
+      "sha256": "095d34bf5495ba4fed7d313622947d0bc50e67c1bb03e6ee104db362de256d8c",
+      "bytes": 201300,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns-teaser_dark_360x1.png",
+      "state": "PC2",
+      "test": "PC2 Summary: the Patterns teaser without Plus (360 dp, text ×1, dark)",
+      "sha256": "a46dfe0cea11f04d72d1ace2daafee98797247c4c5c76aca2143354b03a875e7",
+      "bytes": 205092,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns-teaser_light_320x2.png",
+      "state": "PC2",
+      "test": "PC2 Summary: the Patterns teaser without Plus (320 dp, text ×2, light)",
+      "sha256": "df5f5fe981c4f926b5c279be6751a5a240e9087ca7b034191afebe7cfcabbe21",
+      "bytes": 203064,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns-teaser_light_360x1.png",
+      "state": "PC2",
+      "test": "PC2 Summary: the Patterns teaser without Plus (360 dp, text ×1, light)",
+      "sha256": "8f48a1215b8b5a3df51ab15d205f53ec343c25a9531de1e2db656c57ed429671",
+      "bytes": 207618,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns_dark_320x2.png",
+      "state": "PC1",
+      "test": "PC1 Summary: the Patterns card with Plus (320 dp, text ×2, dark)",
+      "sha256": "271daa5d03cc5ded81d5d97937f61ddcd8518b481a75fadb29f87feb8ebd951e",
+      "bytes": 176056,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns_dark_360x1.png",
+      "state": "PC1",
+      "test": "PC1 Summary: the Patterns card with Plus (360 dp, text ×1, dark)",
+      "sha256": "4edad57575b346de8351e05794323f2725e26ba7b7195d8eeb51bb13835a61ef",
+      "bytes": 179341,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns_light_320x2.png",
+      "state": "PC1",
+      "test": "PC1 Summary: the Patterns card with Plus (320 dp, text ×2, light)",
+      "sha256": "070146949e95b2598c635e920641496f0f536a9b38709248f3c121d1995032b2",
+      "bytes": 177445,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "summary_patterns_light_360x1.png",
+      "state": "PC1",
+      "test": "PC1 Summary: the Patterns card with Plus (360 dp, text ×1, light)",
+      "sha256": "4a0c133491f54fa95ee4b8b8c3949b0c5e000ff40894b8b35c820872318bf69b",
+      "bytes": 181334,
+      "width": 1080,
+      "height": 2340
+    },
+    {
       "file": "summary_s1-december-end_light_320x2.png",
       "state": "SM1",
       "test": "S1 December (320 dp, text ×2, light)",
@@ -1523,6 +1667,168 @@
       "test": "S1 this week: every card (360 dp, text ×1, light)",
       "sha256": "a42c79d30187636194a8c3dc3db92ea24f72b43cac8c2cb1ef13da1fb82eb726",
       "bytes": 167418,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-home_apricot_dark_360x1.png",
+      "state": "TH2",
+      "test": "Home in apricot, dark",
+      "sha256": "7e319d08fc1e4470f6870aea83dfaca4daa139a7fe64aedb7a55224f31efd70c",
+      "bytes": 180009,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-home_apricot_light_360x1.png",
+      "state": "TH2",
+      "test": "Home in apricot, light",
+      "sha256": "889e7fbe46c40add7043ca575aab5f9bf9efdd85907bbd5c3633a4d295bfe3a1",
+      "bytes": 180902,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-home_blueberry_dark_360x1.png",
+      "state": "TH3",
+      "test": "Home in blueberry, dark",
+      "sha256": "58cb61b902d5a9a0adc7e44d226748b98a8d0f98459ea5542fbec7ad2a31dd43",
+      "bytes": 180037,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-home_blueberry_light_360x1.png",
+      "state": "TH3",
+      "test": "Home in blueberry, light",
+      "sha256": "65e4a4c45060c7f9f59f20effcaa14220b191d986370248b5598cc653b23a64a",
+      "bytes": 180639,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-home_plum_dark_360x1.png",
+      "state": "TH1",
+      "test": "Home in plum, dark",
+      "sha256": "f170b4bd977fbdd5f4fdaa7f4e0928d16786ddc8a2019d3d6898b7e484d8e75d",
+      "bytes": 181288,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-home_plum_light_360x1.png",
+      "state": "TH1",
+      "test": "Home in plum, light",
+      "sha256": "4c5dfc36e304c5ba48ba25d91bae3e3c6c4f32457f1786c467c06166c72cc3f9",
+      "bytes": 179739,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-home_strawberry_dark_360x1.png",
+      "state": "TH0",
+      "test": "Home in strawberry, dark",
+      "sha256": "af474128e611870191cc614188a90d281927c10b12a9b649d6662bad2c879700",
+      "bytes": 179732,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-home_strawberry_light_360x1.png",
+      "state": "TH0",
+      "test": "Home in strawberry, light",
+      "sha256": "a655149565fc43400519577771c7a59a38acde14ac8ab214606a29793bf7ecb8",
+      "bytes": 179834,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-picker_plum_dark_360x1.png",
+      "state": "TP1",
+      "test": "Me → Theme, the picker, dark",
+      "sha256": "ba53de29c14d574df6c4eb8284005ee576ebaa5e5404bbbe85c1a1169f8d76a3",
+      "bytes": 152992,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-picker_plum_light_360x1.png",
+      "state": "TP1",
+      "test": "Me → Theme, the picker, light",
+      "sha256": "114c659e33bf6c6fc40932076a62e477c7fc1ba16df315d9823cbf1d67fe963a",
+      "bytes": 151879,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-swatch_apricot_dark_360x1.png",
+      "state": "TS2",
+      "test": "the swatch of apricot, dark",
+      "sha256": "a6f04ed83cd8dd2b33041c0b786c29e40dd45144d4f5bd1c5238adfdde7818d5",
+      "bytes": 128499,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-swatch_apricot_light_360x1.png",
+      "state": "TS2",
+      "test": "the swatch of apricot, light",
+      "sha256": "35e1a8a33930466d658f7c15a5372dd0ebe4ad72068f6de284aebc392abb915d",
+      "bytes": 130550,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-swatch_blueberry_dark_360x1.png",
+      "state": "TS3",
+      "test": "the swatch of blueberry, dark",
+      "sha256": "00b9b930a7c9ada5920bb6b2a9a362b67d83bf7658b8e225ac940b2a960e4ab2",
+      "bytes": 132620,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-swatch_blueberry_light_360x1.png",
+      "state": "TS3",
+      "test": "the swatch of blueberry, light",
+      "sha256": "efc45977265d78964bfe577182d8aab636cb259868b31365788743333692a608",
+      "bytes": 128042,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-swatch_plum_dark_360x1.png",
+      "state": "TS1",
+      "test": "the swatch of plum, dark",
+      "sha256": "71bf7ede75baeee7fcbc537231f61dfe5e9ba8dd5bec881a041435d29456bbfb",
+      "bytes": 124392,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-swatch_plum_light_360x1.png",
+      "state": "TS1",
+      "test": "the swatch of plum, light",
+      "sha256": "cbccf433583d80b686388b9449a89641b5200f3f0ac9f2b8f848377b03b82455",
+      "bytes": 125336,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-swatch_strawberry_dark_360x1.png",
+      "state": "TS0",
+      "test": "the swatch of strawberry, dark",
+      "sha256": "d0e50b73d168aa2861c5cea6fb9fc00f2fa605a035e4680f46e5375a90d6bcf1",
+      "bytes": 134044,
+      "width": 1080,
+      "height": 2340
+    },
+    {
+      "file": "theme-swatch_strawberry_light_360x1.png",
+      "state": "TS0",
+      "test": "the swatch of strawberry, light",
+      "sha256": "223f4a36e58c471c443a736e5a107ee02f005f1e7dff33f1099907f763be052a",
+      "bytes": 134280,
       "width": 1080,
       "height": 2340
     },
