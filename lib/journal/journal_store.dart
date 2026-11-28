@@ -425,8 +425,10 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// One catch-up at a time: a call during a run waits for it to end.
-  Future<void> _catchUps = Future<void>.value();
+  /// The catch-up running now, if any: a call during a run waits for it to
+  /// end. Made per run, in the caller's zone (a future kept from when the
+  /// journal opened would run the next catch-up in the zone that opened it).
+  Future<List<Entry>>? _catchingUp;
 
   /// Adds each running repeat's entries for its days after the last day it
   /// dealt with, up to [today] (the phone's date, LocalDay), none older than
@@ -441,10 +443,23 @@ class JournalStore extends ChangeNotifier {
   /// back. A [today] before "made through" (the clock or the zone moved
   /// back) adds nothing and moves nothing. Returns what it added, oldest
   /// first.
-  Future<List<Entry>> catchUpRepeats({required String today}) {
-    final run = _catchUps.then((_) => _catchUp(today));
-    _catchUps = run.then<void>((_) {}, onError: (Object _) {});
-    return run;
+  Future<List<Entry>> catchUpRepeats({required String today}) async {
+    // One at a time: wait for the run in progress (its caller hears of its
+    // errors), then run.
+    for (var running = _catchingUp; running != null; running = _catchingUp) {
+      try {
+        await running;
+      } on Object {
+        // Reported to that run's caller.
+      }
+    }
+    final run = _catchUp(today);
+    _catchingUp = run;
+    try {
+      return await run;
+    } finally {
+      if (identical(_catchingUp, run)) _catchingUp = null;
+    }
   }
 
   Future<List<Entry>> _catchUp(String today) async {
