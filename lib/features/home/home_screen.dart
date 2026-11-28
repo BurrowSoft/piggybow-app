@@ -527,7 +527,7 @@ class _WeekCard extends StatelessWidget {
           SummaryEntry(
             type: e.type.id,
             amountMinor: e.amountMinor,
-            category: e.category?.id,
+            category: e.categoryId,
             feeling: e.feeling?.id,
             localDate: e.localDate,
           ),

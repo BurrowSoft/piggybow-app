@@ -272,6 +272,13 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                       await _load();
                     },
                   ),
+                  // For everyone: hiding is free; your own are Plus's.
+                  _Row(
+                    id: 'me-categories',
+                    title: l10n.meCategories,
+                    subtitle: l10n.meCategoriesSub,
+                    onTap: () => context.push(MeRoutes.categories),
+                  ),
                   _Section(l10n.meSecReminders),
                   TestId(
                     'me-reminder',
@@ -339,7 +346,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                     id: 'me-export',
                     title: l10n.meExport,
                     subtitle: l10n.meExportHint,
-                    onTap: () => exportJournal(services),
+                    onTap: () => exportJournal(services, l10n: l10n),
                   ),
                   _Row(
                     id: 'me-delete',
