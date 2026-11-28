@@ -34,6 +34,25 @@ Rules for a row:
 
 <!-- rows start here -->
 
+### master: pig tips, the app's side (#93 the client, #94 the screens) — deba760c — 🟢 (one finding, F-TI-1: a second tip call after off → on the same day, fixed in #95 and checked after it lands; other languages ⏳) — 2026-11-28 16:53 UTC
+Build: staging debug with pig tips on, their server pointed at a mock on the runner (`kind=tips-mock`), built in the job from deba760c, APK sha256 1fa4dc48…; installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US; root moves the device clock for the following days
+Rows: `tool/device-rows/group-tips.sh` (emulator run 46166682735, flows `tests/retro` @ 1a06c8f): 5 pass, 1 INFO (TI-7b), 0 fail. The mock (`tool/device-rows/tips_mock.py`) checks every tip request against the contract (`pig-tip-request.json`) and logs every request (`tips-mock.jsonl` in the evidence)
+| Row / check | Result | Notes |
+|---|---|---|
+| Master's push CI, read per test (run 46166156562, this sha) | 🟢 | `+2786: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean; server tests (deno) 32 passed, 0 failed; the SQL asserts pass |
+| The commits since e80101ed | 🟢 | 11, every one authored and committed by the noreply identity |
+| Goldens at deba760c (render 46164465290 on 28ed141) | 🟢 | my own download: 361 PNGs = manifest = committed at deba760c, both ways, by sha256; against e80101ed: 353 identical, 8 new (the written tip, the report sheet, the tips sheet, Me with tips on; light and dark), all looked at |
+| TI-1a nothing leaves before Yes | 🟢 | flow 94a: the built-in tip first; Your privacy names pig tips; Me's switch asks first; "Not now" leaves it off; the mock heard nothing |
+| TI-1b Yes, and TI-6 the labels | 🟢 | flow 94b: one signup, one tip call with a contract-valid body; Home shows the written tip with "Written by AI", Report and Another idea |
+| What a tip request carries | 🟢 | every body: language, weekday, category shares, feelings, saves, active goals, picks; no notes, no amounts |
+| TI-4 Report | 🟢 | flow 94c: Report → Not helpful → thanks; one report with the tip, model and sig that were served; the built-in tip after it, also after a restart, with no new tip call |
+| TI-2 off and on | 🟢 | flow 94d: off at once (forget accepted); on asks again and signs up a new id |
+| TI-7b one written tip a day, whatever the toggles | ❌ seen | after off → on the same day, the new id made a second tip call (1 → 2): F-TI-1, fixed in #95; this row becomes a pass/fail check once #95 lands |
+| TI-3 no tip from the server's side | 🟢 | flow 94e on six days: a timeout, 429, 503, 204, a 200 without sig, a 200 without x-tip-model → the built-in tip, nothing left loading, exactly one tip call each day; the session refreshed each day |
+| ⏳ TI-5 other languages | | pig tips are in English only for now |
+| ⏳ the real tips server | | a build with tips on against the real server, on a phone, with the release that turns tips on |
+History: run 46164524390 on 28ed141 (#94's head) failed for the tests' own reasons: the mock didn't read chunked request bodies, and Me had grown past the flows' scroll (both fixed in the tests). Its APK was byte-identical to this one (1fa4dc48…)
+
 ### master: group B — Home's turns, the pig's name, the night pig, days noted, yesterday, the monthly letter — c6940f6 — 🟢 (retroactive, on master after the landing; one finding, F-B1) — 2026-11-28 15:06 UTC
 Build: staging debug, built in the job from c6940f6, **no fake_now**: before each PR's rows, root sets the device's zone and clock to the moment those rows were written for, and each PR's rows script runs unchanged; installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, en-US
 Rows: `tool/device-rows/group-b.sh` (emulator run 46155006260, flows `tests/retro` @ 523fe1f): 15 pass, 1 INFO, 0 fail
