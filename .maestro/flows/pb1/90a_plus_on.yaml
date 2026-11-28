@@ -1,0 +1,181 @@
+appId: ${APP_ID}
+name: Plus on (group A, plus-owned) - Me says Plus is on; the paywall thanks you with Manage subscription; a second goal needs no paywall; your own category shows in Add; Delete everything says Plus keeps running
+tags: [plus]
+# Run with kind=plus-owned (PLUS_ENABLED + PLUS_FAKE_STORE + PLUS_ROWS_OWNED,
+# staging debug) and zone UTC: the rows' store reports one active yearly
+# purchase, with nothing bought.
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+# Me: Plus is on
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-plus
+- assertVisible:
+    id: me-plus
+- assertVisible: ".*On\\. Thanks for your support!.*"
+- assertVisible:
+    id: me-plus-manage
+- takeScreenshot: 90-me-plus-on
+- tapOn:
+    id: me-plus
+- extendedWaitUntil:
+    visible:
+      id: plus-screen
+    timeout: 10000
+- assertVisible:
+    id: plus-on
+- assertVisible: ".*You have Piggybow Plus.*"
+- assertVisible:
+    id: plus-manage
+- assertNotVisible:
+    id: plus-plan-yearly                           # no plans to buy while on
+- takeScreenshot: 90-plus-on
+- back
+# Two goals: the second opens the goal form, not the paywall
+- tapOn:
+    id: tab-home
+- runFlow:
+    file: ../../subflows/create_goal.yaml
+    env: { NAME: "Bike", AMOUNT: "500", START: "0" }
+- back                                             # the goal screen sits over the tabs
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-new-goal
+- tapOn:
+    id: home-new-goal
+- extendedWaitUntil:
+    visible:
+      id: goal-name
+    timeout: 10000
+- assertNotVisible:
+    id: plus-screen
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: goal-name
+      TEXT: "Trip to Japan"
+      EXPECT: ".*Trip to Japan.*"
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: goal-amount
+      TEXT: "900"
+      EXPECT: ".*900.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: goal-submit
+- tapOn:
+    id: goal-submit
+- extendedWaitUntil:
+    visible:
+      id: "goal-card|goal-screen"
+    timeout: 10000
+- runFlow:
+    when:
+      visible:
+        id: goal-screen
+    commands:
+      - back
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+- assertVisible: ".*Bike.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-new-goal
+- assertVisible: ".*Trip to Japan.*"
+- takeScreenshot: 90-two-goals
+# Your own category: made in Me → Categories, offered in Add
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-categories
+- tapOn:
+    id: me-categories
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: categories-add
+- tapOn:
+    id: categories-add
+- extendedWaitUntil:
+    visible:
+      id: category-edit-screen
+    timeout: 10000
+- runFlow:
+    file: ../../subflows/paste_into.yaml
+    env:
+      ID: category-name
+      TEXT: "Coffee runs"
+      EXPECT: ".*Coffee runs.*"
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: category-save
+- tapOn:
+    id: category-save
+- extendedWaitUntil:
+    visible:
+      id: categories-screen
+    timeout: 10000
+- assertVisible:
+    id: categories-custom-1
+- assertVisible: "(?s).*Coffee runs.*"
+- takeScreenshot: 90-categories-yours
+- back
+- tapOn:
+    id: tab-home
+- tapOn:
+    id: home-add
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: add-cat-custom-1
+- assertVisible:
+    id: add-cat-custom-1
+- takeScreenshot: 90-add-own-category
+- tapOn:                                           # Cancel (Back would only close the keyboard)
+    id: add-back
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
+# Delete everything says the subscription keeps running; cancelled here
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-delete
+- tapOn:
+    id: me-delete
+- extendedWaitUntil:
+    visible:
+      id: me-delete-cancel
+    timeout: 10000
+- assertVisible:
+    id: me-delete-plus-line
+- assertVisible: "(?s).*Your Plus subscription keeps running until you cancel it in Google Play\\..*"
+- assertVisible:
+    id: me-delete-plus-manage
+- takeScreenshot: 90-delete-plus
+- tapOn:
+    id: me-delete-cancel
+- extendedWaitUntil:
+    visible:
+      id: me-plus
+    timeout: 10000
