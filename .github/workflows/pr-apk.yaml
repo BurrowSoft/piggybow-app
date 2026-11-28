@@ -64,8 +64,8 @@ jobs:
       # What the tester's rows read from the log, without downloading the APK:
       # the package, label and version; every permission, diffed against
       # android/expected-permissions.txt (the release list) plus
-      # android/debug-only-permissions.txt (the network, which only debug and
-      # profile builds keep; the staging package's own permission read as the
+      # android/debug-only-permissions.txt (the network state, which only debug
+      # and profile builds keep; the staging package's own permission read as the
       # store package's); the manifest's backup attributes.
       - name: The APK's facts (badging, permissions, backup)
         run: |

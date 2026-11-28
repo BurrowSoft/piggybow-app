@@ -309,6 +309,35 @@ steps:
     expect(run, contains(r'bash "$(dirname "$0")/plus_probe.sh"'));
   });
 
+  // The app's own network use, for the evidence: the store build sends
+  // nothing with pig tips off, and the Plus probe records what Play Billing
+  // sends. One uid's bytes, through the named emulator only.
+  test("net_bytes.sh: one uid's bytes from netstats, and the probe reads it around the wait", () {
+    final net = File('tool/emulator/net_bytes.sh').readAsStringSync();
+    expect(net, contains('set -Eeuo pipefail\n'));
+    final code = net
+        .split('\n')
+        .where((l) => !l.trimLeft().startsWith('#'))
+        .toList();
+    final adb = [
+      for (final l in code)
+        if (RegExp(r'(^|[^\w-])adb(\s|$)').hasMatch(l)) l.trim(),
+    ];
+    expect(adb, [r'A() { adb -s "$SERIAL" "$@"; }']);
+    expect(net, contains(r'A shell cmd package list packages -U "$APP_ID"'));
+    expect(net, contains('A shell dumpsys netstats --poll'));
+    expect(net, contains('A shell dumpsys netstats detail'));
+    // The app's own uid and its totals (tag 0x0) only: never another app's.
+    expect(net, contains(r'index($0, " uid=" uid " ") > 0 && index($0, " tag=0x0") > 0'));
+    final probe = File('tool/emulator/plus_probe.sh').readAsStringSync();
+    expect(probe, contains(r'NET="$(dirname "$0")/net_bytes.sh"'));
+    final before = probe.indexOf(r'net_before=$(bash "$NET"');
+    final after = probe.indexOf(r'net_after=$(bash "$NET"');
+    expect(before, greaterThan(0));
+    expect(before, lessThan(probe.indexOf('A shell monkey')));
+    expect(after, greaterThan(probe.indexOf(r'sleep "$WAIT"')));
+  });
+
   test("plus_probe.sh: every adb call names the emulator; the app checked, "
       'and only the lines that matter kept', () {
     final probe = File('tool/emulator/plus_probe.sh').readAsStringSync();

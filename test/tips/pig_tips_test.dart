@@ -373,6 +373,29 @@ void main() {
     expect(await fake.tipFor('2026-12-02'), staticToday);
   });
 
+  test('at most one ask a local day on this phone, whatever the toggles', () async {
+    final t = await turnedOn();
+    http.answer(tipPath, tipAnswer());
+    expect(await t.tipFor('2026-12-02'), isA<WrittenTip>());
+    // Off and on again the same day: a new id, but no second ask that day.
+    http.answer(forgetPath, const TipsResponse(204));
+    await t.turnOff();
+    http.answer(signupPath, authAnswer(access: 'access-2', refresh: 'refresh-2'));
+    await t.turnOn(aiVersion: 'ai-1', age18Version: 'age-1');
+    expect(t.on.value, isTrue);
+    expect(await t.tipFor('2026-12-02'), staticToday);
+    // A new start the same day: still none. Only a date is kept.
+    final restarted = tips();
+    await restarted.load();
+    expect(await restarted.tipFor('2026-12-02'), staticToday);
+    expect(store.values[PigTipsService.askedKey], '2026-12-02');
+    expect(http.paths.where((p) => p == tipPath), hasLength(1));
+    // The next day: one ask again.
+    http.answer(tipPath, tipAnswer(text: 'Maybe a slow morning walk.', sig: 'sig-2'));
+    expect(await t.tipFor('2026-12-03'), isA<WrittenTip>());
+    expect(http.paths.where((p) => p == tipPath), hasLength(2));
+  });
+
   test('turnOff: off at once, the withdrawal recorded, and the id deleted on the server', () async {
     final t = await turnedOn();
     http.answer(forgetPath, const TipsResponse(204));

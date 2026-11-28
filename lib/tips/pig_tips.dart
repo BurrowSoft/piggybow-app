@@ -186,6 +186,11 @@ class PigTipsService implements PigTips {
   /// Reports with no answer yet, oldest first.
   static const reportsKey = 'pig_tips_reports';
 
+  /// The last local day a tip was asked on this phone: only a date, tied to
+  /// no id, and kept when tips are turned off and on, so that day is never
+  /// asked again (one written tip a phone a day, whatever the toggles).
+  static const askedKey = 'pig_tips_asked_day';
+
   /// The most reports kept to send later; older ones go first.
   static const maxQueuedReports = 20;
 
@@ -306,7 +311,10 @@ class PigTipsService implements PigTips {
       if (day == null || !offered || !_on.value) return fallback;
       final answered = await _readDay(todayWire);
       if (answered != null) return answered.tip ?? fallback;
-      // Once a local day, whatever comes back.
+      // At most once a local day on this phone, whatever comes back and
+      // whatever happened since (tips off and on again, a new id).
+      if (await _store.read(askedKey) == todayWire) return fallback;
+      await _store.write(askedKey, todayWire);
       await _writeDay(todayWire, null);
       final tip = await _ask(todayWire);
       if (tip == null) return fallback;

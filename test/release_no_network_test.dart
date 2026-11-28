@@ -3,12 +3,14 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// Version 0.1 sends nothing, and the phone itself enforces it: a release
-/// build asks for no network permission, a release that would need the
-/// network (a crash-report DSN, or Plus with Play Billing) fails to build
-/// until its manifest changes too, and nothing in the app fetches anything
-/// at runtime. android/expected-permissions.txt is the release list that the
-/// Play upload and CI's release manifest are diffed against.
+/// A release build reaches the network for pig tips only, and the phone
+/// enforces the rest: a release build asks for INTERNET and nothing else of
+/// the network's (ACCESS_NETWORK_STATE removed), a release that would use the
+/// network for more (a crash-report DSN, or Plus with Play Billing) fails to
+/// build until its manifest and the store's texts change too, and the pig
+/// tips client is the only code that opens a connection.
+/// android/expected-permissions.txt is the release list that the Play upload
+/// and CI's release manifest are diffed against.
 void main() {
   final release = File('android/app/src/release/AndroidManifest.xml')
       .readAsStringSync();
@@ -18,20 +20,19 @@ void main() {
   final expected = lines('android/expected-permissions.txt');
   final debugOnly = lines('android/debug-only-permissions.txt');
 
-  test('a release build removes INTERNET and ACCESS_NETWORK_STATE', () {
+  test('a release build keeps INTERNET, for pig tips, and removes ACCESS_NETWORK_STATE', () {
     expect(release, contains('xmlns:tools="http://schemas.android.com/tools"'));
-    for (final permission in ['INTERNET', 'ACCESS_NETWORK_STATE']) {
-      expect(
-        release,
-        matches(
-          RegExp(
-            'android:name="android\\.permission\\.$permission"'
-            '\\s+tools:node="remove"',
-          ),
+    expect(
+      release,
+      matches(
+        RegExp(
+          'android:name="android\\.permission\\.ACCESS_NETWORK_STATE"'
+          '\\s+tools:node="remove"',
         ),
-        reason: permission,
-      );
-    }
+      ),
+    );
+    // INTERNET comes from the main manifest, untouched here.
+    expect(release, isNot(contains('android.permission.INTERNET')));
   });
 
   test('debug and profile builds keep INTERNET, for the Flutter tool', () {
@@ -44,29 +45,27 @@ void main() {
     }
   });
 
-  test('the release list has no network; the debug list adds just that', () {
-    expect(expected, isNot(contains('android.permission.INTERNET')));
+  test('the release list has INTERNET and not the network state; the debug list adds that', () {
+    expect(expected, contains('android.permission.INTERNET'));
     expect(
       expected,
       isNot(contains('android.permission.ACCESS_NETWORK_STATE')),
     );
-    expect(debugOnly, [
-      'android.permission.ACCESS_NETWORK_STATE',
-      'android.permission.INTERNET',
-    ]);
+    expect(debugOnly, ['android.permission.ACCESS_NETWORK_STATE']);
     expect(expected.toSet().intersection(debugOnly.toSet()), isEmpty);
   });
 
-  test('a release build that would need the network stops', () {
+  test('a release build that would use the network for more than pig tips stops', () {
     expect(gradle, contains('project.findProperty("dart-defines")'));
     expect(gradle, contains('import java.util.Base64'));
     expect(gradle, contains('Base64.getDecoder()'));
     expect(gradle, contains('it.name.contains("Release")'));
     expect(gradle, contains('dartDefines["SENTRY_DSN"]'));
     expect(gradle, contains('dartDefines["PLUS_ENABLED"] == "true"'));
-    expect(gradle, contains('dartDefines["AI_TIPS_ENABLED"] == "true"'));
-    expect(gradle, contains('if (release && (dsn || plus || tips))'));
-    // And no build of v0.1 sets any: every env file a build reads.
+    expect(gradle, contains('if (release && (dsn || plus))'));
+    // Pig tips are gated in the app instead: their texts (tips_hook_test).
+    expect(gradle, isNot(contains('AI_TIPS_ENABLED')));
+    // And no build sets either: every env file a build reads.
     final envs = Directory('env')
         .listSync()
         .whereType<File>()
@@ -77,7 +76,6 @@ void main() {
       final env = jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
       expect('${env['SENTRY_DSN'] ?? ''}'.trim(), isEmpty, reason: f.path);
       expect('${env['PLUS_ENABLED']}', isNot('true'), reason: f.path);
-      expect('${env['AI_TIPS_ENABLED']}', isNot('true'), reason: f.path);
     }
   });
 
@@ -94,7 +92,7 @@ void main() {
     expect(pr, contains('android/debug-only-permissions.txt'));
   });
 
-  test('nothing in the app fetches from the network but the pig tips client', () {
+  test('only the pig tips client opens a connection', () {
     // No network package; the fonts are bundled assets.
     final pubspec = File('pubspec.yaml').readAsStringSync();
     for (final package in [
@@ -114,10 +112,11 @@ void main() {
       );
     }
     expect(pubspec, contains('asset: assets/fonts/Poppins-Regular.ttf'));
-    // No network call in the app's own code.
+    // No network call or socket in the app's own code...
     final calls = RegExp(
       r'Image\.network|NetworkImage|SvgPicture\.network|HttpClient\(|'
-      r'package:http/|package:dio/|WebView',
+      r'package:http/|package:dio/|WebView|WebSocket|RawSocket|'
+      r'SecureSocket|Socket\.connect|ServerSocket|RawDatagramSocket',
     );
     final sources = Directory('lib')
         .listSync(recursive: true)
@@ -129,8 +128,8 @@ void main() {
         )
         .toList();
     expect(sources, isNotEmpty);
-    // The one exception: the pig tips client's own file, with dart:io's
-    // client and no package (and a release build still has no INTERNET).
+    // ...but the pig tips client's own file: dart:io's client, no package, no
+    // socket of its own.
     const tipsClient = 'lib/tips/tips_http.dart';
     for (final f in sources) {
       if (f.path.replaceAll('\\', '/') == tipsClient) continue;
@@ -138,8 +137,9 @@ void main() {
     }
     final client = File(tipsClient).readAsStringSync();
     expect(RegExp(r'HttpClient\(').allMatches(client), hasLength(1));
-    expect(client, isNot(contains('package:http/')));
-    expect(client, isNot(contains('package:dio/')));
+    for (final other in ['package:http/', 'package:dio/', 'Socket', 'WebView']) {
+      expect(client, isNot(contains(other)), reason: other);
+    }
   });
 
   test('the signing secrets: line endings stripped, whitespace fails', () {

@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Every link the app shows opens in the browser, outside Piggybow. A web
 /// view inside the app would load the page in Piggybow itself, and a
-/// release build asks for no network at all.
+/// release build reaches the network for pig tips only.
 void main() {
   test('every launchUrl opens outside the app', () {
     var links = 0;

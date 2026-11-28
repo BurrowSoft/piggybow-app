@@ -52,9 +52,14 @@ class IoTipsHttp implements TipsHttp {
       for (final h in headers.entries) {
         r.headers.set(h.key, h.value);
       }
-      if (body != null) {
+      // A known length, never chunked: the most plain request there is.
+      if (body == null) {
+        r.contentLength = 0;
+      } else {
+        final encoded = utf8.encode(body);
         r.headers.contentType = ContentType.json;
-        r.add(utf8.encode(body));
+        r.contentLength = encoded.length;
+        r.add(encoded);
       }
       final response = await r.close();
       final bytes = <int>[];

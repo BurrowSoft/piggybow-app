@@ -6,8 +6,8 @@ name: Supabase staging
 #      password, which would bypass the token's scope);
 #   2. the pig-tip function;
 #   3. a smoke check: a call with no user must get 401.
-# Manual, from master only. The supabase-staging environment holds the
-# token and starts the job only after its reviewer approves.
+# Manual, from master only: the supabase-staging environment holds the
+# token and gives it to master runs only.
 on:
   workflow_dispatch:
     inputs:
@@ -62,7 +62,9 @@ jobs:
           "$RUNNER_TEMP/supabase-cli/supabase" --version
       # Each migration can run again without changing anything: they run
       # twice to prove it, then supabase/checks/after-migrations.sql checks
-      # the result (one settings row, the clean-up scheduled once).
+      # the result (one settings row; the clean-up and the idle users'
+      # deletion scheduled once each; that deletion allowed to delete Auth
+      # users).
       - name: The migrations, through the Management API
         if: inputs.what != 'function'
         env:
@@ -73,11 +75,14 @@ jobs:
           --allow-env=SUPABASE_DEPLOY_TOKEN,PROJECT_REF
           supabase/scripts/sql.ts supabase/migrations/*.sql supabase/migrations/*.sql
           supabase/checks/after-migrations.sql
+      # --yes: CLI 3.4.0 asks to confirm a deploy, and with no terminal it
+      # changes nothing and fails. --project-ref still works in 3.4.0 (v4
+      # renames it --remote).
       - name: The pig-tip function
         if: inputs.what != 'migrations'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_STAGING_DEPLOY_TOKEN }}
-        run: supabase functions deploy pig-tip --project-ref "$PROJECT_REF" --use-api
+        run: supabase functions deploy pig-tip --project-ref "$PROJECT_REF" --use-api --yes
       - name: Smoke check, no user so 401
         if: inputs.what != 'migrations'
         run: >-

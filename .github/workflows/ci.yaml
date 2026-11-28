@@ -132,12 +132,14 @@ jobs:
         working-directory: supabase/functions/pig-tip
         run: deno check --frozen ../../scripts/sql.ts ../../scripts/smoke.ts ../../scripts/tips-run.ts
 
-  # Migration 001 on a bare Postgres (pinned by digest), run twice, then its
-  # SQL asserts: the seed, what the API's roles can't touch, the tips' and
-  # the reports' caps, and the clean-up's edges, in a time zone far from UTC.
-  # supabase/tests/stubs.sql stands in for what Supabase provides (auth.users,
-  # the three roles and their default grants). The pg_cron migration needs
-  # Supabase itself: the deploy runs it twice and checks it.
+  # The migrations without pg_cron on a bare Postgres (pinned by digest), run
+  # twice, then their SQL asserts: the seed, what the API's roles can't
+  # touch, the tips' and the reports' caps, the clean-up's edges, and the
+  # idle anonymous users' deletion on both edges of its 30 days, in a time
+  # zone far from UTC. supabase/tests/stubs.sql stands in for what Supabase
+  # provides (auth.users and its sessions, the three roles and their default
+  # grants). The pg_cron migrations need Supabase itself: the deploy runs
+  # them twice and checks them.
   sql:
     name: server SQL (postgres)
     needs: changes
@@ -165,14 +167,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Migration 001, twice, then its asserts
+      - name: The migrations without pg_cron, twice, then their asserts
         run: |
           set -euo pipefail
           psql --version
           psql -X -v ON_ERROR_STOP=1 -q -f supabase/tests/stubs.sql
-          psql -X -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261128140000_pig_tips.sql
-          psql -X -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261128140000_pig_tips.sql
+          for run in 1 2; do
+            psql -X -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261128140000_pig_tips.sql
+            psql -X -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261128180000_pig_tips_forget_idle.sql
+          done
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/pig_tips_test.sql
+          psql -X -v ON_ERROR_STOP=1 -f supabase/tests/forget_idle_test.sql
 
   trackers:
     name: no tracking dependencies
@@ -217,8 +222,9 @@ jobs:
         # A dependency report needs little heap; android/gradle.properties'
         # -Xmx8G is more than the runner has.
         run: ./gradlew --no-daemon verifyNoTrackingDeps -Dorg.gradle.jvmargs=-Xmx2g
-      # A release build sends nothing (src/release/AndroidManifest.xml removes
-      # the network permissions): its merged manifest asks for exactly
+      # A release build reaches the network for pig tips only
+      # (src/release/AndroidManifest.xml keeps INTERNET for them and removes
+      # ACCESS_NETWORK_STATE): its merged manifest asks for exactly
       # android/expected-permissions.txt, the list the Play upload is checked
       # against. The staging release has the same manifest; a prod task needs
       # the upload key, which only the Release AAB workflow has.

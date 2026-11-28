@@ -9,14 +9,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/app_config.dart';
 import '../../core/button_label.dart';
+import '../../core/policy.dart';
 import '../../core/semantics_id.dart';
 import '../../l10n/gen/app_localizations.dart';
 import '../../tips/pig_tips.dart';
-
-/// The consent texts' versions, recorded by [PigTips.turnOn]: bump one
-/// whenever its words change (UX), so a record always names what was agreed.
-const tipsConsentAi = 'ai-tips-2026-11-28';
-const tipsConsentAge = 'age18-2026-11-28';
 
 /// Me's "Pig tips" switch. On: the consent sheet first, and tips turn on
 /// only after its Yes. Off: at once, said in a snackbar (UX).
@@ -68,9 +64,11 @@ class _TipsConsentSheetState extends State<_TipsConsentSheet> {
       _failed = false;
     });
     try {
+      // The versions of this sheet's texts, from one place: the same ones a
+      // release build's tips wait for (PolicyVersions.aiTextsFinal).
       await widget.tips.turnOn(
-        aiVersion: tipsConsentAi,
-        age18Version: tipsConsentAge,
+        aiVersion: PolicyVersions.ai,
+        age18Version: PolicyVersions.age18,
       );
       if (mounted) Navigator.of(context).pop(true);
     } on PigTipsUnavailable {

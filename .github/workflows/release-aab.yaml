@@ -7,7 +7,8 @@ name: Release AAB
 # accident. Raise pubspec's version in a PR first, higher than the last
 # upload. Google re-signs it with the app key (Play App Signing). Its
 # permissions must equal android/expected-permissions.txt: a release build
-# has no network permission (android/app/src/release/AndroidManifest.xml).
+# has INTERNET for pig tips only, and not the network state
+# (android/app/src/release/AndroidManifest.xml).
 #
 # Secrets (the owner, repo Settings → Secrets → Actions; never in this repo):
 # PIGGYBOW_UPLOAD_KEYSTORE_B64, PIGGYBOW_UPLOAD_STORE_PASSWORD,
