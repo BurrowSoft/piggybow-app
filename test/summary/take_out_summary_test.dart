@@ -70,7 +70,8 @@ void main() {
     expect((old.isEmpty, old.takenOutMinor, old.spentMinor), (false, 500, 0));
   });
 
-  test('a type that is not spent, saved or withdraw throws, loudly', () {
+  test('a type that is not spent, saved or withdraw throws, loudly, in the '
+      'period or not', () {
     expect(
       () => summary(const [
         SummaryEntry(type: 'spend', amountMinor: 100, category: 'food', localDate: '2026-12-01'),
@@ -82,6 +83,14 @@ void main() {
           'must be "spent", "saved" or "withdraw"',
         ),
       ),
+    );
+    // Long before the period shown: still checked.
+    expect(
+      () => summary(const [
+        SummaryEntry(type: 'saved', amountMinor: 100, localDate: '2026-12-01'),
+        SummaryEntry(type: 'spend', amountMinor: 100, category: 'food', localDate: '2025-01-06'),
+      ]),
+      throwsArgumentError,
     );
   });
 }

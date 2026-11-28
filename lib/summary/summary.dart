@@ -207,6 +207,15 @@ Summary summarize({
 
   for (final e in entries) {
     if (oldest == null || e.localDate.compareTo(oldest) < 0) oldest = e.localDate;
+    // Every entry is checked, in the period or not: an unknown type is a
+    // bug, said loudly.
+    if (e.type != 'spent' && e.type != 'saved' && e.type != 'withdraw') {
+      throw ArgumentError.value(
+        e.type,
+        'type',
+        'must be "spent", "saved" or "withdraw"',
+      );
+    }
     if (!period.contains(e.localDate)) continue;
     any = true;
     // Taken out of savings: its own total; never a spend, never less saved.
@@ -217,14 +226,6 @@ Summary summarize({
     if (e.type == 'saved') {
       saved += e.amountMinor;
       continue;
-    }
-    // Only a spend is counted as one: anything else is a bug, said loudly.
-    if (e.type != 'spent') {
-      throw ArgumentError.value(
-        e.type,
-        'type',
-        'must be "spent", "saved" or "withdraw"',
-      );
     }
     spent += e.amountMinor;
     final c = e.category;
