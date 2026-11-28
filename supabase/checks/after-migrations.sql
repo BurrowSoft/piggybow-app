@@ -12,6 +12,28 @@ begin
   if (select count(*) from public.tip_settings) <> 1 then
     raise exception 'tip_settings should have exactly one row';
   end if;
+  -- The API roles on the tables, whatever the project's automatic grants:
+  -- service_role reads tip_settings and nothing else; anon and authenticated
+  -- have nothing.
+  if not has_table_privilege('service_role', 'public.tip_settings', 'select') then
+    raise exception 'service_role can''t read tip_settings';
+  end if;
+  if has_table_privilege('service_role', 'public.tip_settings', 'insert, update, delete') then
+    raise exception 'service_role can change tip_settings';
+  end if;
+  if exists (
+    select from unnest(array['public.tip_usage', 'public.tip_day', 'public.tip_reports']) t
+      where has_table_privilege('service_role', t, 'select, insert, update, delete')
+  ) then
+    raise exception 'service_role has a privilege on a pig tips table besides reading the settings';
+  end if;
+  if exists (
+    select from unnest(array['public.tip_settings', 'public.tip_usage', 'public.tip_day', 'public.tip_reports']) t,
+      unnest(array['anon', 'authenticated']) r
+      where has_table_privilege(r, t, 'select, insert, update, delete')
+  ) then
+    raise exception 'anon or authenticated has a privilege on a pig tips table';
+  end if;
   if (select count(*) from cron.job where jobname = 'pig-tips-clean-up') <> 1 then
     raise exception 'pig-tips-clean-up should be scheduled exactly once';
   end if;

@@ -206,6 +206,34 @@ Deno.test("503 when the database fails, and the error's text isn't logged", asyn
   assertEquals(logs, [{ route: "tip", status: 503, why: "Error" }]);
 });
 
+Deno.test("503 when the database refuses: the error's name and code are logged, never its text", async () => {
+  class PostgrestError extends Error {
+    code: string;
+    constructor(message: string, code: string) {
+      super(message);
+      this.name = "PostgrestError";
+      this.code = code;
+    }
+  }
+  for (
+    const [code, why] of [
+      ["42501", "PostgrestError:42501"],
+      ["PGRST301", "PostgrestError:PGRST301"],
+      // Not a short code: the name alone.
+      ["no such table: " + UID, "PostgrestError"],
+    ]
+  ) {
+    const { deps, logs } = fake({
+      settings: async () => {
+        throw new PostgrestError(`permission denied for table tip_settings, user ${UID}`, code);
+      },
+    });
+    assertEquals((await handle(post("/pig-tip", week), deps)).status, 503, code);
+    assertEquals(logs, [{ route: "tip", status: 503, why }], code);
+    assertQuietLogs(logs);
+  }
+});
+
 Deno.test("report: a tip this server gave, a reason and its model are kept; any other body is refused", async () => {
   const { deps, reports, calls, logs } = fake();
   const good = { tip: TIP, reason: "unhelpful", model: "claude-haiku-5-5", sig: SIG };

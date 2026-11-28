@@ -135,6 +135,22 @@ begin
     'the first request of a new day cleans up, tips off too';
 end $$;
 
+-- service_role, as the function uses it: SELECT on tip_settings and nothing
+-- else, even where the project grants new tables to the API roles (as these
+-- stubs do) or doesn't (as Piggybow's projects don't).
+do $$
+declare
+  t text;
+begin
+  assert has_table_privilege('service_role', 'public.tip_settings', 'select'), 'service_role reads tip_settings';
+  assert not has_table_privilege('service_role', 'public.tip_settings', 'insert, update, delete'),
+    'service_role can''t change tip_settings';
+  foreach t in array array['tip_usage', 'tip_day', 'tip_reports'] loop
+    assert not has_table_privilege('service_role', 'public.' || t, 'select, insert, update, delete'),
+      t || ': nothing for service_role';
+  end loop;
+end $$;
+
 -- A forgotten user's counters go with them.
 do $$
 declare

@@ -175,6 +175,7 @@ jobs:
           for run in 1 2; do
             psql -X -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261128140000_pig_tips.sql
             psql -X -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261128180000_pig_tips_forget_idle.sql
+            psql -X -v ON_ERROR_STOP=1 -q -f supabase/migrations/20261128193000_pig_tips_service_role_read.sql
           done
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/pig_tips_test.sql
           psql -X -v ON_ERROR_STOP=1 -f supabase/tests/forget_idle_test.sql
