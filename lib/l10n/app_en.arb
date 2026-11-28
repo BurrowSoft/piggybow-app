@@ -307,5 +307,5 @@
   "@widgetDescription": {"description": "Android shows it, not the app: the widget picker's description (android/app/src/main/res/values/widget.xml, pinned by a test)."},
   "widgetAdd": "Add a spend",
   "@widgetAdd": {"description": "Android only: what TalkBack says for the widget's + (res/values/widget.xml, pinned by a test)."},
-  "mePrivacyWidget": "The widget shows today's spending and a goal on your home screen. With the app lock on, it shows only the pig."
+  "mePrivacyWidget": "The widget shows today's spending and a goal on your home screen. With the app lock on, it shows only the pig and \"Tap to open\"."
 }

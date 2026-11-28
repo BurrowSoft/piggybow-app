@@ -16,7 +16,8 @@ import 'layout_matrix.dart';
 void main() {
   setUpAll(loadAppFonts);
   const line =
-      "The widget shows today's spending and a goal on your home screen. With the app lock on, it shows only the pig.";
+      "The widget shows today's spending and a goal on your home screen. "
+      'With the app lock on, it shows only the pig and "Tap to open".';
 
   Finder listIn(String screenId) => find
       .descendant(of: byId(screenId), matching: find.byType(Scrollable))
