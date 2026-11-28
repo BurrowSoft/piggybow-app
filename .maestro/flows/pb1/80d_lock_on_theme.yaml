@@ -1,0 +1,18 @@
+appId: ${APP_ID}
+name: Lock status bar (#65), part D - a fresh install with Piggybow's own theme set to THEME (light or dark, against the phone's mode) and the app lock on; pr65b.sh then cold-starts it
+tags: [lockbar]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-theme-${THEME}
+- tapOn:
+    id: me-theme-${THEME}
+- assertVisible:
+    id: me-theme-${THEME}
+    selected: true
+- runFlow: ../../subflows/set_lock_1357.yaml
