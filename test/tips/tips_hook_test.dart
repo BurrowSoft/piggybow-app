@@ -53,7 +53,14 @@ void main() {
       read('android/app/src/debug/AndroidManifest.xml'),
       contains('android:networkSecurityConfig="@xml/network_security_config"'),
     );
-    for (final set in ['main', 'profile', 'release']) {
+    // Every other source set (main, the build types, the flavours): a
+    // flavour's files reach its release builds too.
+    final sets = [
+      for (final d in Directory('android/app/src').listSync().whereType<Directory>())
+        d.path.replaceAll('\\', '/').split('/').last,
+    ]..remove('debug');
+    expect(sets, containsAll(['main', 'profile', 'release']));
+    for (final set in sets) {
       final dir = 'android/app/src/$set';
       final manifest = File('$dir/AndroidManifest.xml');
       if (manifest.existsSync()) {

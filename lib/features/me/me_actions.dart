@@ -155,15 +155,15 @@ Future<bool> deleteEverything(
     }
   }
 
-  // The journal first. Only once it is gone do the lock, the prefs and the
-  // account go: a journal still on the phone keeps its PIN and its account,
-  // so this wipe (which Forgot PIN's erase reuses) is never a way past the
-  // lock (decision 67, amended).
   // Pig tips first: off, and the anonymous id deleted on the server (its
   // reports first). With no connection, that delete is kept through the
   // erase below and sent at a later start.
   String? tipsDelete;
   await step(() async => tipsDelete = await services.pigTips?.eraseBegin());
+  // Then the journal. Only once it is gone do the lock, the prefs and the
+  // account go: a journal still on the phone keeps its PIN and its account,
+  // so this wipe (which Forgot PIN's erase reuses) is never a way past the
+  // lock (decision 67, amended).
   final journalGone = await step(services.journal.wipe);
   await step(services.reminders.cancelAll);
   await step(() => clearCache(cache: cache));
