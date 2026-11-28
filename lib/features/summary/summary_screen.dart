@@ -185,6 +185,19 @@ class _SummaryScreenState extends State<SummaryScreen>
           )
         else ...[
           _Totals(spent: money(s.spentMinor), saved: money(s.savedMinor)),
+          // Taken out of savings: its own quiet line, never netted.
+          if (s.takenOutMinor > 0) ...[
+            const SizedBox(height: 8),
+            TestId.container(
+              'sum-taken-out',
+              child: WholeWordsText(
+                l10n.takeOutSummary(money(s.takenOutMinor)),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
           if (s.planPercent != null && plan != null) ...[
             const SizedBox(height: 12),
             _PlanCard(amount: money(plan), percent: s.planPercent!),

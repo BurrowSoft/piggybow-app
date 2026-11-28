@@ -36,7 +36,7 @@ class CsvRow {
   /// The entry's local_date, "YYYY-MM-DD".
   final String localDate;
 
-  /// "spent" or "saved".
+  /// "spent", "saved" or "withdraw".
   final String type;
   final int amountMinor;
   final String currency;
@@ -48,7 +48,7 @@ class CsvRow {
   final String? feeling;
   final String note;
 
-  /// The goal's name for a save attached to a goal; empty otherwise.
+  /// The goal's name for a save or a withdrawal attached to a goal; empty otherwise.
   final String? goalName;
 }
 
@@ -77,8 +77,8 @@ String buildCsv(List<CsvRow> rows) {
     if (!_isoDate.hasMatch(r.localDate)) {
       throw ArgumentError.value(r.localDate, 'localDate', 'must be YYYY-MM-DD');
     }
-    if (r.type != 'spent' && r.type != 'saved') {
-      throw ArgumentError.value(r.type, 'type', 'must be "spent" or "saved"');
+    if (r.type != 'spent' && r.type != 'saved' && r.type != 'withdraw') {
+      throw ArgumentError.value(r.type, 'type', 'must be "spent", "saved" or "withdraw"');
     }
     lines.add(
       [

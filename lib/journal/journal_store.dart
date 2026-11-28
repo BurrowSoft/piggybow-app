@@ -152,6 +152,10 @@ class JournalStore extends ChangeNotifier {
     Feeling? feeling,
     String note = '',
   }) async {
+    // Out of a goal, within what it has: takeOut.
+    if (type == EntryType.withdraw) {
+      throw ArgumentError.value(type, 'type', 'a withdrawal goes through takeOut');
+    }
     final now = _clock.nowUtc();
     final spend = type == EntryType.spent;
     final entry = Entry(
@@ -176,12 +180,25 @@ class JournalStore extends ChangeNotifier {
 
   /// Saves an edit. Spent ↔ Saved is allowed: a spend drops its goal, a save
   /// drops its category and feeling and goes to the active goal if it had
-  /// none. Its id, currency and creation time never change.
+  /// none. A withdrawal stays one, out of the same goal, and at most what
+  /// that goal has (its own amount counted back); nothing becomes one. Its
+  /// id, currency and creation time never change.
   Future<Entry> updateEntry(Entry changed) async {
     final old = await entry(changed.id);
     if (old == null) throw StateError('no entry ${changed.id}');
+    final withdraw = old.type == EntryType.withdraw;
+    if (withdraw != (changed.type == EntryType.withdraw)) {
+      throw ArgumentError.value(changed.type, 'type', 'a withdrawal stays one');
+    }
+    if (withdraw) {
+      await _checkTakeOut(
+        old.goalId!,
+        changed.amountMinor,
+        countedBack: old.amountMinor,
+      );
+    }
     final spend = changed.type == EntryType.spent;
-    var goalId = spend ? null : changed.goalId;
+    var goalId = spend ? null : (withdraw ? old.goalId : changed.goalId);
     if (!spend && old.type == EntryType.spent) {
       goalId = (await activeGoal())?.id;
     }
@@ -262,19 +279,70 @@ class JournalStore extends ChangeNotifier {
     return [for (final s in snaps) ?Goal.fromMap(s.key, s.value)];
   }
 
-  /// The saves that name [goalId], newest day first.
+  /// The saves that name [goalId], and what was taken out of it, newest day
+  /// first: the goal's own list.
   Future<List<Entry>> goalSaves(String goalId) async => [
     for (final e in await entries())
-      if (e.type == EntryType.saved && e.goalId == goalId) e,
+      if (e.type != EntryType.spent && e.goalId == goalId) e,
   ];
 
-  /// A goal's progress: what was already saved, plus every save that names it.
+  /// A goal's progress: what was already saved, plus every save that names
+  /// it, less what was taken out of it. Never below 0 (a save edited or
+  /// deleted after a withdrawal can't make it negative).
   Future<int> goalProgress(Goal goal) async {
     var sum = goal.startMinor;
     for (final e in await goalSaves(goal.id)) {
-      sum += e.amountMinor;
+      sum += e.type == EntryType.withdraw ? -e.amountMinor : e.amountMinor;
     }
-    return sum;
+    return sum < 0 ? 0 : sum;
+  }
+
+  /// Takes [amountMinor] out of [goalId]'s savings on [localDate]: at most
+  /// what the goal has now (its progress). A goal stays reached (that's an
+  /// event); its rainbow goes down by it. The pig says nothing about it.
+  Future<Entry> takeOut({
+    required String goalId,
+    required int amountMinor,
+    required String currency,
+    required String localDate,
+    String note = '',
+  }) async {
+    await _checkTakeOut(goalId, amountMinor);
+    final now = _clock.nowUtc();
+    final entry = Entry(
+      id: _newId(),
+      type: EntryType.withdraw,
+      amountMinor: amountMinor,
+      currency: currency,
+      note: note.trim(),
+      goalId: goalId,
+      localDate: localDate,
+      createdAt: now,
+      updatedAt: now,
+    );
+    _check(entry);
+    await _entries.record(entry.id).put(_db, entry.toMap());
+    notifyListeners();
+    return entry;
+  }
+
+  /// What [goalId] has to take out of: its progress, plus [countedBack] (an
+  /// edited withdrawal's own amount).
+  Future<int> takeOutLimit(String goalId, {int countedBack = 0}) async {
+    final g = await goal(goalId);
+    if (g == null) throw ArgumentError.value(goalId, 'goalId', 'no such goal');
+    return await goalProgress(g) + countedBack;
+  }
+
+  Future<void> _checkTakeOut(
+    String goalId,
+    int amountMinor, {
+    int countedBack = 0,
+  }) async {
+    final limit = await takeOutLimit(goalId, countedBack: countedBack);
+    if (amountMinor > limit) {
+      throw StateError('more than the goal has saved ($amountMinor > $limit)');
+    }
   }
 
   /// Whether the celebration for reaching [goalId] was shown (it shows once).
@@ -347,6 +415,9 @@ class JournalStore extends ChangeNotifier {
     }
     if (e.type == EntryType.spent && e.category == null) {
       throw ArgumentError('a spend needs a category');
+    }
+    if (e.type == EntryType.withdraw && e.goalId == null) {
+      throw ArgumentError('a withdrawal is out of a goal');
     }
     if (e.note.characters.length > maxNoteLength) {
       throw ArgumentError('the note is over $maxNoteLength characters');

@@ -398,7 +398,7 @@ class _EntrySheetState extends State<EntrySheet> {
                               decimal: minorDigitsOf(currency) > 0,
                             ),
                             inputFormatters: [
-                              _AmountFormatter(minorDigitsOf(currency)),
+                              AmountInputFormatter(minorDigitsOf(currency)),
                             ],
                             onChanged: (_) => setState(() {}),
                             // Typed text in ink, larger for the amount.
@@ -727,8 +727,8 @@ class _CategoryGrid extends StatelessWidget {
 /// Typing: digits and at most one decimal mark ("." or ","), with no more
 /// decimals than the currency has. A paste (several characters at once) goes
 /// in as it is, and the field says when it can't be read.
-class _AmountFormatter extends TextInputFormatter {
-  _AmountFormatter(int decimals)
+class AmountInputFormatter extends TextInputFormatter {
+  AmountInputFormatter(int decimals)
     : _allowed = decimals == 0
           ? RegExp(r'^[0-9]*$')
           : RegExp('^[0-9]*([.,][0-9]{0,$decimals})?\$');

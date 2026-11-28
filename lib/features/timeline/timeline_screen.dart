@@ -13,6 +13,7 @@ import '../../money/money.dart';
 import '../../router.dart';
 import '../../session/session_scope.dart';
 import '../add/entry_sheet.dart';
+import '../goal/take_out_sheet.dart';
 import '../../core/fit_text.dart';
 import '../shell/tab_top.dart';
 
@@ -229,10 +230,11 @@ class _DayHeader extends StatelessWidget {
     // The day's totals in integer minor units; only the ones that aren't 0.
     final currency = entries.first.currency;
     var spent = 0, saved = 0;
+    // Money taken out of savings is in neither total (its row shows it).
     for (final e in entries) {
       if (e.type == EntryType.spent) {
         spent += e.amountMinor;
-      } else {
+      } else if (e.type == EntryType.saved) {
         saved += e.amountMinor;
       }
     }
@@ -300,6 +302,22 @@ class _Row extends StatelessWidget {
           color: theme.colorScheme.onSurface,
         ),
       );
+    } else if (e.type == EntryType.withdraw) {
+      final takenOut = goal == null
+          ? l10n.goalTakenOutRow
+          : l10n.tlTakenOutOf(goal!.name);
+      title = e.note.isNotEmpty ? e.note : takenOut;
+      subtitle = e.note.isNotEmpty ? takenOut : null;
+      icon = const _MiniRainbow();
+      // Taken out of savings: in ink, never red; a minus, as it goes down.
+      amount = Text(
+        '$minusSign$money',
+        maxLines: 1,
+        softWrap: false,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.onSurface,
+        ),
+      );
     } else {
       final savedFor = goal == null
           ? l10n.tlSavedRow
@@ -316,11 +334,17 @@ class _Row extends StatelessWidget {
         ),
       );
     }
+    final takenOutOf = e.type == EntryType.withdraw ? goal : null;
     return TestId(
       'tl-row-${e.id}',
       button: true,
       child: InkWell(
-        onTap: () => showEntrySheet(context, editing: e),
+        // A withdrawal opens its own sheet (out of its goal).
+        onTap: takenOutOf != null
+            ? () => showTakeOutSheet(context, goal: takenOutOf, editing: e)
+            : e.type == EntryType.withdraw
+            ? null
+            : () => showEntrySheet(context, editing: e),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 56),
           child: Padding(

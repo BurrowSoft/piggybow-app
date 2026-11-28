@@ -3,10 +3,14 @@ import 'package:flutter/foundation.dart';
 import '../core/clock.dart';
 import 'category.dart';
 
-/// Spent or saved (`type`).
+/// Spent, saved, or taken out of a goal's savings (`type`).
 enum EntryType {
   spent('spent'),
-  saved('saved');
+  saved('saved'),
+
+  /// Money taken out of a goal's savings: never a spend, never negative
+  /// (a positive amount, the goal's progress goes down by it).
+  withdraw('withdraw');
 
   const EntryType(this.id);
 
@@ -68,7 +72,8 @@ class Entry {
   /// Up to 80 characters; may be empty.
   final String note;
 
-  /// Saves only: the goal it went to (null when there was none).
+  /// A save's goal (null when there was none), or the goal a withdrawal was
+  /// taken out of (always one).
   final String? goalId;
 
   /// The day the person picked, `YYYY-MM-DD`: never derived from a time.
@@ -114,7 +119,7 @@ class Entry {
             : null,
         feeling: type == EntryType.spent ? Feeling.fromId(m['feeling']) : null,
         note: (m['note'] as String?) ?? '',
-        goalId: type == EntryType.saved ? m['goal_id'] as String? : null,
+        goalId: type == EntryType.spent ? null : m['goal_id'] as String?,
         localDate: localDate,
         createdAt: DateTime.parse(m['created_at'] as String).toUtc(),
         updatedAt: DateTime.parse(m['updated_at'] as String).toUtc(),

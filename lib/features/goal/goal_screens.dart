@@ -19,6 +19,7 @@ import '../../theme/theme.dart';
 import '../add/entry_sheet.dart';
 import '../pig/pig_view.dart';
 import 'rainbow.dart';
+import 'take_out_sheet.dart';
 
 /// Up to 40 characters, as people count them.
 const goalNameMax = 40;
@@ -475,6 +476,20 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         ),
                       ),
                     ],
+                    // Money can be taken out while there's some, whatever
+                    // the goal's state: a reached goal stays reached.
+                    if (_progress > 0) ...[
+                      const SizedBox(height: 8),
+                      TestId(
+                        'goal-take-out',
+                        button: true,
+                        child: OutlinedButton(
+                          onPressed: () =>
+                              showTakeOutSheet(context, goal: goal),
+                          child: ButtonLabel(l10n.goalTakeOut),
+                        ),
+                      ),
+                    ],
                     // No saves yet: no header over nothing (decision 57).
                     if (_saves.isNotEmpty) ...[
                       const SizedBox(height: 24),
@@ -486,28 +501,51 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
                         ),
                       ),
                     ],
+                    // Its saves and what was taken out of it, newest first.
                     for (final e in _saves)
                       TestId(
                         'goal-save-${e.id}',
                         button: true,
                         child: InkWell(
-                          onTap: () => showEntrySheet(context, editing: e),
+                          onTap: () => e.type == EntryType.withdraw
+                              ? showTakeOutSheet(
+                                  context,
+                                  goal: goal,
+                                  editing: e,
+                                )
+                              : showEntrySheet(context, editing: e),
                           child: ConstrainedBox(
                             constraints: const BoxConstraints(minHeight: 56),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8),
-                              child: _SaveRow(
-                                title: e.note.isNotEmpty
-                                    ? e.note
-                                    : l10n.tlSavedRow,
-                                day: dayLabel(
-                                  l10n,
-                                  context.session.dateLocale,
-                                  e.date,
-                                  today: context.services.localDay.today,
-                                ),
-                                amount: '+${money(e.amountMinor)}',
-                              ),
+                              child: e.type == EntryType.withdraw
+                                  ? _SaveRow(
+                                      title: e.note.isNotEmpty
+                                          ? e.note
+                                          : l10n.goalTakenOutRow,
+                                      day: dayLabel(
+                                        l10n,
+                                        context.session.dateLocale,
+                                        e.date,
+                                        today: context.services.localDay.today,
+                                      ),
+                                      // In ink, never red; a minus.
+                                      amount:
+                                          '$minusSign${money(e.amountMinor)}',
+                                      accent: false,
+                                    )
+                                  : _SaveRow(
+                                      title: e.note.isNotEmpty
+                                          ? e.note
+                                          : l10n.tlSavedRow,
+                                      day: dayLabel(
+                                        l10n,
+                                        context.session.dateLocale,
+                                        e.date,
+                                        today: context.services.localDay.today,
+                                      ),
+                                      amount: '+${money(e.amountMinor)}',
+                                    ),
                             ),
                           ),
                         ),
@@ -521,17 +559,20 @@ class _GoalDetailScreenState extends State<GoalDetailScreen> {
 }
 
 /// One of a goal's saves: its note (or "Saved"), its day, and "+amount" in
-/// the accent. At large text the amount goes on its own line under the day.
+/// the accent; or money taken out of it, "−amount" in ink ([accent] false).
+/// At large text the amount goes on its own line under the day.
 class _SaveRow extends StatelessWidget {
   const _SaveRow({
     required this.title,
     required this.day,
     required this.amount,
+    this.accent = true,
   });
 
   final String title;
   final String day;
   final String amount;
+  final bool accent;
 
   @override
   Widget build(BuildContext context) {
@@ -545,7 +586,9 @@ class _SaveRow extends StatelessWidget {
         maxLines: 1,
         softWrap: false,
         style: theme.textTheme.titleSmall?.copyWith(
-          color: theme.colorScheme.primary,
+          color: accent
+              ? theme.colorScheme.primary
+              : theme.colorScheme.onSurface,
         ),
       ),
     );
