@@ -1,0 +1,10 @@
+appId: ${APP_ID}
+name: Home's turns (#62), part B - Home left open (no launch, no tap) across midnight; Today's idea becomes the new day's (TIP) on the timer alone
+tags: [turns]
+---
+- extendedWaitUntil:
+    visible:
+      id: home-idea
+      text: "(?s).*${TIP}.*"
+    timeout: 300000
+- takeScreenshot: 83-after-midnight

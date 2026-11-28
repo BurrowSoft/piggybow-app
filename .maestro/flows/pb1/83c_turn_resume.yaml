@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+name: Home's turns (#62), part C - after pr62.sh moved the clock days ahead while the app was in the background, bring it back without a restart; Today's idea is the new day's (TIP)
+tags: [turns]
+---
+- launchApp:
+    stopApp: false
+- extendedWaitUntil:
+    visible:
+      id: home-idea
+    timeout: 20000
+- assertVisible:
+    id: home-idea
+    text: "(?s).*${TIP}.*"
+- takeScreenshot: 83-after-resume

@@ -1,0 +1,14 @@
+appId: ${APP_ID}
+name: Home's turns (#62), part A - a fresh install opened on Home shortly before midnight; Today's idea is the day's (TIP, computed by pr62.sh from the device's date)
+tags: [turns]
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: home-idea
+- assertVisible:
+    id: home-idea
+    text: "(?s).*${TIP}.*"
+- takeScreenshot: 83-before-midnight
