@@ -28,6 +28,10 @@ tags: [pb1, reminder]
     visible: ".*[Nn]otifications.*"     # the system's app notification settings (system UI)
     timeout: 10000
 - takeScreenshot: reminder-open-settings
-- launchApp                             # back to the app (no clearState)
-- assertVisible:
-    id: me-open-settings
+# Back to the app by the system's Back: the settings page opened in the app's
+# own task, so a relaunch would bring that page to the front again.
+- back
+- extendedWaitUntil:
+    visible:
+      id: me-open-settings
+    timeout: 10000
