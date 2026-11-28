@@ -46,9 +46,21 @@ class FakeReminderScheduler implements ReminderScheduler {
   int replaces = 0;
   int cancels = 0;
 
-  /// A test taps a reminder with `taps.value++`.
+  /// A reminder tapped and not yet answered; a test taps one with [tap].
   @override
-  final ValueNotifier<int> taps = ValueNotifier<int>(0);
+  final ValueNotifier<bool> tapPending = ValueNotifier<bool>(false);
+
+  /// A reminder tapped (or the app started from one).
+  void tap() {
+    tapPending.value = true;
+  }
+
+  @override
+  bool takeTap() {
+    if (!tapPending.value) return false;
+    tapPending.value = false;
+    return true;
+  }
 
   @override
   Future<void> listen() async {}

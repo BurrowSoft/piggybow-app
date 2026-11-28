@@ -76,7 +76,13 @@ class _ReminderSyncState extends State<ReminderSync> {
 
   /// Only a change in "an entry was added today" re-plans.
   Future<void> _onJournal() async {
-    if (await _entryAddedToday() != _addedToday) _schedule();
+    try {
+      final added = await _entryAddedToday();
+      if (mounted && added != _addedToday) _schedule();
+    } on Object {
+      // A journal that can't be read leaves the plan as it is: never break
+      // the app over a reminder. The next change, start or resume re-plans.
+    }
   }
 
   /// Whether an entry was added today, in the phone's own zone.

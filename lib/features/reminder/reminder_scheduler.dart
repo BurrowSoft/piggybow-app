@@ -39,11 +39,15 @@ abstract interface class ReminderScheduler {
   /// Cancels every daily reminder, scheduled or already shown.
   Future<void> cancelAll();
 
-  /// Counts the taps on a reminder, a start from one included: each opens
-  /// the Add sheet (plan §3.10).
-  ValueListenable<int> get taps;
+  /// A reminder tapped (a start from one included) and not yet answered:
+  /// the Add sheet opens once for it (plan §3.10).
+  ValueListenable<bool> get tapPending;
 
-  /// Starts counting [taps], and counts the start if a reminder made it.
+  /// Answers the pending tap: true once, then false until another one, so
+  /// a shell built later never replays a tap already answered.
+  bool takeTap();
+
+  /// Starts listening for taps, and takes a start from a reminder as one.
   Future<void> listen();
 }
 
@@ -56,16 +60,23 @@ class PlatformReminderScheduler implements ReminderScheduler {
 
   final FlutterLocalNotificationsPlugin _plugin;
   Future<void>? _ready;
-  final _taps = ValueNotifier<int>(0);
+  final _tapPending = ValueNotifier<bool>(false);
 
   @override
-  ValueListenable<int> get taps => _taps;
+  ValueListenable<bool> get tapPending => _tapPending;
+
+  @override
+  bool takeTap() {
+    if (!_tapPending.value) return false;
+    _tapPending.value = false;
+    return true;
+  }
 
   @override
   Future<void> listen() async {
     await _init();
     final launch = await _plugin.getNotificationAppLaunchDetails();
-    if (launch?.didNotificationLaunchApp ?? false) _taps.value++;
+    if (launch?.didNotificationLaunchApp ?? false) _tapPending.value = true;
   }
 
   static const channelId = 'daily_reminder';
@@ -94,7 +105,7 @@ class PlatformReminderScheduler implements ReminderScheduler {
             requestSoundPermission: false,
           ),
         ),
-        onDidReceiveNotificationResponse: (_) => _taps.value++,
+        onDidReceiveNotificationResponse: (_) => _tapPending.value = true,
       )
       .then((_) {});
 

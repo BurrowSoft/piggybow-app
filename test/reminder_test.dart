@@ -192,9 +192,40 @@ void main() {
       final app = TestApp();
       await app.pump(tester);
       expect(find.byType(EntrySheet), findsNothing);
-      app.reminders.taps.value++;
+      app.reminders.tap();
       await tester.pumpAndSettle();
       expect(find.byType(EntrySheet), findsOneWidget);
+    });
+
+    testWidgets('a tap opens one sheet: a shell built later replays none', (
+      tester,
+    ) async {
+      final app = TestApp();
+      await app.pump(tester);
+      app.reminders.tap();
+      await tester.pumpAndSettle();
+      expect(find.byType(EntrySheet), findsOneWidget);
+      Navigator.of(tester.element(find.byType(EntrySheet))).pop();
+      await tester.pumpAndSettle();
+      // Away from the tabs and back, as after Delete everything: a new shell.
+      app.services.onboarded.value = false;
+      await tester.pumpAndSettle();
+      tester.expectScreen('onb-welcome');
+      app.services.onboarded.value = true;
+      await tester.pumpAndSettle();
+      tester.expectScreen('home-screen');
+      expect(find.byType(EntrySheet), findsNothing);
+    });
+
+    testWidgets('a tap while a sheet is up opens no other', (tester) async {
+      final app = TestApp();
+      await app.pump(tester);
+      app.reminders.tap();
+      await tester.pumpAndSettle();
+      app.reminders.tap();
+      await tester.pumpAndSettle();
+      expect(find.byType(EntrySheet), findsOneWidget);
+      expect(app.reminders.tapPending.value, isFalse, reason: 'answered');
     });
   });
 }
