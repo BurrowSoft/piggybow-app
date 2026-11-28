@@ -16,6 +16,7 @@ import 'core/sentry_setup.dart';
 import 'core/services.dart';
 import 'core/startup_trace.dart';
 import 'data/device_backend.dart';
+import 'features/me/me_actions.dart';
 import 'features/onboarding/onboarding_screens.dart';
 import 'features/pig/pig_view.dart';
 import 'features/reminder/reminder_scheduler.dart';
@@ -37,6 +38,8 @@ Future<void> main() async {
   final dates = initializeDateFormatting();
   // The pigs, decoded before the first frame: Home's pig is never late.
   final pigsLoad = precachePigs();
+  // An export lives only while it is shared: none is left from before.
+  unawaited(sweepExports().then((_) {}, onError: (Object _) {}));
   final prefsLoad = SharedLocalPrefs.load();
   final timeZoneLoad = device.timeZone();
   // Read before the first frame: a cold start with the lock on must never
@@ -46,6 +49,7 @@ Future<void> main() async {
           store: const KeystoreSecretStore(),
           biometrics: DeviceBiometrics(),
           firstRun: const PrefsFirstRunMarker(),
+          mirror: const PrefsLockMirror(),
         )
       : null;
   // Staging only, compiled out of store builds (kLaunchFixtures is a
@@ -75,7 +79,7 @@ Future<void> main() async {
     timeZone: await timeZoneLoad,
     country: device.countryCode,
   );
-  final lockLoad = appLock?.load(userId: backend.currentUser?.id);
+  final lockLoad = appLock?.load();
 
   final session = AppSession(
     auth: backend,
@@ -129,6 +133,8 @@ Future<void> main() async {
     appLock: appLock,
     onboarded: await onboardedAtStart(journal),
   );
+  // A reminder tapped, or the start it made, opens the Add sheet.
+  unawaited(services.reminders.listen());
   // The pig's reaction to an Add lasts until the app goes to the background.
   AppLifecycleListener(onHide: () => services.lastAdd.value = null);
 

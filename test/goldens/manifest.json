@@ -1,7 +1,7 @@
 {
-  "source_sha": "428a2df604bc4a0d85595663c1bd4594224fac0b",
-  "ref": "428a2df604bc4a0d85595663c1bd4594224fac0b",
-  "run_id": "46092944946",
+  "source_sha": "5266c1147be61f4bef9d5c1fc8b1c5d81acc84b2",
+  "ref": "5266c1147be61f4bef9d5c1fc8b1c5d81acc84b2",
+  "run_id": "46107586513",
   "run_attempt": "1",
   "flutter": "3.47.5",
   "goldens": [
@@ -524,6 +524,348 @@
       "test": "H5 Home with the pig sleepy (contract C6) (320 dp, text ×2, light)",
       "sha256": "7b2be9e7bd2deeac50abc49928ec64d74ade9eaeebab83b0f9f0e244b2e7a905",
       "bytes": 159109,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_erase-confirm_dark_320x2.png",
+      "state": "L4",
+      "test": "L4 the erase confirm (320 dp, text ×2, dark)",
+      "sha256": "8c1d6dfc258c502d13a58d4822a34463d80957b3856b501377bec70ace5e44d6",
+      "bytes": 163448,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_erase-confirm_light_320x2.png",
+      "state": "L4",
+      "test": "L4 the erase confirm (320 dp, text ×2, light)",
+      "sha256": "35552f4ae3524daceeae852ed6c0db942addc3711996c0f996ba8e2b6e4331ff",
+      "bytes": 164961,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_forgot-erase-only_dark_320x2.png",
+      "state": "L3",
+      "test": "L3 Forgot PIN, no phone screen lock (320 dp, text ×2, dark)",
+      "sha256": "bbf54706d5f0b048b972733d9a9e42476ece869ed77021d82ab8526297723e9d",
+      "bytes": 167274,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_forgot-erase-only_light_320x2.png",
+      "state": "L3",
+      "test": "L3 Forgot PIN, no phone screen lock (320 dp, text ×2, light)",
+      "sha256": "a9a5936c6f92475b04e6d77f93054caa7818c5e046da3b50ceaadac570e4874c",
+      "bytes": 169736,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_forgot_dark_320x2.png",
+      "state": "L2",
+      "test": "L2 Forgot PIN, with a phone screen lock (320 dp, text ×2, dark)",
+      "sha256": "b0e076ca1823d3eb21e007e547f97b4c569fe5aa0c12c90633d798ddbb332a44",
+      "bytes": 189797,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_forgot_light_320x2.png",
+      "state": "L2",
+      "test": "L2 Forgot PIN, with a phone screen lock (320 dp, text ×2, light)",
+      "sha256": "7162a12266fa53fd854887b03eae4161ccba7098d5989c7a916364d690821ed0",
+      "bytes": 192685,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_new-pin_dark_320x2.png",
+      "state": "L5",
+      "test": "L5 a new PIN, after the phone screen lock (320 dp, text ×2, dark)",
+      "sha256": "d056fc33e8af7aee15e4210ff54da786d49810f69d7632818d7eef93e3f71a95",
+      "bytes": 124908,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_new-pin_light_320x2.png",
+      "state": "L5",
+      "test": "L5 a new PIN, after the phone screen lock (320 dp, text ×2, light)",
+      "sha256": "7991a13d0d399c489dcbda6aa777ce3aa0e1d453a47291a385e3c9e99ebda4d5",
+      "bytes": 121854,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_pin_dark_320x2.png",
+      "state": "L1",
+      "test": "L1 the lock screen (320 dp, text ×2, dark)",
+      "sha256": "0522c03a022a00553c2a30a5754f6a73a48305e1be8fd348c487e9380422f76d",
+      "bytes": 108382,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "lock_pin_light_320x2.png",
+      "state": "L1",
+      "test": "L1 the lock screen (320 dp, text ×2, light)",
+      "sha256": "eaaa386cd7ec769af9b3f6cdb3d3b44e1889e53a7f2fb15bfab00b8aea42e9f3",
+      "bytes": 105581,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-picker_picks-end_dark_320x2.png",
+      "state": "M6",
+      "test": "M6 the picker in Me (320 dp, text ×2, dark)",
+      "sha256": "cbf8e7e167f5b829f80cb429988c979c2965f72428581dd35057430ed20544ce",
+      "bytes": 130580,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-picker_picks-end_light_320x2.png",
+      "state": "M6",
+      "test": "M6 the picker in Me (320 dp, text ×2, light)",
+      "sha256": "8078af08a174cc61f5d10cf6e585ec95fbf161dce3935c41c02acfb649cac273",
+      "bytes": 130989,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-picker_picks_dark_320x2.png",
+      "state": "M6",
+      "test": "M6 the picker in Me (320 dp, text ×2, dark)",
+      "sha256": "aa8021341d30b8e5ae9f22ed718600071715906a98fe7ebf162feea5f8130149",
+      "bytes": 153900,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-picker_picks_light_320x2.png",
+      "state": "M6",
+      "test": "M6 the picker in Me (320 dp, text ×2, light)",
+      "sha256": "13a2cff8d45c039e331aef8b56a0a49be16c09a23840ad6e2d6a43e62919fef0",
+      "bytes": 154074,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_lines-end_dark_320x2.png",
+      "state": "M8",
+      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, dark)",
+      "sha256": "c6b3ea9b007abd3d48cbc5b79cd883412c2db1c46e55c23b642e04c25d4ac67b",
+      "bytes": 205219,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_lines-end_light_320x2.png",
+      "state": "M8",
+      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
+      "sha256": "6d4a43f2894d7a5999c8fe61527b55246e994d8ecc81c81de888d63ee84fbb92",
+      "bytes": 206503,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_lines_dark_320x2.png",
+      "state": "M8",
+      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, dark)",
+      "sha256": "c1626b89620c2d07acddcf066ba044b58ec5ccfd353c30d866a6b986bf250b54",
+      "bytes": 219407,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me-privacy_lines_light_320x2.png",
+      "state": "M8",
+      "test": "M8 Your privacy, no Sentry DSN (320 dp, text ×2, light)",
+      "sha256": "7f53820a8ac6d70f078d56794856f56ee16845289ef2dd873a46233ae76df3dd",
+      "bytes": 220169,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-all_dark_320x2.png",
+      "state": "M7",
+      "test": "M7 \"Delete everything?\" (320 dp, text ×2, dark)",
+      "sha256": "e650123ed2df45638c9c681a6e89912e760ec44d8f2b36ce44dac0dfbd1fa154",
+      "bytes": 193892,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-all_light_320x2.png",
+      "state": "M7",
+      "test": "M7 \"Delete everything?\" (320 dp, text ×2, light)",
+      "sha256": "76f85430067fa97c9a38fe4e37075f66fae3ccc2453d159d7fa57755b16d744c",
+      "bytes": 195963,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-failed-end_dark_320x2.png",
+      "state": "M9",
+      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, dark)",
+      "sha256": "cd0ff2844ca9834af679b1c8b5813300f2e24d06be3a05c1aa59eb4415abac87",
+      "bytes": 201150,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-failed-end_light_320x2.png",
+      "state": "M9",
+      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, light)",
+      "sha256": "a1647334016c1318a8afdda2a7b03082719e5ef2ce4cf4fcb2befb2be4ae8d25",
+      "bytes": 203201,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-failed_dark_320x2.png",
+      "state": "M9",
+      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, dark)",
+      "sha256": "2d7f9c2a20611f8f997daf982e09152df83099e4d968bbb2261da7f35a380119",
+      "bytes": 195165,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_delete-failed_light_320x2.png",
+      "state": "M9",
+      "test": "M9 \"Not everything was erased\" (320 dp, text ×2, light)",
+      "sha256": "81633e5392b8dd6bfb5b046e7c97b5d4a9952185d4598b58aa394c020b7cf01a",
+      "bytes": 197160,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_lock-after-restore_dark_320x2.png",
+      "state": "M10",
+      "test": "M10 the App lock row after a restore (320 dp, text ×2, dark)",
+      "sha256": "eedd30426587205bfe85cf04e27fc19e51f0f57d1b6246a4db5a1f355934a199",
+      "bytes": 198041,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_lock-after-restore_light_320x2.png",
+      "state": "M10",
+      "test": "M10 the App lock row after a restore (320 dp, text ×2, light)",
+      "sha256": "7977aa8eaa55e4c0107fdb3207ddf1a9a5bd5676b0b29e24e5c77d3a3d1a1776",
+      "bytes": 198267,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_no-plan-end_dark_320x2.png",
+      "state": "M1",
+      "test": "M1 Me, no plan (320 dp, text ×2, dark)",
+      "sha256": "51baa627f04434b11703d6892b9e675f0f803a7a90a5624e715c6ecc08236f72",
+      "bytes": 141688,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_no-plan-end_light_320x2.png",
+      "state": "M1",
+      "test": "M1 Me, no plan (320 dp, text ×2, light)",
+      "sha256": "66ab583e2631ef63c6969c7c1d3674c53836658f0c697aae93bae2a1835e04e7",
+      "bytes": 141455,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_no-plan_dark_320x2.png",
+      "state": "M1",
+      "test": "M1 Me, no plan (320 dp, text ×2, dark)",
+      "sha256": "abbec9e958b8ca17922372a49a070842ff50a859dc15a9cd4eadb18006f81af3",
+      "bytes": 177066,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_no-plan_light_320x2.png",
+      "state": "M1",
+      "test": "M1 Me, no plan (320 dp, text ×2, light)",
+      "sha256": "a588d7849b219de0e6cb7ad250d8a258543d7b9cba6787a183ce00a9629dc50f",
+      "bytes": 176948,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_notifications-off_dark_320x2.png",
+      "state": "M3",
+      "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, dark)",
+      "sha256": "f4f6becb97e13c283146e8157c33b2a6a5588b48885e6f8cdaf089032d481973",
+      "bytes": 184176,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_notifications-off_light_320x2.png",
+      "state": "M3",
+      "test": "M3 notifications off: the notice and Open settings (320 dp, text ×2, light)",
+      "sha256": "f8b224787e2bbcbbc3ba0e20671af2377afb0152db8e2da4080ccffdf9d618b6",
+      "bytes": 184167,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-dialog-empty_dark_320x2.png",
+      "state": "M4",
+      "test": "M4 the plan dialog, empty (320 dp, text ×2, dark)",
+      "sha256": "5e7b6e0da00bcc1a0612de3d0fb91f6415c7f9b80d400c40f7dbbe15210ff289",
+      "bytes": 166515,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-dialog-empty_light_320x2.png",
+      "state": "M4",
+      "test": "M4 the plan dialog, empty (320 dp, text ×2, light)",
+      "sha256": "6d7d7b075553ee0a96105a9f38395605b3055e16ea67b28621589cdbd3b6c625",
+      "bytes": 168538,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-dialog-set_dark_320x2.png",
+      "state": "M5",
+      "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, dark)",
+      "sha256": "852b0bbe9409d27f6b3c402b263db90cf1e489cec2b6220683f644e524245072",
+      "bytes": 174272,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-dialog-set_light_320x2.png",
+      "state": "M5",
+      "test": "M5 the plan dialog with a plan: Remove plan (320 dp, text ×2, light)",
+      "sha256": "f630a770cb7d5fdbe5202aa7a29c15ffbe0a51593605920c63e0c00ca670e662",
+      "bytes": 175687,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-set_dark_320x2.png",
+      "state": "M2",
+      "test": "M2 Me, a plan set (320 dp, text ×2, dark)",
+      "sha256": "9cfbd819e51a9d7613ec29d76f3d19e9655ff2423e63c932061e1471e6615d28",
+      "bytes": 181688,
+      "width": 960,
+      "height": 2340
+    },
+    {
+      "file": "me_plan-set_light_320x2.png",
+      "state": "M2",
+      "test": "M2 Me, a plan set (320 dp, text ×2, light)",
+      "sha256": "77d4c42ccf4cc1dc3514886576521308e9a3c38758dafc7b6104d056372b5586",
+      "bytes": 181540,
       "width": 960,
       "height": 2340
     },

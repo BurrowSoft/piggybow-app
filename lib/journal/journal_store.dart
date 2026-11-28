@@ -21,10 +21,14 @@ class JournalStore extends ChangeNotifier {
   JournalStore._(this._db, {required this._clock, String Function()? newId})
     : _newId = newId ?? (() => const Uuid().v4());
 
+  /// The journal's file, in the app's private support folder (on Android,
+  /// files/): the phone's backup rules name it (decision 72).
+  static const fileName = 'journal.db';
+
   /// The journal file in the app's private support folder.
   static Future<JournalStore> open({required Clock clock}) async {
     final dir = await getApplicationSupportDirectory();
-    final db = await databaseFactoryIo.openDatabase('${dir.path}/journal.db');
+    final db = await databaseFactoryIo.openDatabase('${dir.path}/$fileName');
     return JournalStore._(db, clock: clock);
   }
 

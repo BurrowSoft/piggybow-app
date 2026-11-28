@@ -5,13 +5,16 @@
     <!-- The daily reminder: the plugin re-schedules its notifications after a
          restart or an app update. No exact-alarm permission. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <!-- allowBackup is off in this build; the phone's own backup comes on
-         later, with the PIN and caches excluded. -->
+    <!-- The phone's own backup (decisions 17 and 72): the journal and the
+         app's settings, only in a backup encrypted on the phone; never the
+         PIN, the caches or the export files. Android 12+ reads
+         data_extraction_rules.xml, 9 to 11 xml-v28/backup_rules.xml, and 8
+         and below xml/backup_rules.xml, which backs up nothing. -->
     <application
         android:label="@string/app_name"
         android:name="${applicationName}"
-        android:allowBackup="false"
-        android:fullBackupContent="false"
+        android:allowBackup="true"
+        android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher">

@@ -3,45 +3,52 @@ import 'dart:math' as math;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
-/// Two buttons for one choice (decision 57): side by side at the end of the
-/// line when both fit on it, [secondary] first; when they don't, stacked full
-/// width, [primary] on top and [secondary] under it, [spacing] apart.
+/// Buttons for one choice, the main one last (decisions 57 and 71): side by
+/// side at the end of the line, in [children]' order, when they all fit on
+/// it; when they don't, stacked full width, the main one on top and the
+/// others under it in reverse, [spacing] apart.
 ///
 /// [OverflowBar] stacks too, but keeps each button its own width and the
-/// children's order, so this lays the two out itself.
-class ButtonPair extends MultiChildRenderObjectWidget {
-  ButtonPair({
-    super.key,
-    required Widget secondary,
-    required Widget primary,
-    this.spacing = 8,
-  }) : super(children: [secondary, primary]);
+/// children's order, so this lays them out itself.
+class ButtonRow extends MultiChildRenderObjectWidget {
+  const ButtonRow({super.key, required super.children, this.spacing = 8});
 
   final double spacing;
 
   @override
-  RenderButtonPair createRenderObject(BuildContext context) => RenderButtonPair(
+  RenderButtonRow createRenderObject(BuildContext context) => RenderButtonRow(
     spacing: spacing,
     textDirection: Directionality.of(context),
   );
 
   @override
-  void updateRenderObject(BuildContext context, RenderButtonPair renderObject) {
+  void updateRenderObject(BuildContext context, RenderButtonRow renderObject) {
     renderObject
       ..spacing = spacing
       ..textDirection = Directionality.of(context);
   }
 }
 
-class _PairParentData extends ContainerBoxParentData<RenderBox> {}
+/// Two buttons for one choice: [secondary] first on a line, [primary] on top
+/// when stacked.
+class ButtonPair extends ButtonRow {
+  ButtonPair({
+    super.key,
+    required Widget secondary,
+    required Widget primary,
+    super.spacing,
+  }) : super(children: [secondary, primary]);
+}
 
-/// [ButtonPair]'s layout. The two fit on one line when their widest (one-line
-/// labels) plus [spacing] is no wider than the line.
-class RenderButtonPair extends RenderBox
+class _RowParentData extends ContainerBoxParentData<RenderBox> {}
+
+/// [ButtonRow]'s layout. The buttons fit on one line when their widest (one
+/// line labels) plus the spacing between them is no wider than the line.
+class RenderButtonRow extends RenderBox
     with
-        ContainerRenderObjectMixin<RenderBox, _PairParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox, _PairParentData> {
-  RenderButtonPair({required this._spacing, required this._textDirection});
+        ContainerRenderObjectMixin<RenderBox, _RowParentData>,
+        RenderBoxContainerDefaultsMixin<RenderBox, _RowParentData> {
+  RenderButtonRow({required this._spacing, required this._textDirection});
 
   double get spacing => _spacing;
   double _spacing;
@@ -59,131 +66,134 @@ class RenderButtonPair extends RenderBox
     markNeedsLayout();
   }
 
-  /// Whether the last layout stacked the two.
+  /// Whether the last layout stacked them.
   bool get stacked => _stacked;
   bool _stacked = false;
 
-  RenderBox get _secondary => firstChild!;
-  RenderBox get _primary => lastChild!;
-
   @override
   void setupParentData(RenderBox child) {
-    if (child.parentData is! _PairParentData) {
-      child.parentData = _PairParentData();
+    if (child.parentData is! _RowParentData) {
+      child.parentData = _RowParentData();
     }
   }
 
-  /// Both side by side, each on one line.
+  /// In [children]' order.
+  List<RenderBox> get _buttons {
+    final buttons = <RenderBox>[];
+    var child = firstChild;
+    while (child != null) {
+      buttons.add(child);
+      child = childAfter(child);
+    }
+    return buttons;
+  }
+
+  double get _gaps => childCount < 2 ? 0 : spacing * (childCount - 1);
+
+  /// All side by side, each on one line.
   double get _rowWidth =>
-      _secondary.getMaxIntrinsicWidth(double.infinity) +
-      spacing +
-      _primary.getMaxIntrinsicWidth(double.infinity);
+      _buttons.fold(
+        0.0,
+        (width, b) => width + b.getMaxIntrinsicWidth(double.infinity),
+      ) +
+      _gaps;
 
   bool _stacks(double width) => width.isFinite && _rowWidth > width;
 
-  void _checkTwo() {
-    assert(childCount == 2, 'ButtonPair takes exactly two buttons');
-  }
+  @override
+  double computeMinIntrinsicWidth(double height) => _buttons.fold(
+    0.0,
+    (width, b) => math.max(width, b.getMinIntrinsicWidth(double.infinity)),
+  );
 
   @override
-  double computeMinIntrinsicWidth(double height) {
-    _checkTwo();
-    return math.max(
-      _secondary.getMinIntrinsicWidth(double.infinity),
-      _primary.getMinIntrinsicWidth(double.infinity),
-    );
-  }
-
-  @override
-  double computeMaxIntrinsicWidth(double height) {
-    _checkTwo();
-    return _rowWidth;
-  }
+  double computeMaxIntrinsicWidth(double height) => _rowWidth;
 
   double _height(double width, double Function(RenderBox, double) heightOf) {
     if (_stacks(width)) {
-      return heightOf(_primary, width) + spacing + heightOf(_secondary, width);
+      return _buttons.fold(0.0, (h, b) => h + heightOf(b, width)) + _gaps;
     }
-    return math.max(
-      heightOf(_secondary, double.infinity),
-      heightOf(_primary, double.infinity),
+    return _buttons.fold(
+      0.0,
+      (h, b) => math.max(h, heightOf(b, double.infinity)),
     );
   }
 
   @override
-  double computeMinIntrinsicHeight(double width) {
-    _checkTwo();
-    return _height(width, (c, w) => c.getMinIntrinsicHeight(w));
-  }
+  double computeMinIntrinsicHeight(double width) =>
+      _height(width, (b, w) => b.getMinIntrinsicHeight(w));
 
   @override
-  double computeMaxIntrinsicHeight(double width) {
-    _checkTwo();
-    return _height(width, (c, w) => c.getMaxIntrinsicHeight(w));
-  }
+  double computeMaxIntrinsicHeight(double width) =>
+      _height(width, (b, w) => b.getMaxIntrinsicHeight(w));
 
   @override
   double? computeDistanceToActualBaseline(TextBaseline baseline) =>
       defaultComputeDistanceToHighestActualBaseline(baseline);
 
-  /// Lays the two out with [layoutChild] and returns the pair's size and
-  /// each one's offset: (size, secondary, primary).
-  (Size, Offset, Offset) _arrange(
+  /// Lays the buttons out with [layoutChild] and returns the row's size and
+  /// each button's offset, in [children]' order.
+  (Size, List<Offset>) _arrange(
     BoxConstraints constraints,
     ChildLayouter layoutChild,
   ) {
+    final buttons = _buttons;
+    if (buttons.isEmpty) return (constraints.smallest, const []);
     final width = constraints.maxWidth;
+    final offsets = List<Offset>.filled(buttons.length, Offset.zero);
     if (_stacks(width)) {
       final each = BoxConstraints(
         minWidth: width,
         maxWidth: width,
         maxHeight: constraints.maxHeight,
       );
-      final p = layoutChild(_primary, each);
-      final s = layoutChild(_secondary, each);
-      final size = constraints.constrain(
-        Size(width, p.height + spacing + s.height),
-      );
-      return (size, Offset(0, p.height + spacing), Offset.zero);
+      // The main one (the last) on top, then the others in reverse.
+      var y = 0.0;
+      for (var i = buttons.length - 1; i >= 0; i--) {
+        offsets[i] = Offset(0, y);
+        y += layoutChild(buttons[i], each).height + spacing;
+      }
+      return (constraints.constrain(Size(width, y - spacing)), offsets);
     }
     final loose = constraints.loosen();
-    final s = layoutChild(_secondary, loose);
-    final p = layoutChild(_primary, loose);
-    final rowWidth = s.width + spacing + p.width;
-    final height = math.max(s.height, p.height);
+    final sizes = [for (final b in buttons) layoutChild(b, loose)];
+    final rowWidth = sizes.fold(0.0, (w, s) => w + s.width) + _gaps;
+    final height = sizes.fold(0.0, (h, s) => math.max(h, s.height));
     final size = constraints.constrain(
       Size(width.isFinite ? width : rowWidth, height),
     );
     // At the end of the line: the right in left-to-right text, the left in
-    // right-to-left, with the secondary nearer the start either way.
+    // right-to-left, with the first button nearest the start either way.
     final ltr = textDirection == TextDirection.ltr;
-    final start = ltr ? size.width - rowWidth : 0.0;
-    final sx = ltr ? start : start + p.width + spacing;
-    final px = ltr ? start + s.width + spacing : start;
-    return (
-      size,
-      Offset(sx, (height - s.height) / 2),
-      Offset(px, (height - p.height) / 2),
-    );
+    var x = ltr ? size.width - rowWidth : rowWidth;
+    for (var i = 0; i < buttons.length; i++) {
+      final s = sizes[i];
+      final dy = (height - s.height) / 2;
+      if (ltr) {
+        offsets[i] = Offset(x, dy);
+        x += s.width + spacing;
+      } else {
+        x -= s.width;
+        offsets[i] = Offset(x, dy);
+        x -= spacing;
+      }
+    }
+    return (size, offsets);
   }
 
   @override
-  Size computeDryLayout(BoxConstraints constraints) {
-    _checkTwo();
-    return _arrange(constraints, ChildLayoutHelper.dryLayoutChild).$1;
-  }
+  Size computeDryLayout(BoxConstraints constraints) =>
+      _arrange(constraints, ChildLayoutHelper.dryLayoutChild).$1;
 
   @override
   void performLayout() {
-    _checkTwo();
-    final (pair, secondary, primary) = _arrange(
-      constraints,
-      ChildLayoutHelper.layoutChild,
-    );
-    size = pair;
-    _stacked = _stacks(constraints.maxWidth);
-    (_secondary.parentData! as _PairParentData).offset = secondary;
-    (_primary.parentData! as _PairParentData).offset = primary;
+    final (row, offsets) = _arrange(constraints, ChildLayoutHelper.layoutChild);
+    size = row;
+    _stacked = childCount > 0 && _stacks(constraints.maxWidth);
+    final buttons = _buttons;
+    for (var i = 0; i < buttons.length; i++) {
+      (buttons[i].parentData! as _RowParentData).offset = offsets[i];
+    }
   }
 
   @override

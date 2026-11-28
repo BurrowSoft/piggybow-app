@@ -37,8 +37,8 @@ void main() {
 
   Rect rect(WidgetTester tester, String key) =>
       tester.getRect(find.byKey(Key(key)));
-  RenderButtonPair render(WidgetTester tester) =>
-      tester.renderObject<RenderButtonPair>(find.byType(ButtonPair));
+  RenderButtonRow render(WidgetTester tester) =>
+      tester.renderObject<RenderButtonRow>(find.byType(ButtonPair));
 
   /// The width both need side by side: their own widths plus the 8 dp.
   Future<double> rowWidth(WidgetTester tester) async {
@@ -127,5 +127,88 @@ void main() {
     expect(render(tester).stacked, isTrue);
     expect(rect(tester, 'yes').width, 120);
     expect(tester.takeException(), isNull);
+  });
+
+  group('ButtonRow: three buttons (Forgot PIN, decision 71)', () {
+    Widget three(double width, {TextDirection direction = TextDirection.ltr}) =>
+        MaterialApp(
+          home: Scaffold(
+            body: Directionality(
+              textDirection: direction,
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: SizedBox(
+                  width: width,
+                  child: ButtonRow(
+                    children: [
+                      TextButton(
+                        key: const Key('cancel'),
+                        onPressed: () {},
+                        child: const Text('Cancel'),
+                      ),
+                      TextButton(
+                        key: const Key('erase'),
+                        onPressed: () {},
+                        child: const Text('Erase'),
+                      ),
+                      FilledButton(
+                        key: const Key('main'),
+                        onPressed: () {},
+                        child: const Text('Use the lock'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+    RenderButtonRow row(WidgetTester tester) =>
+        tester.renderObject<RenderButtonRow>(find.byType(ButtonRow));
+
+    testWidgets('room for all: one line at the end, in order', (tester) async {
+      await tester.pumpWidget(three(700));
+      final c = rect(tester, 'cancel'),
+          e = rect(tester, 'erase'),
+          m = rect(tester, 'main');
+      expect(row(tester).stacked, isFalse);
+      expect(m.right, 700);
+      expect(e.right + 8, moreOrLessEquals(m.left));
+      expect(c.right + 8, moreOrLessEquals(e.left));
+      expect(c.center.dy, moreOrLessEquals(m.center.dy));
+    });
+
+    testWidgets('right to left: the same order from the start (the right)', (
+      tester,
+    ) async {
+      await tester.pumpWidget(three(700, direction: TextDirection.rtl));
+      final c = rect(tester, 'cancel'),
+          e = rect(tester, 'erase'),
+          m = rect(tester, 'main');
+      expect(m.left, 0);
+      expect(e.left, moreOrLessEquals(m.right + 8));
+      expect(c.left, moreOrLessEquals(e.right + 8));
+    });
+
+    testWidgets('no room: full width, the main one on top, then reversed', (
+      tester,
+    ) async {
+      await tester.pumpWidget(three(160));
+      final c = rect(tester, 'cancel'),
+          e = rect(tester, 'erase'),
+          m = rect(tester, 'main');
+      expect(row(tester).stacked, isTrue);
+      expect(m.top, 0);
+      expect(e.top, m.bottom + 8);
+      expect(c.top, e.bottom + 8);
+      for (final r in [c, e, m]) {
+        expect(r.left, 0);
+        expect(r.width, 160);
+      }
+      final r = row(tester);
+      expect(r.size.height, c.bottom);
+      expect(r.getDryLayout(const BoxConstraints.tightFor(width: 160)), r.size);
+      expect(r.getMinIntrinsicHeight(160), r.size.height);
+    });
   });
 }

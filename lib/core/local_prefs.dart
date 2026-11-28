@@ -24,6 +24,10 @@ abstract interface class LocalPrefs {
   String? get appearance;
   Future<void> setAppearance(String value);
 
+  /// Delete everything (plan §3.8): every pref Piggybow keeps, the device
+  /// account included.
+  Future<void> clear();
+
   /// Plus's extra theme, `dusk@until` (palettes.dart), on this device only;
   /// null: the default.
   String? get palette;
@@ -36,6 +40,8 @@ abstract interface class LocalPrefs {
 }
 
 class SharedLocalPrefs implements LocalPrefs {
+  @override
+  Future<void> clear() => _prefs.clear();
   SharedLocalPrefs._(this._prefs);
 
   static Future<SharedLocalPrefs> load() async =>
@@ -103,6 +109,16 @@ class SharedLocalPrefs implements LocalPrefs {
 }
 
 class MemoryLocalPrefs implements LocalPrefs {
+  @override
+  Future<void> clear() async {
+    localeCode = null;
+    welcomeSeen = false;
+    accountOnDevice = false;
+    sessionEndedNoEmail = false;
+    appearance = null;
+    palette = null;
+    deviceAccount = null;
+  }
   MemoryLocalPrefs({
     this.localeCode,
     this.welcomeSeen = false,
