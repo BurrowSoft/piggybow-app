@@ -32,6 +32,20 @@ Rules for a row:
 
 <!-- rows start here -->
 
+### #39 The phone's own backup, encrypted only; the lock after a restore — 1575d09 — 🟢 (a real cloud backup ⏳) — 2026-11-28 04:22 UTC
+Build: staging debug, built in each job from 1575d09; installed = built · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US · AOSP's local backup transport
+Rows: `tool/device-rows/pr39b.sh` (emulator run 46105739991, flows `tests/pr-39` @ 7d2d860)
+| Row / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46101795619) | 🟢 | `+1637: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| No real encryption (the transport's test flag only) | 🟢 as intended | the app's backup is refused with no file selected ("Error -1002", nothing measured); nothing comes back |
+| Real client-side encryption reported | 🟢 | the backup measures and restores exactly `files/journal.db` and `shared_prefs/FlutterSharedPreferences.xml`; no secure storage (the PIN), no export, no cache |
+| A device-to-device transfer | 🟢 | the same two files, no PIN, export or cache |
+| The app after a restore (flow 46b, both rounds) | 🟢 | the goal and the spend back; no lock prompt; Me's App lock row reads "Off after a restore. Turn it on again." until opened, then "Off" |
+| ⏳ a real cloud backup | | Google's transport on a real phone with a screen lock, and a restore on a new phone |
+| ⏳ the reminder after a restore without the notification permission | | the relaunch granted it (the test tool's default); covered by unit tests only |
+History: ce16ebb9 and 1575d09 runs 46101556335 / 46103938954 were not valid rows (the seed force-stopped the app; the encryption switch set only the transport's test flag), the test's own faults → 1575d09 🟢
+
 ### #37 Summary: Spent and Saved stack rather than shrink below 1x — 76ae303 — 🟢 (on-device ⏳) — 2026-11-28 01:36 UTC
 Build: no device for this row (CI logs + my own download of the golden render)
 | Check | Result | Notes |
@@ -42,6 +56,19 @@ Build: no device for this row (CI logs + my own download of the golden render)
 | Against master dc062d9 | 🟢 | 92 identical, 5 changed (`summary_nine-at-max` and its `-end`), none new or removed |
 | The 5, each looked at beside master's | 🟢 | "$89,999,999,999.91" whole at full size, Spent and Saved stacked full width; the rest unchanged; the `-end` pair differs only where the stacked card's edge shows |
 | ⏳ on a device | | flow `31_summary_week_month` on the CI emulator |
+
+### #35 App lock: Forgot PIN uses the phone's own screen lock, or erases — 2e9c071, landed with #39 at 1575d09 — 🟢 on 1575d09 — 2026-11-28 04:04 UTC
+Build: staging debug, built from 1575d09 (this PR's 2e9c071 plus #39) · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Rows: `tool/device-rows/pr35.sh` (emulator run 46102672427) and R6 with `pr35b.sh` (emulator run 46105004389), flows `tests/pr-35`
+| Row / check | Result | Notes |
+|---|---|---|
+| Golden render (Goldens run 46098889268, source 3af7567), downloaded and checked | 🟢 | 133 entries; master's 123 byte-identical; 10 new lock PNGs, each looked at |
+| R3 the PIN | 🟢 | set 1357 through Me → App lock; a cold start asks; a wrong PIN errs and the pad waits; the right one opens Home; Me's row reads "On" |
+| R3b resume | 🟢 | the lock screen after Home and back |
+| R4 recents | 🟢 | no FLAG_SECURE; the recents card blank while the lock is on |
+| R5 Forgot PIN, no phone screen lock | 🟢 | erase only; the second confirm with the lock's own body and no "Export first"; Cancel keeps all; erase → O1 with the lock off |
+| R6 Forgot PIN with the phone's own PIN | 🟢 | the phone's PIN in the system prompt, then a new Piggybow PIN; the old one refused, the new one opens |
+History: 2e9c071 alone ❌ (Me's App lock row stayed "Off" after the lock was turned on; #39's Me listens, so the two landed together) → 1575d09 🟢
 
 ### #34 Polish: the offer's buttons stack full width, Reached under the button, a 3-line goal name — e3e86b9 — 🟢 (on-device ⏳) — 2026-11-28 00:23 UTC
 Build: no device for this row (CI logs + my own download of the golden render)
@@ -66,6 +93,19 @@ Build: no device for this row (CI logs + my own downloads of the golden renders)
 | After #23: master merge f17d8e7 + baselines 22b85c2 | 🟢 | the only conflict was `test/goldens/manifest.json`; Goldens run 46086591464 (source f17d8e7): 93 entries, every PNG byte-identical to dfeec6e's set or to master's, 0 new or changed; committed = run |
 | CI, read per test (run 46086844984 on 22b85c2) | 🟢 | `+1408: All tests passed!` (master's 1352 + 56), 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
 History: dfeec6e 🟢 → 22b85c2 🟢 (carried: render byte-identical, CI green)
+
+### #32 The daily reminder: Piggybow's words, a new one each day, skipped after an entry, and a tap opens Add — 826b63a — 🟢 (the app's rows; a posted reminder ⏳) — 2026-11-28 02:45 UTC
+Build: staging debug, built from 826b63a · Device: CI emulator, Android 14 (API 34), 1080 × 2400, 420 dpi, UTC, en-US
+Rows: `tool/device-rows/pr32.sh` (emulator run 46097533067) and R2 again with `pr32b.sh` (emulator run 46098720661), flows `tests/pr-32`
+| Row / check | Result | Notes |
+|---|---|---|
+| CI, read per test (run 46096905433) | 🟢 | `+1565: All tests passed!`, 0 failed, 0 skipped, 0 `[E]` lines; analyze clean |
+| R0 No thanks | 🟢 | hides the offer for good, asks for no permission, leaves the reminder off |
+| R1 Yes + Allow | 🟢 | the reminder on at 8:00 PM; not offered again |
+| R1b the schedule, read from the device | 🟢 | 29 reminders (today dropped after today's entry), one a day at 20:00 from tomorrow; every title "Piggybow"; the body rotates by day, no two days alike, no digit |
+| R2 Don't allow | 🟢 | "Notifications are off for Piggybow…"; Open settings opens the app's notification page; Back returns to Me |
+| ⏳ a posted reminder in the shade, tapped | | the flow's setup was at fault twice; it runs again later |
+History: 826b63a R2 ❌ on the flow's return step → 826b63a 🟢 (re-run). Merged on a UX waiver while the confirmation ran.
 
 ### #31 Polish: lighter dark surfaces, centred button labels, a 3-line note — 1298dfd — 🟢 (carried: same tree as 5352dc9) — 2026-11-27 23:49 UTC
 Build: no device for this row (CI logs + my own download of the golden render)
