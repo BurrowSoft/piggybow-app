@@ -7,6 +7,8 @@ import 'package:uuid/uuid.dart';
 import '../core/clock.dart';
 import '../goal/goal_progress.dart';
 import '../pig/pig_mood.dart' show HappyPick;
+import '../repeat/repeat.dart';
+import '../repeat/schedule.dart';
 import 'category.dart';
 import 'entry.dart';
 import 'goal.dart';
@@ -14,9 +16,9 @@ import 'goal.dart';
 /// The longest note, in characters as a person counts them (graphemes).
 const maxNoteLength = 80;
 
-/// The journal on the phone: entries, goals and the journal's own settings,
-/// in one sembast file. Nothing here ever leaves the phone. Listeners hear
-/// about every write.
+/// The journal on the phone: entries, goals, repeats and the journal's own
+/// settings, in one sembast file. Nothing here ever leaves the phone.
+/// Listeners hear about every write.
 class JournalStore extends ChangeNotifier {
   JournalStore._(this._db, {required this._clock, String Function()? newId})
     : _newId = newId ?? (() => const Uuid().v4());
@@ -48,6 +50,7 @@ class JournalStore extends ChangeNotifier {
 
   static final _entries = stringMapStoreFactory.store('entries');
   static final _goals = stringMapStoreFactory.store('goals');
+  static final _repeats = stringMapStoreFactory.store('repeats');
   static final _settings = StoreRef<String, Object?>('settings');
 
   // ------------------------------------------------------------ settings
@@ -93,12 +96,13 @@ class JournalStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Whether nothing was noted or set yet: no entry, no goal, no picks and no
-  /// plan (the currency may be set). Launch fixtures write only into such a
-  /// journal.
+  /// Whether nothing was noted or set yet: no entry, no goal, no repeat, no
+  /// picks and no plan (the currency may be set). Launch fixtures write only
+  /// into such a journal.
   Future<bool> isBlank() async =>
       await _entries.count(_db) == 0 &&
       await _goals.count(_db) == 0 &&
+      await _repeats.count(_db) == 0 &&
       !await _settings.record('picks').exists(_db) &&
       !await _settings.record('plan_minor').exists(_db);
 
@@ -143,6 +147,11 @@ class JournalStore extends ChangeNotifier {
   }
 
   /// Adds a spend or a save. A save goes to the active goal, if any.
+  ///
+  /// With [repeat], the entry is the first of a repeat on that schedule, and
+  /// the journal adds the next ones on their days (catchUpRepeats). [today]
+  /// is then the phone's date (LocalDay): a repeat never adds a day before
+  /// the one it was made on, even after a first entry dated earlier.
   Future<Entry> addEntry({
     required EntryType type,
     required int amountMinor,
@@ -151,9 +160,12 @@ class JournalStore extends ChangeNotifier {
     SpendCategory? category,
     Feeling? feeling,
     String note = '',
+    RepeatSchedule? repeat,
+    String? today,
   }) async {
     final now = _clock.nowUtc();
     final spend = type == EntryType.spent;
+    final repeatId = repeat == null ? null : _newId();
     final entry = Entry(
       id: _newId(),
       type: type,
@@ -166,9 +178,33 @@ class JournalStore extends ChangeNotifier {
       localDate: localDate,
       createdAt: now,
       updatedAt: now,
+      repeatId: repeatId,
     );
     _check(entry);
-    await _entries.record(entry.id).put(_db, entry.toMap());
+    if (repeat == null) {
+      await _entries.record(entry.id).put(_db, entry.toMap());
+    } else {
+      final day = parseWireDate(today);
+      if (day == null) throw ArgumentError.value(today, 'today');
+      final r = Repeat(
+        id: repeatId!,
+        type: type,
+        amountMinor: entry.amountMinor,
+        currency: currency,
+        category: entry.category,
+        note: entry.note,
+        schedule: repeat,
+        firstDate: entry.localDate,
+        madeThrough: wireDate(entry.date.isAfter(day) ? entry.date : day),
+        createdAt: now,
+        updatedAt: now,
+      );
+      _checkRepeat(r);
+      await _db.transaction((txn) async {
+        await _repeats.record(r.id).put(txn, r.toMap());
+        await _entries.record(entry.id).put(txn, entry.toMap());
+      });
+    }
     await _advance(entry.goalId);
     notifyListeners();
     return entry;
@@ -176,7 +212,8 @@ class JournalStore extends ChangeNotifier {
 
   /// Saves an edit. Spent ↔ Saved is allowed: a spend drops its goal, a save
   /// drops its category and feeling and goes to the active goal if it had
-  /// none. Its id, currency and creation time never change.
+  /// none. Its id, currency, creation time, repeat and "added by a repeat"
+  /// never change: an edit is for this entry only, never its repeat.
   Future<Entry> updateEntry(Entry changed) async {
     final old = await entry(changed.id);
     if (old == null) throw StateError('no entry ${changed.id}');
@@ -197,6 +234,8 @@ class JournalStore extends ChangeNotifier {
       localDate: changed.localDate,
       createdAt: old.createdAt,
       updatedAt: _clock.nowUtc(),
+      repeatId: old.repeatId,
+      auto: old.auto,
     );
     _check(updated);
     await _entries.record(updated.id).put(_db, updated.toMap());
@@ -219,9 +258,12 @@ class JournalStore extends ChangeNotifier {
   String newId() => _newId();
 
   /// The active goal, if any (one at a time).
-  Future<Goal?> activeGoal() async {
+  Future<Goal?> activeGoal() => _activeGoalIn(_db);
+
+  /// The active goal as [client] (the journal, or a transaction) reads it.
+  Future<Goal?> _activeGoalIn(DatabaseClient client) async {
     final s = await _goals.findFirst(
-      _db,
+      client,
       finder: Finder(filter: Filter.equals('status', GoalStatus.active.id)),
     );
     return s == null ? null : Goal.fromMap(s.key, s.value);
@@ -324,13 +366,154 @@ class JournalStore extends ChangeNotifier {
         );
   }
 
+  // ------------------------------------------------------------- repeats
+
+  /// Every repeat, stopped ones too, oldest first.
+  Future<List<Repeat>> repeats() async {
+    final snaps = await _repeats.find(
+      _db,
+      finder: Finder(sortOrders: [SortOrder('created_at')]),
+    );
+    return [for (final s in snaps) ?Repeat.fromMap(s.key, s.value)];
+  }
+
+  Future<Repeat?> repeat(String id) async {
+    final m = await _repeats.record(id).get(_db);
+    return m == null ? null : Repeat.fromMap(id, m);
+  }
+
+  /// Saves an edit to a repeat: its amount, category, note and schedule
+  /// apply from its next entry on, and the entries it already added stay as
+  /// they are. A new schedule never adds a second entry in the month (or
+  /// week) that already has the old schedule's last one
+  /// (madeThroughAfterChange). Its type, currency, first day and creation
+  /// time never change.
+  Future<Repeat> updateRepeat(Repeat changed) async {
+    final old = await repeat(changed.id);
+    if (old == null) throw StateError('no repeat ${changed.id}');
+    final made = madeThroughAfterChange(
+      old: old.schedule,
+      changed: changed.schedule,
+      first: parseWireDate(old.firstDate)!,
+      madeThrough: parseWireDate(old.madeThrough)!,
+    );
+    final updated = old.copyWith(
+      amountMinor: changed.amountMinor,
+      category: changed.category,
+      note: changed.note.trim(),
+      schedule: changed.schedule,
+      madeThrough: wireDate(made),
+      updatedAt: _clock.nowUtc(),
+    );
+    _checkRepeat(updated);
+    await _repeats.record(updated.id).put(_db, updated.toMap());
+    notifyListeners();
+    return updated;
+  }
+
+  /// Stops repeat [id] on [today] (the phone's date): it adds nothing more.
+  /// The entries it added stay, and so does the repeat (hidden from the
+  /// list), so they can still say what made them.
+  Future<void> stopRepeat(String id, {required String today}) async {
+    if (parseWireDate(today) == null) {
+      throw ArgumentError.value(today, 'today');
+    }
+    final old = await repeat(id);
+    if (old == null || !old.running) return;
+    final stopped = old.copyWith(stoppedOn: today, updatedAt: _clock.nowUtc());
+    await _repeats.record(id).put(_db, stopped.toMap());
+    notifyListeners();
+  }
+
+  /// One catch-up at a time: a call during a run waits for it to end.
+  Future<void> _catchUps = Future<void>.value();
+
+  /// Adds each running repeat's entries for its days after the last day it
+  /// dealt with, up to [today] (the phone's date, LocalDay), none older than
+  /// a year (dueOccurrences). The app calls it at start, on resume and at
+  /// midnight.
+  ///
+  /// An added entry copies its repeat's amount, category and note, has no
+  /// feeling and is marked auto. A save goes to the active goal, as one from
+  /// the Add sheet would. Each day is written in one transaction with its
+  /// repeat's "made through", and its id is its repeat and day: two runs at
+  /// once add nothing twice, and a day whose entry was deleted never comes
+  /// back. A [today] before "made through" (the clock or the zone moved
+  /// back) adds nothing and moves nothing. Returns what it added, oldest
+  /// first.
+  Future<List<Entry>> catchUpRepeats({required String today}) {
+    final run = _catchUps.then((_) => _catchUp(today));
+    _catchUps = run.then<void>((_) {}, onError: (Object _) {});
+    return run;
+  }
+
+  Future<List<Entry>> _catchUp(String today) async {
+    final day = parseWireDate(today);
+    if (day == null) throw ArgumentError.value(today, 'today');
+    final added = <Entry>[];
+    for (final (planned, date) in dueOccurrences(await repeats(), day)) {
+      final id = repeatEntryId(planned.id, date);
+      final made = await _db.transaction((txn) async {
+        // Read again here: the latest amount and note, and whether a run
+        // already got this far.
+        final m = await _repeats.record(planned.id).get(txn);
+        final r = m == null ? null : Repeat.fromMap(planned.id, m);
+        if (r == null || !r.running) return null;
+        if (!date.isAfter(parseWireDate(r.madeThrough)!)) return null;
+        Entry? entry;
+        if (await _entries.record(id).get(txn) == null) {
+          final now = _clock.nowUtc();
+          final spend = r.type == EntryType.spent;
+          entry = Entry(
+            id: id,
+            type: r.type,
+            amountMinor: r.amountMinor,
+            currency: r.currency,
+            category: spend ? r.category : null,
+            note: r.note,
+            goalId: spend ? null : (await _activeGoalIn(txn))?.id,
+            localDate: wireDate(date),
+            createdAt: now,
+            updatedAt: now,
+            repeatId: r.id,
+            auto: true,
+          );
+          _check(entry);
+          await _entries.record(id).put(txn, entry.toMap());
+        }
+        final moved = r.copyWith(madeThrough: wireDate(date));
+        await _repeats.record(r.id).put(txn, moved.toMap());
+        return entry;
+      });
+      if (made != null) {
+        added.add(made);
+        // A save that reaches the goal ends it, so the next goes to none.
+        await _advance(made.goalId);
+      }
+    }
+    // Every running repeat has now dealt with today.
+    await _db.transaction((txn) async {
+      for (final s in await _repeats.find(txn)) {
+        final r = Repeat.fromMap(s.key, s.value);
+        if (r == null || !r.running) continue;
+        if (day.isAfter(parseWireDate(r.madeThrough)!)) {
+          final moved = r.copyWith(madeThrough: today);
+          await _repeats.record(r.id).put(txn, moved.toMap());
+        }
+      }
+    });
+    if (added.isNotEmpty) notifyListeners();
+    return added;
+  }
+
   // ---------------------------------------------------------------- all
 
-  /// Erases every entry, goal and journal setting on the phone.
+  /// Erases every entry, goal, repeat and journal setting on the phone.
   Future<void> wipe() async {
     await _db.transaction((txn) async {
       await _entries.delete(txn);
       await _goals.delete(txn);
+      await _repeats.delete(txn);
       await _settings.delete(txn);
     });
     notifyListeners();
@@ -349,6 +532,21 @@ class JournalStore extends ChangeNotifier {
       throw ArgumentError('a spend needs a category');
     }
     if (e.note.characters.length > maxNoteLength) {
+      throw ArgumentError('the note is over $maxNoteLength characters');
+    }
+  }
+
+  static void _checkRepeat(Repeat r) {
+    if (r.amountMinor <= 0) {
+      throw ArgumentError.value(r.amountMinor, 'amountMinor');
+    }
+    if (!r.schedule.isValid) {
+      throw ArgumentError.value(r.schedule, 'schedule');
+    }
+    if (r.type == EntryType.spent && r.category == null) {
+      throw ArgumentError('a repeating spend needs a category');
+    }
+    if (r.note.characters.length > maxNoteLength) {
       throw ArgumentError('the note is over $maxNoteLength characters');
     }
   }
