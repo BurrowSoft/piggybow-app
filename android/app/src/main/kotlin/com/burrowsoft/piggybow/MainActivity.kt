@@ -54,9 +54,11 @@ class MainActivity : FlutterFragmentActivity() {
     // Feature 21, restoring a backup file: the phone's own document picker
     // (no storage permission), and nothing copied anywhere. The file's size is
     // checked first, and at most the limit + 1 bytes are ever read, even when
-    // the size is unknown, so a big video can't fill the memory.
+    // the size is unknown, so a big video can't fill the memory. A file whose
+    // first bytes aren't what every backup starts with is read no further.
     private var pendingPick: MethodChannel.Result? = null
     private var pickLimit = 0L
+    private var pickStarts = ByteArray(0)
     private val reader = Executors.newSingleThreadExecutor()
     private val main = Handler(Looper.getMainLooper())
     private val openDocument =
@@ -117,6 +119,7 @@ class MainActivity : FlutterFragmentActivity() {
                 } else {
                     pendingPick = result
                     pickLimit = (call.argument<Number>("maxBytes") ?: 0).toLong()
+                    pickStarts = (call.argument<String>("starts") ?: "").toByteArray(Charsets.UTF_8)
                     try {
                         // Any file: a .piggybow file has no registered type.
                         openDocument.launch(arrayOf("*/*"))
@@ -141,10 +144,11 @@ class MainActivity : FlutterFragmentActivity() {
             return
         }
         val limit = pickLimit
+        val starts = pickStarts
         reader.execute {
             val answer: Map<String, Any?> =
                 try {
-                    readPicked(uri, limit)
+                    readPicked(uri, limit, starts)
                 } catch (e: Exception) {
                     mapOf("unreadable" to true)
                 }
@@ -154,8 +158,10 @@ class MainActivity : FlutterFragmentActivity() {
 
     // The picked file's name, and its bytes unless it's larger than [limit]:
     // by its SIZE when the provider knows it, and while reading either way
-    // (an unknown size is never taken as small). Read into memory only.
-    private fun readPicked(uri: Uri, limit: Long): Map<String, Any?> {
+    // (an unknown size is never taken as small). Nor when its first bytes
+    // aren't [starts]: reading stops as soon as they're in. Read into memory
+    // only.
+    private fun readPicked(uri: Uri, limit: Long, starts: ByteArray): Map<String, Any?> {
         var name: String? = null
         var size: Long? = null
         contentResolver.query(
@@ -180,6 +186,7 @@ class MainActivity : FlutterFragmentActivity() {
             contentResolver.openInputStream(uri)
                 ?: return mapOf("name" to name, "unreadable" to true)
         val out = ByteArrayOutputStream()
+        var checked = starts.isEmpty()
         input.use { stream ->
             val buffer = ByteArray(64 * 1024)
             var total = 0L
@@ -189,8 +196,15 @@ class MainActivity : FlutterFragmentActivity() {
                 total += read
                 if (total > limit) return mapOf("name" to name, "tooLarge" to true)
                 out.write(buffer, 0, read)
+                if (!checked && out.size() >= starts.size) {
+                    val head = out.toByteArray().copyOf(starts.size)
+                    if (!head.contentEquals(starts)) return mapOf("name" to name, "notBackup" to true)
+                    checked = true
+                }
             }
         }
+        // Shorter than how every backup starts.
+        if (!checked) return mapOf("name" to name, "notBackup" to true)
         return mapOf("name" to name, "bytes" to out.toByteArray())
     }
 

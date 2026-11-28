@@ -84,19 +84,22 @@ const openBackupFileMethod = 'openBackupFile';
 /// The phone's own document picker (MainActivity): no storage permission,
 /// any file (a .piggybow file has no registered type), and nothing copied
 /// anywhere. It checks the file's size first and reads at most
-/// [backupMaxBytes] + 1 bytes, so a big video never fills the memory. Null
-/// when nothing was picked; [NotABackup] for a file too large, unreadable or
-/// not text.
+/// [backupMaxBytes] + 1 bytes, so a big video never fills the memory, and
+/// it stops as soon as the first bytes aren't [backupHeaderPrefix]. Null
+/// when nothing was picked; [NotABackup] for a file too large, unreadable,
+/// not starting like a backup, or not text.
 Future<({String name, String text})?> pickBackupFile({
   MethodChannel channel = const MethodChannel(backupChannel),
 }) async {
   final picked = await channel.invokeMapMethod<String, Object?>(
     openBackupFileMethod,
-    {'maxBytes': backupMaxBytes},
+    {'maxBytes': backupMaxBytes, 'starts': backupHeaderPrefix},
   );
   if (picked == null) return null;
   final bytes = picked['bytes'];
-  if (bytes is! Uint8List || bytes.length > backupMaxBytes) {
+  if (bytes is! Uint8List ||
+      bytes.length > backupMaxBytes ||
+      !_startsLikeBackup(bytes)) {
     throw const NotABackup();
   }
   final name = picked['name'];
@@ -105,6 +108,18 @@ Future<({String name, String text})?> pickBackupFile({
   } on FormatException {
     throw const NotABackup();
   }
+}
+
+final _backupHeaderBytes = utf8.encode(backupHeaderPrefix);
+
+/// Whether [bytes] begin as a backup file does ([backupHeaderPrefix]),
+/// compared as bytes before anything is decoded.
+bool _startsLikeBackup(Uint8List bytes) {
+  if (bytes.length < _backupHeaderBytes.length) return false;
+  for (var i = 0; i < _backupHeaderBytes.length; i++) {
+    if (bytes[i] != _backupHeaderBytes[i]) return false;
+  }
+  return true;
 }
 
 Future<bool> _shareSheet(XFile file) async {

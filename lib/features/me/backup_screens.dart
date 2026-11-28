@@ -28,7 +28,9 @@ bool restoreOffered(BuildContext context) =>
 
 /// A password field for a backup: hidden unless shown, and the keyboard
 /// neither learns it nor suggests (it's never stored or logged). Its label
-/// is never cut off (LabeledField).
+/// is never cut off (LabeledField). Its id is a container, not a merge, so
+/// TalkBack finds the field and its show/hide eye as two nodes: a merge
+/// would fold the eye into the field, out of reach.
 class _PasswordField extends StatelessWidget {
   const _PasswordField({
     required this.id,
@@ -53,7 +55,7 @@ class _PasswordField extends StatelessWidget {
   final Widget? toggle;
 
   @override
-  Widget build(BuildContext context) => TestId(
+  Widget build(BuildContext context) => TestId.container(
     id,
     child: LabeledField(
       label: label,

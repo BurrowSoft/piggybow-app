@@ -43,7 +43,10 @@ void main() {
       };
       final picked = await pickBackupFile();
       expect(asked!.method, openBackupFileMethod);
-      expect(asked!.arguments, {'maxBytes': backupMaxBytes});
+      expect(asked!.arguments, {
+        'maxBytes': backupMaxBytes,
+        'starts': '{"format":"piggybow-backup"',
+      });
       expect(picked!.name, 'piggybow-backup-2026-09-30.piggybow');
       expect(picked.text, '{"format":"piggybow-backup"}');
     });
@@ -74,6 +77,14 @@ void main() {
         'more bytes than the cap, whatever was said',
         {'name': 'big', 'bytes': Uint8List(backupMaxBytes + 1)},
       ),
+      // MainActivity stopped reading: its first bytes weren't a backup's.
+      ('starting otherwise, read no further', {'name': 'notes.txt', 'notBackup': true}),
+      // And the same check here, before anything is decoded.
+      (
+        'bytes that start otherwise',
+        {'name': 'x.json', 'bytes': bytesOf('{"version":1,"format":"piggybow-backup"}')},
+      ),
+      ('shorter than a backup starts', {'name': 'tiny', 'bytes': bytesOf('{"format"')}),
     ]) {
       test('$what: not a backup', () async {
         answer = picked;
@@ -97,6 +108,17 @@ void main() {
           'if (total > limit) return mapOf("name" to name, "tooLarge" to true)',
         ),
       );
+      // The first bytes checked as soon as they're in: a file that starts
+      // otherwise, or is shorter, is read no further.
+      expect(
+        kotlin,
+        contains('pickStarts = (call.argument<String>("starts") ?: "").toByteArray(Charsets.UTF_8)'),
+      );
+      expect(
+        kotlin,
+        contains('if (!head.contentEquals(starts)) return mapOf("name" to name, "notBackup" to true)'),
+      );
+      expect(kotlin, contains('if (!checked) return mapOf("name" to name, "notBackup" to true)'));
       // Read into memory only: nothing is written, nothing goes to the cache.
       for (final never in ['cacheDir', 'FileOutputStream', 'copyTo(']) {
         expect(kotlin, isNot(contains(never)), reason: never);
