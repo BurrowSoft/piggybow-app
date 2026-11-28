@@ -187,7 +187,7 @@ void main() {
 
     testWidgets('on resume, the days since are added', (tester) async {
       final clock = MovableClock(DateTime.utc(2026, 10, 2, 1, 30));
-      final app = await open(
+      await open(
         tester,
         app: TestApp(clock: clock),
         seed: (app) => rent(app, day: '2026-10-02', schedule: const RepeatSchedule.monthly(2)),
