@@ -227,10 +227,15 @@ void main() {
       );
       await tester.runAsync(lock.load);
       await open(tester, c, lock: lock);
-      // Me scrolled to Privacy & security: its header at the top.
-      await Scrollable.ensureVisible(
-        tester.element(find.text('Privacy & security')),
+      // Me scrolled to Privacy & security: its header at the top. The list
+      // builds lazily, so it scrolls there first.
+      final header = find.text('Privacy & security');
+      await tester.scrollUntilVisible(
+        header,
+        200,
+        scrollable: listIn('me-screen'),
       );
+      await Scrollable.ensureVisible(tester.element(header));
       await tester.pumpAndSettle();
       expect(
         find.text('Off after a restore. Turn it on again.'),
