@@ -1,8 +1,8 @@
 appId: ${APP_ID}
-name: Plus's gates (group A, plus-rows) - without Plus, a second goal, your own category and a Plus theme each open the paywall and change nothing; hiding a built-in category stays free
+name: Plus's gates (group A, plus-rows) - without Plus, a second goal and your own category each open the paywall and change nothing; hiding a built-in category stays free (the themes' gate is 87d)
 tags: [plus]
-# Run with kind=plus-rows and zone UTC, after the whole of groups A and A′
-# (the themes are #51). Plus stays off: the fake store never owns anything.
+# Run with kind=plus-rows and zone UTC. Plus stays off: the fake store never
+# owns anything.
 ---
 - runFlow: ../../subflows/fresh_launch.yaml
 - runFlow: ../../subflows/to_home.yaml
@@ -85,7 +85,12 @@ tags: [plus]
     id: add-cat-transport
 - assertVisible:
     id: add-cat-food
-- back
+- tapOn:                                         # Cancel (Back would only close the keyboard)
+    id: add-back
+- extendedWaitUntil:
+    visible:
+      id: home-add
+    timeout: 10000
 - tapOn:
     id: tab-me
 - runFlow:
@@ -102,27 +107,7 @@ tags: [plus]
     id: categories-transport-toggle
 - assertNotVisible: "(?s)Transport\\s+Hidden"
 - back
-# A Plus theme opens the paywall and the theme stays
-- runFlow:
-    file: ../../subflows/reveal.yaml
-    env:
-      ID: me-theme
-- tapOn:
-    id: me-theme
 - extendedWaitUntil:
     visible:
-      id: theme-sheet
+      id: me-categories
     timeout: 10000
-- takeScreenshot: 87-theme-sheet
-- tapOn:
-    id: theme-plum
-- extendedWaitUntil:
-    visible:
-      id: plus-screen
-    timeout: 10000
-- back
-- extendedWaitUntil:
-    visible:
-      id: me-theme
-    timeout: 10000
-- takeScreenshot: 87-theme-unchanged

@@ -4,8 +4,9 @@
 # store never owns anything, so the Plus-on states stay on the widget tests and
 # goldens until the rows-only grant lands.
 #   PA-1 flow 87a: the paywall, Start and Restore buy nothing, Back
-#   PA-2 flow 87b: the gates (second goal, own category, Plus theme) and the
-#        free hiding of a built-in category
+#   PA-2 flow 87b: the gates (second goal, own category) and the free hiding
+#        of a built-in category
+#   PA-5 flow 87d: the themes' gate (#51)
 #   PA-3 flow 87c: the paywall at font scale 2.0, for a look
 #   PA-4 the smoke and the journal still pass in a build with Plus enabled
 . "$(dirname "$0")/lib.sh"
@@ -28,9 +29,15 @@ else
 fi
 
 if mf flows/pb1/87b_plus_gates.yaml; then
-  row PA-2 PASS "flow 87b: a second goal, Add category and the Plum theme each open the paywall and change nothing; hiding Transport is free (gone from Add, shown again)"
+  row PA-2 PASS "flow 87b: a second goal and Add category each open the paywall and change nothing; hiding Transport is free (gone from Add, shown again)"
 else
   row PA-2 FAIL "flow 87b"
+fi
+
+if mf flows/pb1/87d_plus_theme_gate.yaml; then
+  row PA-5 PASS "flow 87d: Me → Theme shows Strawberry, Plum, Apricot and Blueberry; Plum opens the paywall; the theme stays"
+else
+  row PA-5 FAIL "flow 87d (needs #51 on the build)"
 fi
 
 A shell settings put system font_scale 2.0; sleep 2

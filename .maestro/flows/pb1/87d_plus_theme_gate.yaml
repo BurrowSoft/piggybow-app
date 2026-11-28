@@ -1,0 +1,40 @@
+appId: ${APP_ID}
+name: Plus's theme gate (group A′, #51, plus-rows) - without Plus, Me → Theme shows the four themes and picking Plum opens the paywall; the theme stays
+tags: [plus]
+# Run with kind=plus-rows and zone UTC, on a build with #51 (the themes).
+---
+- runFlow: ../../subflows/fresh_launch.yaml
+- runFlow: ../../subflows/to_home.yaml
+- tapOn:
+    id: tab-me
+- runFlow:
+    file: ../../subflows/reveal.yaml
+    env:
+      ID: me-theme
+- tapOn:
+    id: me-theme
+- extendedWaitUntil:
+    visible:
+      id: theme-sheet
+    timeout: 10000
+- assertVisible:
+    id: theme-strawberry
+- assertVisible:
+    id: theme-plum
+- assertVisible:
+    id: theme-apricot
+- assertVisible:
+    id: theme-blueberry
+- takeScreenshot: 87-theme-sheet
+- tapOn:
+    id: theme-plum
+- extendedWaitUntil:
+    visible:
+      id: plus-screen
+    timeout: 10000
+- back
+- extendedWaitUntil:
+    visible:
+      id: me-theme
+    timeout: 10000
+- takeScreenshot: 87-theme-unchanged
