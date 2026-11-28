@@ -152,7 +152,7 @@ ThemeData buildTheme(
 
   final seeded =
       ColorScheme.fromSeed(
-        seedColor: PiggybowColors.rose,
+        seedColor: paletteSeed(plusPalette),
         brightness: brightness,
       ).copyWith(
         primary: palette.accent,

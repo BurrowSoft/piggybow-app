@@ -78,6 +78,17 @@ const _tokens = <PlusPalette, ({PiggybowPalette light, PiggybowPalette dark})>{
   ),
 };
 
+/// The colour the theme's other tones are made from (Material's colour
+/// scheme: cards, sheets, the Add button, chips): Piggybow's rose for the
+/// default, so every theme's cards and buttons follow the theme instead of
+/// staying pink.
+Color paletteSeed(PlusPalette? palette) => switch (palette) {
+  null => PiggybowColors.rose,
+  PlusPalette.dusk => PiggybowColors.lavender,
+  PlusPalette.sunrise => PiggybowColors.peach,
+  PlusPalette.sea => const Color(0xFF6F8FB0),
+};
+
 /// The colours for [palette] (null: the default) in [brightness].
 PiggybowPalette paletteColours(PlusPalette? palette, Brightness brightness) {
   final t = palette == null ? null : _tokens[palette]!;
