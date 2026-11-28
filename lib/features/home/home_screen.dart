@@ -551,8 +551,11 @@ class _ReminderOffer extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    // The time as one word ("8:00 PM" never splits): at large text the
+    // button's label wraps before it, at whole words.
     final at = MaterialLocalizations.of(context)
-        .formatTimeOfDay(const TimeOfDay(hour: 20, minute: 0));
+        .formatTimeOfDay(const TimeOfDay(hour: 20, minute: 0))
+        .replaceAll(' ', String.fromCharCode(0xA0));
     Future<void> answer({required bool yes}) async {
       final services = context.services;
       final session = context.readSession;

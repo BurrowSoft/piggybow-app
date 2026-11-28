@@ -152,7 +152,11 @@ void main() {
         seed: (app) => spend(app, 5000, '2026-10-02'),
       );
       expect(find.text('A gentle nudge?'), findsOneWidget);
-      expect(find.text('Remind me at 8:00 PM'), findsOneWidget);
+      // The time is one word: a no-break space before PM.
+      expect(
+        find.text('Remind me at 8:00${String.fromCharCode(0xA0)}PM'),
+        findsOneWidget,
+      );
       await tester.tapId('home-reminder-no');
       await letJournalAnswer(tester);
       expect(byId('home-reminder-yes'), findsNothing);
