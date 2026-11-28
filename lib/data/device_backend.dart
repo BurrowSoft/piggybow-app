@@ -120,9 +120,6 @@ class DeviceBackend implements AuthRepository, AccountRepository {
   Future<AuthUser?> reloadUser() async => currentUser;
 
   @override
-  Future<bool> ageSignalOn() async => false;
-
-  @override
   Future<void> updateLanguage(String locale) async =>
       _save(_current.copyWith(locale: locale));
 
@@ -231,13 +228,6 @@ class DeviceBackend implements AuthRepository, AccountRepository {
       },
     };
   }
-
-  @override
-  Future<void> updateAiSettings({
-    bool? enabled,
-    Tone? tone,
-    Set<FocusArea>? focus,
-  }) => throw UnsupportedError('no AI in v0.1');
 
   /// No policy notices on the phone.
   @override

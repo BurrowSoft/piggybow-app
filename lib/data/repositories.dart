@@ -17,7 +17,8 @@ class SignupProfile {
   /// ISO 3166-1 alpha-2 from the device region, or null.
   final String? country;
 
-  /// Privacy, terms, 18+ (and AI if chosen), recorded with the signup.
+  /// Privacy, terms and 18+, recorded with the signup (never the AI
+  /// consent: that one is asked only where AI is turned on).
   final List<ConsentItem> consents;
 
   Map<String, Object?> toMetadata() => {
@@ -62,9 +63,6 @@ abstract interface class AuthRepository {
   /// the email shows and the account is no longer anonymous).
   Future<AuthUser?> reloadUser();
 
-  /// The server's age signal switch (020), readable with no session.
-  Future<bool> ageSignalOn();
-
   /// Step 3, once the email is confirmed (the server refuses a password on
   /// an account without one).
   Future<void> setPassword(String password);
@@ -106,12 +104,6 @@ abstract interface class AccountRepository {
     String? country,
   });
 
-  /// Me → AI (`update_settings`); null = unchanged.
-  Future<void> updateAiSettings({
-    bool? enabled,
-    Tone? tone,
-    Set<FocusArea>? focus,
-  });
 
   /// The privacy-change notice was dismissed (`policy_notice_seen`, 019).
   /// Throws `invalid_value` when [id] isn't the one out any more.

@@ -1,0 +1,12 @@
+{
+  "about": "A written pig tip's request: the only data that leaves the phone when pig tips are on. Shares and counts of this week so far; never a note, a goal's or a category's name, an amount, a date or the currency. The app's builder is lib/tips/tip_request.dart; its test and the server's read this file.",
+  "required": ["language", "weekday", "category_shares", "feelings", "saves", "active_goals", "picks"],
+  "optional": ["plan_percent", "goal_percent"],
+  "languages": ["en"],
+  "weekday": {"min": 1, "max": 7},
+  "category_keys": ["food", "groceries", "transport", "home", "shopping", "fun", "health", "gifts", "other", "yours"],
+  "max_built_in_categories": 3,
+  "percent": {"min": 0, "max": 100},
+  "feelings": ["worth_it", "not_sure", "not_really", "none"],
+  "picks": ["save", "plan", "worth"]
+}

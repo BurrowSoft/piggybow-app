@@ -265,15 +265,6 @@ class FakeBackend implements AuthRepository, AccountRepository {
   /// Test hook: the token was refreshed.
   void fireSessionRefreshed() => _refreshed.add(null);
 
-  /// Test hook: the server's age signal switch.
-  bool ageSwitch = true;
-
-  @override
-  Future<bool> ageSignalOn() async {
-    await _tick();
-    return ageSwitch;
-  }
-
   /// What gotrue-dart does when a refresh is rejected: the session is
   /// removed on the client and a signedOut event fires (no error code).
   void dropSessionAfterFailedRefresh() {
@@ -314,15 +305,10 @@ class FakeBackend implements AuthRepository, AccountRepository {
       locale: user.locale,
       reminderOn: user.reminderOn,
       reminderTime: user.reminderTime,
-      creditBalance: user.credits,
-      aiAvailable: aiGlobal,
-      aiEnabled: user.aiEnabled,
       policyNoticeId: policyNoticeId,
       policyNoticeSeen: user.policyNoticeSeen,
       policyNoticeV2Id: policyNoticeV2Id,
       policyNoticeV2Seen: user.policyNoticeV2Seen,
-      tone: user.tone,
-      focusAreas: Set.unmodifiable(user.focus),
     );
   }
 
@@ -361,10 +347,6 @@ class FakeBackend implements AuthRepository, AccountRepository {
     if (id != policyNoticeId) throw const AppFailure('invalid_value');
     _signedIn.policyNoticeSeen = id;
   }
-
-  /// Sets a user's AI credit balance (tests: the Delete account warning).
-  void setCredits(String email, int balance) =>
-      _users[email.toLowerCase()]?.credits = balance;
 
   @override
   Future<void> updateReminder({
@@ -417,22 +399,6 @@ class FakeBackend implements AuthRepository, AccountRepository {
   }
 
   @override
-  Future<void> updateAiSettings({
-    bool? enabled,
-    Tone? tone,
-    Set<FocusArea>? focus,
-  }) async {
-    await _tick();
-    final u = _signedIn;
-    if (enabled != null) u.aiEnabled = enabled;
-    if (tone != null) u.tone = tone;
-    if (focus != null) u.focus = Set.of(focus);
-  }
-
-  /// The global AI switch (get_me().ai_available).
-  bool aiGlobal = true;
-
-  @override
   Future<void> deleteMyAccount() async {
     await _tick();
     _users.remove(_signedIn.key);
@@ -454,9 +420,7 @@ class FakeBackend implements AuthRepository, AccountRepository {
     _signedIn
       ..onboarded = true
       ..reminderOn = choices.reminderOn
-      ..reminderTime = choices.reminderTime
-      ..tone = choices.tone
-      ..focus = Set.of(choices.focusAreas);
+      ..reminderTime = choices.reminderTime;
   }
 }
 
@@ -486,12 +450,8 @@ class _FakeUser {
   String locale = 'en';
   bool reminderOn = true;
   ReminderTime reminderTime = ReminderTime.defaultTime;
-  int credits = 0;
-  bool aiEnabled = false;
   String? policyNoticeSeen;
   String? policyNoticeV2Seen;
-  Tone tone = Tone.warm;
-  Set<FocusArea> focus = {};
   final consents = <ConsentKind, ConsentItem>{};
 
   AuthUser toAuthUser() =>

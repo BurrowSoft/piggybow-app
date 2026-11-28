@@ -144,8 +144,6 @@ void main() {
     expect(() => backend.setPassword('x'), throwsUnsupportedError);
     expect(() => backend.resendConfirmation('a@example.invalid'), throwsUnsupportedError);
     expect(() => backend.sendPasswordReset('a@example.invalid'), throwsUnsupportedError);
-    expect(() => backend.updateAiSettings(enabled: true), throwsUnsupportedError);
-    expect(await backend.ageSignalOn(), isFalse);
 
     await backend.signOut();
     expect(backend.currentUser?.id, 'id-1');
@@ -161,7 +159,6 @@ void main() {
       account: backend,
       prefs: prefs,
       device: FakeDevice(),
-      aiEnabled: false,
       anonStart: true,
       reconnectEvery: null,
       shippedLocales: const ['en'],
