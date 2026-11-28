@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 
 import '../../core/button_label.dart';
 import '../../core/clock.dart';
-import '../../core/fit_text.dart';
 import '../../core/line_breaks.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
@@ -27,6 +26,7 @@ import '../currency/currency_picker.dart';
 import '../plus/plus_screen.dart';
 import '../repeat/repeat_choice.dart';
 import 'add_again.dart';
+import 'category_grid.dart';
 
 /// Opens the Add sheet on [start] (Spent unless said), or the Edit sheet for
 /// [editing], on the root navigator: full height over the tab bar, so no
@@ -191,9 +191,6 @@ class _EntrySheetState extends State<EntrySheet> {
   }
 
   bool get _hasCategory => _category != null || _custom != null;
-
-  /// A spend in a category of the person's own: it can't repeat yet.
-  bool get _ownCategory => _type == EntryType.spent && _custom != null;
 
   Future<(Set<SpendCategory>, List<CustomCategory>)> _readCategories() async {
     final store = context.services.journal;
@@ -430,10 +427,9 @@ class _EntrySheetState extends State<EntrySheet> {
     final editing = widget.editing;
     try {
       if (editing == null) {
-        // A repeat stays in the home currency and the built-in categories for
-        // now: in another currency, or in a category of your own, Add makes
-        // none.
-        final repeat = abroad || _ownCategory ? null : scheduleFor(_repeat, date);
+        // A repeat stays in the home currency for now: in another currency,
+        // Add makes none.
+        final repeat = abroad ? null : scheduleFor(_repeat, date);
         await store.addEntry(
           type: _type,
           amountMinor: parsed.minor!,
@@ -643,33 +639,28 @@ class _EntrySheetState extends State<EntrySheet> {
 
   /// The grid: the categories offered (the spend's own and the one picked
   /// always among them), then Add category in builds with Plus.
-  List<_Tile> _tiles(AppLocalizations l10n) {
+  List<CategoryTile> _tiles(AppLocalizations l10n) {
     final plus = context.services.plus;
     final picked = _category?.id ?? _custom;
-    final byId = {for (final c in _customs) c.id: c};
-    final number = {for (final (i, c) in _customs.indexed) c.id: i + 1};
-    void pick(String id) => setState(() {
-      _category = SpendCategory.fromId(id);
-      _custom = _category == null ? id : null;
-    });
     return [
-      for (final id in offeredCategories(
-        hidden: _hidden,
-        customs: _customs,
-        plus: plus?.active ?? false,
-        keep: [?widget.editing?.categoryId, ?picked],
-      ))
-        _Tile(
-          id: number.containsKey(id)
-              ? 'add-cat-custom-${number[id]}'
-              : 'add-cat-$id',
-          label: categoryName(l10n, id, byId),
-          icon: categoryIcon(id, byId),
-          selected: id == picked,
-          onTap: () => pick(id),
+      ...categoryTiles(
+        l10n,
+        ids: offeredCategories(
+          hidden: _hidden,
+          customs: _customs,
+          plus: plus?.active ?? false,
+          keep: [?widget.editing?.categoryId, ?picked],
         ),
+        customs: _customs,
+        picked: picked,
+        idPrefix: 'add-cat',
+        onPick: (id) => setState(() {
+          _category = SpendCategory.fromId(id);
+          _custom = _category == null ? id : null;
+        }),
+      ),
       if (plus != null)
-        _Tile(
+        CategoryTile(
           id: 'add-cat-add',
           label: l10n.categoryAdd,
           icon: Icons.add,
@@ -995,7 +986,7 @@ class _EntrySheetState extends State<EntrySheet> {
                             style: theme.textTheme.titleSmall,
                           ),
                           const SizedBox(height: 8),
-                          _CategoryGrid(tiles: _tiles(l10n)),
+                          CategoryGrid(tiles: _tiles(l10n)),
                           if (_tried && !_hasCategory)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
@@ -1144,10 +1135,7 @@ class _EntrySheetState extends State<EntrySheet> {
                             choice: _repeat,
                             date: date,
                             onTap: _pickRepeat,
-                            // The home currency's reason first, when both apply.
-                            off: abroad
-                                ? l10n.repeatHomeCurrencyOnly
-                                : (_ownCategory ? l10n.repeatBuiltInCategoryOnly : null),
+                            off: abroad ? l10n.repeatHomeCurrencyOnly : null,
                           ),
                         ],
                         // Editing an entry of a repeat: which one, and
@@ -1273,117 +1261,6 @@ class _QuickAmounts extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
-}
-
-/// One cell of the category grid: a category, or Add category ([selected]
-/// null: an action, never picked).
-class _Tile {
-  const _Tile({
-    required this.id,
-    required this.label,
-    required this.icon,
-    this.selected,
-    required this.onTap,
-  });
-
-  final String id;
-  final String label;
-  final IconData icon;
-  final bool? selected;
-  final VoidCallback onTap;
-}
-
-/// The tiles, three to a row (a short last row keeps the same cell width);
-/// each row as tall as its tallest label (large text wraps, never cuts).
-class _CategoryGrid extends StatelessWidget {
-  const _CategoryGrid({required this.tiles});
-
-  final List<_Tile> tiles;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = theme.colorScheme.primary;
-    // One size for every label: each word whole in its cell (a third of the
-    // row, less the gaps and padding), smaller only when it must.
-    return LayoutBuilder(
-      builder: (context, box) {
-        final scaler = wholeWordsScaler(
-          context,
-          texts: [for (final t in tiles) t.label],
-          style: theme.textTheme.bodySmall,
-          available: (box.maxWidth - 16) / 3 - 16,
-        );
-        Widget cell(_Tile t) {
-          final on = t.selected ?? false;
-          return TestId(
-            t.id,
-            button: true,
-            selected: t.selected,
-            child: Material(
-              color: on
-                  ? context.palette.pillBackground
-                  : theme.colorScheme.surface,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: BorderSide(
-                  color: on ? accent : theme.colorScheme.outlineVariant,
-                  width: on ? 2 : 1,
-                ),
-              ),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                onTap: t.onTap,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 72),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(t.icon, color: on ? accent : null),
-                        const SizedBox(height: 4),
-                        Text(
-                          t.label,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodySmall,
-                          textScaler: scaler,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }
-
-        return Column(
-          children: [
-            for (var row = 0; row < tiles.length; row += 3)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      for (var i = 0; i < 3; i++) ...[
-                        if (i > 0) const SizedBox(width: 8),
-                        Expanded(
-                          child: row + i < tiles.length
-                              ? cell(tiles[row + i])
-                              : const SizedBox.shrink(),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        );
-      },
     );
   }
 }

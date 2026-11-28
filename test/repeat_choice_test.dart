@@ -63,9 +63,19 @@ void main() {
     expect(repeatA11y(l10n, RepeatKind.weekly), 'Repeats every week');
   });
 
-  test('a repeat\'s name: its note, else its category, else "Save"', () {
-    expect(repeatName(l10n, note: 'Rent', category: SpendCategory.home), 'Rent');
-    expect(repeatName(l10n, note: '', category: SpendCategory.home), 'Home & bills');
-    expect(repeatName(l10n, note: '', category: null), 'Save');
+  test('a repeat\'s name: its note, else its category (a built-in\'s or your own\'s), else "Save"', () {
+    final tea = CustomCategory(
+      id: '${CustomCategory.idPrefix}tea',
+      name: 'Bubble tea',
+      icon: CategoryIcon.drinks,
+      createdAt: DateTime.utc(2026, 9),
+    );
+    final customs = {tea.id: tea};
+    final home = SpendCategory.home.id;
+    expect(repeatName(l10n, note: 'Rent', categoryId: home, customs: customs), 'Rent');
+    expect(repeatName(l10n, note: '', categoryId: home, customs: customs), 'Home & bills');
+    expect(repeatName(l10n, note: '', categoryId: tea.id, customs: customs), 'Bubble tea');
+    expect(repeatName(l10n, note: 'Boba', categoryId: tea.id, customs: customs), 'Boba');
+    expect(repeatName(l10n, note: '', categoryId: null, customs: customs), 'Save');
   });
 }

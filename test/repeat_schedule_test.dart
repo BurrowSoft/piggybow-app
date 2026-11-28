@@ -240,6 +240,39 @@ void main() {
     expect(Repeat.fromMap('r', {...map, 'stopped_on': '2026-10-05'})?.running, isFalse);
   });
 
+  test('a repeat in a category of your own: one field, as an entry\'s; a built-in replaces it and back', () {
+    const tea = '${CustomCategory.idPrefix}tea';
+    final mine = Repeat(
+      id: 'r',
+      type: EntryType.spent,
+      amountMinor: 6500,
+      currency: 'THB',
+      customCategory: tea,
+      schedule: const RepeatSchedule.weekly(5),
+      firstDate: '2026-10-02',
+      startedOn: '2026-10-02',
+      madeThrough: '2026-10-02',
+      createdAt: DateTime.utc(2026, 10),
+      updatedAt: DateTime.utc(2026, 10),
+    );
+    final map = mine.toMap();
+    expect(map['category'], tea);
+    expect(Repeat.fromMap('r', map), mine);
+    expect((mine.category, mine.customCategory, mine.categoryId), (null, tea, tea));
+    expect(Repeat.fromMap('r', {...map, 'category': 'tea'}), isNull, reason: 'neither a built-in nor your own');
+
+    final home = mine.copyWith(category: SpendCategory.home);
+    expect((home.category, home.customCategory, home.categoryId), (SpendCategory.home, null, 'home'));
+    final back = home.copyWith(customCategory: tea);
+    expect((back.category, back.customCategory), (null, tea));
+    expect(back.copyWith(note: 'Boba').customCategory, tea, reason: 'kept when not changed');
+
+    // A save has neither.
+    final save = Repeat.fromMap('r', {...map, 'type': EntryType.saved.id})!;
+    expect((save.category, save.customCategory), (null, null));
+    expect(save.copyWith(customCategory: tea).customCategory, isNull);
+  });
+
   test("a save's repeat keeps its goal; a spend's has none; older records read as none", () {
     final save = Repeat(
       id: 's',

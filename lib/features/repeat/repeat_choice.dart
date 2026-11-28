@@ -82,21 +82,30 @@ String repeatA11y(AppLocalizations l10n, RepeatKind kind) => switch (kind) {
   RepeatKind.weekly => l10n.repeatA11yWeekly,
 };
 
-/// A repeat's (or one of its entries') name: its note, else its category,
-/// else "Save".
+/// A repeat's (or one of its entries') name: its note, else its category
+/// (a built-in's, or your own's from [customs] by id), else "Save".
 String repeatName(
   AppLocalizations l10n, {
   required String note,
-  required SpendCategory? category,
+  required String? categoryId,
+  required Map<String, CustomCategory> customs,
 }) => note.isNotEmpty
     ? note
-    : category != null
-    ? category.label(l10n)
+    : categoryId != null
+    ? categoryName(l10n, categoryId, customs)
     : l10n.repeatSaveName;
 
 /// The name of [entry], one a repeat added.
-String repeatEntryName(AppLocalizations l10n, Entry entry) =>
-    repeatName(l10n, note: entry.note, category: entry.category);
+String repeatEntryName(
+  AppLocalizations l10n,
+  Entry entry,
+  Map<String, CustomCategory> customs,
+) => repeatName(
+  l10n,
+  note: entry.note,
+  categoryId: entry.categoryId,
+  customs: customs,
+);
 
 /// Asks how an entry on [date] repeats: the choices for that day, [current]
 /// marked. Without [withNone], "Doesn't repeat" isn't offered (a repeat's

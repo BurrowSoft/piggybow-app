@@ -1,7 +1,7 @@
 // Goldens: categories (decision 44), at 320 dp ×2, light and dark, for PB
 // UX & PM's look: Categories with Plus and after Plus ended, a new category
 // in the editor, and the Add sheet's grid with your own and Add category
-// (and with one long word).
+// (and with one long word), and a repeat's page in one of your own.
 @Tags(['golden'])
 library;
 
@@ -13,6 +13,8 @@ import 'package:piggybow/features/plus/fake_plus_store.dart';
 import 'package:piggybow/features/plus/plus_entitlement.dart';
 import 'package:piggybow/features/plus/plus_store.dart';
 import 'package:piggybow/journal/category.dart';
+import 'package:piggybow/journal/entry.dart';
+import 'package:piggybow/repeat/repeat.dart';
 
 import '../helpers.dart';
 import '../helpers/fonts.dart';
@@ -43,6 +45,18 @@ void main() {
       .descendant(of: byId(screenId), matching: find.byType(Scrollable))
       .first;
 
+  /// Frames, with real time between them, until [f] shows (the journal's
+  /// reads behind Me → Repeating entries).
+  Future<void> waitFor(WidgetTester tester, Finder f) async {
+    for (var i = 0; i < 60 && f.evaluate().isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pumpAndSettle();
+  }
+
   /// Fun hidden; your own Coffee runs, and Pets (hidden on Categories, so
   /// both states show; shown in the sheet); or [firstName] for Coffee runs.
   Future<void> open(
@@ -51,6 +65,7 @@ void main() {
     required String location,
     bool plusOn = true,
     String firstName = 'Coffee runs',
+    Future<void> Function(TestApp app)? seed,
   }) async {
     setLayout(tester, c);
     final app = TestApp(
@@ -79,6 +94,7 @@ void main() {
         );
       }
       await app.journal.setBuiltInHidden(SpendCategory.fun, true);
+      if (seed != null) await seed(app);
     });
     await app.pump(tester, location: location);
     await settle(
@@ -162,6 +178,44 @@ void main() {
         screen: 'add',
         state: 'own-long-word',
         stateId: 'PC5',
+      );
+    });
+
+    // A repeat in Coffee runs: its page's grid as the Add sheet's (Fun
+    // hidden, your own after the built-ins), its own picked.
+    testWidgets("PC6 a repeat's page in your own category ($c)", (tester) async {
+      await open(
+        tester,
+        c,
+        location: '/home',
+        seed: (app) => app.journal.addEntry(
+          type: EntryType.spent,
+          amountMinor: 450,
+          currency: 'USD',
+          localDate: '2026-10-01',
+          customCategory: '${CustomCategory.idPrefix}a',
+          repeat: const RepeatSchedule.monthly(1),
+          today: '2026-10-01',
+        ),
+      );
+      await tester.tapId('tab-me');
+      await tester.tapId('me-repeats');
+      await waitFor(tester, byId('repeat-row-entry-1'));
+      await tester.tapId('repeat-row-entry-1');
+      await waitFor(tester, byId('repeat-cat-custom-1'));
+      FocusManager.instance.primaryFocus?.unfocus();
+      await tester.pumpAndSettle();
+      // The whole grid in view: its first row at the top of the page's list.
+      await Scrollable.ensureVisible(tester.element(byId('repeat-cat-food')));
+      await tester.pumpAndSettle();
+      expect(byId('repeat-cat-custom-2'), findsOneWidget);
+      expect(byId('repeat-cat-fun'), findsNothing, reason: 'hidden, as in the sheet');
+      await expectLayoutGolden(
+        tester,
+        c,
+        screen: 'repeat',
+        state: 'own-categories',
+        stateId: 'PC6',
       );
     });
   }

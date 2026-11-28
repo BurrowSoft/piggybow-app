@@ -664,8 +664,6 @@
   "repeatNone": "Doesn't repeat",
   "repeatHomeCurrencyOnly": "Repeats work in your home currency for now.",
   "@repeatHomeCurrencyOnly": {"description": "Under the Add sheet's Repeat row, which then can't be tapped, while the entry is in another currency than the journal's: a repeat can't be made in it yet (wiring item 21)."},
-  "repeatBuiltInCategoryOnly": "Repeats use the built-in categories for now.",
-  "@repeatBuiltInCategoryOnly": {"description": "Under the Add sheet's Repeat row, which then can't be tapped, while the spend is in a category of the person's own (a Plus feature): a repeat can't use one yet. When the entry is also in another currency, the home-currency line shows instead."},
   "repeatMonthly": "Every month on day {day}",
   "@repeatMonthly": {"placeholders": {"day": {"type": "int"}}},
   "repeatMonthlyLast": "Every month on the last day",

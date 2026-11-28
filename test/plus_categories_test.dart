@@ -11,6 +11,7 @@ import 'package:piggybow/features/plus/plus_store.dart';
 import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/l10n/gen/app_localizations.dart';
+import 'package:piggybow/repeat/repeat.dart';
 
 import 'helpers.dart';
 
@@ -243,11 +244,9 @@ void main() {
     expect(textIn('tl-row-${spend.id}', 'Coffee runs'), findsWidgets);
   });
 
-  // A repeat uses the built-in categories for now: with one of your own
-  // picked, the Repeat row says so and can't be tapped, and Add makes no
-  // repeat. Back on a built-in, the choice made is there again.
-  testWidgets('with your own category picked, Repeat is off and says why, and Add makes no repeat', (tester) async {
-    const why = 'Repeats use the built-in categories for now.';
+  // Repeats in your own categories: the Repeat row works as with a
+  // built-in, and the repeat keeps the category.
+  testWidgets('with your own category picked, the spend repeats in it', (tester) async {
     ListTile row() => tester.widget<ListTile>(
       find.descendant(of: byId('add-repeat'), matching: find.byType(ListTile)),
     );
@@ -259,36 +258,100 @@ void main() {
     final o = await open(tester, plusOn: true, customs: [own('a', 'Coffee')]);
     await tester.tapId('home-add');
     await tester.enterId('add-amount', '45');
-    await reveal('add-cat-food');
-    await tester.tapId('add-cat-food');
+    await reveal('add-cat-custom-1');
+    await tester.tapId('add-cat-custom-1');
     await reveal('add-repeat');
+    expect(row().onTap, isNotNull);
     await tester.tap(byId('add-repeat'));
     await tester.pumpAndSettle();
     await tester.tap(byId('repeat-choice-monthly'));
     await tester.pumpAndSettle();
     expect(textIn('add-repeat', 'Every month on day 2'), findsOneWidget);
-    expect(textIn('add-repeat', why), findsNothing);
-
-    await reveal('add-cat-custom-1');
-    await tester.tapId('add-cat-custom-1');
-    await reveal('add-repeat');
-    expect(textIn('add-repeat', why), findsOneWidget);
-    expect(textIn('add-repeat', "Doesn't repeat"), findsOneWidget);
-    expect(row().onTap, isNull);
-
-    await reveal('add-cat-food');
-    await tester.tapId('add-cat-food');
-    await reveal('add-repeat');
-    expect(textIn('add-repeat', 'Every month on day 2'), findsOneWidget);
-    expect(textIn('add-repeat', why), findsNothing);
-    expect(row().onTap, isNotNull);
-
-    await reveal('add-cat-custom-1');
-    await tester.tapId('add-cat-custom-1');
     await tester.tapId('add-submit');
+
     final spend = (await spends(tester, o.app)).single;
-    expect((spend.customCategory, spend.repeatId), ('${CustomCategory.idPrefix}a', null));
-    expect(await tester.runAsync(o.app.journal.repeats), isEmpty);
+    final repeat = (await tester.runAsync(o.app.journal.repeats))!.single;
+    expect((spend.customCategory, spend.repeatId), ('${CustomCategory.idPrefix}a', repeat.id));
+    expect((repeat.category, repeat.customCategory), (null, '${CustomCategory.idPrefix}a'));
+  });
+
+  /// A spend of 4.50 in your own [custom] on [day], every month on the 1st.
+  Future<void> repeatIn(TestApp app, String custom, {String day = '2026-10-01'}) =>
+      app.journal.addEntry(
+        type: EntryType.spent,
+        amountMinor: 450,
+        currency: 'THB',
+        localDate: day,
+        customCategory: custom,
+        repeat: const RepeatSchedule.monthly(1),
+        today: day,
+      );
+
+  /// Frames, with real time between them, until [f] shows (the journal's
+  /// reads and what repeats add at start).
+  Future<void> waitFor(WidgetTester tester, Finder f) async {
+    for (var i = 0; i < 60 && f.evaluate().isEmpty; i++) {
+      await tester.runAsync(
+        () => Future<void>.delayed(const Duration(milliseconds: 20)),
+      );
+      await tester.pump(const Duration(milliseconds: 50));
+    }
+    await tester.pumpAndSettle();
+  }
+
+  // A repeat's page: your own categories with Plus, and its own one always,
+  // even after Plus ends. With no note, it's named by its category.
+  testWidgets("a repeat's page offers your own categories with Plus, and keeps its own after Plus ends", (tester) async {
+    final o = await open(
+      tester,
+      plusOn: true,
+      customs: [own('a', 'Coffee'), own('b', 'Pets', day: 2)],
+      seed: (app) => repeatIn(app, 'c:a'),
+    );
+    await tester.tapId('tab-me');
+    await tester.tapId('me-repeats');
+    await waitFor(tester, textIn('repeat-row-entry-1', 'Coffee'));
+    expect(textIn('repeat-row-entry-1', 'Coffee'), findsOneWidget);
+
+    await tester.tapId('repeat-row-entry-1');
+    await waitFor(tester, byId('repeat-cat-custom-1'));
+    expect(picked(tester, 'repeat-cat-custom-1'), isTrue);
+    expect(byId('repeat-cat-custom-2'), findsOneWidget);
+    await tester.tapId('repeat-cat-custom-2');
+    expect(picked(tester, 'repeat-cat-custom-2'), isTrue);
+    await tester.tapId('repeat-save');
+    await waitFor(tester, textIn('repeat-row-entry-1', 'Pets'));
+    expect(textIn('repeat-row-entry-1', 'Pets'), findsOneWidget);
+    final r = (await tester.runAsync(o.app.journal.repeats))!.single;
+    expect((r.category, r.customCategory), (null, 'c:b'));
+
+    // Plus ends: the page keeps the repeat's own, and offers no other.
+    o.store.owns = const [];
+    await tester.runAsync(o.app.plus!.refresh);
+    await tester.pumpAndSettle();
+    await tester.tapId('repeat-row-entry-1');
+    await waitFor(tester, byId('repeat-cat-custom-2'));
+    expect(picked(tester, 'repeat-cat-custom-2'), isTrue);
+    expect(byId('repeat-cat-custom-1'), findsNothing);
+    expect(byId('repeat-cat-food'), findsOneWidget);
+    await tester.tapId('repeat-stop');
+    expect(find.text('Stop repeating Pets?'), findsOneWidget);
+  });
+
+  // Plus ending doesn't stop a repeat: it adds in your own category, as any
+  // entry keeps its category, and Home's card names it so.
+  testWidgets('without Plus, a repeat in your own category still adds there, and Home names it', (tester) async {
+    final o = await open(
+      tester,
+      customs: [own('a', 'Coffee')],
+      seed: (app) => repeatIn(app, 'c:a', day: '2026-09-01'),
+    );
+    await waitFor(tester, byId('home-repeats'));
+    expect(textIn('home-repeats-repeat-entry-1-2026-10-01', 'Coffee'), findsOneWidget);
+    expect(
+      [for (final e in await spends(tester, o.app)) if (e.auto) (e.localDate, e.customCategory)],
+      [('2026-10-01', 'c:a')],
+    );
   });
 
   testWidgets('the editor: a name is needed, and not one you have: your own '

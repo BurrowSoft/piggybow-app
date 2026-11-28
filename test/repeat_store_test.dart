@@ -333,28 +333,81 @@ void main() {
     expect(await store.isBlank(), isTrue);
   });
 
-  test('a repeating spend in a category of your own is refused, and nothing is written', () async {
-    final mine = CustomCategory(
-      id: '${CustomCategory.idPrefix}a',
-      name: 'Coffee',
-      icon: CategoryIcon.coffee,
-      createdAt: clock.nowUtc(),
+  // A repeat in a category of your own (Plus) keeps it, and so does each
+  // entry it adds. Plus isn't the journal's to know: hidden, or after Plus
+  // ends, it keeps adding there, as any entry keeps its category.
+  group('a repeating spend in a category of your own', () {
+    const mine = '${CustomCategory.idPrefix}a';
+    const gone = '${CustomCategory.idPrefix}gone';
+
+    setUp(() async {
+      await store.putCustomCategory(
+        CustomCategory(
+          id: mine,
+          name: 'Coffee',
+          icon: CategoryIcon.coffee,
+          createdAt: clock.nowUtc(),
+        ),
+      );
+    });
+
+    Future<Entry> coffee({String custom = mine}) => store.addEntry(
+      type: EntryType.spent,
+      amountMinor: 450,
+      currency: 'THB',
+      localDate: '2026-10-01',
+      customCategory: custom,
+      repeat: const RepeatSchedule.monthly(1),
+      today: '2026-10-01',
     );
-    await store.putCustomCategory(mine);
-    await expectLater(
-      store.addEntry(
-        type: EntryType.spent,
-        amountMinor: 450,
-        currency: 'THB',
-        localDate: '2026-10-01',
-        customCategory: mine.id,
-        repeat: const RepeatSchedule.monthly(1),
-        today: '2026-10-01',
-      ),
-      throwsArgumentError,
-    );
-    expect(await store.entries(), isEmpty);
-    expect(await store.repeats(), isEmpty);
+
+    test('keeps it, and so does each entry it adds', () async {
+      final first = await coffee();
+      expect((first.category, first.customCategory), (null, mine));
+      final r = await theRepeat();
+      expect((r.category, r.customCategory, r.categoryId), (null, mine, mine));
+      clock.now = DateTime.utc(2026, 11, 1, 2);
+      final added = await store.catchUpRepeats(today: '2026-11-01');
+      expect(
+        [for (final e in added) (e.localDate, e.category, e.customCategory, e.auto)],
+        [('2026-11-01', null, mine, true)],
+      );
+    });
+
+    test('hidden, it keeps adding there', () async {
+      await coffee();
+      await store.setCustomHidden(mine, true);
+      expect(await catchUp('2026-11-01'), ['2026-11-01']);
+      expect(
+        [for (final e in await store.entries()) e.customCategory],
+        [mine, mine],
+      );
+    });
+
+    test("one that isn't there is refused, and nothing is written", () async {
+      await expectLater(coffee(custom: gone), throwsArgumentError);
+      expect(await store.entries(), isEmpty);
+      expect(await store.repeats(), isEmpty);
+    });
+
+    test('an edit moves it to a built-in and back, from its next entry on', () async {
+      final first = await coffee();
+      final home = await store.updateRepeat(
+        (await theRepeat()).copyWith(category: SpendCategory.home),
+      );
+      expect((home.category, home.customCategory), (SpendCategory.home, null));
+      expect((await store.entry(first.id))!.customCategory, mine, reason: 'what it added stays');
+      expect(await catchUp('2026-11-01'), ['2026-11-01']);
+      expect((await store.entries()).map((e) => e.categoryId).toSet(), {mine, 'home'});
+
+      final back = await store.updateRepeat(home.copyWith(customCategory: mine));
+      expect((back.category, back.customCategory), (null, mine));
+      await expectLater(
+        store.updateRepeat(back.copyWith(customCategory: gone)),
+        throwsArgumentError,
+      );
+      expect((await theRepeat()).customCategory, mine, reason: 'nothing written');
+    });
   });
 
   test('Delete everything erases the repeats too', () async {

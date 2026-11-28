@@ -31,6 +31,9 @@ class RepeatsScreen extends StatefulWidget {
 
 class _RepeatsScreenState extends State<RepeatsScreen> {
   List<Repeat>? _repeats;
+
+  /// Your own categories by id, for the names of repeats in them.
+  Map<String, CustomCategory> _customs = const {};
   AppServices? _services;
 
   @override
@@ -51,9 +54,15 @@ class _RepeatsScreenState extends State<RepeatsScreen> {
   }
 
   Future<void> _load() async {
-    final all = await _services?.journal.repeats();
-    if (all == null || !mounted) return;
-    setState(() => _repeats = [for (final r in all) if (r.running) r]);
+    final journal = _services?.journal;
+    if (journal == null) return;
+    final all = await journal.repeats();
+    final customs = await journal.customCategories();
+    if (!mounted) return;
+    setState(() {
+      _repeats = [for (final r in all) if (r.running) r];
+      _customs = {for (final c in customs) c.id: c};
+    });
   }
 
   @override
@@ -91,7 +100,12 @@ class _RepeatsScreenState extends State<RepeatsScreen> {
                       button: true,
                       child: ListTile(
                         title: Text(
-                          repeatName(l10n, note: r.note, category: r.category),
+                          repeatName(
+                            l10n,
+                            note: r.note,
+                            categoryId: r.categoryId,
+                            customs: _customs,
+                          ),
                         ),
                         subtitle: Text(
                           [
@@ -127,8 +141,16 @@ class _RepeatScreenState extends State<RepeatScreen> {
 
   /// Null until read; stays null for a repeat that's gone or stopped.
   Repeat? _repeat;
-  SpendCategory? _category;
+
+  /// A spend's category: a built-in's id, or your own's ("c:…").
+  String? _categoryId;
   RepeatSchedule? _schedule;
+
+  /// The built-ins hidden from the grid, and your own categories (oldest
+  /// first): what it offers (offeredCategories), as in the Add sheet.
+  Set<SpendCategory> _hidden = const {};
+  List<CustomCategory> _customs = const [];
+  AppServices? _services;
   String? _amountError;
   bool _busy = false;
 
@@ -140,27 +162,50 @@ class _RepeatScreenState extends State<RepeatScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      // Your own categories are in the grid while Plus is on.
+      (_services = context.services).plus?.addListener(_plusChanged);
+      _load();
+    });
+  }
+
+  void _plusChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    _services?.plus?.removeListener(_plusChanged);
     _amount.dispose();
     _note.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
-    final r = await context.services.journal.repeat(widget.repeatId);
+    final store = context.services.journal;
+    final r = await store.repeat(widget.repeatId);
+    final hidden = await store.hiddenBuiltIns();
+    final customs = await store.customCategories();
     if (!mounted || r == null || !r.running) return;
     setState(() {
       _repeat = r;
       _amount.text = inputAmount(r.amountMinor, r.currency, _locale);
       _note.text = r.note;
-      _category = r.category;
+      _categoryId = r.categoryId;
       _schedule = r.schedule;
+      _hidden = hidden;
+      _customs = customs;
     });
   }
+
+  /// The repeat's name: its note, else its category's, else "Save".
+  String _name(AppLocalizations l10n, Repeat r) => repeatName(
+    l10n,
+    note: r.note,
+    categoryId: r.categoryId,
+    customs: {for (final c in _customs) c.id: c},
+  );
 
   /// A new schedule: a day first, then how it repeats from that day.
   Future<void> _changeSchedule() async {
@@ -210,10 +255,12 @@ class _RepeatScreenState extends State<RepeatScreen> {
       _failed = false;
     });
     try {
+      final picked = _categoryId;
       await context.services.journal.updateRepeat(
         r.copyWith(
           amountMinor: parsed.minor,
-          category: _category,
+          category: SpendCategory.fromId(picked),
+          customCategory: CustomCategory.isCustomId(picked) ? picked : null,
           note: _note.text,
           schedule: schedule,
         ),
@@ -236,9 +283,7 @@ class _RepeatScreenState extends State<RepeatScreen> {
         // Whole words, as the plan dialog's title: "repeating" at 320 dp and
         // 200 % text, smaller only if it must be.
         title: WholeWordsText(
-          l10n.repeatStopTitle(
-            repeatName(l10n, note: r.note, category: r.category),
-          ),
+          l10n.repeatStopTitle(_name(l10n, r)),
           style: Theme.of(dialog).textTheme.headlineSmall,
         ),
         content: Text(l10n.repeatStopBody),
@@ -311,9 +356,7 @@ class _RepeatScreenState extends State<RepeatScreen> {
         appBar: AppBar(
           // One line, all of it: a repeat's name can be a long note.
           title: AppBarTitle(
-            r == null
-                ? l10n.meRepeats
-                : repeatName(l10n, note: r.note, category: r.category),
+            r == null ? l10n.meRepeats : _name(l10n, r),
           ),
         ),
         body: r == null || schedule == null
@@ -347,10 +390,23 @@ class _RepeatScreenState extends State<RepeatScreen> {
                       style: theme.textTheme.titleSmall,
                     ),
                     const SizedBox(height: 8),
+                    // As in the Add sheet: your own while Plus is on, and
+                    // the repeat's own always, even hidden or after Plus
+                    // ended.
                     CategoryGrid(
-                      selected: _category,
-                      idPrefix: 'repeat-cat',
-                      onPick: (c) => setState(() => _category = c),
+                      tiles: categoryTiles(
+                        l10n,
+                        ids: offeredCategories(
+                          hidden: _hidden,
+                          customs: _customs,
+                          plus: _services?.plus?.active ?? false,
+                          keep: [?r.categoryId, ?_categoryId],
+                        ),
+                        customs: _customs,
+                        picked: _categoryId,
+                        idPrefix: 'repeat-cat',
+                        onPick: (id) => setState(() => _categoryId = id),
+                      ),
                     ),
                     const SizedBox(height: 8),
                   ],

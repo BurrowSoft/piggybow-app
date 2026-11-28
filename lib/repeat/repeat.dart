@@ -75,6 +75,7 @@ class Repeat {
     required this.createdAt,
     required this.updatedAt,
     this.category,
+    this.customCategory,
     this.goalId,
     this.note = '',
     this.skipThrough,
@@ -89,8 +90,16 @@ class Repeat {
   final int amountMinor;
   final String currency;
 
-  /// Spends only.
+  /// Spends only: a built-in category, or [customCategory] (one of them).
   final SpendCategory? category;
+
+  /// Spends only: the id of a category of your own (Plus), "c:…"; null with
+  /// a built-in [category]. Its entries go there even once it's hidden or
+  /// Plus has ended, as any entry keeps its category.
+  final String? customCategory;
+
+  /// The spend's category id, built-in or your own.
+  String? get categoryId => category?.id ?? customCategory;
 
   /// Saves only: the goal its first entry went to, or null (none). Its saves
   /// go there while that goal is active, then to none: never to a goal the
@@ -133,7 +142,9 @@ class Repeat {
     'type': type.id,
     'amount_minor': amountMinor,
     'currency': currency,
-    'category': category?.id,
+    // One field for both, as an entry's: a built-in's id ("food") or your
+    // own's ("c:…").
+    'category': categoryId,
     'goal_id': goalId,
     'note': note,
     'kind': schedule.kind.id,
@@ -176,10 +187,12 @@ class Repeat {
           !date(stoppedOn)) {
         return null;
       }
-      final category = type == EntryType.spent
-          ? SpendCategory.fromId(m['category'])
+      final spend = type == EntryType.spent;
+      final category = spend ? SpendCategory.fromId(m['category']) : null;
+      final custom = spend && CustomCategory.isCustomId(m['category'])
+          ? m['category'] as String
           : null;
-      if (type == EntryType.spent && category == null) return null;
+      if (spend && category == null && custom == null) return null;
       // Older records have none: their saves go to none.
       final goalId = type == EntryType.saved ? (m['goal_id'] as String?) : null;
       return Repeat(
@@ -188,6 +201,7 @@ class Repeat {
         amountMinor: amount,
         currency: m['currency'] as String,
         category: category,
+        customCategory: custom,
         goalId: goalId,
         note: (m['note'] as String?) ?? '',
         schedule: schedule,
@@ -204,9 +218,12 @@ class Repeat {
     }
   }
 
+  /// A built-in [category] replaces a [customCategory] and the other way
+  /// round; a save has neither.
   Repeat copyWith({
     int? amountMinor,
     SpendCategory? category,
+    String? customCategory,
     String? note,
     RepeatSchedule? schedule,
     String? madeThrough,
@@ -219,7 +236,12 @@ class Repeat {
     type: type,
     amountMinor: amountMinor ?? this.amountMinor,
     currency: currency,
-    category: type == EntryType.spent ? (category ?? this.category) : null,
+    category: type != EntryType.spent || customCategory != null
+        ? null
+        : (category ?? this.category),
+    customCategory: type != EntryType.spent || category != null
+        ? null
+        : (customCategory ?? this.customCategory),
     goalId: goalId,
     note: note ?? this.note,
     schedule: schedule ?? this.schedule,
@@ -240,6 +262,7 @@ class Repeat {
       other.amountMinor == amountMinor &&
       other.currency == currency &&
       other.category == category &&
+      other.customCategory == customCategory &&
       other.goalId == goalId &&
       other.note == note &&
       other.schedule == schedule &&
@@ -258,6 +281,7 @@ class Repeat {
     amountMinor,
     currency,
     category,
+    customCategory,
     goalId,
     note,
     schedule,

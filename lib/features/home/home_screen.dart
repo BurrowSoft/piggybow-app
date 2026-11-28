@@ -298,7 +298,10 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
                   // Right under the pig: what repeats wrote in the journal.
                   if (data.addedByRepeats.isNotEmpty) ...[
                     const SizedBox(height: 16),
-                    _RepeatsCard(added: data.addedByRepeats),
+                    _RepeatsCard(
+                      added: data.addedByRepeats,
+                      customs: data.customs,
+                    ),
                   ],
                   if (data.entries.isNotEmpty &&
                       !data.offerAnswered &&
@@ -450,10 +453,13 @@ class _Pig extends StatelessWidget {
 /// amount, day), and "and N more", which opens Timeline. The journal says
 /// so once, since it wrote there without the person.
 class _RepeatsCard extends StatelessWidget {
-  const _RepeatsCard({required this.added});
+  const _RepeatsCard({required this.added, required this.customs});
 
   /// Newest first.
   final List<Entry> added;
+
+  /// Your own categories by id, for the names of entries in them.
+  final Map<String, CustomCategory> customs;
 
   @override
   Widget build(BuildContext context) {
@@ -483,7 +489,7 @@ class _RepeatsCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          repeatEntryName(l10n, e),
+                          repeatEntryName(l10n, e, customs),
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: theme.colorScheme.onSurface,
                           ),

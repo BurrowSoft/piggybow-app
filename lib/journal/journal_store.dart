@@ -288,11 +288,6 @@ class JournalStore extends ChangeNotifier {
     final now = _clock.nowUtc();
     final spend = type == EntryType.spent;
     if (spend && customCategory != null) await _checkCustom(customCategory);
-    // A repeat uses the built-in categories for now: the sheet offers none
-    // for a category of your own.
-    if (repeat != null && spend && customCategory != null) {
-      throw ArgumentError.value(customCategory, 'customCategory', 'a repeat uses a built-in category');
-    }
     final repeatId = repeat == null ? null : _newId();
     final converted = await _converted(amountMinor, currency, rate);
     if (repeat != null && converted != null) {
@@ -328,6 +323,7 @@ class JournalStore extends ChangeNotifier {
         amountMinor: entry.amountMinor,
         currency: currency,
         category: entry.category,
+        customCategory: entry.customCategory,
         goalId: entry.goalId,
         note: entry.note,
         schedule: repeat,
@@ -858,6 +854,9 @@ class JournalStore extends ChangeNotifier {
   Future<Repeat> updateRepeat(Repeat changed) async {
     final old = await repeat(changed.id);
     if (old == null) throw StateError('no repeat ${changed.id}');
+    // A spend goes only to a category of your own that exists.
+    final custom = old.type == EntryType.spent ? changed.customCategory : null;
+    if (custom != null && custom != old.customCategory) await _checkCustom(custom);
     final skip = skipAfterChange(
       old: old.schedule,
       changed: changed.schedule,
@@ -868,6 +867,7 @@ class JournalStore extends ChangeNotifier {
     final updated = old.copyWith(
       amountMinor: changed.amountMinor,
       category: changed.category,
+      customCategory: changed.customCategory,
       note: changed.note.trim(),
       schedule: changed.schedule,
       skipThrough: skip == null || (earlier != null && !skip.isAfter(earlier))
@@ -906,7 +906,8 @@ class JournalStore extends ChangeNotifier {
   /// midnight.
   ///
   /// An added entry copies its repeat's amount, category and note, has no
-  /// feeling and is marked auto. A save goes to the goal its repeat's first
+  /// feeling and is marked auto; a category of your own stays, hidden or after
+  /// Plus ended, as on any entry. A save goes to the goal its repeat's first
   /// entry went to, while that goal is active, else to none: never to a goal
   /// the person didn't pick (Add again's rule). Each day is written in one
   /// transaction with its repeat's "made through", and its id is its repeat
@@ -960,6 +961,7 @@ class JournalStore extends ChangeNotifier {
             amountMinor: r.amountMinor,
             currency: r.currency,
             category: spend ? r.category : null,
+            customCategory: spend ? r.customCategory : null,
             note: r.note,
             goalId: spend ? null : await _repeatGoalIn(txn, r.goalId),
             localDate: wireDate(date),
@@ -1117,8 +1119,8 @@ class JournalStore extends ChangeNotifier {
   /// Everything a backup carries of the journal, read in one transaction:
   /// every entry, goal, category of your own and repeat as this build
   /// writes them, and the settings that travel. A record [checkSnapshot] would refuse
-  /// (one an older build left unreadable, a spend in a category that isn't
-  /// there) stays out, so a backup made here always restores.
+  /// (one an older build left unreadable, a spend or a repeat in a category
+  /// that isn't there) stays out, so a backup made here always restores.
   Future<JournalSnapshot> snapshot() => _db.transaction((txn) async {
     final entries = await _entries.find(txn);
     final goals = await _goals.find(txn);
@@ -1137,7 +1139,12 @@ class JournalStore extends ChangeNotifier {
       },
       goals: {for (final s in goals) s.key: ?_goalRecord(s.key, s.value)},
       categories: categories,
-      repeats: {for (final s in repeats) s.key: ?_repeatRecord(s.key, s.value)},
+      repeats: {
+        for (final s in repeats)
+          if (_repeatRecord(s.key, s.value) case final m?
+              when _categoryKnown(m, categories))
+            s.key: m,
+      },
       settings: {
         for (final s in settings)
           if (_settingFits(s.key, s.value)) s.key: _plain(s.value),
@@ -1147,10 +1154,10 @@ class JournalStore extends ChangeNotifier {
 
   /// [snapshot] as this store would write it. A [FormatException] for
   /// anything it never writes: an entry, goal or category of your own it
-  /// can't read or would refuse, a spend in a category of your own the
-  /// backup doesn't carry, two of your own with the same name, a repeat it
-  /// can't read or would refuse, a setting that doesn't travel or holds the
-  /// wrong kind of value. Several active goals are fine (#47: Plus allows
+  /// can't read or would refuse, a spend or a repeat in a category of your
+  /// own the backup doesn't carry, two of your own with the same name, a
+  /// repeat it can't read or would refuse, a setting that doesn't travel or
+  /// holds the wrong kind of value. Several active goals are fine (#47: Plus allows
   /// them, and a backup carries them all).
   static JournalSnapshot checkSnapshot(JournalSnapshot snapshot) {
     final categories = <String, Map<String, Object?>>{};
@@ -1180,8 +1187,12 @@ class JournalStore extends ChangeNotifier {
     }
     final repeats = <String, Map<String, Object?>>{};
     for (final MapEntry(:key, :value) in snapshot.repeats.entries) {
-      repeats[key] =
+      final record =
           _repeatRecord(key, value) ?? (throw FormatException('repeat $key'));
+      if (!_categoryKnown(record, categories)) {
+        throw FormatException('repeat $key: no such category');
+      }
+      repeats[key] = record;
     }
     final settings = <String, Object?>{};
     for (final MapEntry(:key, :value) in snapshot.settings.entries) {
@@ -1211,8 +1222,8 @@ class JournalStore extends ChangeNotifier {
     return category.copyWith(name: name).toMap();
   }
 
-  /// Whether an entry's category of your own, if it has one, is in
-  /// [categories] (a spend goes only to one that exists).
+  /// Whether an entry's (or a repeat's) category of your own, if it has one,
+  /// is in [categories] (a spend goes only to one that exists).
   static bool _categoryKnown(
     Map<String, Object?> entry,
     Map<String, Map<String, Object?>> categories,
@@ -1386,7 +1397,7 @@ class JournalStore extends ChangeNotifier {
     if (!r.schedule.isValid) {
       throw ArgumentError.value(r.schedule, 'schedule');
     }
-    if (r.type == EntryType.spent && r.category == null) {
+    if (r.type == EntryType.spent && r.categoryId == null) {
       throw ArgumentError('a repeating spend needs a category');
     }
     if (r.note.characters.length > maxNoteLength) {

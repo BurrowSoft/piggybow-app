@@ -253,6 +253,32 @@ void main() {
       expect(plain(await target.snapshot()), plain(backup));
     });
 
+    // A repeat in a category of your own carries it, as its spends do.
+    test('a repeat in your own category comes back in it', () async {
+      await fill(store);
+      await store.addEntry(
+        type: EntryType.spent,
+        amountMinor: 6500,
+        currency: 'THB',
+        localDate: '2026-11-27',
+        customCategory: 'c:bubble',
+        repeat: const RepeatSchedule.weekly(5),
+        today: '2026-11-28',
+      );
+      final backup = await store.snapshot();
+      expect(
+        backup.repeats.values.where((r) => r['category'] == 'c:bubble'),
+        hasLength(1),
+      );
+      final target = await other();
+      await target.replaceWith(backup);
+      expect(plain(await target.snapshot()), plain(backup));
+      expect(
+        (await target.repeats()).where((r) => r.customCategory == 'c:bubble'),
+        hasLength(1),
+      );
+    });
+
     test('a failure halfway leaves the old journal exactly as it was', () async {
       await fill(store);
       final backup = await store.snapshot();
@@ -430,6 +456,9 @@ void main() {
         ),
         'a repeating spend with no category': withRepeat(
           (m) => m['category'] = null,
+        ),
+        'a repeat in your own category the backup doesn\'t carry': withRepeat(
+          (m) => m['category'] = 'c:gone',
         ),
         'a repeat with no id': JournalSnapshot(
           entries: good.entries,
