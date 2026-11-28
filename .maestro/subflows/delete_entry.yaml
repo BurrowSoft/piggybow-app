@@ -1,0 +1,29 @@
+# Delete one Timeline entry through the app: open its row (found by its note),
+# the edit sheet's Delete, then the dialog's Delete. Back on Timeline after it.
+# env: NOTE (the entry's note, plain text with no regex characters)
+appId: ${APP_ID}
+---
+- scrollUntilVisible:
+    element:
+      id: "tl-row-.*"
+      text: "(?s).*${NOTE}.*"
+    direction: DOWN
+    timeout: 15000
+- tapOn:
+    id: "tl-row-.*"
+    text: "(?s).*${NOTE}.*"
+- runFlow:
+    file: reveal.yaml
+    env:
+      ID: edit-delete
+- tapOn:
+    id: edit-delete
+- tapOn:
+    id: delete-confirm
+- extendedWaitUntil:
+    notVisible:
+      id: "edit-save|delete-confirm"
+    timeout: 10000
+- assertNotVisible:
+    id: "tl-row-.*"
+    text: "(?s).*${NOTE}.*"

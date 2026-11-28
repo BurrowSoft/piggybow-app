@@ -1,17 +1,35 @@
 appId: ${APP_ID}
-name: Play shot 5 - Timeline, All (STORE1) - Today, Yesterday and Mon Nov 16 with their day totals
+name: Play shot 5 - Timeline, All (STORE1) - Today and Yesterday with their day totals; the three older entries deleted through the app first, so the list ends above the + button
 tags: [play]
+# Shot 5 shows two days only (PB UX & PM, after the final set: the + button
+# covered Mon, Nov 16's total). The same STORE1 fixture as the other shots;
+# the older entries go through the app's own Delete, which leaves no note.
 ---
 - runFlow:
     file: ../../subflows/store_launch.yaml
     env: { CASE: "STORE1" }
 - tapOn:
     id: tab-timeline
+- runFlow:
+    file: ../../subflows/delete_entry.yaml
+    env: { NOTE: "Birthday money" }
+- runFlow:
+    file: ../../subflows/delete_entry.yaml
+    env: { NOTE: "Concert tickets" }
+- runFlow:
+    file: ../../subflows/delete_entry.yaml
+    env: { NOTE: "Internet bill" }
+- scrollUntilVisible:
+    element: "(?s)Today.*Spent \\$17\\.25.*"
+    direction: UP
+    timeout: 10000
 # Each day's header carries its total in the same node ("Today\nSpent $17.25")
 - assertVisible: "(?s)Today.*Spent \\$17\\.25.*"
-- assertVisible: "(?s)Yesterday.*Saved \\$60\\.00.*"
-- assertVisible: "(?s)Mon, Nov 16.*"
+- assertVisible: "(?s)Yesterday.*Spent \\$68\\.65.*Saved \\$60\\.00.*"
 - assertVisible: "(?s).*\\+\\$60\\.00.*"
+- assertNotVisible: "(?s)Mon, Nov 16.*"
+- assertNotVisible: "(?s)Fri, Nov 13.*"
+- assertNotVisible: "(?i).*(deleted|undo).*"
 - waitForAnimationToEnd
 - runFlow: ../../subflows/dismiss_system_anr.yaml   # never a launcher dialog in a store shot
 - takeScreenshot: play-05-timeline
