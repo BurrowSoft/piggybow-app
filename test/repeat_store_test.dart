@@ -59,13 +59,16 @@ void main() {
     expect(r.note, 'Rent');
     expect(r.schedule, const RepeatSchedule.monthly(1));
     expect(r.firstDate, '2026-10-01');
+    expect(r.startedOn, '2026-10-01');
     expect(r.madeThrough, '2026-10-01');
+    expect(r.skipThrough, isNull);
     expect(r.running, isTrue);
     expect(await store.entries(), [first]);
   });
 
   test('never a day before the repeat was made, even after a back-dated first entry', () async {
     await rent(day: '2026-08-01', today: '2026-10-05');
+    expect((await theRepeat()).startedOn, '2026-10-05');
     expect((await theRepeat()).madeThrough, '2026-10-05');
     expect(await catchUp('2026-11-01'), ['2026-11-01'], reason: 'not 1 September or 1 October');
   });
@@ -150,7 +153,8 @@ void main() {
     await store.updateRepeat(
       (await theRepeat()).copyWith(schedule: const RepeatSchedule.monthly(5)),
     );
-    expect((await theRepeat()).madeThrough, '2026-11-30');
+    expect((await theRepeat()).madeThrough, '2026-11-03', reason: 'only real catch-ups move it');
+    expect((await theRepeat()).skipThrough, '2026-11-30');
     expect(await catchUp('2026-11-30'), isEmpty, reason: 'no second November rent');
     expect(await catchUp('2026-12-05'), ['2026-12-05']);
   });
@@ -166,11 +170,19 @@ void main() {
     expect(stopped.stoppedOn, '2026-11-02');
   });
 
-  test('a clock set back adds nothing and moves nothing', () async {
+  test('a trip west, today a day or two back: nothing added, nothing moved', () async {
     await rent();
-    await store.catchUpRepeats(today: '2026-12-15');
+    expect(await catchUp('2026-11-03'), ['2026-11-01']);
+    expect(await catchUp('2026-11-01'), isEmpty);
+    expect((await theRepeat()).madeThrough, '2026-11-03');
+    expect((await store.entries()).length, 2);
+  });
+
+  test('a clock set back weeks: nothing added now, and nothing twice when the days come again', () async {
+    await rent();
+    expect(await catchUp('2026-12-15'), ['2026-11-01', '2026-12-01']);
     expect(await catchUp('2026-11-20'), isEmpty);
-    expect((await theRepeat()).madeThrough, '2026-12-15');
+    expect(await catchUp('2026-12-20'), isEmpty, reason: '1 December is there already');
     expect((await store.entries()).length, 3);
   });
 
@@ -180,6 +192,34 @@ void main() {
     expect(added.length, 12);
     expect(added.first, '2028-11-01');
     expect(added.last, '2029-10-01');
+  });
+
+  test('a clock years ahead, then put right: the repeat carries on from its last real entry', () async {
+    await rent();
+    expect(await catchUp('2029-10-15'), hasLength(12));
+    expect(await catchUp('2026-11-02'), ['2026-11-01'], reason: 'November\'s rent, once');
+    expect((await theRepeat()).madeThrough, '2026-11-02');
+    expect(await catchUp('2026-11-02'), isEmpty);
+    expect(await catchUp('2026-12-01'), ['2026-12-01']);
+  });
+
+  test('a repeat made while the clock was ahead: once put right, it starts from today', () async {
+    await rent(day: '2029-10-01', today: '2029-10-15');
+    expect(await catchUp('2026-11-02'), isEmpty);
+    expect((await theRepeat()).madeThrough, '2026-11-02');
+    expect(await catchUp('2026-12-01'), ['2026-12-01']);
+  });
+
+  test('a schedule change made while the clock was ahead: its skip goes once put right', () async {
+    await rent();
+    await store.catchUpRepeats(today: '2029-10-15');
+    await store.updateRepeat(
+      (await theRepeat()).copyWith(schedule: const RepeatSchedule.monthly(5)),
+    );
+    expect((await theRepeat()).skipThrough, '2029-10-31');
+    // October had its rent on the 1st: no second one on the 5th.
+    expect(await catchUp('2026-11-06'), ['2026-11-05']);
+    expect((await theRepeat()).skipThrough, '2026-10-31');
   });
 
   test('a repeating save goes to the active goal; once reached, the next to none', () async {

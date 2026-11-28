@@ -186,6 +186,7 @@ class JournalStore extends ChangeNotifier {
     } else {
       final day = parseWireDate(today);
       if (day == null) throw ArgumentError.value(today, 'today');
+      final started = wireDate(entry.date.isAfter(day) ? entry.date : day);
       final r = Repeat(
         id: repeatId!,
         type: type,
@@ -195,7 +196,8 @@ class JournalStore extends ChangeNotifier {
         note: entry.note,
         schedule: repeat,
         firstDate: entry.localDate,
-        madeThrough: wireDate(entry.date.isAfter(day) ? entry.date : day),
+        startedOn: started,
+        madeThrough: started,
         createdAt: now,
         updatedAt: now,
       );
@@ -385,24 +387,27 @@ class JournalStore extends ChangeNotifier {
   /// Saves an edit to a repeat: its amount, category, note and schedule
   /// apply from its next entry on, and the entries it already added stay as
   /// they are. A new schedule never adds a second entry in the month (or
-  /// week) that already has the old schedule's last one
-  /// (madeThroughAfterChange). Its type, currency, first day and creation
-  /// time never change.
+  /// week) that already has the old schedule's last one (skipAfterChange;
+  /// a skip from an earlier change stays). Its type, currency, first day,
+  /// start and creation time never change.
   Future<Repeat> updateRepeat(Repeat changed) async {
     final old = await repeat(changed.id);
     if (old == null) throw StateError('no repeat ${changed.id}');
-    final made = madeThroughAfterChange(
+    final skip = skipAfterChange(
       old: old.schedule,
       changed: changed.schedule,
       first: parseWireDate(old.firstDate)!,
       madeThrough: parseWireDate(old.madeThrough)!,
     );
+    final earlier = parseWireDate(old.skipThrough);
     final updated = old.copyWith(
       amountMinor: changed.amountMinor,
       category: changed.category,
       note: changed.note.trim(),
       schedule: changed.schedule,
-      madeThrough: wireDate(made),
+      skipThrough: skip == null || (earlier != null && !skip.isAfter(earlier))
+          ? null
+          : wireDate(skip),
       updatedAt: _clock.nowUtc(),
     );
     _checkRepeat(updated);
@@ -440,9 +445,12 @@ class JournalStore extends ChangeNotifier {
   /// the Add sheet would. Each day is written in one transaction with its
   /// repeat's "made through", and its id is its repeat and day: two runs at
   /// once add nothing twice, and a day whose entry was deleted never comes
-  /// back. A [today] before "made through" (the clock or the zone moved
-  /// back) adds nothing and moves nothing. Returns what it added, oldest
-  /// first.
+  /// back. A [today] up to 2 days before "made through" (a trip across time
+  /// zones) adds nothing and moves nothing. Further back, the clock was set
+  /// ahead and put right: "made through" goes back to the repeat's latest
+  /// entry on or before today (never before the day it was made), so it
+  /// carries on instead of waiting for that false day. Returns what it
+  /// added, oldest first.
   Future<List<Entry>> catchUpRepeats({required String today}) async {
     // One at a time: wait for the run in progress (its caller hears of its
     // errors), then run.
@@ -465,6 +473,7 @@ class JournalStore extends ChangeNotifier {
   Future<List<Entry>> _catchUp(String today) async {
     final day = parseWireDate(today);
     if (day == null) throw ArgumentError.value(today, 'today');
+    await _clockPutRight(today, day);
     final added = <Entry>[];
     for (final (planned, date) in dueOccurrences(await repeats(), day)) {
       final id = repeatEntryId(planned.id, date);
@@ -521,6 +530,61 @@ class JournalStore extends ChangeNotifier {
     return added;
   }
 
+  /// A clock that was set far ahead for a catch-up, then put right: each
+  /// running repeat whose "made through" is further after [day] than any
+  /// time zone explains goes back to its latest entry on or before [day],
+  /// never before the day it was made, or to [day] when there's neither.
+  /// The month (or week) that holds that latest entry stays skipped, so a
+  /// schedule changed meanwhile adds no second entry in it. A schedule
+  /// change's skip that far ahead goes. Without this, the repeat would add
+  /// nothing until that false day came round.
+  Future<void> _clockPutRight(String today, DateTime day) async {
+    await _db.transaction((txn) async {
+      for (final s in await _repeats.find(txn)) {
+        final r = Repeat.fromMap(s.key, s.value);
+        if (r == null || !r.running) continue;
+        var fixed = r;
+        if (clockWasAhead(parseWireDate(r.madeThrough)!, day)) {
+          final latest = await _entries.findFirst(
+            txn,
+            finder: Finder(
+              filter: Filter.and([
+                Filter.equals('repeat_id', r.id),
+                Filter.lessThanOrEquals('local_date', today),
+              ]),
+              sortOrders: [SortOrder('local_date', false)],
+            ),
+          );
+          final latestDay = parseWireDate(
+            latest?.value['local_date'] as String?,
+          );
+          var back = latestDay ?? day;
+          final started = parseWireDate(r.startedOn)!;
+          if (!started.isAfter(day) &&
+              (latestDay == null || started.isAfter(latestDay))) {
+            back = started;
+          }
+          final periodEndOfLatest = latestDay == null
+              ? null
+              : periodEnd(r.schedule.kind, latestDay);
+          fixed =
+              periodEndOfLatest != null && periodEndOfLatest.isAfter(back)
+              ? fixed.copyWith(
+                  madeThrough: wireDate(back),
+                  skipThrough: wireDate(periodEndOfLatest),
+                )
+              : fixed.copyWith(madeThrough: wireDate(back), clearSkip: true);
+        }
+        // A skip from a schedule change made while the clock was ahead.
+        final skipThrough = parseWireDate(fixed.skipThrough);
+        if (skipThrough != null && skipFromClockAhead(skipThrough, day)) {
+          fixed = fixed.copyWith(clearSkip: true);
+        }
+        if (fixed != r) await _repeats.record(r.id).put(txn, fixed.toMap());
+      }
+    });
+  }
+
   // ---------------------------------------------------------------- all
 
   /// Erases every entry, goal, repeat and journal setting on the phone.
@@ -552,6 +616,10 @@ class JournalStore extends ChangeNotifier {
   }
 
   static void _checkRepeat(Repeat r) {
+    // A spend or a save: never any other kind of entry repeats.
+    if (r.type != EntryType.spent && r.type != EntryType.saved) {
+      throw ArgumentError.value(r.type, 'type');
+    }
     if (r.amountMinor <= 0) {
       throw ArgumentError.value(r.amountMinor, 'amountMinor');
     }

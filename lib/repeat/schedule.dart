@@ -89,23 +89,41 @@ DateTime periodEnd(RepeatKind kind, DateTime date) => switch (kind) {
   RepeatKind.weekly => addDays(date, DateTime.sunday - date.weekday),
 };
 
-/// A repeat's "made through" day once its schedule changes from [old] to
-/// [changed]. The new schedule starts after the days already dealt with,
-/// and never adds a second entry in the month (or week, by the new
-/// schedule's kind) that holds the old schedule's last one: moving rent
-/// from the 1st to the 5th on 3 November doesn't add a second November
-/// rent. [first] is the repeat's first day.
-DateTime madeThroughAfterChange({
+/// When a schedule changes from [old] to [changed]: the last day the new
+/// schedule skips, or null. It starts after the days already dealt with
+/// ([madeThrough]), and never adds a second entry in the month (or week, by
+/// the new schedule's kind) that holds the old schedule's last one: moving
+/// rent from the 1st to the 5th on 3 November skips to 30 November, so no
+/// second November rent. [first] is the repeat's first day.
+DateTime? skipAfterChange({
   required RepeatSchedule old,
   required RepeatSchedule changed,
   required DateTime first,
   required DateTime madeThrough,
 }) {
-  if (changed == old) return madeThrough;
+  if (changed == old) return null;
   final last = lastOccurrence(old, first: first, through: madeThrough);
   final end = periodEnd(changed.kind, last);
-  return end.isAfter(madeThrough) ? end : madeThrough;
+  return end.isAfter(madeThrough) ? end : null;
 }
+
+/// How far a repeat's "made through" can be after today and still be real:
+/// a trip across time zones can move today back by up to 2 days.
+const repeatZoneSlackDays = 2;
+
+/// How far a schedule change's skip can be after today and still be real:
+/// it ends at most a month after the change, plus the zones' 2 days.
+const repeatSkipSlackDays = 33;
+
+/// Whether [madeThrough] is further after [today] than any time zone
+/// explains: the clock was set ahead for a catch-up, then put right.
+bool clockWasAhead(DateTime madeThrough, DateTime today) =>
+    madeThrough.isAfter(addDays(today, repeatZoneSlackDays));
+
+/// Whether a schedule change's [skipThrough] is too far after [today] to be
+/// real (made while the clock was set ahead).
+bool skipFromClockAhead(DateTime skipThrough, DateTime today) =>
+    skipThrough.isAfter(addDays(today, repeatSkipSlackDays));
 
 /// The first day a catch-up on [today] may still add: the same day a year
 /// earlier (28 February for 29 February).
@@ -113,8 +131,9 @@ DateTime catchUpStart(DateTime today) =>
     monthlyDate(today.year, today.month - repeatCatchUpMonths, today.day);
 
 /// The days a catch-up on [today] adds for [repeats]: for each running
-/// repeat, its days after its "made through" day up to [today], none before
-/// [catchUpStart]. Oldest first; on the same day, the older repeat first.
+/// repeat, its days after its "made through" day (and after a schedule
+/// change's skip) up to [today], none before [catchUpStart]. Oldest first;
+/// on the same day, the older repeat first.
 List<(Repeat, DateTime)> dueOccurrences(List<Repeat> repeats, DateTime today) {
   final from = addDays(catchUpStart(today), -1);
   final due = <(Repeat, DateTime)>[];
@@ -122,7 +141,9 @@ List<(Repeat, DateTime)> dueOccurrences(List<Repeat> repeats, DateTime today) {
     if (!r.running) continue;
     final made = parseWireDate(r.madeThrough);
     if (made == null) continue;
-    final after = made.isAfter(from) ? made : from;
+    var after = made.isAfter(from) ? made : from;
+    final skip = parseWireDate(r.skipThrough);
+    if (skip != null && skip.isAfter(after)) after = skip;
     for (final d in occurrences(r.schedule, after: after, through: today)) {
       due.add((r, d));
     }
