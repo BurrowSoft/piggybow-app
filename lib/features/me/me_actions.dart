@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui' show Rect;
 
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
@@ -46,12 +47,14 @@ Future<String> journalCsv(AppServices services) async {
 
 /// Me → Export my data: the file piggybow-YYYY-MM-DD.csv (UTF-8 with a BOM)
 /// goes through the share sheet, with nothing else in the share (no subject,
-/// no text), and is deleted once the sheet returns. On an iPad the sheet will
-/// need an origin rect (sharePositionOrigin) when iOS ships.
+/// no text), and is deleted once the sheet returns. [origin] is the Export
+/// row's place on screen: on an iPad the sheet points from it (Piggybow is an
+/// iPhone app, but iPads run iPhone apps too).
 Future<void> exportJournal(
   AppServices services, {
   Future<Directory> Function()? cache,
-  Future<void> Function(XFile file)? share,
+  Future<void> Function(XFile file, Rect? origin)? share,
+  Rect? origin,
 }) async {
   final root = await (cache ?? getTemporaryDirectory)();
   final folder = Directory('${root.path}/export');
@@ -62,14 +65,15 @@ Future<void> exportJournal(
   await file.writeAsString(await journalCsv(services));
   try {
     final xfile = XFile(file.path, mimeType: 'text/csv');
-    await (share ?? _shareSheet)(xfile);
+    await (share ?? _shareSheet)(xfile, origin);
   } finally {
     if (await file.exists()) await file.delete();
   }
 }
 
-Future<void> _shareSheet(XFile file) =>
-    SharePlus.instance.share(ShareParams(files: [file]));
+Future<void> _shareSheet(XFile file, Rect? origin) => SharePlus.instance.share(
+  ShareParams(files: [file], sharePositionOrigin: origin),
+);
 
 /// Me → Delete all my data (plan §3.8, the §4.7 wipe list, decision 67):
 /// the journal; the scheduled reminders; the app lock's secure storage,

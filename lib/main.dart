@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:intl/date_symbol_data_local.dart';
@@ -8,6 +9,7 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 import 'app.dart';
 import 'core/app_config.dart';
 import 'core/app_lock.dart';
+import 'core/backup.dart';
 import 'core/clock.dart';
 import 'core/device.dart';
 import 'core/local_day.dart';
@@ -70,7 +72,15 @@ Future<void> main() async {
   }
   // FAKE_NOW pins the time in staging test builds (ignored in prod).
   final clock = fixture?.clock ?? Clock(fixed: config.fakeNow);
-  final journalLoad = JournalStore.open(clock: clock);
+  // iPhone (decision 72): the journal is in no backup, but the prefs are.
+  // Whether its file is there is read before the journal opens and makes
+  // it; a start without it forgets the prefs a backup brought back (below).
+  final journalMissing = defaultTargetPlatform == TargetPlatform.iOS
+      ? JournalStore.missingHere()
+      : Future.value(false);
+  final journalLoad = journalMissing.then(
+    (_) => JournalStore.open(clock: clock),
+  );
   // "Today" follows the phone's own time zone, read now and on every resume.
   final localDay = LocalDay(clock: clock, device: device);
   final dayLoad = localDay.refresh();
@@ -78,6 +88,12 @@ Future<void> main() async {
 
   StartupTrace.mark('prefs');
   final prefs = await prefsLoad;
+  // Before anything reads them: never "set up already" over no journal.
+  await forgetPrefsWithoutJournal(
+    journalMissing: await journalMissing,
+    prefs: prefs,
+    platform: defaultTargetPlatform,
+  );
   navIconsCanBeDark = navIconsCanBeDarkOn(await sdkLoad);
   // v0.1 runs on the phone only: no account, no server.
   StartupTrace.mark('backend');

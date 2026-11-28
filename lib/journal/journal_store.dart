@@ -1,9 +1,13 @@
+import 'dart:io' show Directory, File;
+
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, visibleForTesting;
 import 'package:flutter/widgets.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sembast/sembast_io.dart';
 import 'package:sembast/sembast_memory.dart';
 import 'package:uuid/uuid.dart';
 
+import '../core/backup.dart';
 import '../core/clock.dart';
 import '../goal/goal_progress.dart';
 import '../pig/pig_mood.dart' show HappyPick;
@@ -26,8 +30,29 @@ class JournalStore extends ChangeNotifier {
   static const fileName = 'journal.db';
 
   /// The journal file in the app's private support folder.
-  static Future<JournalStore> open({required Clock clock}) async {
-    final dir = await getApplicationSupportDirectory();
+  static Future<JournalStore> open({required Clock clock}) async =>
+      openIn(await getApplicationSupportDirectory(), clock: clock);
+
+  /// Whether the app's private support folder has no journal file yet. Read
+  /// before [open], which makes one (main.dart: an iPhone start without it
+  /// forgets the prefs a backup brought back).
+  static Future<bool> missingHere() async =>
+      missingIn(await getApplicationSupportDirectory());
+
+  /// Whether [dir] has no journal file yet.
+  static Future<bool> missingIn(Directory dir) async =>
+      !await File('${dir.path}/$fileName').exists();
+
+  /// The journal file in [dir] ([open]'s folder, or a test's). On an iPhone,
+  /// [dir] is first kept out of every backup, at every start and before the
+  /// file opens: the journal is never in a cloud backup someone else could
+  /// read (decision 72, I-1(b)). [dir] holds only the journal. On Android the
+  /// backup rules decide (res/xml-v28).
+  @visibleForTesting
+  static Future<JournalStore> openIn(Directory dir, {required Clock clock}) async {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      await excludeFromBackup(dir.path);
+    }
     final db = await databaseFactoryIo.openDatabase('${dir.path}/$fileName');
     return JournalStore._(db, clock: clock);
   }

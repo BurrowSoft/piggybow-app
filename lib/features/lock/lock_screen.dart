@@ -11,6 +11,7 @@ import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../core/system_bars.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../../l10n/platform_text.dart';
 import '../../lock_rules/lock_rules.dart';
 import '../../session/app_session.dart';
 import '../../theme/theme.dart';
@@ -275,21 +276,6 @@ class _NewPinPadState extends State<NewPinPad> {
   }
 }
 
-/// An iPhone says Face ID or Touch ID, as the system does; everywhere else,
-/// the general words. [kind] is null until the device has answered.
-String lockUseLabel(AppLocalizations l10n, BiometricKind? kind) =>
-    switch (kind) {
-      BiometricKind.faceId => l10n.lockUseFaceId,
-      BiometricKind.touchId => l10n.lockUseTouchId,
-      _ => l10n.lockUseBiometrics,
-    };
-
-String lockHintLabel(AppLocalizations l10n, BiometricKind? kind) =>
-    switch (kind) {
-      BiometricKind.faceId => l10n.meAppLockHintFaceId,
-      BiometricKind.touchId => l10n.meAppLockHintTouchId,
-      _ => l10n.meAppLockHint,
-    };
 
 /// Over the whole app while locked: the PIN pad, biometrics when on (asked
 /// for once as it shows), and "Forgot PIN?" (plan §3.11, decision 19): the
@@ -447,7 +433,11 @@ class _LockBodyState extends State<_LockBody> {
                       future: _kind,
                       builder: (context, kind) => IconButton.filledTonal(
                         onPressed: _biometrics,
-                        tooltip: lockUseLabel(l10n, kind.data),
+                        tooltip: lockUseLabel(
+                          l10n,
+                          kind.data,
+                          Theme.of(context).platform,
+                        ),
                         icon: Icon(
                           kind.data == BiometricKind.faceId
                               ? Icons.face_rounded
@@ -536,6 +526,8 @@ class ForgotPinDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final device = paths == ForgotPinPaths.deviceThenErase;
+    // An iPhone's own lock is its passcode (platform_text.dart).
+    final platform = Theme.of(context).platform;
     return AlertDialog(
       // Closer to the screen's edges than a standard dialog (16 dp, not 40),
       // so on a narrow phone at large text its labels wrap little and both
@@ -564,11 +556,11 @@ class ForgotPinDialog extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: device
               ? [
-                  Text(l10n.lockForgotBodyDevice),
+                  Text(lockForgotBodyDevice(l10n, platform)),
                   const SizedBox(height: 12),
                   Text(l10n.lockForgotBodyErase),
                 ]
-              : [Text(l10n.lockForgotBodyEraseOnly)],
+              : [Text(lockForgotBodyEraseOnly(l10n, platform))],
         ),
       ),
       actions: [
@@ -601,7 +593,7 @@ class ForgotPinDialog extends StatelessWidget {
                 child: FilledButton(
                   onPressed: () =>
                       Navigator.of(context).pop(ForgotPinChoice.screenLock),
-                  child: ButtonLabel(l10n.lockForgotUseDevice),
+                  child: ButtonLabel(lockForgotUseDevice(l10n, platform)),
                 ),
               ),
           ],

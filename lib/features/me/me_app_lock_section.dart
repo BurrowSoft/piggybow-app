@@ -5,6 +5,7 @@ import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../../l10n/platform_text.dart';
 import '../lock/lock_screen.dart';
 import '../shell/piggybow_back.dart';
 
@@ -49,7 +50,13 @@ class _MeAppLockSectionState extends State<MeAppLockSection> {
               subtitle: FutureBuilder<BiometricKind>(
                 future: _kind,
                 builder: (context, kind) =>
-                    Text(lockHintLabel(l10n, kind.data)),
+                    Text(
+                      lockHintLabel(
+                        l10n,
+                        kind.data,
+                        Theme.of(context).platform,
+                      ),
+                    ),
               ),
               contentPadding: EdgeInsets.zero,
               onChanged: (on) async {
@@ -75,7 +82,13 @@ class _MeAppLockSectionState extends State<MeAppLockSection> {
                         title: FutureBuilder<BiometricKind>(
                           future: _kind,
                           builder: (context, kind) =>
-                              Text(lockUseLabel(l10n, kind.data)),
+                              Text(
+                                lockUseLabel(
+                                  l10n,
+                                  kind.data,
+                                  Theme.of(context).platform,
+                                ),
+                              ),
                         ),
                         contentPadding: EdgeInsets.zero,
                         onChanged: (on) => lock.setBiometrics(on: on),

@@ -11,6 +11,7 @@ import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../data/models.dart' show ReminderTime;
 import '../../l10n/gen/app_localizations.dart';
+import '../../l10n/platform_text.dart';
 import '../../lock_rules/lock_rules.dart';
 import '../../money/money.dart';
 import '../../pig/pig_mood.dart' show HappyPick;
@@ -300,7 +301,8 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                     id: 'me-export',
                     title: l10n.meExport,
                     subtitle: l10n.meExportHint,
-                    onTap: () => exportJournal(services),
+                    onTapAt: (origin) =>
+                        exportJournal(services, origin: origin),
                   ),
                   _Row(
                     id: 'me-delete',
@@ -397,24 +399,35 @@ class _Row extends StatelessWidget {
     required this.id,
     required this.title,
     this.subtitle,
-    required this.onTap,
-  });
+    this.onTap,
+    this.onTapAt,
+  }) : assert((onTap == null) != (onTapAt == null));
 
   final String id;
   final String title;
   final String? subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
+
+  /// Instead of [onTap]: called with the row's place on screen, for a sheet
+  /// that points from it (the share sheet on an iPad).
+  final ValueChanged<Rect>? onTapAt;
 
   @override
   Widget build(BuildContext context) {
     final subtitle = this.subtitle;
+    final onTapAt = this.onTapAt;
     return TestId(
       id,
       button: true,
       child: ListTile(
         title: Text(title),
         subtitle: subtitle == null ? null : Text(subtitle),
-        onTap: onTap,
+        onTap: onTapAt == null
+            ? onTap
+            : () {
+                final box = context.findRenderObject()! as RenderBox;
+                onTapAt(box.localToGlobal(Offset.zero) & box.size);
+              },
       ),
     );
   }
@@ -563,7 +576,7 @@ class PrivacyScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final config = ConfigScope.of(context);
     final lines = [
-      l10n.privacy1,
+      privacyStorage(l10n, theme.platform),
       l10n.privacy2,
       if (config.sentryDsn.isNotEmpty) l10n.privacy3,
       l10n.privacy4,
