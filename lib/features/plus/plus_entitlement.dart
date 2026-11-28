@@ -132,6 +132,13 @@ class PlusEntitlement extends ChangeNotifier {
   bool _started = false;
   bool _disposed = false;
 
+  /// The newest word wins: every question to the store takes a number, a
+  /// purchase takes the next one, and an answer older than what Plus shows
+  /// is dropped. (A resume's question asked just before a purchase was
+  /// recorded may answer "none" just after it: that must never end Plus.)
+  int _asked = 0;
+  int _shown = 0;
+
   /// At launch: the hint first (no free look before the store answers),
   /// then the store.
   Future<void> start() async {
@@ -175,6 +182,8 @@ class PlusEntitlement extends ChangeNotifier {
     switch (outcome) {
       case PlusBought(:final proof):
         await _finish(proof);
+        // Newer than any question still out.
+        _shown = ++_asked;
         await _set(true);
       case PlusPending():
         _note = PlusNote.pending;
@@ -224,8 +233,10 @@ class PlusEntitlement extends ChangeNotifier {
   }
 
   /// The store's answer: finishes what still waits, then sets Plus and the
-  /// hint. null: the store couldn't say.
+  /// hint, unless something newer (a later answer, a purchase) already
+  /// did. null: the store couldn't say.
   Future<List<PlusProof>?> _ask() async {
+    final ticket = ++_asked;
     List<PlusProof>? found;
     try {
       found = await store.owned();
@@ -236,6 +247,8 @@ class PlusEntitlement extends ChangeNotifier {
     for (final proof in found) {
       if (proof.needsFinish) await _finish(proof);
     }
+    if (ticket < _shown) return found;
+    _shown = ticket;
     await _set(found.isNotEmpty);
     return found;
   }

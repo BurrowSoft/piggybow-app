@@ -21,6 +21,21 @@ class _SlowStore extends FakePlusStore {
   }
 }
 
+/// A store that answers each "what do you own?" with what it held when
+/// asked, only once the test lets that answer through.
+class _HeldStore extends FakePlusStore {
+  final held = <Completer<void>>[];
+
+  @override
+  Future<List<PlusProof>?> owned() async {
+    final gate = Completer<void>();
+    held.add(gate);
+    final answer = available ? owns : null;
+    await gate.future;
+    return answer;
+  }
+}
+
 /// Plus on the phone (decision 79): the store's answer is the truth at
 /// launch and on resume; the launch hint only bridges until it comes,
 /// bounded and never extended without the store; every purchase is
@@ -129,6 +144,60 @@ void main() {
     expect(plus.note, PlusNote.none);
     expect(plus.busy, isFalse);
     expect(hint.until, now.add(plusHintMaxAge));
+  });
+
+  test('an answer asked before a purchase that lands after it is dropped: '
+      'Plus stays on, and a later question is the newest word', () async {
+    final store = _HeldStore();
+    final hint = MemoryPlusHint();
+    final plus = make(store, hint);
+    final started = plus.start();
+    await settle();
+    store.held.single.complete();
+    await started;
+    expect(plus.active, isFalse);
+
+    // A resume asks before the purchase is recorded…
+    final resumed = plus.refresh();
+    await settle();
+    await plus.buy(yearly);
+    expect(plus.active, isTrue);
+    // …and its "none" lands after it.
+    store.owns = const [owned];
+    store.held.last.complete();
+    await resumed;
+    expect(plus.active, isTrue);
+    expect(hint.until, now.add(plusHintMaxAge));
+
+    final later = plus.refresh();
+    await settle();
+    store.held.last.complete();
+    await later;
+    expect(plus.active, isTrue);
+  });
+
+  test('an older "owned" that lands after a newer "none" is dropped too', () async {
+    final store = _HeldStore()..owns = const [owned];
+    final hint = MemoryPlusHint();
+    final plus = make(store, hint);
+    final started = plus.start();
+    await settle();
+    store.held.single.complete();
+    await started;
+    expect(plus.active, isTrue);
+
+    final older = plus.refresh();
+    await settle();
+    store.owns = const [];
+    final newer = plus.refresh();
+    await settle();
+    store.held.last.complete();
+    await newer;
+    expect(plus.active, isFalse);
+    store.held[1].complete();
+    await older;
+    expect(plus.active, isFalse);
+    expect(hint.until, isNull);
   });
 
   test('buy: pending → its note and no Plus yet; the approval, reported later, '

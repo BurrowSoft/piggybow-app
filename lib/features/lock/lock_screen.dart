@@ -403,10 +403,15 @@ class _LockBodyState extends State<_LockBody> {
   Future<void> _erase() async {
     final l10n = AppLocalizations.of(context);
     final services = context.services;
+    final plus = services.plus;
     final sure = await confirmDeleteEverything(
       context,
       body: l10n.lockEraseBody,
       idPrefix: 'lock-erase',
+      // As in Me: erasing never cancels the store's subscription.
+      note: plus != null && plus.active
+          ? PlusKeepsRunning(plus: plus, idPrefix: 'lock-erase')
+          : null,
     );
     if (!sure || !mounted) return;
     widget.lock.setErasing(on: true);

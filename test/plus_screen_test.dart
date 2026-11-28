@@ -4,11 +4,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:piggybow/core/app_config.dart';
+import 'package:piggybow/core/app_lock.dart';
 import 'package:piggybow/features/plus/fake_plus_store.dart';
 import 'package:piggybow/features/plus/plus_entitlement.dart';
 import 'package:piggybow/features/plus/plus_screen.dart';
 import 'package:piggybow/features/plus/plus_store.dart';
 
+import 'app_lock_test.dart' show FakeBiometrics;
 import 'helpers.dart';
 
 /// Piggybow Plus in the app (decision 79): Me's rows, the paywall at the
@@ -109,10 +111,10 @@ void main() {
     }
     expect(find.text('£2.99 a month'), findsOneWidget);
     expect(find.text('£19.99 a year'), findsOneWidget);
-    expect(find.text('7 days free, then £19.99 a year'), findsOneWidget);
+    expect(find.text('Free for 7 days, then £19.99 a year'), findsOneWidget);
     expect(byId('plus-plan-monthly-trial'), findsNothing);
     expect(find.text('Start monthly'), findsOneWidget);
-    expect(find.text('Start the free week'), findsOneWidget);
+    expect(find.text('Start your free week'), findsOneWidget);
     expect(find.text('Cancel anytime in Google Play.'), findsOneWidget);
     expect(find.text('Cancel anytime in the App Store.'), findsNothing);
     // No link before its page is live.
@@ -177,7 +179,7 @@ void main() {
     );
     await tester.tapId('plus-plan-monthly-start');
     expect(
-      find.text("Your purchase is waiting for approval. Plus starts once it's approved."),
+      find.text('Your purchase is waiting for the store to confirm. Plus turns on as soon as it does.'),
       findsOneWidget,
     );
     expect(byId('plus-on'), findsNothing);
@@ -186,11 +188,11 @@ void main() {
   testWidgets('Restore: none found says so; a purchase found turns Plus on', (tester) async {
     final o = await open(tester, location: '/plus');
     await tester.tapId('plus-restore');
-    expect(find.text('No Plus purchase was found for this account.'), findsOneWidget);
+    expect(find.text('No Plus subscription was found for this store account.'), findsOneWidget);
     o.store.owns = const [owned];
     await tester.tapId('plus-restore');
     tester.expectScreen('plus-on');
-    expect(find.text('Plus is back on.'), findsOneWidget);
+    expect(find.text('Plus is back on. Welcome back!'), findsOneWidget);
   });
 
   testWidgets('no plans on this phone: its line, and Restore still there', (tester) async {
@@ -221,6 +223,42 @@ void main() {
       expect(find.text('Delete everything?'), findsNothing);
     });
   }
+
+  testWidgets("Forgot PIN's erase while Plus is on: the same line, and the store's page", (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 3;
+    tester.view.physicalSize = const Size(360 * 3, 1600 * 3);
+    addTearDown(tester.view.reset);
+    // No fingerprint asked for as the lock shows (as in lock_screen_test).
+    final lock = AppLock(
+      store: MemorySecretStore(),
+      biometrics: FakeBiometrics()..has = false,
+      firstRun: MemoryFirstRunMarker(),
+      iterations: 50,
+    );
+    await tester.runAsync(() => lock.setPin('2468'));
+    lock.lockNow();
+    final store = FakePlusStore()..owns = const [owned];
+    final app = TestApp(
+      appLock: lock,
+      config: withPlus,
+      plus: PlusEntitlement(store: store, hint: MemoryPlusHint(), clock: testClock),
+    );
+    await tester.runAsync(app.openJournal);
+    await app.pump(tester);
+    await waitFor(tester, byId('lock-screen'));
+    await tester.tapId('lock-forgot');
+    await tester.tapId('lock-forgot-erase');
+    expect(
+      find.text('Your Plus subscription keeps running until you cancel it in Google Play.'),
+      findsOneWidget,
+    );
+    await tester.tapId('lock-erase-plus-manage');
+    expect(store.manageCalls, 1);
+    await tester.tapId('lock-erase-cancel');
+    tester.expectScreen('lock-screen');
+  });
 
   testWidgets('Delete everything while Plus is off: nothing about Plus', (tester) async {
     await open(tester);
