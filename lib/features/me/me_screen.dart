@@ -60,6 +60,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
 
   /// How many goals were reached (Reached goals shows from the first).
   int _reached = 0;
+  bool _yesterdayFeel = true;
   (String, String)? _version;
   AppServices? _services;
   AppLifecycleListener? _lifecycle;
@@ -105,6 +106,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
     final picks = await store.picks();
     final plan = await store.planMinor();
     final currency = await store.currency() ?? 'USD';
+    final yesterdayFeel = await store.yesterdayFeelOn();
     final granted = await services.notifications.granted();
     final reached = (await store.reachedGoals()).length;
     if (!mounted) return;
@@ -112,6 +114,7 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
       _picks = picks;
       _plan = plan;
       _currency = currency;
+      _yesterdayFeel = yesterdayFeel;
       _granted = granted;
       _reached = reached;
     });
@@ -295,6 +298,16 @@ class _MeScreenState extends State<MeScreen> with ScrollsToTopOnTabTap {
                       subtitle: l10n.meReachedGoalsCount(_reached),
                       onTap: () => context.push(MeRoutes.reached),
                     ),
+                  // Home's "How did yesterday feel?" (on unless switched off).
+                  TestId(
+                    'me-yesterday-feel',
+                    child: SwitchListTile(
+                      title: Text(l10n.meYesterdayFeel),
+                      value: _yesterdayFeel,
+                      onChanged: (on) =>
+                          context.services.journal.setYesterdayFeelOn(on),
+                    ),
+                  ),
                   _Section(l10n.meSecMoney),
                   _Row(
                     id: 'me-currency',

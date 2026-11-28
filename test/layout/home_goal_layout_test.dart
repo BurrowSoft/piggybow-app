@@ -333,6 +333,14 @@ void main() {
         },
       );
       await checkScrolled(tester, listIn('home-screen'), 'H7');
+      // Back up to the week card: what's below it (yesterday's question for
+      // this spend, today's idea) can leave it out of the built part of the
+      // list at large text.
+      await tester.scrollUntilVisible(
+        byId('home-week'),
+        -200,
+        scrollable: listIn('home-screen'),
+      );
       final bar = tester.widget<LinearProgressIndicator>(
         find.byType(LinearProgressIndicator),
       );

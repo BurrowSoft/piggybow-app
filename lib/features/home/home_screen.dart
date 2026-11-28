@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/button_label.dart';
 import '../../core/button_pair.dart';
+import '../../core/clock.dart' show wireDate;
 import '../../core/fit_text.dart';
 import '../../core/plan_bar.dart';
 import '../../core/semantics_id.dart';
@@ -49,9 +50,18 @@ class _HomeData {
     required this.plan,
     required this.offerAnswered,
     required this.currency,
+    required this.unfeltYesterday,
+    required this.customs,
   });
 
   final List<Entry> entries;
+
+  /// Your own categories by id, for their names (a built-in's is the app's).
+  final Map<String, CustomCategory> customs;
+
+  /// Up to three of yesterday's spends with no feeling yet, for "How did
+  /// yesterday feel?"; empty when Me switched it off or "Not now" hid it today.
+  final List<Entry> unfeltYesterday;
   final List<Goal> goals;
 
   /// The active goals, oldest first, and each one's progress by id.
@@ -124,6 +134,21 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
     final entries = await store.entries();
     final goals = await store.goals();
     final actives = await store.activeGoals();
+    // Yesterday on this phone (its own time zone): its spends with no feeling
+    // yet, in the order they were added, three at most. Never a count of the
+    // rest.
+    final today = localDay.today;
+    final yesterday = wireDate(DateTime(today.year, today.month, today.day - 1));
+    final ask = await store.yesterdayFeelOn() &&
+        await store.yesterdayFeelHiddenOn() != localDay.todayWire;
+    final unfelt = ask
+        ? ([
+            for (final e in entries)
+              if (e.type == EntryType.spent && e.localDate == yesterday && e.feeling == null) e,
+          ]..sort((a, b) => a.createdAt.compareTo(b.createdAt)))
+            .take(3)
+            .toList()
+        : const <Entry>[];
     final data = _HomeData(
       entries: entries,
       goals: goals,
@@ -133,6 +158,8 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
       plan: await store.planMinor(),
       offerAnswered: await store.reminderOfferAnswered(),
       currency: await store.currency() ?? 'USD',
+      unfeltYesterday: unfelt,
+      customs: {for (final c in await store.customCategories()) c.id: c},
     );
     // A goal just reached is celebrated once (plan §3.4); an ended goal
     // never is.
@@ -209,6 +236,18 @@ class _HomeScreenState extends State<HomeScreen> with ScrollsToTopOnTabTap {
                   ],
                   const SizedBox(height: 16),
                   _WeekCard(data: data),
+                  if (data.unfeltYesterday.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    _YesterdayCard(
+                      spends: data.unfeltYesterday,
+                      customs: data.customs,
+                      // As the edit sheet sets it; the pig doesn't react.
+                      onAnswer: (spend, feeling) => context.services.journal
+                          .updateEntry(spend.copyWith(feeling: feeling)),
+                      onLater: () => context.services.journal
+                          .hideYesterdayFeel(context.services.localDay.todayWire),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   _IdeaCard(
                     tip: _tip ?? tipForDay(context.services.localDay.today),
@@ -635,6 +674,147 @@ class _WeekCard extends StatelessWidget {
                   child: Text(l10n.weekNotedDays(noted), style: muted),
                 ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// How did yesterday feel? Up to three of yesterday's spends with no feeling
+/// yet, each with the three feelings. An answer is that spend's feeling, as
+/// the edit sheet sets it, and its row goes; the card goes with the last one.
+/// "Not now" hides it until tomorrow. It never counts the rest, and never
+/// mentions how anything felt.
+class _YesterdayCard extends StatelessWidget {
+  const _YesterdayCard({
+    required this.spends,
+    required this.customs,
+    required this.onAnswer,
+    required this.onLater,
+  });
+
+  final List<Entry> spends;
+
+  /// Your own categories by id: a spend in one is named as you typed it.
+  final Map<String, CustomCategory> customs;
+  final void Function(Entry spend, Feeling feeling) onAnswer;
+  final VoidCallback onLater;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final locale = context.session.device.localeName;
+    return TestId.container(
+      'home-yesterday',
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(l10n.yesterdayFeelTitle, style: theme.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              // The cards' body style (decision 57).
+              Text(
+                l10n.yesterdayFeelBody,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              for (final spend in spends) ...[
+                const SizedBox(height: 16),
+                TestId.container(
+                  'home-yesterday-${spend.id}',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      LayoutBuilder(
+                        builder: (context, box) {
+                          final title = Text(
+                            spend.note.isNotEmpty
+                                ? spend.note
+                                : categoryName(l10n, spend.categoryId ?? '', customs),
+                            style: theme.textTheme.bodyLarge,
+                          );
+                          // Spends in ink: never red, never a minus sign. One
+                          // line; a very large amount gets smaller rather than
+                          // pushing the title out.
+                          final amount = FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Text(
+                              formatMoney(spend.amountMinor, spend.currency, locale),
+                              maxLines: 1,
+                              softWrap: false,
+                              style: theme.textTheme.bodyLarge,
+                            ),
+                          );
+                          // At large text the amount gets its own line under
+                          // the title, as on Timeline, so the title keeps
+                          // whole words.
+                          if (MediaQuery.textScalerOf(context).scale(1) >= 1.3) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                title,
+                                Align(alignment: AlignmentDirectional.centerEnd, child: amount),
+                              ],
+                            );
+                          }
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(child: title),
+                              const SizedBox(width: 8),
+                              // At most half the row.
+                              ConstrainedBox(
+                                constraints: BoxConstraints(maxWidth: box.maxWidth / 2),
+                                child: amount,
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          for (final (feeling, label) in [
+                            (Feeling.worthIt, l10n.feelWorth),
+                            (Feeling.notSure, l10n.feelNotSure),
+                            (Feeling.notReally, l10n.feelNotReally),
+                          ])
+                            TestId(
+                              'home-yesterday-${spend.id}-${feeling.id}',
+                              button: true,
+                              child: ChoiceChip(
+                                label: Text(label),
+                                selected: false,
+                                onSelected: (_) => onAnswer(spend, feeling),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TestId(
+                  'home-yesterday-later',
+                  button: true,
+                  child: TextButton(
+                    onPressed: onLater,
+                    child: ButtonLabel(l10n.yesterdayFeelLater),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
