@@ -21,6 +21,7 @@ class AppConfig {
     this.appLockEnabled = true,
     this.plusEnabled = false,
     this.plusFakeStore = false,
+    this.plusRowsOwned = false,
     this.privacyUrl = '',
     this.supportUrl = '',
     this.termsUrl = '',
@@ -61,6 +62,13 @@ class AppConfig {
           kDebugMode &&
           flavor == Flavor.staging &&
           const bool.fromEnvironment('PLUS_FAKE_STORE'),
+      // Rows only, and only on top of the rows' store: the same guard, so
+      // never a release or prod build either.
+      plusRowsOwned:
+          kDebugMode &&
+          flavor == Flavor.staging &&
+          const bool.fromEnvironment('PLUS_FAKE_STORE') &&
+          const bool.fromEnvironment('PLUS_ROWS_OWNED'),
       privacyUrl: const String.fromEnvironment('PRIVACY_URL'),
       supportUrl: const String.fromEnvironment('SUPPORT_URL'),
       termsUrl: const String.fromEnvironment('TERMS_URL'),
@@ -122,6 +130,11 @@ class AppConfig {
   /// PLUS_FAKE_STORE: a store with prices that never buys, for the
   /// tester's rows. Debug builds of staging only.
   final bool plusFakeStore;
+
+  /// PLUS_ROWS_OWNED: that store reports an active yearly purchase, so the
+  /// tester's rows see Plus on with nothing bought. Debug builds of staging
+  /// only, and only with PLUS_FAKE_STORE.
+  final bool plusRowsOwned;
 
   /// The website's privacy policy, support and terms of use pages, once
   /// each is live (PRIVACY_URL, SUPPORT_URL, TERMS_URL). Empty = no link

@@ -117,6 +117,7 @@ void main() {
       final text = File(path).readAsStringSync();
       expect(text, isNot(contains('QUICK_REMINDER_NOW')), reason: path);
       expect(text, isNot(contains('PLUS_FAKE_STORE')), reason: path);
+      expect(text, isNot(contains('PLUS_ROWS_OWNED')), reason: path);
     }
   });
 }

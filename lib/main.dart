@@ -135,11 +135,11 @@ Future<void> main() async {
   StartupTrace.mark('services');
   // Piggybow Plus (decision 79), only where PLUS_ENABLED is on (never in a
   // release build: AppConfig). The rows' fake store needs PLUS_FAKE_STORE
-  // too, on a debug build of staging.
+  // too, on a debug build of staging; PLUS_ROWS_OWNED makes it own Plus.
   final plusStore = !config.plusEnabled
       ? null
       : config.plusFakeStore
-      ? RowsPlusStore()
+      ? RowsPlusStore(ownsPlus: config.plusRowsOwned)
       : platformPlusStore();
   final plus = plusStore == null
       ? null

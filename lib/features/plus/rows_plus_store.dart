@@ -5,13 +5,25 @@ import 'plus_store.dart';
 /// PLUS_FAKE_STORE: a store for the Mobile Tester's large-text rows on a
 /// staging debug build, where Play Billing has no product. It shows prices
 /// as long as real ones, so the shots have the true text length, and it
-/// never buys and never owns anything: Start and Restore only write a
-/// debug line. Wired only when [AppConfig.plusFakeStore] is on, which needs
-/// a debug build of the staging flavor.
+/// never buys anything: Start and Restore only write a debug line. It owns
+/// nothing either, unless PLUS_ROWS_OWNED is on too ([ownsPlus]): then it
+/// reports an active yearly purchase, so the rows see Plus on. Wired only
+/// when [AppConfig.plusFakeStore] is on, which needs a debug build of the
+/// staging flavor.
 class RowsPlusStore implements PlusStore {
-  RowsPlusStore({void Function(String line)? log}) : _log = log ?? debugPrint;
+  RowsPlusStore({void Function(String line)? log, this.ownsPlus = false})
+    : _log = log ?? debugPrint {
+    if (ownsPlus) _log('[plus-fake] Plus on, with nothing bought (PLUS_ROWS_OWNED)');
+  }
 
   final void Function(String line) _log;
+
+  /// PLUS_ROWS_OWNED ([AppConfig.plusRowsOwned]): the store account owns
+  /// Plus, with nothing bought.
+  final bool ownsPlus;
+
+  /// The purchase [ownsPlus] reports, with nothing to finish.
+  static const rowsPurchase = PlusProof(token: 'plus-rows-owned', productId: plusPlayProductId);
 
   /// Plus's price (decision 85: yearly only, with the free week), as
   /// long as the real one.
@@ -32,7 +44,7 @@ class RowsPlusStore implements PlusStore {
   }
 
   @override
-  Future<List<PlusProof>?> owned() async => const [];
+  Future<List<PlusProof>?> owned() async => ownsPlus ? const [rowsPurchase] : const [];
 
   @override
   Future<void> finish(PlusProof proof) async {}
