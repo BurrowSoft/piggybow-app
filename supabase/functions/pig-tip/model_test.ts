@@ -1,10 +1,13 @@
 import fixtures from "../../fixtures/tips-run.json" with { type: "json" };
-import type { TipRequest } from "./contract.ts";
+import { validRequest } from "./contract.ts";
 import { askModel, isTipModel, MAX_TOKENS, type Reply, tipParams } from "./model.ts";
 import { SYSTEM_PROMPT, TIP_SCHEMA, userTurn } from "./prompt.ts";
 import { assert, assertEquals } from "./test_util.ts";
 
-const week = fixtures.weeks[1].request as TipRequest;
+// The week as the function sees it: through the contract's own check.
+const checked = validRequest(fixtures.weeks[1].request);
+if (!checked) throw new Error("the second staging week breaks the contract");
+const week = checked;
 const haiku = { model: "claude-haiku-5-5", effort: "low" } as const;
 const sonnet = { model: "claude-sonnet-5-5", effort: "low" } as const;
 

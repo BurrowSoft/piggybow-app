@@ -36,10 +36,12 @@ Deno.serve((req) =>
         .eq("id", 1)
         .single();
       if (error) throw error;
-      if (!data?.enabled || !isTipModel(data.model) || !efforts.includes(data.effort)) {
-        return null;
-      }
-      return { model: data.model, effort: data.effort };
+      // Checked here, whatever the client's types say: an unknown model or
+      // effort asks nothing.
+      const row = data as unknown as { enabled?: unknown; model?: unknown; effort?: unknown } | null;
+      const effort = efforts.find((e) => e === row?.effort);
+      if (!row || row.enabled !== true || !isTipModel(row.model) || !effort) return null;
+      return { model: row.model, effort };
     },
     async takeTip(uid, today) {
       const { data, error } = await admin.rpc("take_tip", { uid, today });
