@@ -33,7 +33,8 @@ int recentSavesMinor(Iterable<Entry> entries, DateTime today) {
     if (e.localDate.compareTo(from) < 0 || e.localDate.compareTo(to) > 0) {
       continue;
     }
-    sum += sign * e.amountMinor;
+    // At its home amount: a save in another currency, converted (#74).
+    sum += sign * e.homeMinor;
   }
   return sum;
 }

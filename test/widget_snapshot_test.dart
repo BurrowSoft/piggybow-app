@@ -8,6 +8,7 @@ import 'package:piggybow/journal/category.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/l10n/gen/app_localizations.dart';
+import 'package:piggybow/money/rate.dart';
 
 /// The home-screen widget's snapshot (feature 16): each example in
 /// test/contracts/widget_snapshot.json, built from its inputs; today is
@@ -146,5 +147,29 @@ void main() {
       ],
     );
     expect(snap['spentToday'], r'$3.50');
+  });
+
+  // Wiring item 18 (#71 with #74): a spend in another currency counts at
+  // its home amount.
+  test('a spend in another currency today counts at its home amount', () {
+    final snap = build(
+      entries: [
+        entry(EntryType.spent, 350, '2026-10-02'),
+        // EUR 10.00 at "1 EUR = 1.1 USD".
+        Entry(
+          id: 'abroad-1',
+          type: EntryType.spent,
+          amountMinor: 1000,
+          currency: 'EUR',
+          localDate: '2026-10-02',
+          createdAt: t,
+          updatedAt: t,
+          category: SpendCategory.food,
+          rate: parseRate('1.1', RateDirection.toHome, mark: '.').rate,
+          convertedMinor: 1100,
+        ),
+      ],
+    );
+    expect(snap['spentToday'], r'$14.50');
   });
 }

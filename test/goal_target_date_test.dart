@@ -4,6 +4,7 @@ import 'package:piggybow/goal/goal_pace.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/l10n/gen/app_localizations.dart';
+import 'package:piggybow/money/rate.dart';
 import 'package:piggybow/router.dart';
 
 import '../tool/no_guilt.dart' show findGuilt;
@@ -118,6 +119,25 @@ void main() {
       expect(recent, 300);
       // ceil(1200 × 4 ÷ 300) = 16 weeks.
       expect(goalPaceWeeks(remainingMinor: 1200, recentMinor: recent), 16);
+    });
+
+    // Wiring item 18 (#60 with #74): a save in another currency counts at
+    // its home amount.
+    test('a save in another currency counts at its home amount', () {
+      // EUR 10.00 at "1 EUR = 39.12 THB" is 391.20 at home.
+      final abroad = Entry(
+        id: 'e-abroad',
+        type: EntryType.saved,
+        amountMinor: 1000,
+        currency: 'EUR',
+        localDate: '2026-10-01',
+        createdAt: t,
+        updatedAt: t,
+        goalId: 'g1',
+        rate: parseRate('39.12', RateDirection.toHome, mark: '.').rate,
+        convertedMinor: 39120,
+      );
+      expect(recentSavesMinor([entry('2026-10-01', 500), abroad], today), 39620);
     });
 
     test('a take-out before the 4 weeks doesn\'t count', () {

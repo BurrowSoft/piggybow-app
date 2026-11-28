@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:piggybow/journal/entry.dart';
 import 'package:piggybow/journal/goal.dart';
 import 'package:piggybow/money/money.dart';
+import 'package:piggybow/money/rate.dart';
 import 'package:piggybow/router.dart';
 
 import 'helpers.dart';
@@ -234,6 +235,46 @@ void main() {
 
   Future<Entry?> theSave(WidgetTester tester, TestApp app) =>
       tester.runAsync<Entry?>(() => app.journal.entry('entry-1'));
+
+  // Wiring item 18 (#61 with #76): the lock compares home amounts, so a save
+  // in another currency goes as low as its amount at home allows.
+  testWidgets('a save in another currency keeps its floor at home: EUR 50 is '
+      'said at once, EUR 60 is fine', (tester) async {
+    final eur = parseRate('39.12', RateDirection.toHome, mark: '.').rate!;
+    final app = await open(
+      tester,
+      seed: (app) async {
+        await app.journal.putGoal(bike(target: 1000000));
+        // EUR 100.00 is 3,912.00 at home; 2,000.00 of it is taken out.
+        await app.journal.addEntry(
+          type: EntryType.saved,
+          amountMinor: 10000,
+          currency: 'EUR',
+          localDate: '2026-10-01',
+          rate: eur,
+        );
+        await app.journal.takeOut(
+          goalId: 'goal-1',
+          amountMinor: 200000,
+          currency: 'THB',
+          localDate: '2026-10-02',
+        );
+      },
+    );
+    await tester.tapId('tab-timeline');
+    await tester.tapId('tl-row-entry-1');
+    await settle(tester, find.text('100.00'));
+    // EUR 50.00 is 1,956.00 at home: under what was taken out.
+    await tester.enterId('add-amount', '50');
+    expect(find.text(lockedLine), findsOneWidget);
+    // EUR 60.00 is 2,347.20.
+    await tester.enterId('add-amount', '60');
+    expect(find.text(lockedLine), findsNothing);
+    await tester.tapId('edit-save');
+    expect(byId('edit-save'), findsNothing);
+    final save = (await theSave(tester, app))!;
+    expect((save.amountMinor, save.currency, save.convertedMinor), (6000, 'EUR', 234720));
+  });
 
   testWidgets("a save the goal needs can't be deleted: the sheet says why at "
       'once, and asks nothing', (tester) async {

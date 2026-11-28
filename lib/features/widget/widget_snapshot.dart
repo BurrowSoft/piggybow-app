@@ -60,7 +60,8 @@ Map<String, Object?> widgetSnapshot({
   for (final e in entries) {
     if (e.localDate != today) continue;
     noted = true;
-    if (e.type == EntryType.spent) spent += e.amountMinor;
+    // At its home amount: a spend in another currency, converted (#74).
+    if (e.type == EntryType.spent) spent += e.homeMinor;
   }
   return {
     'version': widgetSnapshotVersion,

@@ -372,10 +372,13 @@ class _EntrySheetState extends State<EntrySheet> {
   String? _amountError(AppLocalizations l10n) {
     final parsed = _parsed;
     final minor = parsed?.minor;
+    // The floor is a home amount: in another currency, the amount converted
+    // (none until the rate is read).
+    final atHome = _abroad ? _conversion?.minor : minor;
     if (_saveFloor > 0 &&
         _type == EntryType.saved &&
-        minor != null &&
-        minor < _saveFloor) {
+        atHome != null &&
+        atHome < _saveFloor) {
       return l10n.saveLockedByTakeOut(_goalName ?? '');
     }
     final problem = parsed?.problem;
