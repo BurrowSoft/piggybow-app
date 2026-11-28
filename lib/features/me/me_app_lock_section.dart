@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../core/button_label.dart';
-import '../../core/app_dialog.dart';
 import '../../core/app_lock.dart';
 import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
 import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
-import '../../session/session_scope.dart';
 import '../lock/lock_screen.dart';
 import '../shell/piggybow_back.dart';
 
-/// Me → App lock (1.1 C): off by default; on → a PIN (twice), then
-/// biometrics if the device has them; "Lock after". Absent while the feature
-/// is off (AppConfig.appLockEnabled).
+/// Me → App lock (plan §3.11): off until turned on; on → a PIN (twice), then
+/// biometrics if the phone has them; "Lock after". A forgotten PIN has a way
+/// back (the phone's own screen lock, or erase), so turning it on needs no
+/// warning.
 class MeAppLockSection extends StatefulWidget {
   const MeAppLockSection({super.key});
 
@@ -58,10 +56,6 @@ class _MeAppLockSectionState extends State<MeAppLockSection> {
                 if (!on) {
                   await lock.clear();
                   return;
-                }
-                if (context.readSession.user?.isAnonymous ?? false) {
-                  final go = await _noEmailNotice(context);
-                  if (go != true || !context.mounted) return;
                 }
                 await Navigator.of(context).push<void>(
                   MaterialPageRoute(builder: (_) => PinSetupPage(lock: lock)),
@@ -128,120 +122,11 @@ class _MeAppLockSectionState extends State<MeAppLockSection> {
   }
 }
 
-/// The person, not just whoever holds the unlocked phone: biometrics when
-/// they're on, else (or when that's cancelled) the PIN.
-Future<bool> confirmItsYou(BuildContext context, AppLock lock) async {
-  final l10n = AppLocalizations.of(context);
-  final navigator = Navigator.of(context);
-  if (lock.biometricsOn &&
-      await lock.biometrics.authenticate(l10n.lockBiometricReason)) {
-    return true;
-  }
-  final ok = await navigator.push<bool>(
-    MaterialPageRoute(builder: (_) => PinConfirmPage(lock: lock)),
-  );
-  return ok ?? false;
-}
-
-/// The PIN once, unlocking nothing: pops true when it's right.
-class PinConfirmPage extends StatefulWidget {
-  const PinConfirmPage({super.key, required this.lock});
-
-  final AppLock lock;
-
-  @override
-  State<PinConfirmPage> createState() => _PinConfirmPageState();
-}
-
-class _PinConfirmPageState extends State<PinConfirmPage> {
-  String? _error;
-  int _tries = 0;
-
-  Future<void> _done(String pin) async {
-    final l10n = AppLocalizations.of(context);
-    final navigator = Navigator.of(context);
-    if (await widget.lock.confirmPin(pin)) {
-      navigator.pop(true);
-      return;
-    }
-    if (mounted) {
-      setState(() {
-        _error = l10n.lockWrongPin;
-        _tries++;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return TestId.container(
-      'pin-confirm-screen',
-      child: Scaffold(
-        appBar: AppBar(
-          title: AppBarTitle(l10n.meAppLock),
-          leadingWidth: 64,
-          leading: PiggybowBack(
-            id: 'pin-confirm-back',
-            to: l10n.tabMe,
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-        ),
-        body: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: PinPad(
-              // Empty again after a wrong one.
-              key: ValueKey(_tries),
-              title: l10n.lockEnterPin,
-              error: _error,
-              onDone: _done,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// A PIN twice, then (if available) one biometric check to turn it on.
-class PinSetupPage extends StatefulWidget {
+class PinSetupPage extends StatelessWidget {
   const PinSetupPage({super.key, required this.lock});
 
   final AppLock lock;
-
-  @override
-  State<PinSetupPage> createState() => _PinSetupPageState();
-}
-
-class _PinSetupPageState extends State<PinSetupPage> {
-  String? _first;
-  String? _error;
-
-  Future<void> _done(String pin) async {
-    final l10n = AppLocalizations.of(context);
-    if (_first == null) {
-      setState(() {
-        _first = pin;
-        _error = null;
-      });
-      return;
-    }
-    if (pin != _first) {
-      setState(() {
-        _first = null;
-        _error = l10n.lockPinMismatch;
-      });
-      return;
-    }
-    final navigator = Navigator.of(context);
-    await widget.lock.setPin(pin);
-    if (await widget.lock.biometrics.available() &&
-        await widget.lock.biometrics.authenticate(l10n.lockBiometricReason)) {
-      await widget.lock.setBiometrics(on: true);
-    }
-    if (mounted) navigator.pop();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -261,44 +146,22 @@ class _PinSetupPageState extends State<PinSetupPage> {
         body: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: PinPad(
-              // A new pad per step (the typed digits start empty).
-              key: ValueKey(_first == null),
-              title: _first == null ? l10n.lockSetPin : l10n.lockConfirmPin,
-              error: _error,
-              onDone: _done,
+            child: NewPinPad(
+              onChosen: (pin) async {
+                final navigator = Navigator.of(context);
+                await lock.setPin(pin);
+                if (await lock.biometrics.available() &&
+                    await lock.biometrics.authenticate(
+                      l10n.lockBiometricReason,
+                    )) {
+                  await lock.setBiometrics(on: true);
+                }
+                if (context.mounted) navigator.pop();
+              },
             ),
           ),
         ),
       ),
     );
   }
-}
-
-/// Before a lock on an account with no email: a forgotten PIN has no way back
-/// (decision 216). True: go on with the PIN.
-Future<bool?> _noEmailNotice(BuildContext context) async {
-  return showAppDialog<bool>(
-    context: context,
-    builder: (dialogContext) {
-      final l10n = AppLocalizations.of(dialogContext);
-      return TestId.container(
-        'me-lock-no-email',
-        child: AlertDialog(
-          scrollable: true,
-          content: Text(l10n.meLockNoEmailNotice),
-          actions: [
-            TestId(
-              'me-lock-continue',
-              button: true,
-              child: TextButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: ButtonLabel(l10n.meLockContinue),
-              ),
-            ),
-          ],
-        ),
-      );
-    },
-  );
 }

@@ -184,29 +184,7 @@ class _SummaryScreenState extends State<SummaryScreen>
             ),
           )
         else ...[
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _TotalCard(
-                    id: 'sum-spent',
-                    title: l10n.sumSpent,
-                    amount: money(s.spentMinor),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _TotalCard(
-                    id: 'sum-saved',
-                    title: l10n.sumSaved,
-                    amount: money(s.savedMinor),
-                    accent: true,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _Totals(spent: money(s.spentMinor), saved: money(s.savedMinor)),
           if (s.planPercent != null && plan != null) ...[
             const SizedBox(height: 12),
             _PlanCard(amount: money(plan), percent: s.planPercent!),
@@ -325,6 +303,75 @@ class _Section extends StatelessWidget {
   );
 }
 
+/// Spent and Saved side by side, or stacked full width when either total
+/// would otherwise be shrunk below its size at 1× text to fit half the width
+/// (a total near the maximum at large text, decision 58).
+class _Totals extends StatelessWidget {
+  const _Totals({required this.spent, required this.saved});
+
+  final String spent;
+  final String saved;
+
+  static const _gap = 12.0;
+
+  /// [_Section]'s padding, 16 dp a side.
+  static const _padding = 32.0;
+
+  /// Whether [amount] fits [width] at the person's text size, but no bigger
+  /// than 1×: the size it is never shrunk below.
+  static bool _fits(BuildContext context, String amount, double width) {
+    final style = DefaultTextStyle.of(
+      context,
+    ).style.merge(_TotalCard.amountStyle(Theme.of(context)));
+    final painter = TextPainter(
+      text: TextSpan(text: amount, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context).clamp(maxScaleFactor: 1),
+      maxLines: 1,
+    )..layout();
+    final fits = painter.width <= width;
+    painter.dispose();
+    return fits;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final spentCard = _TotalCard(
+      id: 'sum-spent',
+      title: l10n.sumSpent,
+      amount: spent,
+    );
+    final savedCard = _TotalCard(
+      id: 'sum-saved',
+      title: l10n.sumSaved,
+      amount: saved,
+      accent: true,
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final half = (constraints.maxWidth - _gap) / 2 - _padding;
+        if (_fits(context, spent, half) && _fits(context, saved, half)) {
+          return IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: spentCard),
+                const SizedBox(width: _gap),
+                Expanded(child: savedCard),
+              ],
+            ),
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [spentCard, const SizedBox(height: _gap), savedCard],
+        );
+      },
+    );
+  }
+}
+
 /// Spent or Saved for the period. Saved is in the accent, as on Home.
 class _TotalCard extends StatelessWidget {
   const _TotalCard({
@@ -338,6 +385,13 @@ class _TotalCard extends StatelessWidget {
   final String title;
   final String amount;
   final bool accent;
+
+  /// The total's style; [_Totals] measures with it (its colour aside).
+  static TextStyle? amountStyle(ThemeData theme, {bool accent = false}) =>
+      theme.textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w600,
+        color: accent ? theme.colorScheme.primary : theme.colorScheme.onSurface,
+      );
 
   @override
   Widget build(BuildContext context) {
@@ -354,15 +408,7 @@ class _TotalCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        _Amount(
-          amount,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: accent
-                ? theme.colorScheme.primary
-                : theme.colorScheme.onSurface,
-          ),
-        ),
+        _Amount(amount, style: amountStyle(theme, accent: accent)),
       ],
     );
   }

@@ -4,10 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/app_lock.dart';
+import '../../core/button_label.dart';
+import '../../core/button_pair.dart';
+import '../../core/fit_text.dart';
 import '../../core/semantics_id.dart';
+import '../../core/services.dart';
 import '../../l10n/gen/app_localizations.dart';
+import '../../lock_rules/lock_rules.dart';
 import '../../session/app_session.dart';
 import '../../theme/theme.dart';
+import '../me/delete_dialogs.dart';
 
 /// The PIN's dots and a 12-key pad (digits, delete, OK). [onDone] gets the
 /// typed PIN when OK is pressed with 4–6 digits.
@@ -220,10 +226,56 @@ class _PinPadState extends State<PinPad> {
   }
 }
 
-/// Over the whole app while locked: the PIN pad, biometrics when on (asked
-/// for once as it shows), and "Forgot PIN?" = sign out (clears the lock).
-/// An iPhone says Face ID or Touch ID, as the system does; everywhere else, the
-/// general words. [kind] is null until the device has answered.
+/// A new PIN, typed twice: [onChosen] gets it once both match; a mismatch
+/// starts over. Me → App lock uses it to turn the lock on, and Forgot PIN
+/// after the phone's own screen lock let the person in.
+class NewPinPad extends StatefulWidget {
+  const NewPinPad({super.key, required this.onChosen});
+
+  final Future<void> Function(String pin) onChosen;
+
+  @override
+  State<NewPinPad> createState() => _NewPinPadState();
+}
+
+class _NewPinPadState extends State<NewPinPad> {
+  String? _first;
+  String? _error;
+
+  Future<void> _done(String pin) async {
+    final l10n = AppLocalizations.of(context);
+    if (_first == null) {
+      setState(() {
+        _first = pin;
+        _error = null;
+      });
+      return;
+    }
+    if (pin != _first) {
+      setState(() {
+        _first = null;
+        _error = l10n.lockPinMismatch;
+      });
+      return;
+    }
+    await widget.onChosen(pin);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return PinPad(
+      // A new pad per step (the typed digits start empty).
+      key: ValueKey(_first == null),
+      title: _first == null ? l10n.lockSetPin : l10n.lockConfirmPin,
+      error: _error,
+      onDone: _done,
+    );
+  }
+}
+
+/// An iPhone says Face ID or Touch ID, as the system does; everywhere else,
+/// the general words. [kind] is null until the device has answered.
 String lockUseLabel(AppLocalizations l10n, BiometricKind? kind) =>
     switch (kind) {
       BiometricKind.faceId => l10n.lockUseFaceId,
@@ -238,55 +290,41 @@ String lockHintLabel(AppLocalizations l10n, BiometricKind? kind) =>
       _ => l10n.meAppLockHint,
     };
 
-class LockScreen extends StatefulWidget {
+/// Over the whole app while locked: the PIN pad, biometrics when on (asked
+/// for once as it shows), and "Forgot PIN?" (plan §3.11, decision 19): the
+/// phone's own screen lock, then a new PIN; or, behind a second confirm,
+/// erase and start over. It sits above the app's Navigator, so it has its
+/// own, for its dialogs.
+class LockScreen extends StatelessWidget {
   const LockScreen({super.key, required this.lock, required this.session});
 
   final AppLock lock;
   final AppSession session;
 
   @override
-  State<LockScreen> createState() => _LockScreenState();
+  Widget build(BuildContext context) => TestId.container(
+    'lock-screen',
+    child: Navigator(
+      onGenerateRoute: (_) => PageRouteBuilder<void>(
+        pageBuilder: (_, _, _) => _LockBody(lock: lock, session: session),
+      ),
+    ),
+  );
 }
 
-enum _ForgotStep { none, explained, confirming }
+class _LockBody extends StatefulWidget {
+  const _LockBody({required this.lock, required this.session});
 
-class _LockScreenState extends State<LockScreen> {
+  final AppLock lock;
+  final AppSession session;
+
+  @override
+  State<_LockBody> createState() => _LockBodyState();
+}
+
+class _LockBodyState extends State<_LockBody> {
   String? _error;
   Timer? _tick;
-
-  /// An account with no email can't sign back in (decision 216), and nothing
-  /// else can prove who holds the phone, so a forgotten PIN can't be reset:
-  /// signing out is the only way past this screen, and it asks twice, here,
-  /// since no Navigator sits above the lock.
-  _ForgotStep _forgot = _ForgotStep.none;
-
-  /// Sign out for good only answers after this, so no second tap of a double tap
-  /// can reach it, wherever large text has put it.
-  static const _confirmDelay = Duration(milliseconds: 800);
-  Timer? _confirmTimer;
-  bool _confirmReady = false;
-
-  void _setForgot(_ForgotStep step) {
-    _confirmTimer?.cancel();
-    setState(() {
-      _forgot = step;
-      _confirmReady = false;
-    });
-    if (step == _ForgotStep.confirming) {
-      _confirmTimer = Timer(_confirmDelay, () {
-        if (mounted) setState(() => _confirmReady = true);
-      });
-    }
-    // At large text the pad fills the screen: open on the explanation (triage 37).
-    if (step == _ForgotStep.explained) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final at = _forgotAt.currentContext;
-        if (at != null) unawaited(Scrollable.ensureVisible(at));
-      });
-    }
-  }
-
-  final _forgotAt = GlobalKey();
 
   late final Future<BiometricKind> _kind = widget.lock.biometrics.kind();
 
@@ -302,7 +340,6 @@ class _LockScreenState extends State<LockScreen> {
   @override
   void dispose() {
     _tick?.cancel();
-    _confirmTimer?.cancel();
     super.dispose();
   }
 
@@ -315,52 +352,6 @@ class _LockScreenState extends State<LockScreen> {
       setState(() {});
       if (widget.lock.waitRemaining == null) t.cancel();
     });
-  }
-
-  Future<void> _signOut() async {
-    // Erase first: signing out switches the lock to no account
-    // at once, so a clear() after it erased nothing of this account's, and
-    // signing back in asked for the forgotten PIN again.
-    await widget.lock.clear();
-    await widget.session.signOut();
-  }
-
-  Widget _forgotNoEmail(AppLocalizations l10n) {
-    // Sign out for good sits above the text, away from where Sign out anyway was,
-    // whatever the text's length in each language (a test checks), and waits
-    // for _confirmDelay. Keep trying is pinned below the scrolling part.
-    if (_forgot == _ForgotStep.confirming) {
-      return Column(
-        key: const ValueKey('lock-no-email'),
-        children: [
-          TestId(
-            'lock-sign-out-for-good',
-            button: true,
-            child: TextButton(
-              onPressed: _confirmReady ? _signOut : null,
-              child: Text(l10n.lockSignOutForGood, textAlign: TextAlign.center),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(l10n.lockNoEmailConfirm, textAlign: TextAlign.center),
-        ],
-      );
-    }
-    return Column(
-      key: const ValueKey('lock-no-email'),
-      children: [
-        Text(l10n.lockNoEmailExplain, textAlign: TextAlign.center),
-        const SizedBox(height: 8),
-        TestId(
-          'lock-sign-out-anyway',
-          button: true,
-          child: TextButton(
-            onPressed: () => _setForgot(_ForgotStep.confirming),
-            child: Text(l10n.lockSignOutAnyway, textAlign: TextAlign.center),
-          ),
-        ),
-      ],
-    );
   }
 
   Future<void> _biometrics() async {
@@ -381,118 +372,248 @@ class _LockScreenState extends State<LockScreen> {
     _startTick();
   }
 
+  /// Forgot PIN: the phone's own screen lock first when it has one, then a
+  /// new PIN; erase only as the other way, behind a second confirm.
+  Future<void> _forgot() async {
+    final l10n = AppLocalizations.of(context);
+    final paths = forgotPinPaths(
+      deviceHasScreenLock: await widget.lock.biometrics.screenLockSet(),
+    );
+    if (!mounted) return;
+    final choice = await showDialog<ForgotPinChoice>(
+      context: context,
+      builder: (_) => ForgotPinDialog(paths: paths),
+    );
+    if (!mounted) return;
+    switch (choice) {
+      case ForgotPinChoice.screenLock:
+        // A pass shows the new-PIN pad (AppLock.mayResetPin).
+        await widget.lock.verifyWithScreenLock(l10n.lockBiometricReason);
+      case ForgotPinChoice.erase:
+        await _erase();
+      case null:
+        break;
+    }
+  }
+
+  /// Erase and start over: "Delete everything?" once more, then Delete
+  /// everything's own wipe. The journal goes first and the PIN only after
+  /// it (decision 67), so a journal that can't be erased keeps its lock. The
+  /// lock screen stays up until it's done; then onboarding starts, from O1.
+  Future<void> _erase() async {
+    final l10n = AppLocalizations.of(context);
+    final services = context.services;
+    final sure = await confirmDeleteEverything(
+      context,
+      body: l10n.lockEraseBody,
+      idPrefix: 'lock-erase',
+    );
+    if (!sure || !mounted) return;
+    widget.lock.setErasing(on: true);
+    try {
+      await wipeEverything(
+        context,
+        services,
+        widget.session,
+        idPrefix: 'lock-erase',
+      );
+    } finally {
+      widget.lock.setErasing(on: false);
+    }
+  }
+
+  /// The PIN pad. While Forgot PIN's erase runs it stays, still, with
+  /// nothing to tap: the erase takes a moment, and its "Not everything was
+  /// erased" shows over it.
+  Widget _enterPin(AppLocalizations l10n) {
+    final lock = widget.lock;
+    final wait = lock.waitRemaining;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        PinPad(
+          title: l10n.lockEnterPin,
+          enabled: wait == null && !lock.erasing,
+          error: wait != null ? l10n.lockWait(wait.inSeconds + 1) : _error,
+          onDone: _pin,
+          extra: lock.biometricsOn
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: TestId(
+                    'lock-biometrics',
+                    button: true,
+                    child: FutureBuilder(
+                      future: _kind,
+                      builder: (context, kind) => IconButton.filledTonal(
+                        onPressed: _biometrics,
+                        tooltip: lockUseLabel(l10n, kind.data),
+                        icon: Icon(
+                          kind.data == BiometricKind.faceId
+                              ? Icons.face_rounded
+                              : Icons.fingerprint_rounded,
+                        ),
+                      ),
+                    ),
+                  ),
+                )
+              : null,
+        ),
+        const SizedBox(height: 16),
+        TestId(
+          'lock-forgot',
+          button: true,
+          child: TextButton(
+            onPressed: lock.erasing ? null : _forgot,
+            child: ButtonLabel(l10n.lockForgot),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _newPin(AppLocalizations l10n) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      NewPinPad(onChosen: widget.lock.resetPin),
+      const SizedBox(height: 16),
+      TestId(
+        'lock-new-pin-cancel',
+        button: true,
+        child: TextButton(
+          onPressed: widget.lock.cancelResetPin,
+          child: ButtonLabel(l10n.cancel),
+        ),
+      ),
+    ],
+  );
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final noEmail = widget.session.user?.isAnonymous ?? false;
     final palette = context.palette;
-    final wait = widget.lock.waitRemaining;
-    return TestId.container(
-      'lock-screen',
-      // Above the app's Navigator (MaterialApp.builder), so no Overlay comes
-      // from there; the biometrics button's tooltip needs one.
-      child: Overlay.wrap(
-        child: Material(
+    return ListenableBuilder(
+      listenable: widget.lock,
+      builder: (context, _) {
+        final lock = widget.lock;
+        return Material(
           color: palette.background,
           child: SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: Center(
-                    child: SingleChildScrollView(
+            child: Center(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    if (_forgot != _ForgotStep.confirming) ...[
                     ExcludeSemantics(
                       child: SvgPicture.asset(palette.logoAsset, height: 56),
                     ),
                     const SizedBox(height: 24),
-                    PinPad(
-                      title: l10n.lockEnterPin,
-                      enabled: wait == null,
-                      error: wait != null
-                          ? l10n.lockWait(wait.inSeconds + 1)
-                          : _error,
-                      onDone: _pin,
-                      extra: widget.lock.biometricsOn
-                          ? Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: TestId(
-                                'lock-biometrics',
-                                button: true,
-                                child: FutureBuilder(
-                                  future: _kind,
-                                  builder: (context, kind) =>
-                                      IconButton.filledTonal(
-                                        onPressed: _biometrics,
-                                        tooltip: lockUseLabel(l10n, kind.data),
-                                        icon: Icon(
-                                          kind.data == BiometricKind.faceId
-                                              ? Icons.face_rounded
-                                              : Icons.fingerprint_rounded,
-                                        ),
-                                      ),
-                                ),
-                              ),
-                            )
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    ],
-                    if (noEmail && _forgot != _ForgotStep.none)
-                      KeyedSubtree(
-                        key: _forgotAt,
-                        child: _forgotNoEmail(l10n),
-                      )
-                    else
-                      TestId(
-                        'lock-forgot',
-                        button: true,
-                        child: TextButton(
-                          onPressed: noEmail
-                              ? () => _setForgot(_ForgotStep.explained)
-                              : _signOut,
-                          child: Text(
-                            noEmail ? l10n.lockForgotNoEmail : l10n.lockForgot,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
+                    if (lock.mayResetPin) _newPin(l10n) else _enterPin(l10n),
                   ],
                 ),
-                    ),
-                  ),
-                ),
-                // Always on screen, at any text size: the safe way out.
-                if (noEmail && _forgot != _ForgotStep.none)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
-                    child: TestId(
-                      'lock-keep-trying',
-                      button: true,
-                      child: FilledButton(
-                        onPressed: () => _setForgot(_ForgotStep.none),
-                        child: Text(
-                          l10n.lockKeepTrying,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-/// Wraps the app: the lock screen over everything while locked (signed in
-/// only); a plain cover while the app is in the background, so the app
-/// switcher's preview shows nothing; the lock cleared on sign-out.
+/// What the person picked in Forgot PIN's dialog.
+enum ForgotPinChoice { screenLock, erase }
+
+/// Forgot PIN's dialog (plan §3.11): with a phone screen lock, that first
+/// (the filled button) and erase as the secondary text button; without one,
+/// erase only, saying why (decision 71).
+class ForgotPinDialog extends StatelessWidget {
+  const ForgotPinDialog({super.key, required this.paths});
+
+  final ForgotPinPaths paths;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final device = paths == ForgotPinPaths.deviceThenErase;
+    return AlertDialog(
+      // Closer to the screen's edges than a standard dialog (16 dp, not 40),
+      // so on a narrow phone at large text its labels wrap little and both
+      // ways back stay readable (decision 71).
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      // One side padding, 16 dp, for the title, the body and the buttons, at
+      // every text size: the dialog's own shrinks to a third at large text,
+      // so the sides are ours and only the top and bottom are its own.
+      titlePadding: const EdgeInsets.only(top: 24),
+      contentPadding: const EdgeInsets.only(top: 16, bottom: 24),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+      // At the largest text sizes its words outgrow a small screen.
+      scrollable: true,
+      // Whole words at large text: a dialog is narrow.
+      title: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: WholeWordsText(
+          l10n.lockForgotTitle,
+          style: Theme.of(context).textTheme.headlineSmall,
+        ),
+      ),
+      content: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: device
+              ? [
+                  Text(l10n.lockForgotBodyDevice),
+                  const SizedBox(height: 12),
+                  Text(l10n.lockForgotBodyErase),
+                ]
+              : [Text(l10n.lockForgotBodyEraseOnly)],
+        ),
+      ),
+      actions: [
+        // On one line when they fit; else full width, the main way back on
+        // top, so the labels wrap little and both paths stay readable
+        // (decision 71).
+        ButtonRow(
+          children: [
+            TestId(
+              'lock-forgot-cancel',
+              button: true,
+              child: TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: ButtonLabel(l10n.cancel),
+              ),
+            ),
+            TestId(
+              'lock-forgot-erase',
+              button: true,
+              child: TextButton(
+                onPressed: () =>
+                    Navigator.of(context).pop(ForgotPinChoice.erase),
+                child: ButtonLabel(l10n.lockForgotErase),
+              ),
+            ),
+            if (device)
+              TestId(
+                'lock-forgot-device',
+                button: true,
+                child: FilledButton(
+                  onPressed: () =>
+                      Navigator.of(context).pop(ForgotPinChoice.screenLock),
+                  child: ButtonLabel(l10n.lockForgotUseDevice),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Wraps the app: the lock screen over everything while locked (and while
+/// Forgot PIN's erase runs); a plain cover while the app is in the
+/// background, so the app switcher's preview shows nothing. The lock belongs
+/// to the phone, not to an account (decision 70).
 class LockGate extends StatefulWidget {
   const LockGate({
     super.key,
@@ -511,42 +632,17 @@ class LockGate extends StatefulWidget {
 
 class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
   bool _covered = false;
-  String? _uid;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _uid = widget.session.user?.id;
-    widget.session.addListener(_sessionChanged);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    widget.session.removeListener(_sessionChanged);
     super.dispose();
-  }
-
-  /// Each account keeps its own lock on this phone.
-  /// Signing out keeps it (the same account back = the lock back); another
-  /// account has its own (none at first); a deleted account's goes.
-  /// "Forgot PIN?" erases it itself before signing out.
-  void _sessionChanged() {
-    final lock = widget.lock;
-    final previous = _uid;
-    final uid = widget.session.user?.id;
-    if (uid == previous) return;
-    _uid = uid;
-    if (lock == null) return;
-    final reason = widget.session.signedOutReason;
-    if (previous != null &&
-        uid == null &&
-        (reason == SignedOutReason.deleted ||
-            reason == SignedOutReason.accountGone)) {
-      unawaited(lock.forget(previous));
-    }
-    unawaited(lock.switchUser(uid));
   }
 
   @override
@@ -576,10 +672,10 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
     return ListenableBuilder(
       listenable: Listenable.merge([lock, widget.session]),
       builder: (context, _) {
-        final showLock = lock.locked && widget.session.user != null;
-        // While another account's lock is read: covered, never the journal.
-        final switching = lock.switching && widget.session.user != null;
-        final hidden = showLock || switching || (_covered && lock.on);
+        final showLock =
+            lock.erasing || (lock.locked && widget.session.user != null);
+        final covered = _covered && lock.on;
+        final hidden = showLock || covered;
         return Stack(
           children: [
             // Under the lock or the cover the app is unreachable: not read
@@ -595,7 +691,7 @@ class _LockGateState extends State<LockGate> with WidgetsBindingObserver {
               Positioned.fill(
                 child: LockScreen(lock: lock, session: widget.session),
               )
-            else if (switching || (_covered && lock.on))
+            else if (covered)
               Positioned.fill(
                 child: TestId.container(
                   'lock-cover',

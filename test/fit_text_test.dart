@@ -213,4 +213,52 @@ void main() {
       }
     });
   });
+
+  group('WholeWordsText', () {
+    // An AlertDialog asks its title how wide it would be whenever the dialog
+    // isn't at its narrowest (phones wider than 360 dp): a LayoutBuilder
+    // alone can't answer, and asserts in debug builds.
+    testWidgets('sized by an IntrinsicWidth: no error, on one line', (
+      tester,
+    ) async {
+      screen(tester, 411, 1);
+      await tester.pumpWidget(
+        const MaterialApp(
+          // A Scaffold, so the text takes the theme's style (with no
+          // Material above it, Flutter's 48 px debug style).
+          home: Scaffold(
+            body: Center(
+              child: IntrinsicWidth(
+                child: WholeWordsText('Not everything was erased'),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      onOneLine(tester, find.byType(WholeWordsText), 'its widest');
+    });
+
+    testWidgets('its sizes before layout are the ones it lays out at', (
+      tester,
+    ) async {
+      screen(tester, 320, 2);
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Align(
+            alignment: Alignment.topLeft,
+            child: SizedBox(
+              width: 150,
+              child: WholeWordsText('Not everything was erased'),
+            ),
+          ),
+        ),
+      );
+      final box = tester.renderObject<RenderBox>(find.byType(WholeWordsText));
+      final dry = box.getDryLayout(const BoxConstraints.tightFor(width: 150));
+      expect(dry.width, closeTo(box.size.width, 0.01));
+      expect(dry.height, closeTo(box.size.height, 0.01));
+      expect(box.getMinIntrinsicHeight(150), closeTo(box.size.height, 0.01));
+    });
+  });
 }

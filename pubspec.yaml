@@ -33,6 +33,7 @@ dependencies:
   # The journal's store on the phone (entries, goals, settings): pure Dart,
   # no native code, an in-memory database for tests. Pinned exactly.
   sembast: 3.10.1
+  share_plus: 13.3.1
 
 dev_dependencies:
   flutter_test:

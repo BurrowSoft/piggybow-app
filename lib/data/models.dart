@@ -73,7 +73,8 @@ class ReminderTime {
   final int hour;
   final int minute;
 
-  static const defaultTime = ReminderTime(21, 0);
+  /// Piggybow's evening nudge (plan §3.10).
+  static const defaultTime = ReminderTime(20, 0);
 
   /// `HH:MM`, as Postgres `time` accepts it.
   String get wire =>
