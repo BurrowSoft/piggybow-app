@@ -64,8 +64,9 @@ void main() {
     expect(gradle, contains('it.name.contains("Release")'));
     expect(gradle, contains('dartDefines["SENTRY_DSN"]'));
     expect(gradle, contains('dartDefines["PLUS_ENABLED"] == "true"'));
-    expect(gradle, contains('if (release && (dsn || plus))'));
-    // And no build of v0.1 sets either: every env file a build reads.
+    expect(gradle, contains('dartDefines["AI_TIPS_ENABLED"] == "true"'));
+    expect(gradle, contains('if (release && (dsn || plus || tips))'));
+    // And no build of v0.1 sets any: every env file a build reads.
     final envs = Directory('env')
         .listSync()
         .whereType<File>()
@@ -76,6 +77,7 @@ void main() {
       final env = jsonDecode(f.readAsStringSync()) as Map<String, dynamic>;
       expect('${env['SENTRY_DSN'] ?? ''}'.trim(), isEmpty, reason: f.path);
       expect('${env['PLUS_ENABLED']}', isNot('true'), reason: f.path);
+      expect('${env['AI_TIPS_ENABLED']}', isNot('true'), reason: f.path);
     }
   });
 
@@ -92,7 +94,7 @@ void main() {
     expect(pr, contains('android/debug-only-permissions.txt'));
   });
 
-  test('nothing in the app fetches from the network', () {
+  test('nothing in the app fetches from the network but the pig tips client', () {
     // No network package; the fonts are bundled assets.
     final pubspec = File('pubspec.yaml').readAsStringSync();
     for (final package in [
@@ -127,9 +129,17 @@ void main() {
         )
         .toList();
     expect(sources, isNotEmpty);
+    // The one exception: the pig tips client's own file, with dart:io's
+    // client and no package (and a release build still has no INTERNET).
+    const tipsClient = 'lib/tips/tips_http.dart';
     for (final f in sources) {
+      if (f.path.replaceAll('\\', '/') == tipsClient) continue;
       expect(calls.hasMatch(f.readAsStringSync()), isFalse, reason: f.path);
     }
+    final client = File(tipsClient).readAsStringSync();
+    expect(RegExp(r'HttpClient\(').allMatches(client), hasLength(1));
+    expect(client, isNot(contains('package:http/')));
+    expect(client, isNot(contains('package:dio/')));
   });
 
   test('the signing secrets: line endings stripped, whitespace fails', () {

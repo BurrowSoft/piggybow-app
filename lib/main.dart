@@ -30,6 +30,10 @@ import 'l10n/gen/app_localizations.dart';
 import 'money/currency.dart';
 import 'router.dart';
 import 'session/app_session.dart';
+import 'tips/pig_tips.dart';
+import 'tips/tip_request.dart';
+import 'tips/tips_endpoint.dart';
+import 'tips/tips_http.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -144,6 +148,22 @@ Future<void> main() async {
   final plus = plusStore == null
       ? null
       : PlusEntitlement(store: plusStore, hint: FilePlusHint(), clock: clock);
+  // Pig tips, only where AI_TIPS_ENABLED is on and a tips project (or, in a
+  // staging debug build, the tester's mock) is set. Nothing is sent until
+  // the person turns them on.
+  final tipsEndpoint = config.aiTipsEnabled ? TipsEndpoint.fromConfig(config) : null;
+  final pigTips = tipsEndpoint == null
+      ? null
+      : PigTipsService(
+          enabled: config.aiTipsEnabled,
+          endpoint: tipsEndpoint,
+          http: IoTipsHttp(),
+          store: const KeystoreSecretStore(),
+          clock: clock,
+          language: () => session.locale.languageCode,
+          requestFor: (todayWire) => tipRequestFor(journal, todayWire),
+          recordConsents: session.account.recordConsents,
+        );
   final services = AppServices(
     clock: clock,
     localDay: localDay,
@@ -152,8 +172,15 @@ Future<void> main() async {
     notifications: const PlatformNotificationPermission(),
     appLock: appLock,
     plus: plus,
+    pigTips: pigTips,
     onboarded: await onboardedAtStart(journal),
   );
+  // Whether tips are on, and what's still to send: at launch and on every
+  // resume.
+  if (pigTips != null) {
+    unawaited(pigTips.load());
+    AppLifecycleListener(onResume: () => unawaited(pigTips.resumePending()));
+  }
   // The store's answer at launch and on every resume (the launch hint
   // shows Plus until it comes).
   if (plus != null) {

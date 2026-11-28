@@ -207,4 +207,11 @@ void main() {
     expect(r.feelings.values, everyElement(0));
     expect(r.saves, 0);
   });
+
+  test("goal_percent stays within 0 to 100, as the contract allows, whatever is passed", () {
+    expect(build(const [], goalPercent: 150).goalPercent, 100);
+    expect(build(const [], goalPercent: -5).goalPercent, 0);
+    expect(build(const [], goalPercent: 42).goalPercent, 42);
+    expect(build(const []).goalPercent, isNull);
+  });
 }

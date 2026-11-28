@@ -90,7 +90,9 @@ Future<void> _shareSheet(XFile file) =>
 /// every id (only after the journal is gone); every pref (the device
 /// account, its reminder, language, appearance and the rest); every export
 /// file; Plus's launch hint (the store's own record of a subscription stays:
-/// erasing the app never cancels it). Then a fresh device account, and
+/// erasing the app never cancels it); pig tips' anonymous id, deleted on the
+/// server now or, with no connection, at a later start. Then a fresh device
+/// account, and
 /// onboarding from O1. The lock, the
 /// prefs and the account go only after the journal did; the other steps run
 /// even if one fails; false when any did (Me says so and offers Try again).
@@ -121,12 +123,18 @@ Future<bool> deleteEverything(
   // account go: a journal still on the phone keeps its PIN and its account,
   // so this wipe (which Forgot PIN's erase reuses) is never a way past the
   // lock (decision 67, amended).
+  // Pig tips first: off, and the anonymous id deleted on the server (its
+  // reports first). With no connection, that delete is kept through the
+  // erase below and sent at a later start.
+  String? tipsDelete;
+  await step(() async => tipsDelete = await services.pigTips?.eraseBegin());
   final journalGone = await step(services.journal.wipe);
   await step(services.reminders.cancelAll);
   await step(() => sweepExports(cache: cache));
   await step(() async => services.plus?.forget());
   if (!journalGone) return false;
   await step(() async => services.appLock?.eraseAll());
+  await step(() async => services.pigTips?.eraseEnd(tipsDelete));
   await step(session.prefs.clear);
   await step(() async {
     final backend = session.account;

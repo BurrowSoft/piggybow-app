@@ -18,6 +18,7 @@ import 'package:piggybow/features/reminder/reminder_scheduler.dart';
 import 'package:piggybow/journal/journal_store.dart';
 import 'package:piggybow/router.dart';
 import 'package:piggybow/session/app_session.dart';
+import 'package:piggybow/tips/pig_tips.dart';
 
 class FakeDevice implements DeviceContext {
   FakeDevice({
@@ -129,6 +130,7 @@ class TestApp {
     this.onboarded = true,
     this.config = const AppConfig(flavor: Flavor.staging),
     this.plus,
+    this.pigTips,
     this.letters = false,
     Clock? clock,
   }) : clock = clock ?? testClock,
@@ -171,6 +173,9 @@ class TestApp {
   /// starts it, as main does.
   final PlusEntitlement? plus;
 
+  /// Pig tips; null = a build without them.
+  final PigTips? pigTips;
+
   late final DeviceBackend backend;
   late final AppSession session;
 
@@ -190,6 +195,7 @@ class TestApp {
     notifications: notifications,
     appLock: appLock,
     plus: plus,
+    pigTips: pigTips,
     stagingTestError: () => stagingErrors++,
     onboarded: onboarded,
   );

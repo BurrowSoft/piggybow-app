@@ -5,7 +5,9 @@
 // an amount, a date or the currency. supabase/contracts/pig-tip-request.json
 // is its shape, read by the app's tests and the server's.
 
+import '../goal/goal_progress.dart' as progress;
 import '../journal/entry.dart';
+import '../journal/journal_store.dart';
 import '../pig/pig_mood.dart' show HappyPick;
 import '../summary/summary.dart';
 
@@ -127,12 +129,34 @@ TipRequest buildTipRequest({
     feelings: feelings,
     saves: saves,
     planPercent: ofPlan == null || ofPlan <= 100 ? ofPlan : 100,
-    goalPercent: goalPercent,
+    // 0 to 100, as the contract allows, whatever the caller passes.
+    goalPercent: goalPercent?.clamp(0, 100),
     activeGoals: activeGoals,
     picks: [
       for (final p in HappyPick.values)
         if (picks.contains(p)) p.name,
     ],
+  );
+}
+
+/// The request for [todayWire] from the journal: this week so far, its plan,
+/// the goal saves go to by default, how many goals are active, and the
+/// picks. In English: tips are offered only in English for now.
+Future<TipRequest> tipRequestFor(JournalStore journal, String todayWire) async {
+  final goal = await journal.activeGoal();
+  return buildTipRequest(
+    language: 'en',
+    todayWire: todayWire,
+    entries: await journal.entries(),
+    planMinor: await journal.planMinor(),
+    goalPercent: goal == null
+        ? null
+        : progress.goalPercent(
+            progressMinor: await journal.goalProgress(goal),
+            targetMinor: goal.targetMinor,
+          ),
+    activeGoals: (await journal.activeGoals()).length,
+    picks: await journal.picks(),
   );
 }
 

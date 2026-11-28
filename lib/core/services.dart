@@ -4,6 +4,7 @@ import '../features/plus/plus_entitlement.dart';
 import '../features/reminder/reminder_scheduler.dart';
 import '../journal/journal_store.dart';
 import '../pig/pig_mood.dart' show PigReaction;
+import '../tips/pig_tips.dart';
 import 'app_lock.dart';
 import 'clock.dart';
 import 'device.dart';
@@ -11,7 +12,8 @@ import 'local_day.dart';
 import 'staging_tools.dart';
 
 /// The app's dependencies beyond the session (which covers the device
-/// account). v0.1 runs on the phone only: nothing here talks to a server.
+/// account). Only [pigTips] talks to a server, and only once the person
+/// turns tips on.
 class AppServices {
   AppServices({
     required this.clock,
@@ -21,6 +23,7 @@ class AppServices {
     required this.notifications,
     this.appLock,
     this.plus,
+    this.pigTips,
     this.stagingTestError = stagingToolsEnabled ? throwStagingTestError : null,
     bool onboarded = true,
   }) : onboarded = ValueNotifier(onboarded);
@@ -54,6 +57,11 @@ class AppServices {
   /// while PLUS_ENABLED is off, and so in every release build (AppConfig):
   /// then no Plus row, paywall or Plus feature shows anywhere.
   final PlusEntitlement? plus;
+
+  /// Pig tips: the switch, the day's written tip and Report. Null where the
+  /// build has no tips (AI_TIPS_ENABLED off, or no tips project set); A3's
+  /// screens show only when it's set and [PigTips.offered].
+  final PigTips? pigTips;
 
   /// Staging and dev builds only: sends a test error to Sentry (if a DSN is set).
   final void Function()? stagingTestError;

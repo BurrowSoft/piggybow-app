@@ -4,8 +4,9 @@ import 'package:flutter/widgets.dart';
 
 /// Build-time configuration, read from `--dart-define-from-file=env/<flavor>.json`.
 ///
-/// Only public values belong here (the Sentry DSN, page links). v0.1 has no
-/// server: there is no backend URL or key at all.
+/// Only public values belong here (the Sentry DSN, page links, the pig tips
+/// project's URL, publishable key and region). The journal has no server:
+/// pig tips' project is the only backend, and it never sees the journal.
 class AppConfig {
   const AppConfig({
     required this.flavor,
@@ -25,6 +26,10 @@ class AppConfig {
     this.privacyUrl = '',
     this.supportUrl = '',
     this.termsUrl = '',
+    this.aiTipsEnabled = false,
+    this.tipsUrl = '',
+    this.tipsAnonKey = '',
+    this.tipsRegion = '',
   });
 
   factory AppConfig.fromEnvironment() {
@@ -72,6 +77,14 @@ class AppConfig {
       privacyUrl: const String.fromEnvironment('PRIVACY_URL'),
       supportUrl: const String.fromEnvironment('SUPPORT_URL'),
       termsUrl: const String.fromEnvironment('TERMS_URL'),
+      // Pig tips: only with AI_TIPS_ENABLED, and never in a release build
+      // until the release that ships them (with INTERNET) lifts this; the
+      // Android build refuses it there too. kReleaseMode is a compile-time
+      // constant, so this is false in release whatever the env file says.
+      aiTipsEnabled: const bool.fromEnvironment('AI_TIPS_ENABLED') && !kReleaseMode,
+      tipsUrl: const String.fromEnvironment('TIPS_URL'),
+      tipsAnonKey: const String.fromEnvironment('TIPS_ANON_KEY'),
+      tipsRegion: const String.fromEnvironment('TIPS_REGION'),
       fakeNow: isProd
           ? null
           : DateTime.tryParse(const String.fromEnvironment('FAKE_NOW')),
@@ -143,6 +156,18 @@ class AppConfig {
   final String privacyUrl;
   final String supportUrl;
   final String termsUrl;
+
+  /// AI_TIPS_ENABLED: this build offers pig tips (in English, after the
+  /// consent sheet). Off in prod's env file until the release that ships
+  /// them.
+  final bool aiTipsEnabled;
+
+  /// The pig tips project (TIPS_URL, `https://<ref>.supabase.co`), its
+  /// publishable key (TIPS_ANON_KEY: the `apikey` header, not a secret) and
+  /// its region (TIPS_REGION, sent as `x-region`). Empty: no tips.
+  final String tipsUrl;
+  final String tipsAnonKey;
+  final String tipsRegion;
 }
 
 enum Flavor {

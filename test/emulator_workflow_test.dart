@@ -53,7 +53,7 @@ void main() {
       r'[[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]]',
       r'[[ "$FLOWS_REF" =~ ^[A-Za-z0-9._/-]{1,100}$ && "$FLOWS_REF" != *..* ]]',
       r'[[ "$TAGS" =~ ^[a-z0-9_-]+(,[a-z0-9_-]+)*$ ]]',
-      r'[[ "$KIND" =~ ^(debug|reminder-now|release|prod-release|plus-rows|plus-owned|plus-probe)$ ]]',
+      r'[[ "$KIND" =~ ^(debug|reminder-now|release|prod-release|plus-rows|plus-owned|plus-probe|tips-mock)$ ]]',
       r'[[ -z "$ROWS" || "$ROWS" =~ ^[a-z0-9_-]{1,40}$ ]]',
       r'[[ "$ZONE" =~ ^[A-Za-z_]+(/[A-Za-z0-9_+-]+){0,2}$ ]]',
     ]) {
@@ -141,7 +141,7 @@ steps:
     expect(
       wf,
       contains(
-        'options: [debug, reminder-now, release, prod-release, plus-rows, plus-owned, plus-probe]',
+        'options: [debug, reminder-now, release, prod-release, plus-rows, plus-owned, plus-probe, tips-mock]',
       ),
     );
     expect(wf, contains(r'[[ "$KIND" != prod-release || -z "$FAKE_NOW" ]]'));
@@ -189,6 +189,32 @@ steps:
     expect(run.indexOf('maestro --device'), greaterThan(perms));
   });
 
+  // Pig tips from the tester's mock tips server (started by the rows script
+  // on the runner): only in tips-mock, a staging debug build, the one kind
+  // of build the app reads TIPS_TEST_URL in. Never the store's build.
+  test('tips-mock: the mock tips server only in its staging debug build', () {
+    final build = wf.substring(
+      wf.indexOf('- name: Build the APK under test'),
+      wf.indexOf('- name: Maestro'),
+    );
+    final prod = build.substring(
+      build.indexOf('if [ "\$KIND" = prod-release ]; then'),
+      build.indexOf('          else\n'),
+    );
+    expect(prod, isNot(contains('TIPS_TEST_URL')));
+    expect(prod, isNot(contains('AI_TIPS_ENABLED')));
+    expect(build, contains(r'| if $kind == "tips-mock" then .AI_TIPS_ENABLED = "true" else . end'));
+    expect(
+      build,
+      contains(r'| if $kind == "tips-mock" then .TIPS_TEST_URL = "http://10.0.2.2:8787" else . end'),
+    );
+    expect('AI_TIPS_ENABLED = '.allMatches(wf), hasLength(1));
+    expect('TIPS_TEST_URL = '.allMatches(wf), hasLength(1));
+    // No build case of its own: a staging debug build.
+    expect(build, isNot(contains('tips-mock)')));
+    expect(build, contains('*) mode=--debug; built=app-staging-debug.apk ;;'));
+  });
+
   // Decision 79: Plus on the emulator, in its three staging kinds only. The
   // tester's rows get the rows' fake store (debug builds), owning Plus in
   // plus-owned; the probe gets
@@ -230,7 +256,7 @@ steps:
     expect(
       wf,
       contains(
-        '        options: [debug, reminder-now, release, prod-release, plus-rows, plus-owned, plus-probe]\n'
+        '        options: [debug, reminder-now, release, prod-release, plus-rows, plus-owned, plus-probe, tips-mock]\n'
         '        default: debug\n',
       ),
     );

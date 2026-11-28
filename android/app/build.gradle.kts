@@ -134,12 +134,14 @@ gradle.taskGraph.whenReady {
     val release = allTasks.any { it.name.contains("Release") }
     val dsn = dartDefines["SENTRY_DSN"].orEmpty().isNotBlank()
     val plus = dartDefines["PLUS_ENABLED"] == "true"
-    if (release && (dsn || plus)) {
+    val tips = dartDefines["AI_TIPS_ENABLED"] == "true"
+    if (release && (dsn || plus || tips)) {
         throw GradleException(
             "this release build would need the network (" +
                 listOfNotNull(
                     "SENTRY_DSN".takeIf { dsn },
                     "PLUS_ENABLED".takeIf { plus },
+                    "AI_TIPS_ENABLED".takeIf { tips },
                 ).joinToString() +
                 "), but src/release/AndroidManifest.xml removes INTERNET and " +
                 "ACCESS_NETWORK_STATE: change that file and " +

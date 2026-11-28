@@ -13,5 +13,9 @@
   "PLUS_ENABLED": "false",
   "PRIVACY_URL": "https://www.piggybow.com/privacy",
   "SUPPORT_URL": "https://www.piggybow.com/support",
-  "TERMS_URL": ""
+  "TERMS_URL": "",
+  "AI_TIPS_ENABLED": "false",
+  "TIPS_URL": "https://shibvpzkwwmqpvhspfsv.supabase.co",
+  "TIPS_ANON_KEY": "",
+  "TIPS_REGION": "ap-northeast-1"
 }

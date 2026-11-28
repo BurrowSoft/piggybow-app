@@ -59,9 +59,17 @@ void main() {
       jsonDecode(File('env/$flavor.json').readAsStringSync())
           as Map<String, dynamic>;
 
-  // v0.1 runs on the phone only (no account, no server): no env file may
-  // carry a backend, and none may ever hold a secret.
-  test('the env files: no backend, no secret, no DSN; only live page links', () {
+  // The journal never leaves the phone (no account, no server): no env file
+  // may carry a backend for it, and none may ever hold a secret. Pig tips'
+  // project is the one backend, per flavor: its URL, its publishable key
+  // (or none yet) and its region, never anything else of Supabase's.
+  test('the env files: no backend but pig tips, no secret, no DSN; only live page links', () {
+    const tipsUrls = {
+      'dev': '',
+      'staging': 'https://shibvpzkwwmqpvhspfsv.supabase.co',
+      'prod': 'https://zpmvixoaydiltdspmcoc.supabase.co',
+    };
+    const tipsRegions = {'dev': '', 'staging': 'ap-northeast-1', 'prod': 'us-east-1'};
     for (final flavor in ['dev', 'staging', 'prod']) {
       final text = File('env/$flavor.json').readAsStringSync();
       final e = env(flavor);
@@ -72,10 +80,20 @@ void main() {
       expect(e.containsKey('REGION_HOST'), isFalse, reason: flavor);
       expect(e.containsKey('WEB_ORIGIN'), isFalse, reason: flavor);
       expect(text, isNot(contains('sb_secret_')), reason: flavor);
-      expect(text, isNot(contains('sb_publishable_')), reason: flavor);
       expect(text, isNot(contains('service_role')), reason: flavor);
-      expect(text, isNot(contains('supabase.co')), reason: flavor);
       expect(text, isNot(contains('sentry.io')), reason: flavor);
+      // Pig tips: off in every env file until the release that ships them
+      // (the emulator's tips-mock kind turns them on in its debug build),
+      // and only their own project.
+      expect(e['AI_TIPS_ENABLED'], 'false', reason: flavor);
+      final url = e['TIPS_URL'] as String;
+      final key = e['TIPS_ANON_KEY'] as String;
+      expect(url, tipsUrls[flavor], reason: flavor);
+      expect(e['TIPS_REGION'], tipsRegions[flavor], reason: flavor);
+      expect(key.isEmpty || RegExp(r'^sb_publishable_[A-Za-z0-9_-]+$').hasMatch(key), isTrue, reason: flavor);
+      final rest = text.replaceFirst(url, '').replaceFirst(key, '');
+      expect(rest, isNot(contains('supabase.co')), reason: flavor);
+      expect(rest, isNot(contains('sb_publishable_')), reason: flavor);
       // No Sentry project yet: crash reports are off in every build.
       expect(e['SENTRY_DSN'], isEmpty, reason: flavor);
       // Links appear only once each page is live (a link never 404s). The
