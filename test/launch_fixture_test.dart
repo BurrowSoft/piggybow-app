@@ -118,12 +118,26 @@ void main() {
     test(
       'every contract case and R0, R32, R100 load; an unknown id says so',
       () {
+        // The cases with an entry a repeat added play in the mood tests
+        // only: their fixture says so instead of writing them.
+        final auto = {
+          for (final c in (jsonDecode(casesJson)['cases'] as List))
+            if (((c as Map<String, dynamic>)['entries'] as List).any(
+              (e) => (e as Map<String, dynamic>)['auto'] == true,
+            ))
+              c['id'] as String,
+        };
+        expect(auto, {'C38', 'C39'});
         for (final id in [...caseIds, 'R0', 'R32', 'R100']) {
           final f = LaunchFixture.byId(id, casesJson);
+          if (auto.contains(id)) {
+            expect(f.error, contains('a repeat added'), reason: id);
+            continue;
+          }
           expect(f.error, isNull, reason: id);
           expect(f.check(f.today), isNull, reason: id);
         }
-        expect(caseIds, hasLength(38));
+        expect(caseIds, hasLength(40));
         final unknown = LaunchFixture.byId('C99', casesJson);
         expect(unknown.error, contains('C99'));
         expect(unknown.check('2026-12-02'), contains('C99'));

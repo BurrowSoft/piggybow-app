@@ -335,6 +335,7 @@ class _Pig extends StatelessWidget {
             feeling: e.feeling?.id,
             localDate: e.localDate,
             createdAt: e.createdAt,
+            auto: e.auto,
           ),
       ],
       // Every goal's stamps, ended ones too (the contract's rule 1, decision

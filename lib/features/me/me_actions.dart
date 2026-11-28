@@ -37,6 +37,10 @@ Future<String> journalCsv(
   final words = l10n ?? lookupAppLocalizations(const Locale('en'));
   final goals = {for (final g in await store.goals()) g.id: g.name};
   final customs = {for (final c in await store.customCategories()) c.id: c};
+  // Each repeat's kind, stopped ones too: their entries still say so.
+  final repeats = {
+    for (final r in await store.repeats()) r.id: r.schedule.kind.id,
+  };
   final entries = await store.entries();
   return buildCsv([
     for (final e in entries.reversed)
@@ -53,6 +57,7 @@ Future<String> journalCsv(
         feeling: e.feeling?.id,
         note: e.note,
         goalName: e.goalId == null ? null : goals[e.goalId],
+        repeat: e.repeatId == null ? null : repeats[e.repeatId],
       ),
   ]);
 }

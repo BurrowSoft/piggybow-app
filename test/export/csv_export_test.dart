@@ -59,7 +59,7 @@ CsvRow spend({String note = 'Lunch', String date = '2026-12-02'}) => CsvRow(
   note: note,
 );
 
-const header = 'date,type,amount,currency,category,category_name,feeling,note,goal';
+const header = 'date,type,amount,currency,category,category_name,feeling,note,goal,repeat';
 
 void main() {
   test('an empty export is the BOM and the header, ending in CRLF', () {
@@ -86,9 +86,36 @@ void main() {
     expect(
       csv,
       '\uFEFF$header\r\n'
-      '2026-12-02,spent,120.50,THB,food,Food,worth_it,Lunch,\r\n'
-      '2026-12-03,saved,500.00,THB,,,,,Trip to Chiang Mai\r\n'
-      '2026-12-04,saved,1200,JPY,,,,Coins,\r\n',
+      '2026-12-02,spent,120.50,THB,food,Food,worth_it,Lunch,,\r\n'
+      '2026-12-03,saved,500.00,THB,,,,,Trip to Chiang Mai,\r\n'
+      '2026-12-04,saved,1200,JPY,,,,Coins,,\r\n',
+    );
+  });
+
+  test("an entry of a repeat says the repeat's kind; nothing else may go there", () {
+    final csv = buildCsv([
+      const CsvRow(
+        localDate: '2026-12-01',
+        type: 'spent',
+        amountMinor: 1200000,
+        currency: 'THB',
+        category: 'home',
+        note: 'Rent',
+        repeat: 'monthly',
+      ),
+      const CsvRow(localDate: '2026-12-04', type: 'saved', amountMinor: 50000, currency: 'THB', note: '', repeat: 'weekly'),
+    ]);
+    expect(
+      csv,
+      '\uFEFF$header\r\n'
+      '2026-12-01,spent,12000.00,THB,home,,,Rent,,monthly\r\n'
+      '2026-12-04,saved,500.00,THB,,,,,,weekly\r\n',
+    );
+    expect(
+      () => buildCsv([
+        const CsvRow(localDate: '2026-12-01', type: 'spent', amountMinor: 1, currency: 'THB', category: 'food', note: '', repeat: 'yearly'),
+      ]),
+      throwsArgumentError,
     );
   });
 
@@ -243,7 +270,7 @@ void main() {
         goalName: 'Bike',
       ),
     ]);
-    expect(csv, '$csvBom$header\r\n2026-12-05,withdraw,20.00,THB,,,,New tyre,Bike\r\n');
+    expect(csv, '$csvBom$header\r\n2026-12-05,withdraw,20.00,THB,,,,New tyre,Bike,\r\n');
   });
 
   test('a type other than spent, saved or withdraw throws, and says which are', () {

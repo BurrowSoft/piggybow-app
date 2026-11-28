@@ -85,10 +85,12 @@ class _ReminderSyncState extends State<ReminderSync> {
     }
   }
 
-  /// Whether an entry was added today, in the phone's own zone.
+  /// Whether the person added an entry today, in the phone's own zone. One a
+  /// repeat added doesn't count: the person hasn't written anything yet.
   Future<bool> _entryAddedToday() async {
     final day = _services.localDay;
     for (final e in await _services.journal.entries()) {
+      if (e.auto) continue;
       if (wireDate(Clock.localDateOf(e.createdAt, day.zone)) == day.todayWire) {
         return true;
       }

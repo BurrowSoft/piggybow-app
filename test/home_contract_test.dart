@@ -24,6 +24,14 @@ void main() {
   final cases = (contract['cases'] as List).cast<Map<String, dynamic>>();
 
   for (final c in cases) {
+    // An entry a repeat added can't be written as the person would have
+    // (the launch fixture refuses those cases): they play in the mood
+    // function's tests, and repeat_ripples_test plays the rule on Home.
+    if ((c['entries'] as List).any(
+      (e) => (e as Map<String, dynamic>)['auto'] == true,
+    )) {
+      continue;
+    }
     final expected = c['expect'] as Map<String, dynamic>;
     testWidgets('${c['id']} on Home: ${c['why']}', (tester) async {
       tester.view.devicePixelRatio = 3;
