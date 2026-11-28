@@ -173,6 +173,23 @@ void main() {
       expect(await tester.runAsync(app.journal.repeatsSeenAt), isNotNull);
     });
 
+    testWidgets('OK puts away what was added under a clock set ahead', (tester) async {
+      // The clock says 1 January 2027: the catch-up adds Nov, Dec and Jan,
+      // each "added" then.
+      final clock = MovableClock(DateTime.utc(2027, 1, 1, 2));
+      final app = await open(
+        tester,
+        app: TestApp(clock: clock),
+        seed: (app) => rent(app, day: '2026-10-01'),
+      );
+      await waitFor(tester, byId('home-repeats'));
+      // Put right: 2 October 2026, before those entries were "added".
+      clock.now = DateTime.utc(2026, 10, 2, 1, 30);
+      await tester.tapId('home-repeats-ok');
+      expect(byId('home-repeats'), findsNothing);
+      expect(await tester.runAsync(app.journal.repeatsSeenAt), DateTime.utc(2027, 1, 1, 2));
+    });
+
     testWidgets('more than 3: "and N more" opens Timeline', (tester) async {
       // Every Friday since 7 August: 8 more, up to today.
       await open(

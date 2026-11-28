@@ -133,10 +133,15 @@ class JournalStore extends ChangeNotifier {
   }
 
   /// OK on Home's "Added from your repeats": everything added so far is seen.
-  Future<void> markRepeatsSeen() async {
+  /// [newest] is when the newest of what it showed was added: when that's
+  /// after now (added under a clock that was set ahead), it's the mark, so
+  /// those go too.
+  Future<void> markRepeatsSeen({DateTime? newest}) async {
+    final now = _clock.nowUtc();
+    final at = newest != null && newest.isAfter(now) ? newest : now;
     await _settings
         .record('repeats_seen_at')
-        .put(_db, _clock.nowUtc().toIso8601String());
+        .put(_db, at.toUtc().toIso8601String());
     notifyListeners();
   }
 

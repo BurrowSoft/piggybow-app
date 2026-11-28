@@ -330,8 +330,13 @@ class _RepeatsCard extends StatelessWidget {
                     'home-repeats-ok',
                     button: true,
                     child: TextButton(
-                      onPressed: () =>
-                          context.services.journal.markRepeatsSeen(),
+                      // All of them, "and N more" too: the newest one's
+                      // time is the mark, even after a clock set ahead.
+                      onPressed: () => context.services.journal.markRepeatsSeen(
+                        newest: added
+                            .map((e) => e.createdAt)
+                            .reduce((a, b) => a.isAfter(b) ? a : b),
+                      ),
                       child: ButtonLabel(l10n.repeatAddedOk),
                     ),
                   ),
