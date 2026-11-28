@@ -240,7 +240,7 @@
   "meExportHint": "A spreadsheet file (CSV) you can keep anywhere.",
   "meSecData": "Your data",
   "meBackup": "Back up to a file",
-  "meBackupHint": "An encrypted copy to keep, or to move to a new phone.",
+  "meBackupHint": "A copy locked with your password, to keep or to move to a new phone.",
   "meRestore": "Restore from a file",
   "meRestoreHint": "Bring back your journal from a backup file.",
   "backupBody": "Choose a password for this backup. You'll need it to restore the file on any phone.",

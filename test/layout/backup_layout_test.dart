@@ -98,6 +98,13 @@ void main() {
   for (final c in layoutCases) {
     testWidgets('BK1 Back up to a file ($c)', (tester) async {
       await open(tester, c, MeRoutes.backup);
+      // That Piggybow can't recover the password: on screen before any
+      // scrolling, at every text size.
+      expect(
+        tester.getRect(byId('backup-no-recovery')).bottom,
+        lessThanOrEqualTo(780),
+        reason: 'BK1: the no-recovery line is in view',
+      );
       await check(
         tester,
         c,

@@ -192,6 +192,18 @@ class _BackupScreenState extends State<BackupScreen> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
           children: [
             Text(l10n.backupBody, style: theme.textTheme.bodyLarge),
+            const SizedBox(height: 12),
+            // Right under what the password is for, so it's on screen at
+            // the largest text, before any scrolling.
+            TestId.container(
+              'backup-no-recovery',
+              child: Text(
+                l10n.backupNoRecovery,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
             const SizedBox(height: 16),
             _PasswordField(
               id: 'backup-password',
@@ -218,16 +230,6 @@ class _BackupScreenState extends State<BackupScreen> {
               l10n.backupHint,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TestId.container(
-              'backup-no-recovery',
-              child: Text(
-                l10n.backupNoRecovery,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
-                ),
               ),
             ),
             if (error != null) _Line('backup-error', error, error: true),
