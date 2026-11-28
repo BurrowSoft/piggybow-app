@@ -142,7 +142,8 @@ class JournalStore extends ChangeNotifier {
     return m == null ? null : Entry.fromMap(id, m);
   }
 
-  /// Adds a spend or a save. A save goes to the active goal, if any.
+  /// Adds a spend or a save. A save goes to the active goal, if any; with
+  /// [noGoal], to none (a save added again that had none stays so).
   Future<Entry> addEntry({
     required EntryType type,
     required int amountMinor,
@@ -151,6 +152,7 @@ class JournalStore extends ChangeNotifier {
     SpendCategory? category,
     Feeling? feeling,
     String note = '',
+    bool noGoal = false,
   }) async {
     final now = _clock.nowUtc();
     final spend = type == EntryType.spent;
@@ -162,7 +164,7 @@ class JournalStore extends ChangeNotifier {
       category: spend ? category : null,
       feeling: spend ? feeling : null,
       note: note.trim(),
-      goalId: spend ? null : (await activeGoal())?.id,
+      goalId: spend || noGoal ? null : (await activeGoal())?.id,
       localDate: localDate,
       createdAt: now,
       updatedAt: now,

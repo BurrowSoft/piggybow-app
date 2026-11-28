@@ -123,6 +123,30 @@ void main() {
     expect(copy.localDate, '2026-10-02');
   });
 
+  testWidgets('a save that had no goal stays with no goal, even with a goal '
+      'active now', (tester) async {
+    final app = await open(
+      tester,
+      seed: (app) async {
+        // Saved before any goal: it went to none.
+        await app.journal.addEntry(
+          type: EntryType.saved,
+          amountMinor: 30000,
+          currency: 'THB',
+          localDate: '2026-09-29',
+        );
+        await app.journal.putGoal(bike());
+      },
+    );
+    await longPress(tester, 'tl-row-entry-1');
+    await tester.tapId('tl-repeat');
+    final copy = (await entries(tester, app)).firstWhere((e) => e.id != 'entry-1');
+    expect((copy.type, copy.goalId, copy.amountMinor), (EntryType.saved, null, 30000));
+    // The goal's progress didn't move.
+    final goal = (await tester.runAsync(() => app.journal.goal('goal-1')))!;
+    expect((await tester.runAsync(() => app.journal.goalProgress(goal)))!, 0);
+  });
+
   testWidgets('a save whose goal ended offers no Add again: not on a long-press, '
       'not in its edit sheet', (tester) async {
     final app = await open(

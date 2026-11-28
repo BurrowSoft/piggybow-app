@@ -15,8 +15,8 @@ bool canAddAgain(Entry entry, Goal? goal) =>
     goal?.status == GoalStatus.active;
 
 /// [entry] again, dated today: the same type, amount, category and note.
-/// The feeling is asked fresh (none yet); a save goes where a new save goes
-/// (its goal, still active).
+/// The feeling is asked fresh (none yet). A save goes to its goal, still
+/// active; a save that had none stays with none (never moved into a goal).
 Future<Entry> addAgainToday(AppServices services, Entry entry) =>
     services.journal.addEntry(
       type: entry.type,
@@ -25,6 +25,7 @@ Future<Entry> addAgainToday(AppServices services, Entry entry) =>
       localDate: services.localDay.todayWire,
       category: entry.category,
       note: entry.note,
+      noGoal: entry.type == EntryType.saved && entry.goalId == null,
     );
 
 /// Adds [entry] again and says so on [messenger] ("Added again for today",
