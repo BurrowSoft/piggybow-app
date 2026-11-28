@@ -79,12 +79,11 @@ void main() {
       // No Sentry project yet: crash reports are off in every build.
       expect(e['SENTRY_DSN'], isEmpty, reason: flavor);
       // Links appear only once each page is live (a link never 404s). The
-      // support page is, for the builds people install; the privacy policy
-      // isn't yet.
+      // support page is; the privacy policy isn't yet.
       expect(e['PRIVACY_URL'], isEmpty, reason: flavor);
       expect(
         e['SUPPORT_URL'],
-        flavor == 'dev' ? isEmpty : 'https://www.piggybow.com/support',
+        'https://www.piggybow.com/support',
         reason: flavor,
       );
     }
