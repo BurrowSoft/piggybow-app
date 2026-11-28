@@ -673,11 +673,13 @@ class _EntrySheetState extends State<EntrySheet> {
                               ),
                             ),
                           ),
-                        if (spend && !_editing && _category != null)
+                        // By the picked category's id: a built-in or your
+                        // own (#49).
+                        if (spend && !_editing && _hasCategory)
                           _QuickAmounts(
                             amounts: quickAmounts(
                               _entries,
-                              category: _category!,
+                              categoryId: (_category?.id ?? _custom)!,
                               currency: currency,
                             ),
                             currency: currency,
