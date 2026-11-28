@@ -58,7 +58,10 @@ tags: [takeout]
     visible:
       id: goal-screen
     timeout: 10000
-- assertVisible: "Taken out"                      # the goal's list: the take-out row
+# The goal's list: the take-out row is one merged node ("Taken out", the day,
+# the amount), so match it whole; the goal now holds $150.00
+- assertVisible: "(?s)Taken out\\s+Today.*"
+- assertVisible: ".*\\$150\\.00 of \\$500\\.00.*"
 - takeScreenshot: 86-goal
 # Timeline (the goal screen sits over the tabs: Back to Home first)
 - back
@@ -94,7 +97,7 @@ tags: [takeout]
     visible:
       id: goal-screen
     timeout: 10000
-- tapOn: "Taken out"
+- tapOn: "(?s)Taken out\\s+Today.*"
 - runFlow:
     file: ../../subflows/reveal.yaml
     env:
@@ -107,7 +110,8 @@ tags: [takeout]
     visible:
       id: goal-screen
     timeout: 10000
-- assertNotVisible: "Taken out"
+- assertNotVisible: "(?s)Taken out\\s+Today.*"
+- assertVisible: ".*\\$200\\.00 of \\$500\\.00.*"
 - back
 - extendedWaitUntil:
     visible:

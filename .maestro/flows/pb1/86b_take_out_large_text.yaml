@@ -5,10 +5,13 @@ tags: [takeout]
 - launchApp:
     appId: ${APP_ID}
     stopApp: false
+# 86a ends on Summary: Home first (its Add button shows only there)
 - extendedWaitUntil:
     visible:
-      id: home-add
+      id: tab-home
     timeout: 30000
+- tapOn:
+    id: tab-home
 - runFlow:
     file: ../../subflows/reveal.yaml
     env:
