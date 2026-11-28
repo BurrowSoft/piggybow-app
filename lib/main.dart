@@ -133,6 +133,8 @@ Future<void> main() async {
     appLock: appLock,
     onboarded: await onboardedAtStart(journal),
   );
+  // A reminder tapped, or the start it made, opens the Add sheet.
+  unawaited(services.reminders.listen());
   // The pig's reaction to an Add lasts until the app goes to the background.
   AppLifecycleListener(onHide: () => services.lastAdd.value = null);
 
